@@ -115,3 +115,5 @@
 64. 未特定ライセンスの追加＝rocm 版 torch の `torch/lib/liblzma.dll`・`aotriton_v2.dll`（License-File 107 件に該当なし）＝`docs/acceptance.md` §3 11 番。cu の zlibwapi・cpu の libiomp5md と同型（配布物には入れない＝初回取得の通知のみ）。
 
 65. **参照潜在キャッシュ（ref_latent の事前計算 .pt）は Radeon 版だけ持つ**（司令官裁定・2026-09-05）。裁定 11 の「持たない」は CUDA 版に限る。Radeon 版では話者登録時（プリセットの初回展開時と利用者の追加時）に wrapper が `.pt` を 1 回焼き、`voices.json` の alias を `ref_latent` に向ける（上流の VoiceSpec は `ref_latent` を受ける・同 stem の `.wav` が `.pt` に勝つ穴があるので `.pt` は別名で置く＝research 40 §6-2・handoff §1-7）。実装は便 D（ランチャの話者台帳）と wrapper の `POST /ywk/voices/{id}/precompute` 相当で行い、`empty_cache_interval` の扱いは別途裁定待ち。
+
+66. **便 B のドライバ入れ替えで再起動が要る場合＝席が `claude -c` で復帰するよう仕込んでから、そのまま再起動してよい**（司令官裁定・2026-09-05）。仕込み＝遠隔席が自分を起こした元のコマンド行（`Get-CimInstance Win32_Process` で自プロセスの CommandLine を読む）に `-c`（continue）を付けたものを `HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce` か「ログオン時」のタスクに登録し、作業ディレクトリ・-NoProfile を保ったまま `shutdown /r /t 15` を撃つ。復帰後は同じ会話の続き（関門⑴の確認返信と関門⑵の承諾が済んだ後の手順）から再開する。自動ログオンでなければログオンは司令官が行う。裁定 56 の「席は自分で shutdown を撃たない」はこれで上書き。
