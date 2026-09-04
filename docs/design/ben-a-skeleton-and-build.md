@@ -15,7 +15,7 @@
 | A-2 | `build/assemble-app.ps1` が上流 2 本を `build/out/app/server/upstream/` に写し `patches/` を当て（submodule は無改変のまま）、`git -C upstream/... status` が clean | `git submodule status`・`git status` |
 | A-3 | 組み立てた runtime で `python.exe -m ywk_server` を起動し、モデル未読込で `GET /health` 200・`GET /params` 200（≤100 ms）・`GET /ywk/status` 200 | `build/verify-runtime.ps1` |
 | A-4 | 既存 HF キャッシュ（`%USERPROFILE%\.cache\huggingface`・読むだけ）を `HF_HOME` に向け、CPU fp32・4 steps で `POST /v1/audio/speech` が wav を返す（依存の間引きが正しい証拠） | 同上・wav の RIFF 検査 |
-| A-5 | 契約テスト（`tests/contract/`）が全緑＝未知欄 400・範囲外 400・`voice`＋`no_ref` 同時 400・エラー body に絶対パス 0 件・`/params` に `default: null` 0 件・「デフォルト」常在・`none` 非露出・日本語話者名 200 | `build/run-tests.ps1` |
+| A-5 | 契約テスト（`tests/contract/`）が全緑＝未知欄 400・範囲外 400・`voice`＋`no_ref` 同時 400・エラー body に絶対パス 0 件・`/params` の **`exposed_to_ywk:true` の欄**に `default: null` 0 件（§4-2 の規則）・「デフォルト」常在・`none` 非露出・日本語話者名 200 | `build/run-tests.ps1` |
 | A-6 | `licenses/` に Irodori 系 MIT 3 本の全文＋Ethical Restrictions＋自作分＋取得物の注意書き索引がある | 目視・`build/check-licenses.ps1` |
 | A-7 | 第三者バイナリ・モデル・wheel が `git ls-files` に 0 件 | `build/check-tree.ps1` |
 | A-8 | 敵対検分 3 席（契約・ビルド・ライセンス）の指摘を是正済み | 完了報告 |
@@ -70,7 +70,7 @@ irodori-tts-for-yomiwakechan/
     irodori-tts-v4.1-small/LICENSE.md   重み MIT（宣言のみ＝MIT 全文を自作し「宣言の出典」を併記）＋Ethical Restrictions 4 条（原文）
     semantic-dacvae-japanese-32dim/LICENSE.md  コーデック MIT（同上）
     silentcipher/LICENSE    sony/silentcipher MIT（原文・GitHub）
-    dacvae/LICENSE          facebookresearch/dacvae Apache-2.0（原文・GitHub）＋HF 本文の SAM 記述の矛盾は結論を書かず原文の檔と行を記す
+    dacvae/LICENSE          facebookresearch/dacvae Apache-2.0（原文・GitHub）＝裁定 29「Apache-2.0 と読む（3 対 1）」。HF 本文 46 行目の SAM 記述は原文の檔と行つきで README に併記し「当方の読み」と明記
     irodori-tts-for-yomiwakechan/LICENSE  自作分 MIT
     first-run-notices.md    初回取得で利用者の機体に入る第三者物（torch・CUDA/cuDNN DLL・libsndfile・vc_redist・uv 不使用）の通知文の索引＝**配布物には入れない**が、初回取得 UI が表示する
   installer/                便 E（便 A は README のみ）
@@ -145,12 +145,22 @@ irodori-tts-for-yomiwakechan/
              "voice": {"type":"string","description":"話者名（/ywk/voices の id）。「デフォルト」= 参照なし"},
              "response_format": {"type":"enum","default":"wav","enum":["wav"]}},
  "irodori": [
-   {"key":"caption","type":"string","default":null,"group":"emotion","label":"演技指示（キャプション）","description":"…","max_length":null,"note":"空は欄ごと省略（空文字は 400）"},
-   {"key":"num_steps","type":"integer","default":40,"min":4,"max":64,"step":1,"group":"quality","label":"サンプリング歩数","range_source":"配布版の推奨（上流に範囲検査なし・gradio スライダ 4〜64 準拠）"},
+   {"key":"caption","type":"string","default":"","nullable":true,"group":"emotion","label":"演技指示（キャプション）","description":"…","max_length":null,"exposed_to_ywk":true,"note":"空文字＝未指定（wrapper が欄ごと省略して上流へ渡す・上流は空文字を 400 にするので wrapper が畳む）"},
+   {"key":"num_steps","type":"integer","default":40,"min":1,"max":120,"step":1,"group":"quality","label":"サンプリング歩数","range_source":"gradio","exposed_to_ywk":true,"presets":[10,40]},
    {"key":"cfg_scale_text","type":"number","default":3.0,"min":1.0,"max":10.0,"step":0.1,"group":"emotion", …},
    {"key":"t_schedule_mode","type":"enum","default":"…","enum":["linear","sway"], …},
    …（`IrodoriOptions` 44 欄を全部載せる。既定は **env 反映後の実効値**＝`settings.default_*` があればそれ、無ければ `SamplingRequest` の dataclass 既定。`cfg_scale_caption` は Server 実効値 3.0 を採り、gradio 4.0 は `note` に残す。`speaker_kv_min_t` は「`speaker_kv_scale` 指定時のみ 0.9 に解決」を `note` に書く）
  ],
+ // 規則（批評席の指摘を受けた設計席の決定・2026-09-04）：
+ //  ⑴ dataclass 既定が None の欄（19 欄）は `default:null`＋`nullable:true` で「未指定＝上流の挙動」を表す。
+ //  ⑵ 本体に露出する欄は `exposed_to_ywk:true` の集合だけ＝caption・seed・speed・num_steps・cfg_scale_text・cfg_scale_caption・cfg_scale_speaker・
+ //     t_schedule_mode・sway_coeff（＋voice は /ywk/voices の Choice）。この集合には null の default を置かない（文字列欄は "" で未指定・seed は "" で乱数）。
+ //     受け入れ条件 A-5 の「null 0 件」はこの集合に対して撃つ。他の欄は `advanced` グループ（UI の上級者向け・本体には出さない）。
+ //  ⑶ `range_source` を欄ごとに持つ＝"gradio"（上流 UI のスライダ 7 本＝num_steps 1〜120／num_candidates 1〜32／duration_scale 0.5〜1.5／
+ //     sway_coeff −1.0〜1.5／cfg_scale_text・cfg_scale_speaker・cfg_scale_caption 0〜10）・"upstream-check"（コードの値域検査・例 seconds>0）・
+ //     "ywk"（配布版が自分の責任で名乗る範囲）。上流が保証していない範囲を「gradio 準拠」と名乗らない。
+ //  ⑷ `duration_scale` は本体に露出しない（上流が `duration_scale / speed` で除算合成する＝app.py の該当行を出典に note に書く）。本体は `speed` だけを送る。
+ //  ⑸ `/params` の所要は ≤ 100 ms（引き継ぎ §4 API 行）。37 ノートの 200 ms は採らない。
  "rules": {"priority": "irodori.X > top-level X > env", "literal_must_be_nested": ["t_schedule_mode","decode_mode","cfg_guidance_mode"],
            "voice_and_no_ref_exclusive": true, "unknown_field": "400", "out_of_range": "400"},
  "prefetch": {"available": false, "planned": "/ywk/prefetch（§6）"}}
@@ -165,12 +175,13 @@ irodori-tts-for-yomiwakechan/
 - 絶対パスは出さない（受け入れ条件「API」行）。
 
 ### 4-4 `GET /v1/audio/voices` の覆いと `GET /ywk/voices`
+- wrapper は `voice` が上流の NO_REF_IDS（none/no_ref/no-ref/null/text-only・大小無視）のときも「デフォルト」に正規化して受ける（本体の現行アダプタが `voice:"none"` を送る互換の保険。`allow_no_ref_voice=false` でもこの経路は 400 にしない）。
 - 上流の一覧は `ref_wav` に絶対パスを返す→ wrapper が同パスの route を差し替え（`app.router.routes` から上流の GET を外して自前を登録）。返す形は上流互換（`{"object":"list","data":[{"id":"デフォルト","object":"voice", ...}]}`）で **パス欄を落とし** `display_name`・`preset:true|false`・`no_ref:true|false` を足す。「デフォルト」を先頭に並べ替える。`none` は `allow_no_ref_voice=false` で出ない（テストで釘）。
 - `voices.json` は配布版（ランチャ）が所有＝書式は上流 README §voices.json（`research/` upstream-server 読解）＋`{"デフォルト":{"no_ref":true}}`。wrapper は読むだけ。話者メタ（表示名・caption 既定・既定パラメータ）は `voices/voices.ywk.json`（配布版の台帳・便 D で確定）。便 A は「デフォルト」1 行の `voices.json` と台帳の空雛形を `build/out/app/voices/` に置く。
 
 ### 4-5 `POST /v1/audio/speech` の前段検査（白名簿・範囲・排他）
 - 上流 route を差し替え、body を先に検査してから上流の関数を呼ぶ（上流のコードは呼ぶだけ・改変しない）。
-- 検査＝⑴ 未知欄（top-level と `irodori` ネストの両方）→ 400 `{"error":{"message":"unknown field: <k>","type":"invalid_request_error","code":"ywk_unknown_field"}}`。⑵ 範囲外→ 400（`/params` の min/max と同じ表を使う）。⑶ Literal 3 欄が top-level にあれば 400（ネストで送れ）。⑷ `voice` と `irodori.no_ref` の同時指定→ 400。⑸ `response_format` は `wav` のみ（ffmpeg 不要＝第三者バイナリ不同梱）。⑹ 422 の本文 echo（5,000 字＋app.py の絶対パス）を wrapper の `RequestValidationError` ハンドラで置き換え（欄名と理由だけ）。
+- 検査＝⑴ 未知欄（top-level と `irodori` ネストの両方）→ 400 `{"error":{"message":"unknown field: <k>","type":"invalid_request_error","code":"ywk_unknown_field"}}`。⑵ 範囲外→ 400（`/params` の min/max と同じ表を使う）。⑶ Literal 3 欄が top-level にあれば 400（ネストで送れ）。⑷ `voice` と `irodori.no_ref` の同時指定→ 400。⑸ `response_format` は `wav` のみ（上流は wav/flac を soundfile で完結し、mp3/opus/aac は torchaudio→ffmpeg に落ちうる＝ffmpeg 不要にするには wav 固定・第三者バイナリ不同梱）。⑹ 422 の本文 echo（5,000 字＋app.py の絶対パス）を wrapper の `RequestValidationError` ハンドラで置き換え（欄名と理由だけ）。
 - 綴り違いの沈黙（上流 T-2）はこれで塞がる。優先順（`irodori.X`→top→env）は上流のまま。
 
 ### 4-6 精度の device 連動と GPU 検査
