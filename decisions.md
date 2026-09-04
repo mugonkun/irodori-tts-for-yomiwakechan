@@ -97,3 +97,9 @@
 
 53. **遠隔席 `12900k-new-enchanted-metcalfe` と双方向の疎通を確認**（SendMessage の往復＋N: への檔 `ping/12900k-new-20260905-025233.txt`）。RTX 機の事実＝hostname `12900k-new`・pwsh 7.6.5＋PS 5.1（26100.9168）・git 2.55.0・**Python 3.14.7**（配布版は使わない＝埋め込み 3.12.10 を台帳から組む）・**uv 0.12.9**（`build/dev-venv.ps1` は 0.12.7 以外で止まる＝持ち込みの `uv.exe` 0.12.7 を PATH 先頭で使わせる）・RTX 3090 `GPU-19adfe89-c9e0-df55-4a8a-e31798717a36`・ドライバ 591.86・C: 空き ≈3.5 TiB・N: 可視・ドキュメントが OneDrive 配下（台本は全部 `-NoProfile`）・PSModulePath に Desktop 版経路が混在（pwsh→PS 5.1 の罠が成立し得る）。遠隔席の作業先は `C:/ywk/` を指定する（現状は `C:/claudeprobe`）。
 54. **U-8（vc_redist 欠落機）は RTX 機で素のまま再現できない**＝`C:/Windows/System32/msvcp140.dll` 14.42.34438.0 が既に在る。便 B の B-3 は「System32 の msvcp140.dll の有無と版を検出し、在れば vc_redist を飛ばす」判定の実射に読み替える。欠落状態の実挙動を撃つには System32 の同 DLL を一時的に退避する必要がある（TrustedInstaller 所有・他アプリに影響）＝台本の最終手順として任意に置き、実施は司令官の一言を得てから。
+
+### 遠隔席への交付の作法 — 2026-09-05
+
+55. **交付経路＝`SendMessage`（双方向・実測）**。本体 `docs/operations.md` §3「remote-control 経由の実装席」の正典は「走行中の bridge 席への伝達は Routine の即時発火（作って・撃って・消す）・雲席からの SendMessage は届かない」だが、本席はローカル CLI なので `SendMessage` が往復で通った（返信 3 通・N: の檔）。Routine 経路は使わない。倣う作法＝⑴ 交付は全文を投げず「在り処＋枷」（N: の持ち込み物 `rtx-handoff/runbook/` と bundle 内の `probe/rtx-remote-runbook.md` を指し、停止域・成功判定・命名・チェックポイントをメッセージに書く）⑵ MCP 前提の指示を出さない（席が持つのは gh と PowerShell）⑶ モデルは席の自己申告で照合（bridge の get_session は last_served_model を返さない）⑷ 全工程 `-NoProfile`。
+56. **ドライバ入れ替え（U-14）の承諾は遠隔席のセッションで改めて取る**（遠隔席の規則＝セッション間の許可の持ち回りは不可）。台本ではドライバ手順を独立した最終ブロック（現行 591.86・投入版と NVIDIA 公式アーカイブ URL・戻し方・セーフモードで標準 VGA に戻す復旧経路）にし、cu130／cu126 の 591.86 での測定を N: に書き戻したチェックポイントの後にだけ入る。降格後に測るのは cu126 のみ・cu130 の落ち方は事実として 1 回記録。
+57. **U-8 の扱いは司令官の指示待ち**（AskUserQuestion を却下）。台本には System32 の msvcp140.dll の退避手順を入れない。B-3 は「検出して飛ばす」判定の実射のみ。
