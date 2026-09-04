@@ -92,3 +92,8 @@
 
 51. **ランチャの .NET ランタイムは SelfContained publish（1 exe）**（司令官裁定）。.NET ランタイム（MIT・再配布条項が明確）を自作分と一緒に焼く。裁定 8「第三者バイナリを配布物に入れない」の**例外**として記帳する＝法解釈が立つ第三者物（MSVC・LGPL・NVIDIA）を避けるという趣旨に反しない。`licenses/` に .NET のライセンス（MIT）と第三者通知を置く。
 52. 〔設計席〕ポート 18088 が塞がっていたら**止まって告知**する（次を探さない＝本体の定数と食い違うため）。試し撃ちの再生は NAudio（MIT）で、再生時に −16 dBFS 相当へ揃える（裁定 38）。UI は日本語のみ。設計書＝`docs/design/ben-d-launcher.md`（草稿・便 B・C の結果で §3・§5 を確定してから着工）。
+
+### RTX 機の疎通と事実 — 2026-09-05
+
+53. **遠隔席 `12900k-new-enchanted-metcalfe` と双方向の疎通を確認**（SendMessage の往復＋N: への檔 `ping/12900k-new-20260905-025233.txt`）。RTX 機の事実＝hostname `12900k-new`・pwsh 7.6.5＋PS 5.1（26100.9168）・git 2.55.0・**Python 3.14.7**（配布版は使わない＝埋め込み 3.12.10 を台帳から組む）・**uv 0.12.9**（`build/dev-venv.ps1` は 0.12.7 以外で止まる＝持ち込みの `uv.exe` 0.12.7 を PATH 先頭で使わせる）・RTX 3090 `GPU-19adfe89-c9e0-df55-4a8a-e31798717a36`・ドライバ 591.86・C: 空き ≈3.5 TiB・N: 可視・ドキュメントが OneDrive 配下（台本は全部 `-NoProfile`）・PSModulePath に Desktop 版経路が混在（pwsh→PS 5.1 の罠が成立し得る）。遠隔席の作業先は `C:/ywk/` を指定する（現状は `C:/claudeprobe`）。
+54. **U-8（vc_redist 欠落機）は RTX 機で素のまま再現できない**＝`C:/Windows/System32/msvcp140.dll` 14.42.34438.0 が既に在る。便 B の B-3 は「System32 の msvcp140.dll の有無と版を検出し、在れば vc_redist を飛ばす」判定の実射に読み替える。欠落状態の実挙動を撃つには System32 の同 DLL を一時的に退避する必要がある（TrustedInstaller 所有・他アプリに影響）＝台本の最終手順として任意に置き、実施は司令官の一言を得てから。
