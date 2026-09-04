@@ -1,0 +1,75 @@
+{
+ "text_state": {
+  "shape": [
+   1,
+   256,
+   512
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "text_mask": {
+  "shape": [
+   1,
+   256
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ },
+ "speaker_state": {
+  "shape": [
+   1,
+   2,
+   768
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "speaker_mask": {
+  "shape": [
+   1,
+   2
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ },
+ "caption_state": {
+  "shape": [
+   1,
+   512,
+   512
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "caption_mask": {
+  "shape": [
+   1,
+   512
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ },
+ "duration_features": {
+  "shape": [
+   1,
+   14
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "has_speaker": {
+  "shape": [
+   1
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ },
+ "has_caption": {
+  "shape": [
+   1
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ }
+}

@@ -1,0 +1,69 @@
+{
+ "x_t": {
+  "shape": [
+   3,
+   94,
+   32
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "t": {
+  "shape": [
+   3
+  ],
+  "dtype": "float32",
+  "fill": "ones"
+ },
+ "text_state": {
+  "shape": [
+   3,
+   256,
+   512
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "text_mask": {
+  "shape": [
+   3,
+   256
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ },
+ "speaker_state": {
+  "shape": [
+   3,
+   2,
+   768
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "speaker_mask": {
+  "shape": [
+   3,
+   2
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ },
+ "caption_state": {
+  "shape": [
+   3,
+   512,
+   512
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "caption_mask": {
+  "shape": [
+   3,
+   512
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ }
+}

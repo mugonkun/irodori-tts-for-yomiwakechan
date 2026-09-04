@@ -1,0 +1,51 @@
+{
+ "text_ids": {
+  "shape": [
+   1,
+   256
+  ],
+  "dtype": "int64",
+  "fill": "zeros"
+ },
+ "text_mask": {
+  "shape": [
+   1,
+   256
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ },
+ "cap_ids": {
+  "shape": [
+   1,
+   512
+  ],
+  "dtype": "int64",
+  "fill": "zeros"
+ },
+ "cap_mask": {
+  "shape": [
+   1,
+   512
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ },
+ "ref_latent": {
+  "shape": [
+   1,
+   4,
+   32
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "ref_mask": {
+  "shape": [
+   1,
+   4
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ }
+}

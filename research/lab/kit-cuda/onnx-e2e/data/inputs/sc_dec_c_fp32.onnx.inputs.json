@@ -1,0 +1,3 @@
+{
+ "merged": { "shape": [1, 96, 2049, 83], "dtype": "float32", "fill": "randn" }
+}

@@ -1,0 +1,10 @@
+{
+ "x": {
+  "shape": [
+   1,
+   167936
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ }
+}

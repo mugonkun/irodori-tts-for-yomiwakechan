@@ -1,0 +1,11 @@
+@echo off
+rem Irodori-TTS-Server（読み分けちゃん2 が叩く API サーバ）を GPU(ROCm) で起動する
+rem ※uv run で起動すると CPU の旧 .venv を掴むので、必ずこの bat か下の 2 行で起動すること
+cd /d C:\irodori-TTS-server\Irodori-TTS-Server
+set IRODORI_PRELOAD=true
+set IRODORI_EMPTY_CACHE_INTERVAL=0
+rem bf16=実測でウォーム4.8倍速・VRAM半減（fp32に戻すには下の2行を削除）
+set IRODORI_MODEL_PRECISION=bf16
+set IRODORI_CODEC_PRECISION=bf16
+.venv-rocm\Scripts\python.exe -m irodori_openai_tts --host 0.0.0.0 --port 8088
+pause

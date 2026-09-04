@@ -1,0 +1,11 @@
+{
+ "latent": {
+  "shape": [
+   1,
+   32,
+   94
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ }
+}

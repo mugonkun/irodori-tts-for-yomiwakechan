@@ -1,0 +1,20 @@
+{
+ "mag": {
+  "shape": [
+   1,
+   2049,
+   83
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "phase": {
+  "shape": [
+   1,
+   2049,
+   83
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ }
+}

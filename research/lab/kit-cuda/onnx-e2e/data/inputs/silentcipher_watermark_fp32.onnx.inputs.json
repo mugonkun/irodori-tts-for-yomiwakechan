@@ -1,0 +1,27 @@
+{
+ "y_pad": {
+  "shape": [
+   1,
+   167936
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "msg": {
+  "shape": [
+   1,
+   1,
+   5,
+   83
+  ],
+  "dtype": "float32",
+  "fill": "ones"
+ },
+ "orig_power": {
+  "shape": [
+   1
+  ],
+  "dtype": "float32",
+  "fill": "ones"
+ }
+}

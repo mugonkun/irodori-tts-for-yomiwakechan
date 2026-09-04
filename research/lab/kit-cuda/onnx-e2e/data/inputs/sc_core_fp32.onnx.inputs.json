@@ -1,0 +1,22 @@
+{
+ "carrier": {
+  "shape": [
+   1,
+   1,
+   2049,
+   83
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "msg": {
+  "shape": [
+   1,
+   1,
+   5,
+   83
+  ],
+  "dtype": "float32",
+  "fill": "ones"
+ }
+}

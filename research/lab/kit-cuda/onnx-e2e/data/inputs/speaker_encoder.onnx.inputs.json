@@ -1,0 +1,19 @@
+{
+ "ref_patched": {
+  "shape": [
+   1,
+   10,
+   128
+  ],
+  "dtype": "float32",
+  "fill": "randn"
+ },
+ "ref_mask": {
+  "shape": [
+   1,
+   10
+  ],
+  "dtype": "bool",
+  "fill": "ones"
+ }
+}

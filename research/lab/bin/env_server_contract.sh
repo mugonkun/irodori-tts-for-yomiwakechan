@@ -1,0 +1,10 @@
+export PY=C:/Users/mugonkun/source/repos/irodori-native-research/lab/.venv/Scripts/python.exe
+export LAB=C:/Users/mugonkun/source/repos/irodori-native-research/lab
+export PYTHONPATH="C:/Users/mugonkun/source/repos/irodori-native-research/upstream/Irodori-TTS;C:/Users/mugonkun/source/repos/irodori-native-research/upstream/Irodori-TTS-Server/src"
+export PYTHONDONTWRITEBYTECODE=1
+export HF_HUB_OFFLINE=1
+export PYTHONIOENCODING=utf-8
+export PYTHONUTF8=1
+export PYTHONWARNINGS=ignore
+export OMP_NUM_THREADS=8
+export MKL_NUM_THREADS=8
