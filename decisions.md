@@ -122,3 +122,5 @@
 
 67. **Radeon 版のランチャ UI**＝⑴ 参照潜在キャッシュの ON／OFF の切り替え（既定 ON・裁定 65）⑵ 参照ボイスごとの消費メモリの概算表示（wav 参照＝+0.7 GB 級・潜在参照＝増えない・出力尺 1 フレーム ≈3.5 MB＝research 40 §1・§6 と便 C（2）の実測で係数を確定）⑶ GPU メモリの使用量と占有量（torch の allocated と reserved・OS 側の GPU Process Memory）の目視表示。実装＝wrapper の `/ywk/status` に `memory`（allocated／reserved／max・話者ごとの潜在サイズ）を足し、ランチャが常時表示する。CUDA 版でも同じ欄を出す（値の意味は同じ）。
 68. 二次 wav（プリセット）の司令官の試聴は**後回し**（`docs/preset-voices-listening.md` は据え置き）。
+
+69. **就寝前の 3 点は既定どおり**（司令官「規定通りでよい」・2026-09-05）＝⑴ U-8 は検出判定の実射のみ・System32 の DLL は退避しない ⑵ Radeon 版の `empty_cache_interval` はランチャの設定項目（初期値 0）にし、使用量表示（裁定 67）で利用者が判断できる形にする（便 C（2）の実測を docs に残す）⑶ 便 D はこの Radeon 機で着工し、UIA 検分など機体固有の段は RTX 移行後に回す。
