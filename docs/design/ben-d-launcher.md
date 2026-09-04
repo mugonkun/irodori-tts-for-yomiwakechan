@@ -84,3 +84,13 @@ build/
 2. **ポート衝突時**＝18088 が塞がっていたら次を探す（18089…）か止まるか。推奨＝止まって告知（本体の定数と食い違うため）。
 3. **試し撃ちの再生**＝本体と同じ NAudio（MIT）で再生・音量は再生時に −16 dBFS 相当に揃える（decisions 38）。
 4. **UI の言語**＝日本語のみ。
+
+## 8. 追記（2026-09-05・裁定の反映）
+
+- 裁定 51＝**SelfContained publish（1 exe）**で確定。`licenses/` に .NET の MIT と第三者通知を置く。
+- 裁定 52＝ポート 18088 が塞がっていたら止まって告知。再生は NAudio（MIT）・再生時に −16 dBFS 相当へ揃える。UI は日本語のみ。
+- 裁定 65＝**Radeon 版は参照潜在キャッシュを持つ**＝話者登録時（プリセットの初回展開・利用者の追加）に wrapper の `POST /ywk/voices/precompute` を叩き、`/ywk/voices` の `latent`／`latent_stale` を一覧に出す。CUDA 版は既定 OFF（設定で ON にできる）。
+- 裁定 67＝**Radeon 版の UI**＝⑴ 潜在キャッシュの ON／OFF（設定）⑵ 参照ボイスごとの消費メモリの概算（wav 参照＝+0.7 GB 級・潜在参照＝増えない・出力 1 フレーム ≈3.5 MB・係数は便 C（2）の実測で確定）⑶ GPU メモリの使用量と占有量（wrapper の `/ywk/status.memory`＝torch の allocated／reserved／max・便 C（2）の後に wrapper へ足す。OS 側の GPU Process Memory は性能カウンタから読む）を常時表示。CUDA 版も同じ欄。
+- 裁定 69＝`empty_cache_interval` は設定項目（初期値 0）。便 D はこの Radeon 機で着工＝UIA 検分と CUDA 固有の段は RTX 移行後。
+- 便 C の実測から＝起動 26〜29 s・暖機 12.6〜51.8 s（機体初回 80.8 s）・暖機中の本物の待ちは走行中 1 射分（既定段で最大 ≈12 s）・`/ywk/status.warmup` を状態欄に出す。状態機械の `Warming` は `state=running` で表す。
+- 便 A（2）・便 C から＝wrapper の起動ログ 3 行（`ywk_server <版> upstream=…`・`Uvicorn running on`・`ywk_server: device actual=…`）＋上流の `runtime loaded in`。exit 2＝wrapper の事前検査（理由 1 行）・exit 3＝上流の startup 失敗。`YWK_VARIANT`・`YWK_DATA_DIR`・`YWK_WARMUP_ON_START`・`YWK_WARMUP_VOICES`・`YWK_PRECOMPUTE_ON_START` の env。
