@@ -57,9 +57,15 @@ def test_status_carries_no_absolute_path(client):
 
 
 def test_status_declares_warmup_idle(client):
-    """便 C fills this in; 便 A only promises the shape."""
+    """便 A promised ``{"state","shots"}``; 便 C filled the record in.
+
+    The two 便 A keys still read the same on an untouched server -- the rest of
+    the record (``tests/contract/test_warmup.py``) was added around them, and
+    contract ⑻ says adding fields does not move ``schema``.
+    """
     payload = client.get("/ywk/status").json()
-    assert payload["warmup"] == {"state": "idle", "shots": 0}
+    assert payload["warmup"]["state"] == "idle"
+    assert payload["warmup"]["shots"] == 0
 
 
 def test_bind_and_port_defaults(client):

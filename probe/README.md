@@ -29,22 +29,36 @@
 
 ### 便 B（RTX 3090 機・CUDA 実射）
 
+**番号は設計書 `docs/design/ben-b-rtx-remote.md` §0 の記号に揃える**（台本 `probe/rtx-remote-runbook.md`
+の見出しも同じ B-1〜B-9）。以前ここに置いていた独自番号（B-1〜B-7）は設計書の記号と衝突していたので捨てた。
+
 | # | 何 | 根拠となる受け入れ条件 |
 |---|---|---|
-| B-1 | cu130・bf16・40 steps・warm・参照なしで短文 RTF ≤ 0.25／長文 ≤ 0.10 | `docs/acceptance.md` 速度 1 |
-| B-2 | 参照 10〜30 s ありで RTF ≤ 0.35 | 同 速度 2 |
-| B-3 | 起動後 1 発目 ≤ 2.0 s（コールド） | 同 コールド |
-| B-4 | VRAM bf16 ≤ 3.2 GiB・kill 後 10 s で idle へ | 同 VRAM |
-| B-5 | **cu126 が古いドライバで実際に動くか（U-14）**＝これが取れるまで「cu126＝古いドライバ向け」と謳わない | 同 ドライバ・§3 の 2 |
-| B-6 | **CUDA wheel を入れた NVIDIA 無し機で CPU 合成が 200 で返るか（W-1）** | 同 §3 の 6 |
-| B-7 | **`torch/lib/zlibwapi.dll` の出所（A14）**・`nvperf_host.dll`・`nvrtc*.alt.dll` を削れるか | `licenses/first-run-notices.md` A14・A15 |
+| B-1 | `assemble-runtime -Variant cu130` が RTX 機で台帳だけから組み上がる（`fallback_url` の sha256 も 1 度突き合わせる） | 設計書 §0 |
+| B-2 | `ywk_fetch_models` が 3 リポ 22 檔を取得・検証し `refs/main` を書く | `decisions.md` 49 |
+| B-3 | **U-8**＝vc_redist 未導入で `import torch` がどう落ちるか（逐語）→ 台帳の直リンクで導入 → 通る | 設計書 §0 |
+| B-4 | cu130・bf16 の実射＝短文 RTF ≤ 0.25／長文 ≤ 0.10／参照 10〜30 s ≤ 0.35／10 steps 短文 ≤ 0.10・コールド 1 発目 ≤ 2.0 s・VRAM bf16 ≤ 3.2 GiB・kill 後 10 s で idle | `docs/acceptance.md` 速度 1〜3・コールド・VRAM |
+| B-5 | 未見の参照形状の 1 発目（11 プリセット順撃ち）が CUDA でどう振る舞うか＝暖機を CUDA でも既定 ON にするかの根拠 | `research/lab/notes/33` §5・`decisions.md` 40 |
+| B-6 | cu126 変種を組んで同じベンチ＝cu130 と ±5 % | 設計書 §0 |
+| B-7 | **U-14**＝2023 年秋のドライバ（R537／R545）で cu126 が動くか（`import torch`・`is_available()`・実合成 1 射） | `docs/acceptance.md` ドライバ行 |
+| B-8 | clone した木で `build/run-tests.ps1` が緑（`.gitattributes` の CRLF 対策の実証） | 設計書 §0 |
+| B-9 | 結果を `N:\temp_for_claudecode_agents\irodori-ywk\rtx\` へ・停止域の証明 | `decisions.md` 21 |
+
+**任意（時間が余れば・台本 §2 の末尾）**
+
+| # | 何 | 根拠 |
+|---|---|---|
+| B-10 | **CUDA wheel を入れた NVIDIA 無し機で CPU 合成が 200 で返るか（W-1）**＝RTX 機では GPU を隠して代用する | `docs/acceptance.md` §3 の 6 |
+| B-11 | **`torch/lib/zlibwapi.dll` の出所（A14）**・`nvperf_host.dll`・`nvrtc*.alt.dll` を削れるか | `licenses/first-run-notices.md` A14・A15 |
 
 **キットの再利用**＝`N:\irodori-native-research\kit-ssd\`（全段 6.2 分）・`kit-ssd\ref-bench\`
 （参照ボイス 5 話者）・`gpu-props.cmd`・聴取セット `listening\`（9 対）。
 結果の写し＝`N:\…\results-ssd\`（`decisions.md` 21＝「好きにしてよい」）。
 
-**RTX 3090 機の停止域**＝**D:・E:・F: ドライブは触らない**。Windows ごと壊してよいが、
-**ドライバの入れ替え（U-14）は司令官の明示の一言を得てから**（`decisions.md` 20・22）。
+**RTX 3090 機の停止域**＝**D:・E:・F: ドライブは触らない**。Windows ごと壊してよい。
+**ドライバの入れ替え（U-14）は `decisions.md` 50 で司令官が承諾済み**（2026-09-05・「入れ替え承諾」）＝
+もう「明示の一言待ち」ではない。ただし台本の順どおり **B-1〜B-6・B-8・B-9 を終えて結果を N: に写してから**
+着手する（`decisions.md` 20・22・50）。
 
 ### 便 C（Radeon 機・実射と暖機）
 
@@ -55,6 +69,14 @@
 | C-3 | **8088 経由（HTTP・チャンク分割・`empty_cache`）で 3 発目の再発が起きるか** | 同 §5 の 6 |
 | C-4 | **MIOpen の db（`gfx1151_20.ukdb`）を他機に同梱して効くか** | 同 §5 の 3 |
 | C-5 | Radeon 変種の取得台帳（`ledger/runtime-rocm-gfx1151.json`）の確定 | 同 §6 |
+
+**便 C の台本と結果（2026-09-05・実走済み）**＝台本 `probe/rocm-warmup-probe.ps1`＋`probe/rocm-warmup-probe.py`、
+なま値 `build/out/probe-log/rocm-warmup-<日時>.json`（＋同ディレクトリの `server-<日時>-{cold,warm}.err.log` と
+GPU メモリの標本 `gpu-<日時>-*.csv`）、読み方は `docs/radeon.md` §7。
+**C-1（同一形状・db 温で 1 発目 ≤ 5 s）＝満たす**（4.02 s／暖機ありなら 1.49 s）・**C-2 は §7-2／§7-7**・
+**C-3（HTTP 経路で 3 発目の再発）＝出ない**・**C-4（db の他機同梱）＝未検証のまま**・**C-5（台帳）＝確定**。
+**新しく判った未達**＝11 プリセットの RTF（`docs/acceptance.md` §3 の 9）。
+生データは `build/out/` に置いた（`probe/out/` は作っていない）＝檔が大きく、ビルド出力と同じ寿命で捨てられる場所に置く方が筋だと判断した。
 
 **Radeon 機が使えるのは 2026-09-07（月）まで**（`decisions.md` 19）。C-1〜C-5 と便 P
 （プリセット話者の一次 wav 生成）はこの枠で済ませる。

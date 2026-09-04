@@ -174,6 +174,28 @@ def write_voices(aliases: dict[str, Any] | None = None, files: tuple[str, ...] =
         )
 
 
+def reset_warmup() -> None:
+    """Stop any warmup left running and put the record back to idle.
+
+    The runner is a real background thread (便 C 設計書 §2-3), so a test that
+    leaves one going would keep writing into ``ywk_server._warmup`` while the
+    next test reads it.  Cancel, join, then reset.
+    """
+    ywk_server._warmup_cancel.set()
+    with ywk_server._pending_cond:
+        ywk_server._pending_cond.notify_all()
+    thread = ywk_server._warmup_thread
+    if thread is not None and thread.is_alive():
+        thread.join(timeout=10)
+    ywk_server._warmup_thread = None
+    ywk_server._warmup_cancel.clear()
+    with ywk_server._warmup_lock:
+        ywk_server._warmup.clear()
+        ywk_server._warmup.update(ywk_server._WARMUP_IDLE)
+    with ywk_server._pending_cond:
+        ywk_server._pending_real_requests = 0
+
+
 @pytest.fixture(autouse=True)
 def baseline() -> Any:
     """Reset settings, voices and the fake runtime before every test."""
@@ -184,10 +206,12 @@ def baseline() -> Any:
     upstream._synthesis_semaphore_limit = None
     ywk_server._runtime_error = None
     ywk_server._device_logged = False
+    reset_warmup()
     write_voices(aliases={DEFAULT_VOICE: {"no_ref": True}})
     fake = FakeRuntime()
     upstream.runtime_manager = FakeRuntimeManager(fake)
     yield fake
+    reset_warmup()
 
 
 @pytest.fixture()

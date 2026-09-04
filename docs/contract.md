@@ -150,6 +150,7 @@
   | `input` が空白のみ | `ywk_empty_input` |
   | 読込中・読込失敗（503） | `ywk_runtime_unavailable` |
   | 配布版の前段検査（3-2） | `ywk_unknown_field`・`ywk_out_of_range`・`ywk_type_error`・`ywk_invalid_enum`・`ywk_literal_top_level`・`ywk_voice_and_no_ref`・`ywk_voice_and_reference`・`ywk_unsupported_response_format`・`ywk_invalid_body`・`ywk_validation_error` |
+  | 暖機の口（⑺ 7-2・**本体は叩かない**） | `ywk_warmup_running`（409）・`ywk_warmup_unknown_id`（404） |
   | 上記以外の 4xx／5xx | `ywk_upstream_error`／`ywk_server_error`（404 は `ywk_not_found`・405 は `ywk_method_not_allowed`） |
 
 - **エラー body に絶対パスを 1 件も出さない**。上流は⒜未知 voice の 400 で `voices` ディレクトリの
@@ -262,6 +263,12 @@
   `no_ref:true` が 200 で `ref_wav=null`）。配布版はこの同時指定を **400** で弾く
   （`no_ref` は `ywk_voice_and_no_ref`・残り 5 欄は `ywk_voice_and_reference`）。
   **`null` を入れた欄は「明示」ではない**＝上流も読まないので 400 にしない。
+- **`no_ref: false` は「参照あり」ではない**＝上流の 6 欄の短絡は**揃っていない**。パス 5 欄は
+  「`None` でなければ」短絡するが、`no_ref` は同じ `or` 連鎖の最後の項で**真値として**読まれる
+  （`app.py:439-446` の `or explicit_no_ref`）＝`no_ref: false` は話者解決に進む。配布版も同じに読む
+  ＝`voice` を省いた `{"irodori":{"no_ref":false}}` は**欄ごと出さないときと同じ 200**（参照なし合成）で、
+  `voices.json` がまだ無い初回起動でも 400 にならない。**`voice` との同時指定は 400 のまま**
+  （3-2 の 4＝どちらの意味か body から決められない）。
 - 参照なしの声は **Irodori 自身の素の声**（caption のみで作る）。
 
 ### 4-3 所有者
@@ -280,7 +287,7 @@
 - **プリセット話者 12 名**をリリース版に同梱する予定（`decisions.md` 17・生成は便 P）。
   一覧では `preset: true` で区別できる。
 
-題目＝`一覧の先頭にデフォルトが常在する`／`voicesjsonが無くてもデフォルトで合成200`／
+題目＝`norefのfalseは参照ではない`／`一覧の先頭にデフォルトが常在する`／`voicesjsonが無くてもデフォルトで合成200`／
 `voicesjsonが壊れても500ではなく1件と理由`／`一覧にnoneが0件`／`noneの別名は正規化されて200`／
 `一覧の応答に絶対パスが0件`／`日本語話者名で合成200`／`上流の書き込み3口が外れている`。
 
@@ -389,18 +396,42 @@
   **fp32×GPU 不在は黙って CPU に落ちて 200 を返す**（2 文字・10 steps で 267 秒＝340 倍の実測）。
   配布版は `cuda` 指定で `torch.cuda.is_available()` が偽なら**起動前に理由 1 行で exit 2** にする。
 - **絶対パスは出さない**（`voices.dir` は末尾 1 段だけ）。
-- 上の逐語に**足した欄が 1 つある**＝`voices.error`（`string|null`）。`voices.json` が読めないときに
-  理由を 1 行で載せる（⑷ の「0 件＋理由」の相方）。**欄を足すのは `schema` を上げない**（⑻）。
+- 上の逐語に**足した欄が 4 つある**（**欄を足すのは `schema` を上げない**＝⑻）：
+  - `voices.error`（`string|null`）＝`voices.json` が読めないときの理由 1 行（⑷ の「0 件＋理由」の相方）。
+  - **`variant`**（`string`）＝ランチャが起こしたビルドの名前。既定 **`"cuda"`**（`decisions.md` 4）・
+    CPU 版は `"cpu"`・Radeon 版は `"rocm-gfx1151"`（`decisions.md` 5＝**arch を名乗る**。
+    確認済みは gfx1151 だけで、他 gfx は未検証）。env `YWK_VARIANT` の値をそのまま返す。
+    **これは「何で組んだか」の名前であって能力ではない**＝実際に載った device は `device.actual`。
+  - **`device.hip`**（`string|null`）＝`torch.version.hip`。**`device.gcn_arch`**（`string|null`）＝
+    `torch.cuda.get_device_properties(i).gcnArchName`（例 `"gfx1151"`）。**ROCm の torch は device type を
+    `cuda` と名乗る**ので、CUDA 機と Radeon 機を分けるのはこの 2 欄である（CUDA ビルドでは
+    `gcnArchName` 属性が無い＝両方 `null`・CPU に載っているときも `null`）。
+    実測の形＝`research/lab/notes/29-gpu-designation-lab.md` :317。
+- **`warmup` は⑺ 7-2 の暖機の記録**に育った（便 C）。便 A が約束した `state`・`shots` の 2 欄は
+  そのままの意味で残っている。
+- **Radeon 版は精度が bf16 に固定**（`decisions.md` 5・36）＝`IRODORI_MODEL_PRECISION=fp32` を
+  載せて `rocm-*` を起動すると、**上流を import する前に理由 1 行で exit 2** する
+  （`IRODORI_MODEL_DEVICE=cpu` のときだけ fp32 を許す）。根拠＝同一形状 1 発目が
+  fp32 32.1 s 対 bf16 2.84 s（`research/lab/notes/40-rocm-warmup.md` §8）＝MIOpen が
+  workspace 0 の遅い solver に落ちるため、fp32 の decode は CPU より遅い。
+- **Radeon 版は MIOpen の db を利用者データ配下に置く**＝`MIOPEN_USER_DB_PATH`＝
+  `<YWK_DATA_DIR>/miopen/db`・`MIOPEN_CUSTOM_CACHE_DIR`＝`<YWK_DATA_DIR>/miopen/cache`（`setdefault`）。
+  この db は**プロセスを跨いで効く**（空 db の 1 発目 11.2 s → 既存 db 2.5 s＝`40` §5）。
+  本体には見えない（`/ywk/status` はパスを載せない）が、暖機の効きが再起動後も残る根拠はここ。
 - **本体は device を要求 JSON に載せない**。device は Server プロセスの env
   （`IRODORI_MODEL_DEVICE`／`IRODORI_CODEC_DEVICE`）だけで決まる＝1 プロセス 1 デバイス。
   ランチャで選んだ GPU が**暗黙に**使われる（`decisions.md` 15・⑼ の D-7）。
   `/ywk/status` は**表示と記録のため**の口であって、切り替えの口ではない。
 
-題目＝`ywkstatusのdeviceactualは実測値でモデル未読込ならnull`／`ywkstatusに絶対パスが0件`。
+題目＝`ywkstatusのdeviceactualは実測値でモデル未読込ならnull`／`ywkstatusに絶対パスが0件`／
+`ywkstatusが変種を名乗る`／`ywkstatusのdeviceにhipとgcnarchが載る`／`rocm変種はfp32指定でexit2`／
+`rocm変種はMIOpenのdbを利用者データ配下に置く`。
 
 ---
 
-## ⑺ 先読み（**予約**＝便 A では `available: false`）
+## ⑺ 先読み（7-1・**予約**）と暖機（7-2・**便 C で実装済み**）
+
+### 7-1 先読み（`POST /ywk/prefetch`）＝**予約**＝便 A では `available: false`
 
 **契約の形だけ先に決めておく。実装は後続便で、本体スケジューラの対応も後続。**
 （`decisions.md` 14＝「深い先読み機構は余力があれば・使いやすい形で契約に準備する」）
@@ -421,6 +452,69 @@
   `true` に変わるのは⑻の手順を踏んだときだけ。
 
 題目＝`paramsのprefetchavailableは便Aではfalse`。
+
+### 7-2 暖機（`POST /ywk/warmup`）＝**ランチャの口。本体は叩かない**
+
+**「初めての形」は 1 発目だけ数秒〜十数秒かかる。それを利用者の読み上げの前に済ませておく口。**
+叩くのは**ランチャ（便 D）**であって本体ではない（本体は⑶の 1 本道だけを使う）。
+
+- **なぜ要るか**（事実＝`research/lab/notes/40-rocm-warmup.md`・`decisions.md` 40）＝Radeon（gfx1151）では
+  **出力の潜在フレーム数（40 ms 刻み）と参照ボイスの長さが「形」**で、**形ごとに MIOpen の探索が走る**。
+  罰は二層＝**ディスクの user db**（空 db の 1 発目 11.2 s 対 既存 db 2.5 s・**再起動を跨いで残る**＝§5）と
+  **プロセス内の残差**（`decode_latent` に +0.18〜0.61 s＝§5-1）。
+  **未見の参照ボイスに当たるたびに跳ねる**（VOICEVOX/COEIROINK 参照で 0.6〜1.0 s → 最初の
+  VOICEROID2 参照で 14.8 s＝`decisions.md` 40）。**CUDA 側で同じ罰があるかは便 B の実射待ち**
+  ＝口は変種に依らず在るが、既定で撃つかはランチャが決める。
+
+| 口 | body | 応答 |
+|---|---|---|
+| `POST /ywk/warmup` | `{"stages":[4,8,12],"voices":["デフォルト","琴葉茜"],"text":"暖機です。"}`（3 欄とも任意） | **202** `{"id","shots_total","state":"running"}` ／ 走行中は **409** `ywk_warmup_running` |
+| `DELETE /ywk/warmup/{id}` | — | **200** `{"id","state","cancel_requested"}`／別の id は **404** `ywk_warmup_unknown_id` |
+| `GET /ywk/status` | — | `warmup` 欄（下） |
+
+- **射の順**＝`stages` の秒（**`no_ref`・`seconds` 指定**＝出力尺を秒ちょうどにして「形」を焼く）を並び順に、
+  そのあと `voices` の各話者に**短文 1 射**（`seconds` は指定しない＝自然尺・**参照の形**を焼くのが目的）。
+  **`shots_total` ＝ `len(stages)+len(voices)`**。`stages` の既定は **`[4,8,12]`**（3 段で 6.25 s＝`40` §3）、
+  `text` の既定は **`"暖機です。"`**。**`seconds` を使うのは暖機の射だけ**（本番の要求に送ってはいけない＝⑶ 3-1）。
+- **優先度＝本物の要求が必ず勝つ**。wrapper は `POST /v1/audio/speech` の入口と出口で「走行中の本物」を数え、
+  暖機は**次の射の前に 0 になるまで待つ**（最大 **30 s**・以後は 1 射だけ撃って再確認）。
+  射そのものは**上流の合成セマフォ**（`max_concurrent_synthesis` 既定 1＝⑶ 3-4）に並ぶので、
+  **本物が待たされるのは最大で暖機 1 射分**（C-5）。
+  **`stream_format:"sse"` の要求も同じ扱い**＝上流はチャンクごとに合成枠を取り直す
+  （`app.py:711`）ので、数えるのは応答を返すまでではなく**最後のチャンクを流し終えるまで**。
+  ここを handler の出口で下ろすと、1 本の SSE 要求がチャンクの合間に**射の数だけ**
+  追い越される（敵対検分で実測）。切断で本文が閉じられたときも下ろす。
+- **暖機の射も本番と同じ話者解決を通る**＝「デフォルト」は `voices.json` が無くても・壊れていても
+  参照無しの射に書き換わる（⑷ 4-2・`decisions.md` 45）。通らないと、同じ話者 id が
+  本番 200・暖機 400 になり、**「失敗は 1 射目で止める」規定と重なって run 全体が死ぬ**。
+- **取消は「次の射を撃たない」ところまで**＝走っている射は最後まで走る（⑶ 3-4 と同じ粒度）。
+- **暖機の wav は捨てる**（`/v1/audio/speech` は通らない＝本体の音は 1 度も鳴らない）。
+  ログは **1 射 1 行**（`kind`・`key`・`seconds`・`ms`）。
+- **失敗は 1 射目で止める**＝どれか 1 射が例外を出したらその時点で `state:"failed"`・`error` に理由
+  （絶対パスは畳む＝⑶ 3-3 と同じ規則）。**知らない話者名は 1 射目で判る**という意味でもある。
+- **`/ywk/status.warmup` の形**：
+
+```json
+{"state":"idle|running|done|failed|cancelled","id":"…|null","shots_done":0,"shots_total":0,
+ "elapsed_s":0.0,"last_shot":{"kind":"no_ref|voice","key":"4s|琴葉茜","seconds":4.0,"ms":2518.4},
+ "error":null,"shots":0}
+```
+
+  - `elapsed_s`＝走行中は現在まで・終わっていれば総計。`last_shot`＝直前に**成功した**射（未着手は `null`）。
+  - **`shots` は `shots_done` の別名**＝⑹の逐語（便 A）が名乗った欄をそのまま残してある。
+  - **`cancelled` は便 C が足した state**（設計書 §2-3 は 4 つを挙げるが、取消と完走は区別できねばならない）。
+- **起動時暖機**＝env `YWK_WARMUP_ON_START=1`・`YWK_WARMUP_STAGES`（カンマ区切りの秒）・
+  `YWK_WARMUP_VOICES`（カンマ区切りの話者 id）・`YWK_WARMUP_TEXT` で、**ready 直後に自動で 1 回**走る。
+  ランチャが無い間の検分用であり、便 D は明示的に `POST /ywk/warmup` を叩く形にしてよい。
+- **body の検査は⑶ 3-2 と同じ規律**＝未知欄は `ywk_unknown_field`・型違いは `ywk_type_error`・
+  範囲外（`stages` の秒は 0 < s ≤ 60・最大 12 段・`voices` 最大 64 件・`text` 最大 200 字・
+  **射が 0 本になる指定**）は `ywk_out_of_range`。
+
+題目＝`暖機は段のあとに話者を撃つ`／`走行中の暖機に重ねると409`／`暖機の取消は次の射の前で止まる`／
+`暖機の失敗はstatefailedと理由`／`本物の要求が来たら暖機は次の射の前で待つ`／
+`暖機は上流のセマフォに並ぶ`／`暖機のbodyの検査`／`起動時暖機はenvで走る`／
+`SSEの間もカウンタを握る`／`SSEが失敗してもカウンタは下りる`／
+`暖機の射も保証された話者を解決する`／`暖機のrunは保証された話者で止まらない`。
 
 ---
 
@@ -448,7 +542,7 @@
 | D-2 | 発見は `/health` 1 段 | ④で `GET /params`（配布版）が加わる | `EngineCapability` は非永続＝保存の形は増えない |
 | D-3 | 話者登録は `POST /v1/audio/voices`＋`ywk-<sha12>` | 日本語の名付けは同じ経路で 400 | 配布版が登録口の所有者になる根拠。**配布版は書き込み 3 口を外した**＝本体が叩けば 404／405（⑷ 4-3） |
 | D-4 | 参照なし＝`voice:"none"` | `allow_no_ref_voice=false` で全滅（実射） | `no_ref:true` か alias「デフォルト」なら落ちない（推奨）。事実＝`voice` と `no_ref` の同時送信は参照が黙って落ちる。**配布版では `voice:"none"` も 200**＝別名 5 つを「デフォルト」に正規化する（⑶ 3-1・⑷ 4-1）＝本体は改修前でも合成できる |
-| D-5 | `IsMissingVoiceFailure` は文言依存 | 日本語話者名の 400（`voice_id must contain only ASCII…`）を誤検知して 1 回無駄に再登録 | 経路を変えれば消える。**配布版は `error.code` を必ず載せる**（⑶ 3-3）＝未知話者は `ywk_unknown_voice`・`voice` 省略は `ywk_missing_voice` で判定できる |
+| D-5 | `IsMissingVoiceFailure` は文言依存 | 日本語話者名の 400（`voice_id must contain only ASCII…`）を誤検知して 1 回無駄に再登録 | 経路を変えれば消える。**配布版は `error.code` を必ず載せる**（⑶ 3-3）＝未知話者は `ywk_unknown_voice` で判定できる。**`ywk_missing_voice`（`voice` 省略）が出るのは、ランチャが `IRODORI_DEFAULT_VOICE` を空にしたときだけ**（3-1・`decisions.md` 45＝既定では省略しても 200 になる）＝**この code を待つ分岐は常時は走らない** |
 | D-6 | 話者メタ（wav パス）は本体プロファイル側 | 持ち主が配布版へ移る | 話者の所有者の裁定次第で `VoiceParamId` の Text 欄が Choice の話者選択に変わる |
 | D-7 | GPU 欄なし・精度 2 env のみ | 配布版が GPU を管掌すれば差分ゼロ（元栓の env 注入も不要） | 報告 §4-2・§10-2 と整合 |
 | D-8 | `/health` 200 だけで発見 | `voices.json` 破損（一覧だけ 500）を検知できない | 発見段のエラー処理に 1 態増える |

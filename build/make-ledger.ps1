@@ -18,13 +18,18 @@
 
 .PARAMETER Variant
     Which runtime ledgers to build. Default: cpu, cu130, cu126.
+    rocm-gfx1151 is the Radeon variant (convoy C); it is never built by default because it
+    downloads 1.27 GB -- the AMD index publishes no hash, so the only way to obtain a sha256
+    for those files is to fetch them and compute it (see "AMD index" below).
 
 .EXAMPLE
     powershell -NoProfile -ExecutionPolicy Bypass -File build\make-ledger.ps1
+.EXAMPLE
+    powershell -NoProfile -ExecutionPolicy Bypass -File build\make-ledger.ps1 -Variant rocm-gfx1151 -SkipPythonEmbed -SkipModels -SkipVcRedist
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('cpu', 'cu130', 'cu126')]
+    [ValidateSet('cpu', 'cu130', 'cu126', 'rocm-gfx1151')]
     [string[]]$Variant = @('cpu', 'cu130', 'cu126'),
     [switch]$SkipRuntime,
     [switch]$SkipPythonEmbed,
@@ -64,8 +69,65 @@ $TorchIndexOf = @{
     'cpu'   = 'https://download.pytorch.org/whl/cpu'
     'cu130' = 'https://download.pytorch.org/whl/cu130'
     'cu126' = 'https://download.pytorch.org/whl/cu126'
+    'rocm-gfx1151' = 'https://stable.repo.amd.com/rocm/whl-next/'
 }
-$LocalTagOf = @{ 'cpu' = 'cpu'; 'cu130' = 'cu130'; 'cu126' = 'cu126' }
+$LocalTagOf = @{ 'cpu' = 'cpu'; 'cu130' = 'cu130'; 'cu126' = 'cu126'; 'rocm-gfx1151' = 'rocm10.0.0' }
+
+# --------------------------------------------------------------------------- ROCm variant
+#
+# The Radeon variant is pinned to what the running Radeon box actually runs (decisions.md 24),
+# and every one of those pins was re-read off the AMD index on the generation date.
+#
+# AMD index: https://stable.repo.amd.com/rocm/whl-next/ is a PEP 503 simple index, but --
+# unlike download.pytorch.org -- its hrefs carry NO "#sha256=" fragment and it serves no
+# PEP 691 JSON (asking for application/vnd.pypi.simple.v1+json still returns text/html).
+# Verified on the generation date; the convoy C design doc assumed the fragment was there.
+# So the sha256 for every AMD file is obtained the way python-embed's and vc_redist's are:
+# download it and hash it. That is still machine-obtained -- it is never typed by hand.
+$RocmVariant       = 'rocm-gfx1151'
+$RocmGfx           = 'gfx1151'
+$RocmTorchVersion       = '2.13.0+rocm10.0.0'
+$RocmTorchaudioVersion  = '2.11.0.2+rocm10.0.0'
+$RocmSdkVersion         = '10.0.0'
+# torch[device-gfx1151] pulls amd-torch-device-gfx1151 AND amd-torch-device-gfx115x
+# (torch METADATA "Provides-Extra: device-gfx1151" names both), and torch itself requires
+# rocm[libraries]==10.0.0 unconditionally. Everything below is therefore reached by the
+# resolver, not listed by hand; this array only says which names must come out of it.
+#
+# The "sha256" column is a REFERENCE, the same kind $EmbedSha256Ref is (line 61) and for the
+# same reason: with the index publishing no hash, the only hash in the pipeline was the one
+# computed from whatever happened to be in build/cache, and Invoke-YwkDownload returns a
+# cached file untouched when it is handed no expected hash. So a regeneration on a warm cache
+# re-derived the ledger from the cache instead of from the index, and AMD re-publishing the
+# same filename at the same length would have gone unnoticed -- the only surviving guard was
+# the Content-Length compare, which such a swap passes. These values were written by an
+# earlier run of this script from files it had just downloaded; the operating rule is
+# trust-on-first-use: leave the column empty for a name that has none yet, then copy the
+# value the run recorded into it. A mismatch throws instead of quietly rewriting the ledger.
+$RocmExpectedPins = @(
+    @{ name = 'torch';                    version = $RocmTorchVersion;      sha256 = '4ff21da558065d6c28773f9053eadec4897c579e1f34f623db3825755198b164' },
+    @{ name = 'torchaudio';               version = $RocmTorchaudioVersion; sha256 = '25c1857654c9232474bd88da29f91979482d243a2b096e0b22381c4e6bd65cf5' },
+    @{ name = 'amd-torch-device-gfx1151'; version = $RocmTorchVersion;      sha256 = 'd274a50cfab1943b4fec390db48ae3faa4bcfe1653ccc17812a373ac2ac7fa6f' },
+    @{ name = 'amd-torch-device-gfx115x'; version = $RocmTorchVersion;      sha256 = '67e23e9eca1674e131a5618fb7c5e0a04c809bd71e122c22e1a2a5e9c47136f0' },
+    @{ name = 'rocm';                     version = $RocmSdkVersion;        sha256 = '65b5982249612a310135f5e061b9f28909e8ad718a1ddb3f1abba92298b7216b' },
+    @{ name = 'rocm-sdk-core';            version = $RocmSdkVersion;        sha256 = '066195cb0f7df02e6009facb17652dd992d13fae44d87652e5ab928d5b4f0851' },
+    @{ name = 'rocm-sdk-libraries';       version = $RocmSdkVersion;        sha256 = 'bfc7a1bd3b6050fb4d36d8ac2eea80d3afd70c5604a29142463d6cb890fc73bf' },
+    @{ name = 'rocm-sdk-device-gfx1151';  version = $RocmSdkVersion;        sha256 = '1ab27ebfe61ea3c3fd2c5c1a0e780ae22ed9b662106ce0aefda0a30e3b11577f' }
+)
+# torch declares "Requires-Dist: rocm-bootstrap" with no extra marker, so uv resolves it,
+# but nothing on the synthesis path imports it: it is AMD's gfx auto-detection helper
+# (clinfo wrapper) and decisions.md 5 says the distribution carries no auto-detection --
+# the launcher names the variant. Dropped from the ledger; the reason is in ledger/README.md
+# and the import check in assemble-runtime.ps1 -ExpectGpu is what proves torch still loads.
+$RocmDroppedAfterSolve = @('rocm-bootstrap')
+# Distributions that only the AMD index serves (PyPI answers 404 for all of them except
+# torch/torchaudio, whose +rocm10.0.0 local versions are not on PyPI either).
+$RocmIndexOnlyNames = @('torch', 'torchaudio', 'rocm')
+$RocmIndexOnlyPrefixes = @('amd-torch-device-', 'rocm-sdk-')
+# U+672A U+7279 U+5B9A = "unidentified". build/check-licenses.ps1 looks for exactly this
+# string in the ledger "license" field and then demands the item be named in
+# licenses/first-run-notices.md. This file stays ASCII, so the word is built from code points.
+$YwkUnidentified = [string]([char]0x672A + [char]0x7279 + [char]0x5B9A)
 
 # Top-level names dropped from the mother set (design doc section 3).
 $DroppedTopLevel = @('gradio', 'wandb', 'datasets', 'torchdata', 'torchcodec', 'peft')
@@ -431,6 +493,166 @@ function Get-YwkContentLength {
     }
 }
 
+function Test-YwkRocmIndexOnly {
+    <#
+      .SYNOPSIS
+        True when this distribution is served only by the AMD index (never by PyPI).
+    #>
+    param([Parameter(Mandatory = $true)][string]$Name)
+    $n = Get-YwkNormalizedName -Name $Name
+    if ($RocmIndexOnlyNames -contains $n) { return $true }
+    foreach ($p in $RocmIndexOnlyPrefixes) {
+        if ($n.StartsWith($p)) { return $true }
+    }
+    return $false
+}
+
+function Get-YwkRocmPinSha256 {
+    <#
+      .SYNOPSIS
+        The reference sha256 recorded for an AMD distribution, or '' when there is none.
+      .DESCRIPTION
+        Empty is the trust-on-first-use case: a name that has never been through this
+        script yet. Everything else is checked against the value below.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Name)
+    $n = Get-YwkNormalizedName -Name $Name
+    foreach ($pin in $RocmExpectedPins) {
+        if ((Get-YwkNormalizedName -Name $pin.name) -ne $n) { continue }
+        if ($pin.ContainsKey('sha256')) { return [string]$pin.sha256 }
+        return ''
+    }
+    return ''
+}
+
+function Get-YwkAmdIndexEntry {
+    <#
+      .SYNOPSIS
+        Find one distribution file for <name>==<version> on the AMD simple index.
+      .DESCRIPTION
+        The page lists plain hrefs with no hash fragment, "+" percent-encoded as %2B.
+        A wheel is preferred over an sdist; among wheels, cp312/win_amd64 beats py3/any
+        (Get-YwkWheelTagScore does that scoring, the same one PyPI wheels go through).
+        The href resolves to a different path on the same host (rocm/pytorch/whl-next or
+        rocm/core/whl-next); both answer, so the redirect target is recorded as fallback_url.
+      .OUTPUTS
+        @{ url; fallback_url; filename; kind } or $null
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$IndexUrl,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Version
+    )
+    $norm = Get-YwkNormalizedName -Name $Name
+    $pageUrl = $IndexUrl.TrimEnd('/') + '/' + $norm + '/'
+    $page = Invoke-YwkHttpGetString -Url $pageUrl
+    $bestHref = ''
+    $bestFile = ''
+    $bestKind = ''
+    $bestScore = 0
+    foreach ($m in ([regex]'href="([^"]+)"').Matches($page)) {
+        $href = $m.Groups[1].Value
+        $leaf = ($href -split '[?#]')[0]
+        $leaf = $leaf.Substring($leaf.LastIndexOf('/') + 1)
+        $file = $leaf -replace '%2B', '+' -replace '%2b', '+'
+        if ([string]::IsNullOrEmpty($file)) { continue }
+        $kind = ''
+        $stem = ''
+        if ($file.EndsWith('.whl')) {
+            $kind = 'wheel'
+            $stem = $file.Substring(0, $file.Length - 4)
+        } elseif ($file.EndsWith('.tar.gz')) {
+            $kind = 'sdist'
+            $stem = $file.Substring(0, $file.Length - 7)
+        } else {
+            continue
+        }
+        $parts = $stem -split '-'
+        if ($parts.Count -lt 2) { continue }
+        if ((Get-YwkNormalizedName -Name $parts[0]) -ne $norm) { continue }
+        if ($parts[1] -ne $Version) { continue }
+        $score = 0
+        if ($kind -eq 'wheel') {
+            $score = Get-YwkWheelTagScore -FileName $file
+        } else {
+            $score = 1
+        }
+        if ($score -le 0) { continue }
+        if ($score -gt $bestScore) {
+            $bestScore = $score
+            $bestHref = $href
+            $bestFile = $file
+            $bestKind = $kind
+        }
+    }
+    if ($bestScore -eq 0) { return $null }
+    $url = $bestHref
+    if ($url -notmatch '^https?://') {
+        $url = $pageUrl + $url.TrimStart('/')
+    }
+    $url = $url -replace '\+', '%2B'
+    $fallback = ''
+    try {
+        $final = Resolve-YwkRedirect -Url $url
+        if ($final -ne $url) { $fallback = $final }
+    } catch {
+        $fallback = ''
+    }
+    return @{ url = $url; fallback_url = $fallback; filename = $bestFile; kind = $bestKind; index_page = $pageUrl }
+}
+
+function Get-YwkAmdIndexVersions {
+    param(
+        [Parameter(Mandatory = $true)][string]$IndexUrl,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+    $norm = Get-YwkNormalizedName -Name $Name
+    $page = Invoke-YwkHttpGetString -Url ($IndexUrl.TrimEnd('/') + '/' + $norm + '/')
+    $found = New-Object System.Collections.Generic.List[string]
+    foreach ($m in ([regex]'href="([^"]+)"').Matches($page)) {
+        $file = ($m.Groups[1].Value -replace '%2B', '+')
+        $file = $file.Substring($file.LastIndexOf('/') + 1)
+        $parts = $file -split '-'
+        if ($parts.Count -lt 2) { continue }
+        if ((Get-YwkNormalizedName -Name $parts[0]) -ne $norm) { continue }
+        $ver = $parts[1] -replace '\.tar\.gz$', ''
+        if (-not $found.Contains($ver)) { $found.Add($ver) }
+    }
+    return $found.ToArray()
+}
+
+function Get-YwkSdistPkgInfoLicense {
+    <#
+      .SYNOPSIS
+        Read License-Expression / License / "Classifier: License ::" out of an sdist's PKG-INFO.
+      .OUTPUTS
+        The license string, or $null when PKG-INFO declares none.
+    #>
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $tar = Get-YwkTarPath
+    $r = Invoke-YwkNative -FilePath $tar -Arguments @('-tzf', $Path)
+    if ($r.ExitCode -ne 0) { return $null }
+    $pkgInfo = ''
+    foreach ($n in ($r.StdOut -split "`n")) {
+        $t = $n.Trim()
+        if ($t -match '^[^/]+/PKG-INFO$') { $pkgInfo = $t; break }
+    }
+    if ([string]::IsNullOrEmpty($pkgInfo)) { return $null }
+    $r2 = Invoke-YwkNative -FilePath $tar -Arguments @('-xzOf', $Path, $pkgInfo)
+    if ($r2.ExitCode -ne 0) { return $null }
+    $text = $r2.StdOut
+    foreach ($key in @('License-Expression', 'License')) {
+        $m = [regex]::Match($text, '(?m)^' + $key + ':\s*(.+?)\s*$')
+        if ($m.Success) {
+            $vv = $m.Groups[1].Value
+            if (-not [string]::IsNullOrEmpty($vv) -and $vv.Length -le 120) { return $vv }
+        }
+    }
+    $m = [regex]::Match($text, '(?m)^Classifier:\s*(License :: .+?)\s*$')
+    if ($m.Success) { return $m.Groups[1].Value }
+    return $null
+}
+
 # --------------------------------------------------------------------------- start
 
 $null = New-YwkDirectory -Path $LogDir
@@ -520,11 +742,13 @@ foreach ($d in $dropLog) { Write-YwkLog -Message ('  ' + $d) }
 function Invoke-YwkCompile {
     param(
         [Parameter(Mandatory = $true)][string]$VariantName,
-        [Parameter(Mandatory = $true)][string]$OutPath
+        [Parameter(Mandatory = $true)][string]$OutPath,
+        [string]$InPath = ''
     )
+    if ([string]::IsNullOrEmpty($InPath)) { $InPath = $reqInPath }
     $index = $TorchIndexOf[$VariantName]
     $uvArgs = @(
-        'pip', 'compile', $reqInPath,
+        'pip', 'compile', $InPath,
         '--override', $overridePath,
         '--python-version', '3.12',
         '--python-platform', 'windows',
@@ -615,26 +839,77 @@ if (-not $SkipRuntime) {
         Write-YwkLog -Level 'STEP' -Message ('=== variant ' + $v + ' ===')
         $index = $TorchIndexOf[$v]
         $localTag = $LocalTagOf[$v]
+        $isRocm = ($v -eq $RocmVariant)
+        $variantIn = $reqInPath
 
-        # 1. sanity: is the pinned torch actually on that index?
-        foreach ($pkg in @(@{ n = 'torch'; ver = $TorchVersion }, @{ n = 'torchaudio'; ver = $TorchaudioVersion })) {
-            $hit = Get-YwkTorchIndexWheel -IndexUrl $index -Name $pkg.n -Version $pkg.ver -LocalTag $localTag
-            if ($null -eq $hit) {
-                $have = Get-YwkTorchIndexVersions -IndexUrl $index -Name $pkg.n -LocalTag $localTag
-                throw ($pkg.n + ' ' + $pkg.ver + '+' + $localTag + ' cp312 win_amd64 is not on ' + $index +
-                       '. The index carries: ' + ($have -join ', ') +
-                       '. Pick the nearest 2.10.x, record the reason in ledger/README.md, and edit $TorchVersion.')
+        if ($isRocm) {
+            # The mother set is the same as the cpu variant's (design doc section 2-1); only the
+            # two torch lines change. Substituting them keeps the two requirement files provably
+            # the same document, and the substitution is asserted rather than assumed.
+            $rocmLines = New-Object System.Collections.Generic.List[string]
+            $sawTorch = $false
+            $sawAudio = $false
+            foreach ($line in $reqLines) {
+                if ($line -eq ('torch==' + $TorchVersion)) {
+                    $rocmLines.Add('torch[device-' + $RocmGfx + ']==' + $RocmTorchVersion)
+                    $sawTorch = $true
+                } elseif ($line -eq ('torchaudio==' + $TorchaudioVersion)) {
+                    $rocmLines.Add('torchaudio==' + $RocmTorchaudioVersion)
+                    $sawAudio = $true
+                } else {
+                    $rocmLines.Add($line)
+                }
+            }
+            if (-not $sawTorch -or -not $sawAudio) {
+                throw ('the mother set no longer carries "torch==' + $TorchVersion + '" and "torchaudio==' +
+                       $TorchaudioVersion + '"; the rocm substitution cannot be made blindly.')
+            }
+            $variantIn = Join-Path $LogDir ('requirements-' + $v + '.in')
+            $null = Write-YwkTextFile -Path $variantIn -Newline 'LF' -Text (($rocmLines -join "`n") + "`n")
+            Write-YwkLog -Message ('rocm mother set: ' + $variantIn)
+
+            # 1. sanity: every AMD pin has to be on the AMD index before anything is resolved.
+            foreach ($pin in $RocmExpectedPins) {
+                $hit = Get-YwkAmdIndexEntry -IndexUrl $index -Name $pin.name -Version $pin.version
+                if ($null -eq $hit) {
+                    $have = Get-YwkAmdIndexVersions -IndexUrl $index -Name $pin.name
+                    throw ($pin.name + ' ' + $pin.version + ' (' + $PythonTag + '/' + $PlatformTag +
+                           ') is not on ' + $index + '. The index carries: ' + ($have -join ', ') +
+                           '. Record the move in ledger/README.md and edit $RocmExpectedPins.')
+                }
+                Write-YwkLog -Message ('  amd index ok: ' + $pin.name + '==' + $pin.version + '  ' + $hit.filename)
+            }
+        } else {
+            # 1. sanity: is the pinned torch actually on that index?
+            foreach ($pkg in @(@{ n = 'torch'; ver = $TorchVersion }, @{ n = 'torchaudio'; ver = $TorchaudioVersion })) {
+                $hit = Get-YwkTorchIndexWheel -IndexUrl $index -Name $pkg.n -Version $pkg.ver -LocalTag $localTag
+                if ($null -eq $hit) {
+                    $have = Get-YwkTorchIndexVersions -IndexUrl $index -Name $pkg.n -LocalTag $localTag
+                    throw ($pkg.n + ' ' + $pkg.ver + '+' + $localTag + ' cp312 win_amd64 is not on ' + $index +
+                           '. The index carries: ' + ($have -join ', ') +
+                           '. Pick the nearest 2.10.x, record the reason in ledger/README.md, and edit $TorchVersion.')
+                }
             }
         }
 
-        $compiled = Invoke-YwkCompile -VariantName $v -OutPath (Join-Path $LogDir ('requirements-' + $v + '.txt'))
+        $compiled = Invoke-YwkCompile -VariantName $v -OutPath (Join-Path $LogDir ('requirements-' + $v + '.txt')) -InPath $variantIn
         $rows = Read-YwkCompiled -Path $compiled
         $removed = Get-YwkPruneSet -Rows $rows
+        if ($isRocm) {
+            foreach ($d in $RocmDroppedAfterSolve) {
+                $dn = Get-YwkNormalizedName -Name $d
+                $null = $removed.Add($dn)
+            }
+        }
         Write-YwkLog -Message ('resolved ' + $rows.Count + ' packages; pruning ' + $removed.Count)
 
         $pruneReport = New-Object System.Collections.Generic.List[string]
         $pruneReport.Add('# packages removed from the resolved set for variant ' + $v)
         $pruneReport.Add('# roots: ' + ($PrunedTransitive -join ', ') + ' -- everything else here became an orphan.')
+        if ($isRocm) {
+            $pruneReport.Add('# rocm only: ' + ($RocmDroppedAfterSolve -join ', ') +
+                             ' -- declared by torch, imported by nothing on the synthesis path (decisions.md 5).')
+        }
         foreach ($r in $rows) {
             if ($removed.Contains($r.name)) {
                 $pruneReport.Add($r.name + '==' + $r.version + '   # was via ' + ($r.via -join ', '))
@@ -689,7 +964,86 @@ if (-not $SkipRuntime) {
             $notices = @()
             $sdist = $null
 
-            if ($r.version -match '\+') {
+            if ($isRocm -and (Test-YwkRocmIndexOnly -Name $r.name)) {
+                # --------------------------------------------------------- AMD index item
+                $hit = Get-YwkAmdIndexEntry -IndexUrl $index -Name $r.name -Version $r.version
+                if ($null -eq $hit) {
+                    throw ($r.name + ' ' + $r.version + ' is not on ' + $index +
+                           ' for ' + $PythonTag + '/' + $PlatformTag + '.')
+                }
+                $headSize = Get-YwkContentLength -Url $hit.url
+                $localFile = Join-Path $CacheDir $hit.filename
+                $pinSha = Get-YwkRocmPinSha256 -Name $r.name
+                Write-YwkLog -Message ('  ' + $r.name + '==' + $r.version + ': no hash on the index; fetching ' +
+                                       $hit.filename + ' (' + $headSize + ' B) to compute one')
+                # The pin is what makes a warm cache safe to reuse: without it
+                # Invoke-YwkDownload hands back whatever is already on disk and this
+                # generation would re-derive the ledger from build/cache instead of
+                # from the index. With it, a cached file that does not match is
+                # refetched -- and the compare below is what turns a moved upstream
+                # file into a throw rather than a silently rewritten ledger.
+                $dl = Invoke-YwkDownload -Url $hit.url -Destination $localFile -ExpectedSize $headSize -ExpectedSha256 $pinSha
+                if ($dl.Size -ne $headSize) {
+                    throw ($hit.filename + ' is ' + $dl.Size + ' B but HEAD said ' + $headSize + ' B')
+                }
+                if (-not [string]::IsNullOrEmpty($pinSha) -and $dl.Sha256 -ne $pinSha) {
+                    throw ($hit.filename + ' sha256 moved: the index now serves ' + $dl.Sha256 +
+                           ', $RocmExpectedPins records ' + $pinSha +
+                           '. Check what AMD republished, then edit $RocmExpectedPins and note it in ledger/README.md.')
+                }
+                $entry = @{ url = $hit.url; fallback_url = $hit.fallback_url; sha256 = $dl.Sha256; size = $dl.Size; filename = $hit.filename }
+                $source = 'no hash is published on ' + $hit.index_page +
+                          ' (the hrefs carry no "#sha256=" fragment and the index serves no PEP 691 json), so build/make-ledger.ps1 downloaded the file and hashed it'
+                if ($dl.FromCache) {
+                    $source = $source + '. THIS generation read the file from build/cache rather than the index; ' +
+                              $(if ([string]::IsNullOrEmpty($pinSha)) {
+                                    'no reference hash existed for it yet, so nothing cross-checked the cached bytes'
+                                } else {
+                                    'the cached bytes were verified against the reference sha256 in $RocmExpectedPins'
+                                })
+                }
+                $licenseUrl = $hit.index_page
+                if ($hit.kind -eq 'sdist') {
+                    $license = Get-YwkSdistPkgInfoLicense -Path $localFile
+                    if (-not [string]::IsNullOrEmpty([string]$license)) {
+                        $licenseSource = 'sdist ' + $hit.filename + ' PKG-INFO'
+                    }
+                    $layout = Get-YwkSdistLayout -Path $localFile
+                    $sdist = $layout
+                    Write-YwkLog -Message ('    sdist (no wheel is published for this project), packages=' + ($layout.packages -join ','))
+                } else {
+                    $license = Get-YwkWheelMetadataLicense -WheelPath $localFile
+                    if (-not [string]::IsNullOrEmpty([string]$license)) {
+                        $licenseSource = 'wheel ' + $hit.filename + ' dist-info/METADATA'
+                    }
+                }
+                if ([string]::IsNullOrEmpty([string]$license)) {
+                    # AMD's own packages declare nothing at all. Do not guess (decisions.md 22):
+                    # say "unidentified" in the field check-licenses.ps1 reconciles, and carry the
+                    # observation that produced that verdict in the notices.
+                    $license = $YwkUnidentified + ' (' + $hit.filename +
+                               ': METADATA/PKG-INFO declares no License, no License-Expression and no License classifier)'
+                    $licenseSource = 'read from ' + $hit.filename + ' on ' + $generated + ': the metadata is silent'
+                }
+                $noticeLines = New-Object System.Collections.Generic.List[string]
+                $noticeLines.Add('AMD ROCm ' + $hit.kind + ', fetched from ' + $hit.index_page + ' on ' + $generated +
+                                 '. The index publishes no sha256; the one in this ledger was computed from the downloaded file.')
+                if ($licenseSource -like 'read from *') {
+                    $noticeLines.Add('Licence position UNIDENTIFIED: ' + $hit.filename +
+                                     ' declares no licence of its own (licenses/first-run-notices.md B1 records the same reading of rocm_sdk_core METADATA: 3 lines, 59 B, no License field). Nothing here asserts what the bundled binaries are under.')
+                }
+                if ($r.name -eq 'torch') {
+                    $noticeLines.Add('This wheel ships third-party native binaries (torch/lib/*.dll, among them c10_hip.dll and torch_hip.dll). The licence texts that cover the PyTorch sources travel inside the wheel: keep the *.dist-info directory in the install tree.')
+                    $noticeLines.Add('ROCm runtime binaries do NOT arrive with this wheel: torch/_rocm_init.py calls rocm_sdk.initialize_process(...) and the DLLs live in the rocm-sdk-core / rocm-sdk-libraries / rocm-sdk-device-gfx1151 items of this same ledger, whose licence position is unidentified.')
+                    $noticeLines.Add('Two of the 14 DLLs in torch/lib are UNIDENTIFIED even so: liblzma.dll (196,096 B) and aotriton_v2.dll (14,948,352 B). METADATA names 107 License-File entries and dist-info/licenses/ holds 107 files, and not one of them is lzma, xz or aotriton (read on ' + $generated + ' out of the assembled tree). aotriton_v2.dll imports liblzma.dll, so the two travel together. See licenses/first-run-notices.md B7 (2) and docs/acceptance.md section 3 item 11; check-licenses.ps1 cannot reach this, because it reconciles the item "license" field and this item declares Apache-2.0 AND ... AND MIT.')
+                } elseif ($r.name -eq 'torchaudio') {
+                    $noticeLines.Add('Read from ' + $hit.filename + ' on ' + $generated + ': native code is torchaudio/lib/*.pyd; it bundles no ROCm DLL of its own.')
+                } elseif ($r.name -eq 'rocm') {
+                    $noticeLines.Add('Pure python (src/rocm_sdk). PKG-INFO declares no licence; the source header of src/rocm_sdk/__init__.py reads "# SPDX-License-Identifier: MIT" (read on ' + $generated + '). That header is an observation, not a finding about the binaries the other rocm-sdk items carry.')
+                    $noticeLines.Add('Required at runtime, not optional: torch/__init__.py imports torch._rocm_init, which imports rocm_sdk and calls initialize_process(preload_shortnames=[amd_comgr, amdhip64, hiprtc, ...], check_version=10.0.0).')
+                }
+                $notices = $noticeLines.ToArray()
+            } elseif ($r.version -match '\+') {
                 # local version segment: only the pytorch index can serve it
                 $base = ($r.version -split '\+')[0]
                 $tag = ($r.version -split '\+')[1]
@@ -845,6 +1199,50 @@ if (-not $SkipRuntime) {
         $null = Write-YwkTextFile -Path (Join-Path $LogDir ('requirements-' + $v + '.pruned.txt')) -Newline 'LF' -Text (($keptLines -join "`n") + "`n")
         $null = Write-YwkTextFile -Path (Join-Path $LogDir ('sources-' + $v + '.txt')) -Newline 'LF' -Text (($sourceLog -join "`n") + "`n")
 
+        # --------------------------------------------------------------- shared-with-cpu check
+        # Acceptance condition C-1 says every dependency that is not part of the ROCm stack must
+        # be the SAME item as the cpu variant's, sha256 included. That is a claim about two
+        # generated files, so it is checked here rather than asserted in prose: same name, same
+        # version, same sha256, or the run stops.
+        $sharedReport = New-Object System.Collections.Generic.List[string]
+        if ($isRocm) {
+            $cpuLedgerPath = Join-Path $LedgerDir 'runtime-cpu.json'
+            if (-not (Test-Path -LiteralPath $cpuLedgerPath)) {
+                throw ('the rocm ledger cannot be reconciled: ' + $cpuLedgerPath + ' is missing. Generate the cpu variant first.')
+            }
+            $cpuLedger = Read-YwkJsonFile -Path $cpuLedgerPath
+            $cpuByName = @{}
+            foreach ($ci in $cpuLedger.items) { $cpuByName[[string]$ci.name] = $ci }
+            $sharedOk = 0
+            $sharedMissing = New-Object System.Collections.Generic.List[string]
+            foreach ($it in $items) {
+                $nm = [string]$it['name']
+                if (Test-YwkRocmIndexOnly -Name $nm) { continue }
+                if (-not $cpuByName.ContainsKey($nm)) {
+                    $sharedMissing.Add($nm + '==' + [string]$it['version'] + ' (not in runtime-cpu.json)')
+                    continue
+                }
+                $ci = $cpuByName[$nm]
+                if ([string]$ci.version -ne [string]$it['version']) {
+                    throw ('shared dependency ' + $nm + ' resolved to ' + [string]$it['version'] +
+                           ' for ' + $v + ' but runtime-cpu.json pins ' + [string]$ci.version +
+                           '. C-1 requires the non-ROCm half of the two ledgers to be identical.')
+                }
+                if ([string]$ci.sha256 -ne [string]$it['sha256']) {
+                    throw ('shared dependency ' + $nm + '==' + [string]$it['version'] + ' has sha256 ' +
+                           [string]$it['sha256'] + ' here and ' + [string]$ci.sha256 + ' in runtime-cpu.json.')
+                }
+                $sharedOk = $sharedOk + 1
+                $sharedReport.Add($nm + '==' + [string]$it['version'] + '  sha256 matches runtime-cpu.json')
+            }
+            if ($sharedMissing.Count -gt 0) {
+                throw ('these items are in the rocm ledger but not in runtime-cpu.json: ' + ($sharedMissing -join ', '))
+            }
+            Write-YwkLog -Message ('shared with runtime-cpu.json: ' + $sharedOk + ' items, all sha256 identical')
+            $null = Write-YwkTextFile -Path (Join-Path $LogDir ('shared-with-cpu-' + $v + '.txt')) -Newline 'LF' `
+                -Text (($sharedReport -join "`n") + "`n")
+        }
+
         $ledger = [ordered]@{
             schema      = 1
             name        = ('runtime-' + $v)
@@ -868,6 +1266,17 @@ if (-not $SkipRuntime) {
             }
             count       = $items.Count
             items       = $items.ToArray()
+        }
+        if ($isRocm) {
+            $ledger['gfx'] = $RocmGfx
+            $ledger['torch_extra'] = ('torch[device-' + $RocmGfx + ']==' + $RocmTorchVersion)
+            $ledger['resolution']['dropped_after_solve'] = $RocmDroppedAfterSolve
+            $ledger['resolution']['dropped_after_solve_reason'] =
+                'rocm-bootstrap is declared by torch but imported by nothing on the synthesis path; it is AMD gfx auto-detection (a clinfo wrapper) and decisions.md 5 gives the distribution no auto-detection. See ledger/README.md section 4-6.'
+            $ledger['resolution']['shared_with'] = 'runtime-cpu.json'
+            $ledger['resolution']['shared_items_verified'] = $sharedOk
+            $ledger['sha256_note'] =
+                'The AMD index https://stable.repo.amd.com/rocm/whl-next/ publishes no hash: its hrefs carry no "#sha256=" fragment and it answers a PEP 691 json request with text/html. Every AMD sha256 below was computed by build/make-ledger.ps1 from the downloaded file, and the size was cross-checked against the HEAD Content-Length. Because the index publishes nothing to compare against, build/make-ledger.ps1 also carries the eight AMD hashes as reference pins ($RocmExpectedPins) and throws when a fetched or cached file no longer matches one; the per-item sha256_source says whether THIS generation read the bytes from the index or from build/cache. A name with no pin yet is trusted on first use and its hash copied into the pin afterwards.'
         }
         $path = Join-Path $LedgerDir ('runtime-' + $v + '.json')
         $null = Write-YwkJsonFile -Path $path -Value $ledger -Depth 20
@@ -1047,17 +1456,17 @@ if (-not (Test-Path -LiteralPath $rocmPath)) {
         schema      = 1
         name        = 'runtime-rocm-gfx1151'
         generated   = $null
-        generator   = 'build/make-ledger.ps1 (template only -- not yet resolved)'
+        generator   = 'build/make-ledger.ps1 (template only -- run -Variant rocm-gfx1151 to resolve it; ledger/README.md section 9)'
         status      = 'template'
         python      = $PythonVersion
         python_tag  = $PythonTag
         platform_tag = $PlatformTag
         torch_index = 'https://stable.repo.amd.com/rocm/whl-next/'
         seed        = [ordered]@{
-            note   = 'Facts from the running Radeon box, read-only (decisions.md 24). Convoy C fills this in.'
-            torch  = 'torch==2.13.0+rocm10.0.0'
-            torchaudio = 'torchaudio==2.11.0.2+rocm10.0.0'
-            torch_extra = 'torch[device-gfx1151]'
+            note   = 'Facts from the running Radeon box, read-only (decisions.md 24). Run make-ledger.ps1 -Variant rocm-gfx1151 to replace this template with the resolved ledger.'
+            torch  = ('torch==' + $RocmTorchVersion)
+            torchaudio = ('torchaudio==' + $RocmTorchaudioVersion)
+            torch_extra = ('torch[device-' + $RocmGfx + ']')
             hip    = '7.15'
             sentencepiece = 'sentencepiece==0.2.1'
         }

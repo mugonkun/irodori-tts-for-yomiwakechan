@@ -82,6 +82,44 @@ RESPONSE_FORMATS = ("wav",)
 #: ``irodori`` alias for "参照なし".  ``voices.json`` maps it to ``no_ref``.
 DEFAULT_VOICE_ID = "デフォルト"
 
+#: ``/ywk/status.variant`` -- the build the launcher started, not a capability.
+#: ``cuda`` is the default (decisions.md 4); the Radeon build names its arch
+#: (``rocm-gfx1151``) because that is the only one measured (decisions.md 5).
+DEFAULT_VARIANT = "cuda"
+
+#: ``/ywk/status.warmup.state`` (便 C 設計書 §2-3).  ``cancelled`` is 便 C's
+#: addition to the four the design lists: ``DELETE /ywk/warmup/{id}`` has to be
+#: distinguishable from a run that finished its plan.
+WARMUP_STATES = ("idle", "running", "done", "failed", "cancelled")
+
+#: Every key ``/ywk/status.warmup`` carries.  ``shots`` is ``shots_done`` under
+#: the name 便 A's contract ⑹ already promised the launcher.
+WARMUP_KEYS = (
+    "state",
+    "id",
+    "shots_done",
+    "shots_total",
+    "elapsed_s",
+    "last_shot",
+    "error",
+    "shots",
+)
+
+#: Every key ``/ywk/status.device`` carries.  ``hip`` and ``gcn_arch`` are 便 C's:
+#: ROCm's torch calls its device type ``cuda`` too, and these two are what tell
+#: a gfx1151 from an RTX (both are ``null`` on a CUDA build / on cpu).
+STATUS_DEVICE_KEYS = (
+    "configured",
+    "codec_configured",
+    "actual",
+    "precision",
+    "name",
+    "uuid",
+    "pci_bus_id",
+    "hip",
+    "gcn_arch",
+)
+
 #: The upstream's own "no reference" spellings (``voices.py:23`` ``NO_REF_IDS``).
 #: ``allow_no_ref_voice=false`` is baked in, so the upstream would 400 every one
 #: of them; the wrapper normalises them to :data:`DEFAULT_VOICE_ID` instead so

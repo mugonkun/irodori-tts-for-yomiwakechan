@@ -101,6 +101,25 @@ def test_an_omitted_voice_with_no_ref_stays_a_no_ref_request(client, baseline):
     assert baseline.requests[-1].no_ref is True
 
 
+def test_no_ref_false_is_not_a_reference(client, baseline):
+    """便 A（2）の持ち越し＝`no_ref: false` を「参照あり」と読んでいた穴.
+
+    Upstream's six-field short-circuit is not symmetric: the five paths are tested
+    for *not None*, ``no_ref`` for its truth value (``app.py:439-446`` --
+    ``or explicit_no_ref``).  So ``no_ref: false`` falls through to
+    ``settings.default_voice``, and on a first run -- ``voices.json`` not yet
+    written -- 「デフォルト」 resolves to nothing and the caller got a 400 where
+    the same body without the field got a 200.
+    """
+    write_voices(aliases=None)
+    assert (VOICES / "voices.json").exists() is False
+
+    response = client.post("/v1/audio/speech", json=_body(irodori={"no_ref": False}))
+    assert response.status_code == 200, response.text
+    assert baseline.requests[-1].no_ref is True
+    assert baseline.requests[-1].ref_wav is None
+
+
 def test_an_emptied_default_voice_is_still_the_upstream_400(client):
     """The launcher may empty it; then the upstream's own 400 comes back --
     with the machine-readable ``code`` contract ⑶ 3-3 promises."""

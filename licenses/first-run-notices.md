@@ -50,11 +50,37 @@ DirectML は **⒝案（ONNX Runtime＋DirectML EP）を採らないので非該
 
 ## B. Radeon 版（rocm-gfx1151）で追加で入る物
 
-| # | 何 | ライセンス | 所在 | 備考 |
-|---|---|---|---|---|
-| B1 | `torch==2.13.0+rocm10.0.0`・`torchaudio==2.11.0.2+rocm10.0.0`・`rocm-sdk-*`（AMD の wheel・索引 `https://stable.repo.amd.com/rocm/whl-next/`） | **wheel からは特定できない** | **未特定** | `rocm_sdk_core-10.0.0.dist-info/METADATA` は **59 B・3 行**（`Metadata-Version` / `Name` / `Version`）で **License 欄も License-File 欄も分類子も 1 つも無い**。wheel 内の license 檔は `amd_comgr/LICENSE.txt`（15,289 B・Apache License v2.0 with LLVM Exceptions）と `hipcc/LICENSE.txt`（1,098 B）の 2 件だけ。参考＝GitHub `ROCm/ROCm` は MIT（`spdx_id`）だが、**それが wheel のバイナリにも及ぶかは未確認**（`research/lab/notes/22` 表 7・未確認 6） |
+> 出典＝`ledger/runtime-rocm-gfx1151.json`（便 C が 2026-09-05 に生成）と、**その台帳が指す
+> wheel／sdist を実際に開いて読んだ事実**（2026-09-05）。
+> **AMD の索引 `https://stable.repo.amd.com/rocm/whl-next/` は hash を公開していない**
+> （href に `#sha256=` 断片が無く、PEP 691 の JSON を要求しても `text/html` が返る）。
+> だから台帳の sha256 は **落とした檔から `build/make-ledger.ps1` が計算した値**であり、
+> `size` は HEAD の `Content-Length` と突合済み（手打ちは 0 件）。
+> AMD 由来 8 件の合計＝**1,367,591,795 B（1.274 GB）**。他の 99 件は cpu 変種と**同じ item
+> （sha256 一致）**で、生成器が `ledger/runtime-cpu.json` と 1 件ずつ突合している（不一致なら
+> 台帳を書かずに止まる）＝だから下表は **§A の上に積まれる差分だけ**を書く。
 
-Radeon 版はそもそも**未保障・別リリース**（`docs/radeon.md`）。B1 が未特定であることを取得前に明示する。
+| # | 何が入るか（取得先はすべて AMD の索引） | ライセンス | 許諾文の所在 | 備考（すべて 2026-09-05 に wheel／sdist を開いて読んだ観測） |
+|---|---|---|---|---|
+| B1 | **`rocm-sdk-core` 10.0.0**（`rocm_sdk_core-10.0.0-py3-none-win_amd64.whl`・**758,050,981 B**・627 エントリ・展開後 ≈ 2.1 GB） | **wheel からは特定できない** | **未特定** | `dist-info/METADATA` は **59 B・4 行**（`Metadata-Version` / `Name` / `Version` と空行）で **`License` 欄も `License-Expression` 欄も `License-File` 欄も `Classifier: License ::` も 1 つも無い**。wheel 内の license 檔は `_rocm_sdk_core/share/doc/amd_comgr/LICENSE.txt`（15,289 B・Apache License v2.0 with LLVM Exceptions）と `_rocm_sdk_core/share/doc/hipcc/LICENSE.txt`（1,098 B）の **2 件だけ**。参考＝GitHub `ROCm/ROCm` は MIT（`spdx_id`）だが、**それが wheel のバイナリにも及ぶかは未確認**（`research/lab/notes/22` 表 7・未確認 6） |
+| B2 | **`rocm-sdk-libraries` 10.0.0**（`rocm_sdk_libraries-10.0.0-py3-none-win_amd64.whl`・**116,831,755 B**・57 エントリ・展開後 ≈ 1.1 GB） | **未特定** | **無し** | `METADATA` は **64 B・4 行**。**wheel の中に LICENSE／COPYING／NOTICE に当たる檔が 1 件も無い**（B1 と違い `amd_comgr` の分すら無い） |
+| B3 | **`rocm-sdk-device-gfx1151` 10.0.0**（`rocm_sdk_device_gfx1151-10.0.0-py3-none-win_amd64.whl`・**139,346,623 B**・260 エントリ） | **未特定** | **無し** | `METADATA` は **134 B・6 行**（`Requires-Dist: rocm-sdk-libraries==10.0.0` を含む）。license 檔 0 件。gfx1151 専用のカーネル像 |
+| B4 | **`amd-torch-device-gfx1151` 2.13.0+rocm10.0.0**（**50,010,016 B**・**5 エントリ**） | **未特定** | **無し** | `METADATA` は **220 B・7 行**。中身は実質 1 檔＝`torch/.kpack/torch_gfx1151.kpack`（50,247,134 B）。license 檔 0 件 |
+| B5 | **`amd-torch-device-gfx115x` 2.13.0+rocm10.0.0**（**187,800,925 B**・12 エントリ） | **未特定** | **無し** | `METADATA` は **171 B・6 行**。中身は `torch/lib/aotriton.images/amd-gfx115x/...`（flash attention のカーネル像）。**`torch[device-gfx1151]` は 1151 と 115x の両方を引く**（torch の `METADATA` の `Provides-Extra: device-gfx1151` に `Requires-Dist` が 2 行並ぶ）ので片方だけでは成立しない。license 檔 0 件 |
+| B6 | **`rocm` 10.0.0**（**sdist** `rocm-10.0.0.tar.gz`・**24,780 B**） | **未特定**（宣言無し） | **無し**（下記は観測だけ） | `PKG-INFO` に `License` 欄は無い。ただし `src/rocm_sdk/__init__.py` の 2 行目が `# SPDX-License-Identifier: MIT`（1 行目は `# Copyright Advanced Micro Devices, Inc.`）。**これはソースのヘッダの観測であって、B1〜B5 のバイナリに及ぶ読みではない**。純 Python（`src/rocm_sdk` の 1 パッケージ）で、**実行時に必須**＝`torch/__init__.py` が `torch._rocm_init` を import し、それが `rocm_sdk.initialize_process(preload_shortnames=[amd_comgr, amdhip64, hiprtc, hipblas, ...], check_version='10.0.0')` を呼ぶ |
+| B7 | **`torch` 2.13.0+rocm10.0.0**（**113,440,240 B**・12,256 エントリ） | **`License-Expression: Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT`**（`METADATA` 44,299 B・841 行） | **wheel の中**＝`torch-2.13.0+rocm10.0.0.dist-info/licenses/` に **107 檔**（`License-File:` も 107 件で 1 対 1）。展開先にそのまま残す | `torch/lib` の DLL は **14 件**（`c10_hip.dll`・`torch_hip.dll`・`aotriton_v2.dll`・`libomp140.x86_64.dll`・`liblzma.dll`・`uv.dll` 他）。⑴ **cpu 変種（§A の A19 ⑵）と違い OpenMP の分は名乗っている**＝107 件に `third_party/llvm-openmp/LICENSE.txt` がある。⑵ 一方 **`liblzma.dll`（xz）と `aotriton_v2.dll` に当たる `License-File` は 107 件中 0 件＝未特定**。⑶ **`miopen`・`rocm` を名に含む `License-File` も 0 件**＝ROCm ランタイムの許諾は torch 側では名乗られておらず、実体は B1〜B3 に入っている（未特定）。⑷ **NVIDIA 系の DLL は 0 件** |
+| B8 | **`torchaudio` 2.11.0.2+rocm10.0.0**（**2,086,475 B**・86 エントリ） | **`Classifier: License :: OSI Approved :: BSD License`**（`License-Expression` 欄も `License` 欄も無し） | **wheel の中**＝`torchaudio-2.11.0.2+rocm10.0.0.dist-info/licenses/LICENSE`（1,363 B・`License-File:` 1 件） | ネイティブは `torchaudio/lib/*.pyd` だけで、**ROCm の DLL を同梱しない**（cpu／cu 変種と同じ形） |
+
+**取らない物**＝`rocm-bootstrap`。torch の `METADATA` は `Requires-Dist: rocm-bootstrap` を（extra の
+条件無しで）名乗るので uv は解いてしまうが、**合成の経路に import が 0 件**（torch の `.py` に
+`rocm_bootstrap` の参照は無い）で、実体は AMD の gfx 自動判定（`clinfo` の包み）である。
+**裁定 5 により配布版は自動判定を持たない**（変種はランチャが名乗る）ので台帳に入れていない
+＝`ledger/README.md` § 4-6。落とさなくても torch が読み込めることは
+`build/assemble-runtime.ps1 -ExpectGpu` の import 検分が実射で示す（便 C の C-2）。
+
+Radeon 版はそもそも**未保障・別リリース**（`docs/radeon.md`）。**B1〜B6 が未特定であることを取得前に明示する**。
+この未特定は席の読みではなく、**wheel を開いて見た結果そこに名乗りが無かったという事実**である
+（`decisions.md` 22＝席は推測で断定しない）。
 
 ---
 

@@ -14,7 +14,7 @@
 | `runtime-cpu.json` | CPU 変種の site-packages 一式（開発・検分用） | 同上 |
 | `runtime-cu130.json` | **既定**（NVIDIA・ドライバ 580 以上） | 同上 |
 | `runtime-cu126.json` | 選択肢（ドライバ 560.76 以上） | 同上 |
-| `runtime-rocm-gfx1151.json` | Radeon 変種。**便 A では雛形**（`status: "template"`・`items: []`）。便 C が埋める | `make-ledger.ps1` が雛形だけ書く（既存檔は上書きしない） |
+| `runtime-rocm-gfx1151.json` | Radeon 変種（gfx1151・**未保障・別リリース**）。**便 C が 2026-09-05 に実生成**（107 item） | `make-ledger.ps1 -Variant rocm-gfx1151`（§ 9） |
 | `models.json` | HF 3 リポの pin 版と檔ごとのハッシュ | 同上（HF API） |
 | `vc_redist.json` | `msvcp140.dll` を入れる Microsoft の再頒布パッケージ | 同上（版固定直リンク＋実ダウンロード） |
 
@@ -85,6 +85,7 @@ cuDNN SLA、cpu 版は同梱の `dist-info/LICENSE`（third_party 33 件・oneDN
 | `vc_redist.x64.exe` | 実ダウンロード＋計算。**URL 中の 64 桁 hex（Microsoft が埋めている）とも突合**（`sha256_matches_url_segment`） | 同上 |
 | HF の LFS 檔 | `https://huggingface.co/api/models/<repo>/tree/<rev>` の `lfs.oid`（＝sha256） | `models.json` の `sha256_source` |
 | HF の非 LFS 檔 | 同 API の `oid`（＝**git blob sha1**）。`sha256` は `null`・`verify: "git-blob-sha1"` | 同上 |
+| AMD の wheel／sdist（rocm 変種） | **索引に hash が無い**ので実ダウンロード＋計算。`size` は HEAD の `Content-Length` と突合 | `no hash is published on <index page> ... so build/make-ledger.ps1 downloaded the file and hashed it` |
 
 `torch` の `size` だけは index ページに無いので、pin した URL への **HEAD の `Content-Length`**。
 
@@ -176,6 +177,81 @@ override 後の実解は **protobuf 7.36.1**＝調査便の lab 箱と同じ版�
 `research/lab/notes/08` §2-B は「両コードベースに import 0 件・librosa が遅延で持つだけ」と記録しているので、
 **外せる見込みはあるが、便 A では決めない**（外すなら A-4 の実合成で証明してからにすること）。
 
+### 4-6. rocm 変種だけの差分（`runtime-rocm-gfx1151.json`）
+
+**母集合は cpu 変種と同じ**で、差すのは torch の 2 行だけ：
+
+```
+torch[device-gfx1151]==2.13.0+rocm10.0.0     （cpu 変種は torch==2.10.0）
+torchaudio==2.11.0.2+rocm10.0.0             （cpu 変種は torchaudio==2.10.0）
+```
+
+生成器は `requirements.in` のこの 2 行を差し替えて
+`build/out/ledger-log/requirements-rocm-gfx1151.in` を書き、**差し替え先の行が見つからなければ止まる**（目をつぶって置換しない）。
+
+**解決は uv で通った**（2026-09-05・uv 0.12.7）。
+`uv pip compile --python-version 3.12 --python-platform windows --extra-index-url https://stable.repo.amd.com/rocm/whl-next/ --index-strategy unsafe-best-match`
+が終了コード 0 で 129 パッケージを解いたので、
+設計書 § 2-1 の退路（venv-rocm の実構成を pin として写す）は**使っていない**。
+結果の非 ROCm の部分は cpu 変種の解と **1 行も違わなかった**。
+
+**cpu 変種との突合は機械**＝台帳を書く前に、ROCm 以外の全 item（**99 件**）を
+`runtime-cpu.json` と name・version・sha256 で 1 件ずつ突合し、
+**1 件でも違えば台帳を書かずに止まる**（受け入れ条件 C-1 の「他の依存は cpu 変種と同じ pin」は
+文章ではなくこの検分で担保される）。逆に `runtime-cpu.json` に無い item があっても止まる。
+逆を言えば、**cpu 台帳を作り直したら rocm 台帳も作り直す**（片方だけ更新すると次の生成で止まる）。
+突合の逐語は `build/out/ledger-log/shared-with-cpu-rocm-gfx1151.txt`。
+
+**AMD 由来の 8 item**（`torch`・`torchaudio`・`amd-torch-device-gfx1151`・`amd-torch-device-gfx115x`・
+`rocm`・`rocm-sdk-core`・`rocm-sdk-libraries`・`rocm-sdk-device-gfx1151`）だけが差分で、
+すべて `https://stable.repo.amd.com/rocm/whl-next/` から取る。PyPI には無い
+（`rocm`・`rocm-sdk-*`・`amd-torch-device-*` は PyPI が 404。torch の `+rocm10.0.0` も同じ）。
+
+**索引の作りが download.pytorch.org と違う（重要）**：
+
+1. **`#sha256=` 断片が無い**。PEP 691 の JSON（`Accept: application/vnd.pypi.simple.v1+json`）を
+   要求しても `text/html` が返る。設計書 § 2-1 は「`#sha256=` 付きの href」と書いているが、
+   **2026-09-05 の実照会では付いていない**。だから python-embed・vc_redist と同じ手
+   ＝**落として計算する**（手打ちではない）。`size` は HEAD の `Content-Length` と突合する。
+   → **rocm 変種だけは台帳生成の段で 1.27 GB 落ちる**（cu130／cu126 は HEAD だけ）。
+   落ちた物は `build/cache/` に残るので `assemble-runtime` は全件 cache hit になる。
+   **同じことが台帳の再生成にも起きる**＝温 cache では `make-ledger` も cache hit で済み、
+   索引の現物には 1 バイトも当たらない（`Invoke-YwkDownload` は既存檔をそのまま返す）。
+   だから AMD 8 件は `build/make-ledger.ps1` の `$RocmExpectedPins` に **参照 sha256** を持つ
+   （`$EmbedSha256Ref` と同じ役）＝cache でも索引でも、取れた檔がこの値と違えば **throw**。
+   索引が hash を publish しない以上、同名・同長での差し替えを捕まえるのはこの pin だけ
+   （`Content-Length` の突合は素通りする）。各 item の `sha256_source` は、**その生成が**
+   索引から読んだのか `build/cache` から読んだのかを書き分ける。pin の無い名前は
+   初回だけ無検査で通し、その回の値を pin に写す運用。
+2. **href は相対パスで、実体は別のパスにリダイレクトされる**（torch 系は
+   `.../rocm/pytorch/whl-next/...`、rocm-sdk 系は `.../rocm/core/whl-next/...`）。
+   台帳は索引側の URL を `url`、リダイレクト先を `fallback_url` に持つ（torch の 2 ホストと同じ形―§ 3）。
+3. **`rocm` だけ wheel が無く sdist**（`rocm-10.0.0.tar.gz`・24,780 B）。`kind: "sdist"` で扱い、
+   `src/rocm_sdk` を写す（§ 5 と同じ経路）。**これは実行時に必須**＝
+   `torch/__init__.py` が `torch._rocm_init` を import し、それが
+   `rocm_sdk.initialize_process(preload_shortnames=[amd_comgr, amdhip64, hiprtc, ...], check_version='10.0.0')`
+   を呼んで ROCm の DLL を解決する。落とすと torch が import できない。
+4. **`torch[device-gfx1151]` は device wheel を 2 本引く**＝`amd-torch-device-gfx1151`（カーネル像
+   `torch/.kpack/torch_gfx1151.kpack`）と `amd-torch-device-gfx115x`（flash attention の
+   `torch/lib/aotriton.images/amd-gfx115x/...`）。torch の `METADATA` の
+   `Provides-Extra: device-gfx1151` に `Requires-Dist` が 2 行並ぶからで、**両方入れないと揃わない**。
+   3 本の wheel（torch・gfx1151・gfx115x）の展開先に **重複するパスは 1 件も無い**ので、
+   `assemble-runtime.ps1` の展開順は結果に影響しない（実測）。
+
+**台帳に入れない物＝`rocm-bootstrap`**。torch の `METADATA` は
+`Requires-Dist: rocm-bootstrap` を extra の条件無しで名乗るので uv は 0.2.0（PyPI）を解くが、
+実体は AMD の gfx 自動判定（Windows では `clinfo` を子プロセスで呼ぶ包み―`research/lab/notes/34`）で、
+**裁定 5 により配布版は自動判定を持たない**（変種はランチャが名乗る）。
+合成の経路では **torch の `.py` に `rocm_bootstrap` の参照が 0 件**（`torch/_rocm_init.py` が見るのは
+`rocm_sdk` だけ）なので、台帳から落とす。落としても壊れないことは文章ではなく
+**`build/assemble-runtime.ps1 -ExpectGpu` の import 検分**が実射で示す（便 C の C-2・下の § 9）。
+`resolution.dropped_after_solve` に名前と理由が入っている。
+
+**ライセンス**＝AMD の wheel は `METADATA` に名乗りが無い。その場合 `license` 欄には
+**`未特定`＋そう判断した根拠**（どの檔の METADATA に何が無かったか）を入れる。
+§ 2 の「`license` 欄は空にしない」は守られ、`build/check-licenses.ps1` はこの `未特定` を見て
+`licenses/first-run-notices.md` にその item 名が出ていることを要求する（§ B1〜B8）。
+
 ---
 
 ## 5. wheel を出していない依存（`kind: "sdist"`）
@@ -210,6 +286,7 @@ override 後の実解は **protobuf 7.36.1**＝調査便の lab 箱と同じ版�
 | `runtime-cpu` | 101 | **270.1 MiB** |
 | `runtime-cu130` | 101 | **1,944.1 MiB**（うち torch 1,867,405,006 B） |
 | `runtime-cu126` | 101 | **2,632.9 MiB**（うち torch 2,589,881,452 B） |
+| `runtime-rocm-gfx1151` | 107 | **1,465.5 MiB**（うち AMD 由来 8 件で 1,367,591,795 B・残り 169,104,569 B は cpu 変種と同じ item） |
 
 ＋ `python-embed` 11,133,606 B ＋ `vc_redist` 25,635,768 B ＋ モデル 3,570,982,039 B。
 cu130 の初回取得は合計 **約 5.4 GiB**（`research/report/irodori-native-handoff-2026-09-04.md` §5-3 の見積と一致）。
@@ -227,3 +304,29 @@ powershell -NoProfile -ExecutionPolicy Bypass -File build\make-ledger.ps1 -Varia
 - `build/cache/` は再利用する（sha256 が合えば再取得しない）。
 - **cu130 / cu126 は URL と sha256 を引くだけで wheel を落とさない**（HEAD で size を見るだけ）。
   実際に落ちるのは `assemble-runtime.ps1 -Variant cu130` を走らせたとき。
+
+---
+
+## 9. rocm 変種を作り直す（便 C）
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File build\make-ledger.ps1 -Variant rocm-gfx1151 -SkipPythonEmbed -SkipModels -SkipVcRedist
+powershell -NoProfile -ExecutionPolicy Bypass -File build\assemble-runtime.ps1 -Variant rocm-gfx1151 -ExpectGpu
+```
+
+- 1 行目は **`runtime-cpu.json` が既にあることが前提**（突合先が無ければ止まる）。
+  索引に hash が無いので **1.27 GB 落ちる**（§ 4-6）。
+- 2 行目の `-ExpectGpu` は **GPU のある機体でしか通らない**。
+  組んだ `python.exe` で `torch` / `torchaudio` / `soundfile` / `transformers` / `numpy` を import し、
+  `torch.version.hip` が非 null・`torch.cuda.is_available()` が True・`get_device_properties(0)` の
+  `name` と `gcnArchName` が読めることを見る。結果は
+  `build/out/assemble-log/import-check-rocm-gfx1151.json`。
+- **非ゼロ終了は成果物を残さない**（家の規則）ので、`-ExpectGpu` が落ちると
+  `build/out/runtime-rocm-gfx1151/` は削除される。`build/cache/` の sha256 済みの檔は残るので、
+  組み直しに外への取得は 1 バイトも発生しない。
+
+**2026-09-05 の実走（gfx1151 実機）**＝台帳 107 item・組み上げ 26,523 檔・
+**4,347.7 MiB**・`dist-info` 107 件・捨てた `.pth` 1 件（`distutils-precedence.pth`）。
+import 検分の実値＝`torch 2.13.0+rocm10.0.0` / `torch.version.hip = 7.15.26333` /
+`torch.version.cuda = null` / `is_available() = True` / `device_count = 1` /
+`name = AMD Radeon(TM) 8060S Graphics` / `gcnArchName = gfx1151` / `total_memory = 107,090,132,992`。

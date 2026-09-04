@@ -24,6 +24,18 @@
 .PARAMETER Variant
     cpu | cu130 | cu126 | rocm-gfx1151
 
+.PARAMETER ExpectGpu
+    Also require the assembled python to see its accelerator: torch.cuda.is_available() true,
+    torch.version.hip non-null for a rocm variant (torch.version.cuda for a cu one), a
+    readable device 0, and -- on ROCm -- gcnArchName equal to the ledger's "gfx" field, not
+    merely non-empty: a gfx1151 ledger assembled against a gfx1100 card would otherwise pass.
+    It also runs one bf16 matmul on the device. Reading properties proves the driver answers;
+    only a kernel proves the ROCm libraries this variant carries can actually compute, and it
+    is the same dtype decisions.md 5/36 fixes the Radeon build to. Measured under a second on
+    gfx1151. Only pass it on a machine that has the GPU: the house rule is that a non-zero
+    exit leaves no artefact, so a failed check removes the runtime directory. Everything it
+    downloaded stays in build/cache with its sha256 verified, so re-running costs no bytes.
+
 .PARAMETER NoVerifyCache
     DEVELOPMENT ONLY -- DO NOT USE FOR A PRODUCT BUILD. Accepts a file already in the cache
     on its name alone, skipping the sha256 check that acceptance condition A-1 rests on.
@@ -41,6 +53,7 @@ param(
     [string]$OutRoot = '',
     [string]$CacheRoot = '',
     [switch]$Force,
+    [switch]$ExpectGpu,
     [switch]$NoVerifyCache
 )
 
@@ -88,7 +101,8 @@ $ledgerPath = Join-Path $LedgerDir ('runtime-' + $Variant + '.json')
 $ledger = Read-YwkJsonFile -Path $ledgerPath
 if ($ledger.PSObject.Properties.Name -contains 'status') {
     if ([string]$ledger.status -eq 'template') {
-        throw ($ledgerPath + ' is still a template (no items). Convoy C fills the rocm ledger in; nothing to assemble.')
+        throw ($ledgerPath + ' is still a template (no items). Generate it first: build\make-ledger.ps1 -Variant ' +
+               $Variant + ' -SkipPythonEmbed -SkipModels -SkipVcRedist (ledger/README.md section 9).')
     }
 }
 if ($ledger.items.Count -eq 0) {
@@ -411,6 +425,179 @@ if ($script:YwkUnverified.Count -gt 0) {
     Write-YwkLog -Level 'WARN' -Message ('UNVERIFIED BUILD: ' + $script:YwkUnverified.Count + ' item(s) installed without a sha256 check (-NoVerifyCache): ' + ($script:YwkUnverified -join ', '))
 }
 
+# --------------------------------------------------------------------------- 5b. import check
+#
+# A tree of unpacked zips is not yet a runtime. The check below is the first moment the
+# assembled python is asked to do anything, and it is what turns "the bytes landed" into
+# "torch loads out of this tree" -- the claim the ROCm variant rests on, because the ROCm
+# stack resolves its DLLs through torch/_rocm_init.py -> rocm_sdk.initialize_process(), a
+# path no amount of sha256 checking exercises. With -ExpectGpu it also has to see the device.
+
+Write-YwkLog -Level 'STEP' -Message 'import check on the assembled python'
+
+$probePy = Join-Path $LogDir ('import-check-' + $Variant + '.py')
+$probeLines = @(
+    'import json, os, sys',
+    'out = {"python": sys.version.split()[0], "executable": sys.executable, "path_entries": len(sys.path)}',
+    'mods = {}',
+    'for name in ("torch", "torchaudio", "soundfile", "transformers", "numpy"):',
+    '    try:',
+    '        m = __import__(name)',
+    '        mods[name] = getattr(m, "__version__", "?")',
+    '    except Exception as exc:',
+    '        mods[name] = "IMPORT FAILED: %s: %s" % (type(exc).__name__, exc)',
+    'out["modules"] = mods',
+    'try:',
+    '    import torch',
+    '    out["torch_version"] = torch.__version__',
+    '    out["torch_version_cuda"] = torch.version.cuda',
+    '    out["torch_version_hip"] = getattr(torch.version, "hip", None)',
+    '    out["cuda_is_available"] = bool(torch.cuda.is_available())',
+    '    out["device_count"] = int(torch.cuda.device_count())',
+    '    devs = []',
+    '    for i in range(torch.cuda.device_count()):',
+    '        p = torch.cuda.get_device_properties(i)',
+    '        devs.append({',
+    '            "index": i,',
+    '            "name": getattr(p, "name", None),',
+    '            "gcn_arch_name": getattr(p, "gcnArchName", None),',
+    '            "total_memory": int(getattr(p, "total_memory", 0)),',
+    '            "multi_processor_count": int(getattr(p, "multi_processor_count", 0)),',
+    '        })',
+    '    out["devices"] = devs',
+    '    if torch.cuda.is_available() and torch.cuda.device_count() > 0:',
+    '        # One real kernel. Reading device properties only proves the driver',
+    '        # answers; this is the first and only thing that runs arithmetic on',
+    '        # the card, in the dtype decisions.md 5/36 fixes the build to.',
+    '        try:',
+    '            a = torch.randn(64, 64, dtype=torch.bfloat16, device="cuda:0")',
+    '            total = (a @ a).float().sum().item()',
+    '            out["matmul_bf16"] = "ok" if total == total else "nan"',
+    '        except Exception as exc:',
+    '            out["matmul_bf16"] = "%s: %s" % (type(exc).__name__, exc)',
+    'except Exception as exc:',
+    '    out["torch_error"] = "%s: %s" % (type(exc).__name__, exc)',
+    'print("YWK-IMPORT-CHECK " + json.dumps(out, ensure_ascii=True))'
+)
+$null = Write-YwkTextFile -Path $probePy -Newline 'LF' -Text (($probeLines -join "`n") + "`n")
+
+$probeEnv = New-YwkChildEnvironment -Extra @{
+    'HF_HUB_OFFLINE'   = '1'
+    'PYTHONIOENCODING' = 'utf-8'
+}
+$probeRun = Invoke-YwkNative -FilePath $pythonExe -Arguments @($probePy) -WorkingDirectory $LogDir -Environment $probeEnv -TimeoutSeconds 900
+$null = Write-YwkTextFile -Path (Join-Path $LogDir ('import-check-' + $Variant + '.log')) -Newline 'LF' `
+    -Text ('$ ' + $pythonExe + ' ' + $probePy + "`n--- stdout ---`n" + $probeRun.StdOut + "`n--- stderr ---`n" + $probeRun.StdErr + "`n(exit " + $probeRun.ExitCode + ")`n")
+
+$probeJson = ''
+foreach ($line in ($probeRun.StdOut -split "`n")) {
+    $t = $line.Trim()
+    if ($t.StartsWith('YWK-IMPORT-CHECK ')) { $probeJson = $t.Substring('YWK-IMPORT-CHECK '.Length) }
+}
+if ([string]::IsNullOrEmpty($probeJson)) {
+    throw ('the import check produced no result (exit ' + $probeRun.ExitCode + '). See ' +
+           (Join-Path $LogDir ('import-check-' + $Variant + '.log')))
+}
+try {
+    $probe = $probeJson | ConvertFrom-Json
+} catch {
+    throw ('the import check emitted a line that is not json: ' + $probeJson)
+}
+$null = Write-YwkTextFile -Path (Join-Path $LogDir ('import-check-' + $Variant + '.json')) -Newline 'LF' -Text ($probeJson + "`n")
+
+foreach ($p in $probe.modules.PSObject.Properties) {
+    Write-YwkLog -Message ('  import ' + $p.Name + ' = ' + [string]$p.Value)
+}
+$importFailures = New-Object System.Collections.Generic.List[string]
+foreach ($p in $probe.modules.PSObject.Properties) {
+    if ([string]$p.Value -like 'IMPORT FAILED*') {
+        $importFailures.Add($p.Name + ': ' + [string]$p.Value)
+    }
+}
+if ($importFailures.Count -gt 0) {
+    throw ('the assembled runtime cannot import: ' + ($importFailures -join ' | '))
+}
+
+$hip = $null
+if ($probe.PSObject.Properties.Name -contains 'torch_version_hip') { $hip = $probe.torch_version_hip }
+$cudaVer = $null
+if ($probe.PSObject.Properties.Name -contains 'torch_version_cuda') { $cudaVer = $probe.torch_version_cuda }
+$isAvail = $false
+if ($probe.PSObject.Properties.Name -contains 'cuda_is_available') { $isAvail = [bool]$probe.cuda_is_available }
+$devCount = 0
+if ($probe.PSObject.Properties.Name -contains 'device_count') { $devCount = [int]$probe.device_count }
+Write-YwkLog -Message ('  torch=' + [string]$probe.torch_version + '  hip=' + [string]$hip +
+                       '  cuda=' + [string]$cudaVer + '  is_available=' + $isAvail + '  device_count=' + $devCount)
+if ($probe.PSObject.Properties.Name -contains 'devices') {
+    foreach ($d in $probe.devices) {
+        Write-YwkLog -Message ('  device ' + [string]$d.index + ': name=' + [string]$d.name +
+                               '  gcnArchName=' + [string]$d.gcn_arch_name +
+                               '  total_memory=' + [string]$d.total_memory)
+    }
+}
+if ($probe.PSObject.Properties.Name -contains 'matmul_bf16') {
+    Write-YwkLog -Message ('  bf16 matmul on device 0: ' + [string]$probe.matmul_bf16)
+}
+
+if ($ExpectGpu) {
+    $gpuFailures = New-Object System.Collections.Generic.List[string]
+    if ($Variant -like 'rocm*') {
+        if ([string]::IsNullOrEmpty([string]$hip)) {
+            $gpuFailures.Add('torch.version.hip is null -- this is not a ROCm build of torch')
+        }
+    } elseif ($Variant -like 'cu*') {
+        if ([string]::IsNullOrEmpty([string]$cudaVer)) {
+            $gpuFailures.Add('torch.version.cuda is null -- this is not a CUDA build of torch')
+        }
+    } else {
+        $gpuFailures.Add('-ExpectGpu makes no sense for variant "' + $Variant + '"')
+    }
+    if (-not $isAvail) {
+        $gpuFailures.Add('torch.cuda.is_available() is False')
+    }
+    if ($devCount -lt 1) {
+        $gpuFailures.Add('torch.cuda.device_count() is ' + $devCount)
+    } else {
+        $d0 = @($probe.devices)[0]
+        if ([string]::IsNullOrEmpty([string]$d0.name)) {
+            $gpuFailures.Add('device 0 reports no name')
+        }
+        if ($Variant -like 'rocm*') {
+            # The ledger names the architecture it was solved for ("gfx": "gfx1151"),
+            # and every AMD wheel in it -- amd-torch-device-gfx1151,
+            # rocm-sdk-device-gfx1151 -- is that architecture's code object and no
+            # other. A merely non-empty gcnArchName let a gfx1151 tree pass on a
+            # gfx1100 card, i.e. the one mistake this check exists to catch went
+            # through it. A ledger with no "gfx" field keeps the old rule.
+            $wantGfx = ''
+            if ($ledger.PSObject.Properties.Name -contains 'gfx') { $wantGfx = [string]$ledger.gfx }
+            $haveGfx = [string]$d0.gcn_arch_name
+            if ([string]::IsNullOrEmpty($haveGfx)) {
+                $gpuFailures.Add('device 0 reports no gcnArchName')
+            } elseif (-not [string]::IsNullOrEmpty($wantGfx)) {
+                # gcnArchName carries the target features too ("gfx1151:xnack-").
+                $baseGfx = ($haveGfx -split ':')[0]
+                if ($baseGfx -ne $wantGfx) {
+                    $gpuFailures.Add('device 0 is ' + $haveGfx + ' but ' + $ledgerPath +
+                                     ' was solved for ' + $wantGfx)
+                }
+            }
+        }
+    }
+    # The kernel. Absent means torch never got as far as running it (is_available
+    # false), which the checks above already recorded.
+    $matmul = ''
+    if ($probe.PSObject.Properties.Name -contains 'matmul_bf16') { $matmul = [string]$probe.matmul_bf16 }
+    if ($matmul -ne 'ok') {
+        $gpuFailures.Add('a bf16 matmul on device 0 did not run: ' +
+                         $(if ([string]::IsNullOrEmpty($matmul)) { '(not attempted)' } else { $matmul }))
+    }
+    if ($gpuFailures.Count -gt 0) {
+        throw ('-ExpectGpu: ' + ($gpuFailures -join ' | '))
+    }
+    Write-YwkLog -Message ('  -ExpectGpu satisfied (bf16 matmul on device 0: ' + $matmul + ')')
+}
+
 # --------------------------------------------------------------------------- 6. report
 
 # Everything landed: the directory is no longer half-built, so the trap must not touch it.
@@ -436,6 +623,8 @@ $report = [ordered]@{
     verified      = ($script:YwkUnverified.Count -eq 0)
     unverified_items = $script:YwkUnverified.ToArray()
     dropped_pth   = $script:YwkDroppedPth.ToArray()
+    expect_gpu    = [bool]$ExpectGpu
+    import_check  = $probe
 }
 $null = Write-YwkJsonFile -Path (Join-Path $LogDir ('assemble-runtime-' + $Variant + '.json')) -Value $report
 

@@ -9,12 +9,31 @@
     seconds and must report runtime.loaded = false:
         GET /health       200
         GET /params       200 and under -ParamsBudgetMs (default 100 ms)
-        GET /ywk/status   200
+        GET /ywk/status   200, and its "variant" field really is -Variant
+
+    With -WithModel the /ywk/status body is read, not merely saved: device.actual and
+    device.precision have to be -Device / -Precision, and on a rocm variant device.name
+    must be non-empty, device.hip (torch.version.hip) non-null and device.gcn_arch equal to
+    the architecture in the variant tag (rocm-gfx1151 -> gfx1151). That is acceptance
+    condition C-3; without these the run passed on a wrapper answering device.actual: null.
+    On a cu* / cpu variant device.hip must be null instead -- a hip version there is a ROCm
+    torch under the wrong label.
 
     With -WithModel the model is loaded from the existing Hugging Face cache. HF_HOME is
-    pointed at %USERPROFILE%\.cache\huggingface and HF_HUB_OFFLINE=1 is set, so nothing is
-    downloaded and nothing in that cache is written (decisions.md 22). The run then posts one
-    short CPU/fp32 synthesis at num_steps=4 and checks the answer really is a RIFF/WAVE file.
+    pointed at -HfHome (default %USERPROFILE%\.cache\huggingface) and HF_HUB_OFFLINE=1 is set,
+    so nothing is downloaded and nothing in that cache is written (decisions.md 22). The run
+    then posts short syntheses at num_steps=4 and checks the answers really are RIFF/WAVE.
+
+    The three shots -WithModel makes, and why each one is there:
+      1. voice = the default speaker name (U+30C7 U+30D5 U+30A9 U+30EB U+30C8) -- no reference.
+      2. no "voice" field at all -- decisions.md 45: /params names that same speaker as the default
+         and required:false, so a body that simply omits the field must be a 200 too. Convoy A
+         carried this over; it is checked here.
+      3. voice = a reference wav written from shot 1 -- the only shot that opens an audio file,
+         which is the path patches/0001 fixes (torchaudio raises ImportError without torchcodec).
+
+    -Device / -Precision default off the variant: cpu -> cpu/fp32, everything else -> cuda:0
+    and bf16 (decisions.md 5 and 36 make bf16 mandatory on Radeon; the wrapper enforces it).
 
     While the wrapper is not in place yet (seat S2 delivers server/ywk_server.py), pass
     -HealthOnly: only GET /health is required and the other two routes are reported, not enforced.
@@ -23,6 +42,8 @@
     powershell -NoProfile -ExecutionPolicy Bypass -File build\verify-runtime.ps1 -Variant cpu
 .EXAMPLE
     powershell -NoProfile -ExecutionPolicy Bypass -File build\verify-runtime.ps1 -Variant cpu -WithModel
+.EXAMPLE
+    powershell -NoProfile -ExecutionPolicy Bypass -File build\verify-runtime.ps1 -Variant rocm-gfx1151 -WithModel
 #>
 [CmdletBinding()]
 param(
@@ -34,7 +55,13 @@ param(
     [int]$StartupTimeoutSeconds = 90,
     [int]$ReadyTimeoutSeconds = 300,
     [int]$ParamsBudgetMs = 100,
-    [string]$Device = 'cpu',
+    [string]$Device = '',
+    # Upstream resolve_runtime_dtype accepts fp32 and bf16 only
+    # (upstream/Irodori-TTS/irodori_tts/inference_runtime.py:304-312), and bf16 there requires
+    # a CUDA or XPU device -- ROCm's torch reports device type "cuda", so it qualifies.
+    [ValidateSet('', 'fp32', 'bf16')]
+    [string]$Precision = '',
+    [string]$HfHome = '',
     [string]$OutRoot = ''
 )
 
@@ -53,7 +80,29 @@ $WorkDir    = Join-Path $OutRoot ('verify-work-' + $Variant)
 
 $null = New-YwkDirectory -Path $LogDir
 $null = Start-YwkLog -Path (Join-Path $LogDir ('verify-runtime-' + $Variant + '.log'))
-Write-YwkLog -Level 'STEP' -Message ('verify-runtime: variant=' + $Variant + ' port=' + $Port + ' withModel=' + [bool]$WithModel)
+
+# Variant defaults. The variant, not the caller, decides what "the obvious device" is; an
+# explicit -Device / -Precision always wins so a Radeon box can still be driven on the cpu.
+if ([string]::IsNullOrEmpty($Device)) {
+    if ($Variant -eq 'cpu') { $Device = 'cpu' } else { $Device = 'cuda:0' }
+}
+if ([string]::IsNullOrEmpty($Precision)) {
+    if ($Device -eq 'cpu') { $Precision = 'fp32' } else { $Precision = 'bf16' }
+}
+if ($Device -eq 'cpu' -and $Precision -ne 'fp32') {
+    throw ('-Device cpu with -Precision ' + $Precision + ': the wrapper ties cpu to fp32 (design doc section 4-6).')
+}
+if ($Variant -like 'rocm*' -and $Device -ne 'cpu' -and $Precision -ne 'bf16') {
+    throw ('-Variant ' + $Variant + ' with -Precision ' + $Precision +
+           ': the Radeon variant is bf16-only (decisions.md 5 and 36); the wrapper exits 2 on anything else.')
+}
+if ([string]::IsNullOrEmpty($HfHome)) {
+    $HfHome = Join-Path $env:USERPROFILE '.cache\huggingface'
+}
+
+Write-YwkLog -Level 'STEP' -Message ('verify-runtime: variant=' + $Variant + ' port=' + $Port +
+                                     ' device=' + $Device + ' precision=' + $Precision +
+                                     ' withModel=' + [bool]$WithModel)
 
 $python = Join-Path $RuntimeDir 'python.exe'
 if (-not (Test-Path -LiteralPath $python)) {
@@ -164,21 +213,21 @@ $childEnv = [ordered]@{
     'IRODORI_VOICE_ALIASES_FILE'    = $voicesJson
     'IRODORI_MODEL_DEVICE'          = $Device
     'IRODORI_CODEC_DEVICE'          = $Device
+    'YWK_VARIANT'                   = $Variant
     'PYTHONUTF8'                    = '1'
     'PYTHONDONTWRITEBYTECODE'       = '1'
     'PYTHONUNBUFFERED'              = '1'
     'PYTHONIOENCODING'              = 'utf-8'
 }
 if ($WithModel) {
-    $hfHome = Join-Path $env:USERPROFILE '.cache\huggingface'
-    if (-not (Test-Path -LiteralPath $hfHome)) {
-        throw ('-WithModel needs the existing Hugging Face cache at ' + $hfHome + ' (read only). It is not there.')
+    if (-not (Test-Path -LiteralPath $HfHome)) {
+        throw ('-WithModel needs a Hugging Face cache at ' + $HfHome + ' (read only). It is not there.')
     }
-    $childEnv['HF_HOME'] = $hfHome
+    $childEnv['HF_HOME'] = $HfHome
     $childEnv['HF_HUB_OFFLINE'] = '1'
     $childEnv['IRODORI_PRELOAD'] = 'true'
-    $childEnv['IRODORI_MODEL_PRECISION'] = 'fp32'
-    $childEnv['IRODORI_CODEC_PRECISION'] = 'fp32'
+    $childEnv['IRODORI_MODEL_PRECISION'] = $Precision
+    $childEnv['IRODORI_CODEC_PRECISION'] = $Precision
 } else {
     $childEnv['HF_HUB_OFFLINE'] = '1'
     $childEnv['IRODORI_PRELOAD'] = 'false'
@@ -212,6 +261,21 @@ function Add-YwkResult {
         Write-YwkLog -Level 'FAIL' -Message ('FAIL  ' + $Name + '  ' + $Detail)
         $failures.Add($Name + ': ' + $Detail)
     }
+}
+
+function Get-YwkField {
+    <#
+      .SYNOPSIS
+        One property off a ConvertFrom-Json object, or $null when it is absent.
+      .DESCRIPTION
+        Set-StrictMode -Version Latest turns a missing property into a
+        terminating error, and a missing field is exactly what these checks have
+        to be able to report as a FAIL rather than die on.
+    #>
+    param([AllowNull()]$Object, [Parameter(Mandatory = $true)][string]$Name)
+    if ($null -eq $Object) { return $null }
+    if ($Object.PSObject.Properties.Name -notcontains $Name) { return $null }
+    return $Object.$Name
 }
 
 try {
@@ -248,6 +312,73 @@ try {
         $s = Invoke-YwkProbe -Url ($base + '/ywk/status') -TimeoutSeconds 30
         Add-YwkResult -Name 'GET /ywk/status' -Ok ($s.Status -eq 200) -Detail ('status=' + $s.Status)
 
+        # --------------------------------------------------------------- C-3
+        #
+        # Reading the body back is the whole of C-3. Until this block existed the
+        # run reported "200" for /ywk/status and wrote the body to a file, which
+        # means a wrapper answering device.actual = null -- or "cpu" on a machine
+        # that was supposed to be on the GPU -- still finished with every check
+        # PASS and exit code 0. The values a human then read out of
+        # ywk-status-<variant>.json were never a judgement the script made.
+        # device.actual is null until the model is in, so the five device checks
+        # only run under -WithModel; the variant echo is checked either way.
+        if ($s.Status -eq 200) {
+            $status = $null
+            try {
+                $status = $s.Body | ConvertFrom-Json
+            } catch {
+                Add-YwkResult -Name '/ywk/status is JSON' -Ok $false -Detail $_.Exception.Message
+            }
+            if ($null -ne $status) {
+                Add-YwkResult -Name '/ywk/status.variant' `
+                    -Ok ((Get-YwkField -Object $status -Name 'variant') -eq $Variant) `
+                    -Detail ('variant=' + (Get-YwkField -Object $status -Name 'variant') + ' (want ' + $Variant + ')')
+                if ($WithModel) {
+                    $dev = Get-YwkField -Object $status -Name 'device'
+                    $actual = Get-YwkField -Object $dev -Name 'actual'
+                    $devName = Get-YwkField -Object $dev -Name 'name'
+                    $prec = Get-YwkField -Object $dev -Name 'precision'
+                    $hip = Get-YwkField -Object $dev -Name 'hip'
+                    $gcn = Get-YwkField -Object $dev -Name 'gcn_arch'
+                    Add-YwkResult -Name '/ywk/status.device.actual' `
+                        -Ok ([string]$actual -eq $Device) `
+                        -Detail ('actual=' + [string]$actual + ' (want ' + $Device + ')')
+                    Add-YwkResult -Name '/ywk/status.device.precision' `
+                        -Ok ([string]$prec -eq $Precision) `
+                        -Detail ('precision=' + [string]$prec + ' (want ' + $Precision + ')')
+                    if ($Variant -like 'rocm*') {
+                        # rocm-gfx1151 -> gfx1151. The variant tag is the only
+                        # place the expected architecture is written down, so
+                        # the answer has to agree with it, not merely be present.
+                        $wantGcn = $Variant.Substring($Variant.IndexOf('-') + 1)
+                        Add-YwkResult -Name '/ywk/status.device.name' `
+                            -Ok (-not [string]::IsNullOrEmpty([string]$devName)) `
+                            -Detail ('name=' + [string]$devName)
+                        Add-YwkResult -Name '/ywk/status.device.hip' `
+                            -Ok (-not [string]::IsNullOrEmpty([string]$hip)) `
+                            -Detail ('torch.version.hip=' + [string]$hip)
+                        Add-YwkResult -Name '/ywk/status.device.gcn_arch' `
+                            -Ok ([string]$gcn -eq $wantGcn) `
+                            -Detail ('gcn_arch=' + [string]$gcn + ' (want ' + $wantGcn + ')')
+                    } elseif ($Variant -like 'cu*') {
+                        Add-YwkResult -Name '/ywk/status.device.name' `
+                            -Ok (-not [string]::IsNullOrEmpty([string]$devName)) `
+                            -Detail ('name=' + [string]$devName)
+                        # A CUDA variant that answers a hip version is a ROCm
+                        # torch wearing the wrong label -- the mismatch the
+                        # wrapper now warns about on stderr.
+                        Add-YwkResult -Name '/ywk/status.device.hip is null' `
+                            -Ok ([string]::IsNullOrEmpty([string]$hip)) `
+                            -Detail ('torch.version.hip=' + [string]$hip)
+                    } else {
+                        Add-YwkResult -Name '/ywk/status.device.hip is null' `
+                            -Ok ([string]::IsNullOrEmpty([string]$hip)) `
+                            -Detail ('torch.version.hip=' + [string]$hip)
+                    }
+                }
+            }
+        }
+
         $v = Invoke-YwkProbe -Url ($base + '/v1/audio/voices') -TimeoutSeconds 30
         Add-YwkResult -Name 'GET /v1/audio/voices' -Ok ($v.Status -eq 200) -Detail ('status=' + $v.Status)
 
@@ -257,7 +388,7 @@ try {
 
     if ($WithModel) {
         $body = '{"model":"irodori-tts","input":"' + [char]0x30C6 + [char]0x30B9 + [char]0x30C8 + '","response_format":"wav","voice":"' + $defaultName + '","irodori":{"num_steps":4}}'
-        Write-YwkLog -Message 'POST /v1/audio/speech (num_steps=4, cpu, fp32)'
+        Write-YwkLog -Message ('POST /v1/audio/speech (num_steps=4, ' + $Device + ', ' + $Precision + ')')
         $sp = Invoke-YwkProbe -Url ($base + '/v1/audio/speech') -Method 'POST' -JsonBody $body -TimeoutSeconds 1200
         if ($sp.Status -ne 200) {
             Add-YwkResult -Name 'POST /v1/audio/speech' -Ok $false -Detail ('status=' + $sp.Status + ' body=' + $sp.Body)
@@ -268,7 +399,25 @@ try {
             Add-YwkResult -Name 'POST /v1/audio/speech' -Ok $true -Detail ('200, ' + $sp.Bytes.Length + ' bytes in ' + $sp.ElapsedMs + ' ms -> ' + $wavPath)
             Add-YwkResult -Name 'response is RIFF/WAVE' -Ok $isRiff -Detail ('first 12 bytes: ' + ([System.BitConverter]::ToString($sp.Bytes[0..11])))
 
-            # Second shot, this time THROUGH a reference voice. The no-ref shot above never
+            # Second shot: the SAME body with the "voice" field removed altogether.
+            # decisions.md 45 -- /params calls request.voice default (the same name) and
+            # required:false, so a body that leaves it out has to come back 200 as well;
+            # the wrapper burns IRODORI_DEFAULT_VOICE for exactly this. Upstream on its own
+            # answers 400 here, so this shot is the one that proves the wrapper's setdefault
+            # is really in the assembled tree. Carried over from convoy A (A-2).
+            $bodyNoVoice = '{"model":"irodori-tts","input":"' + [char]0x30C6 + [char]0x30B9 + [char]0x30C8 + '","response_format":"wav","irodori":{"num_steps":4}}'
+            Write-YwkLog -Message 'POST /v1/audio/speech with no "voice" field (decisions.md 45)'
+            $sp0 = Invoke-YwkProbe -Url ($base + '/v1/audio/speech') -Method 'POST' -JsonBody $bodyNoVoice -TimeoutSeconds 1200
+            if ($sp0.Status -ne 200) {
+                Add-YwkResult -Name 'POST /v1/audio/speech (voice omitted)' -Ok $false -Detail ('status=' + $sp0.Status + ' body=' + $sp0.Body)
+            } else {
+                $wav0 = Join-Path $LogDir ('speech-novoice-' + $Variant + '.wav')
+                [System.IO.File]::WriteAllBytes($wav0, $sp0.Bytes)
+                Add-YwkResult -Name 'POST /v1/audio/speech (voice omitted)' -Ok $true -Detail ('200, ' + $sp0.Bytes.Length + ' bytes in ' + $sp0.ElapsedMs + ' ms -> ' + $wav0)
+                Add-YwkResult -Name 'voice-omitted answer is RIFF/WAVE' -Ok (Test-YwkRiffWave -Bytes $sp0.Bytes) -Detail ('first 12 bytes: ' + ([System.BitConverter]::ToString($sp0.Bytes[0..11])))
+            }
+
+            # Third shot, this time THROUGH a reference voice. The no-ref shot above never
             # opens an audio file, so it cannot tell whether patches/0001 is really on the
             # copy: torchaudio 2.10 raises ImportError without torchcodec and the upstream
             # fallback only catches RuntimeError. Reading a reference wav is exactly the path
@@ -322,6 +471,8 @@ $report = [ordered]@{
     with_model = [bool]$WithModel
     health_only = [bool]$HealthOnly
     device     = $Device
+    precision  = $Precision
+    hf_home    = $HfHome
     checks     = $results.ToArray()
     failures   = $failures.ToArray()
     stdout_log = $stdoutLog
