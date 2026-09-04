@@ -51,3 +51,13 @@
 
 26. **一次 wav は存在しない＝席が生成する**。手段＝yomiwakechan2 を使うか、各エンジンを個別起動して生成（VOICEVOX／COEIROINK＝HTTP API・CeVIO AI＝COM・VOICEROID2＝本体アダプタの方式に倣う）。二次ボイスは既存 Irodori-TTS-Server（8088・Radeon 機）を参照ボイス経路で叩いて生成。この作業は Radeon 機が使える 2026-09-07 までに済ませる（便 C と同じ枠）。
 27. **弦巻マキ（英語・CeVIO AI）の一次 wav**＝日本語読みができないため、席が詰まったら飛ばして進めてよい。後で司令官が生成して提供する（2026-09-04）。
+
+### 着任読解（統合席）が挙げた追加の卓 7 件の裁定 — 2026-09-04
+
+28. **libsndfile（soundfile wheel 同梱・LGPL-2.1）＝通知のみ**（司令官裁定）。裁定 8 により soundfile は配布物に入れず利用者機が PyPI から取得するので、§6 の義務は配布側に立たないと読む。初回取得の通知（`licenses/first-run-notices.md`・ランチャの初回取得 UI）に「LGPL-2.1 の libsndfile を含む soundfile を取得する」旨とソースの所在 URL を載せる。
+29. **facebook/dacvae-watermarked のライセンス表示＝Apache-2.0 と読む（3 対 1）**（司令官裁定）。`licenses/dacvae/` には GitHub facebookresearch/dacvae の LICENSE（Apache-2.0 全文）を置き、README に「HF カード本文 46 行目のみ SAM License の記述が残る（GitHub 側は 2025-12-19 `34e0b0d` で Apache-2.0 に修正済み・LICENSE 実体は不変）」と原文の檔と行、および「当方の読みである」旨を併記する。
+30. 〔設計席の判断・依頼文と整合〕**torchcodec は配布物から外す**＝`patches/0001`（`inference_runtime.py` の `_load_audio`／`save_wav`・`codec.py` の `encode_file` の `except RuntimeError` → `except (RuntimeError, ImportError)`）。理由＝FFmpeg（LGPL/GPL）を落とせ、日本語パスの参照 wav は soundfile 経路で実射済み。torchcodec 経路は未実射のまま使わない。
+31. 〔設計席の判断・依頼文 §2-2〕**api_key は持たない**（bind 127.0.0.1 固定）。受け入れ条件「安全」行は「既定 bind 127.0.0.1・api_key なし・empty_cache_interval=0・preload=true を焼く」に書き換える（`docs/acceptance.md`）。
+32. 〔設計席の判断・依頼文 §2-2〕**ポートは 18088 で確定**。本体側は D-9（`IrodoriConstants.cs:35` の固定値と `App.xaml.cs:131` の baseUrl 受け渡し）の改修が必ずセット＝便 F の票に明記（`docs/contract.md` §9）。
+33. 〔設計席の判断〕**`/params` の `cfg_scale_caption` の既定は 3.0（API 実効値）**。gradio 初期値 4.0 は説明文の注記に残す。`IRODORI_DEFAULT_CFG_SCALE_TEXT` を動かすと caption 側の既定も連動する副作用を `/params` の note に書く。
+34. 〔設計席の判断〕**GPU 同定は UUID**（`torch.cuda.get_device_properties(i).uuid`・`nvidia-smi -L` は NVIDIA 専用の高速路）。`CUDA_VISIBLE_DEVICES` に UUID 形式（`GPU-xxxx`）を渡す経路は調査に実射記録が無いので、便 B（RTX 実射）で確かめてから採否を決める。それまでランチャは UUID→index 解決＋`cuda:N` で指定する。
