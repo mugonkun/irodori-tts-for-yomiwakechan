@@ -705,6 +705,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$d = Get-Content -Raw -E
 ```
 
 **記録すること**＝`device.actual`（`cpu` になるはず）・`ok`・`errors`・`server-cu130-w1-nogpu.err.log` の末尾 20 行。
+
+> **実射（2026-09-05・降格後 537.58 で撃った＝§2 の順ではない）**＝**cu126 は通る**（CPU fp32 で 2 射とも 200・約 12.8 s／3.76 s 音声）。**cu130 は落ちる**＝`/health`・`/params`・`/ywk/status` は 200 で `device.actual=cpu` と名乗るのに、最初の合成の `prepare_reference` 直後に**プロセスごと 0xC0000005（アクセス違反）で消える**（Python 例外なし・クライアントには接続断だけ）。
+> **限界**＝降格後に撃ったので「GPU を隠したから」と「537.58 で cu130 が GPU を見られないから」を分離できていない。分離には 591.86 に戻す必要があり、恒久降格（裁定 70）と衝突するのでやらない＝`decisions.md` 83。
+> **cu126 と cu130 の両方で撃つ**（この節の 1 本は cu130 だけだが、cu126 も同じ引数で）。
 **速度の数字は使わない**（`-Quick`・CPU）。
 
 ---
@@ -715,12 +719,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$d = Get-Content -Raw -E
 > 消してよいかの判断は設計席が別便でやる。ここは**在るか・何バイトか**を報告するだけ。
 
 ```
-powershell -NoProfile -ExecutionPolicy Bypass -Command "foreach ($v in @('cu130','cu126')) { $d = 'C:\ywk\repo\build\out\runtime-' + $v + '\Lib\site-packages\torch\lib'; if (-not (Test-Path -LiteralPath $d)) { Write-Host ($v + ': no torch\lib'); continue }; Get-ChildItem -LiteralPath $d -File | Where-Object { $_.Name -like 'zlibwapi*' -or $_.Name -like 'nvperf*' -or $_.Name -like 'nvrtc*' } | ForEach-Object { Write-Host ($v + '  ' + $_.Name + '  ' + $_.Length + ' B') } }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "foreach ($v in @('cu130','cu126')) { $d = 'C:\ywk\repo\build\out\runtime-' + $v + '\site-packages\torch\lib'; if (-not (Test-Path -LiteralPath $d)) { Write-Host ($v + ': no torch\lib'); continue }; Get-ChildItem -LiteralPath $d -File | Where-Object { $_.Name -like 'zlibwapi*' -or $_.Name -like 'nvperf*' -or $_.Name -like 'nvrtc*' } | ForEach-Object { Write-Host ($v + '  ' + $_.Name + '  ' + $_.Length + ' B') } }"
 ```
 
 **記録すること**＝出力の全行（変種ごとに檔名とバイト数）。`zlibwapi.dll` が**在る／無い**は
 `licenses/first-run-notices.md` A14 の「出所」の議論にそのまま効く事実なので、**在っても無くても**そのまま書く。
 **削除・改名・移動はしない**（`decisions.md` 22＝ライセンスの結論を推測で断定しない）。
+
+> **実射（2026-09-05）**＝台本の旧 path `\Lib\site-packages` は誤り（埋め込み Python の実配置は `runtime-<v>\site-packages`）で、遠隔席が「無い」と誤報しかけた＝上で直した。
+> 実測＝zlibwapi.dll は両変種に在る（89,088 B）・torch 配下に LICENSE/NOTICE は 1 檔も無い・`nvrtc64_*_0.alt.dll` が本体とほぼ同サイズで並ぶ（cu130 91.0 MB＋91.0 MB・cu126 45.9 MB＋45.9 MB）＝`decisions.md` 84。
 
 ---
 
