@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mugonkun/irodori-tts-for-yomiwakechan/tools/preset-voices/presets.json.schema",
+  "title": "便 P — プリセット話者の台帳（voices/presets.json）",
+  "description": "decisions.md 17・18・26・27 が正典。リリース版に同梱するテンプレート参照ボイス 12 名の台帳。二次 wav が実体の参照ボイス（voices/presets/<id>.wav）で、一次 wav は素材＝配布物には入れない（build/out/preset-work/primary/ と N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/primary/ に保全）。",
+  "type": "object",
+  "required": ["version", "generated_at", "presets"],
+  "additionalProperties": true,
+
+  "properties": {
+    "version": { "type": "integer", "minimum": 1, "description": "台帳の書式版。" },
+    "generated_at": { "type": "string", "description": "この台帳を書き出した時刻（ISO 8601）。" },
+    "corpus": { "type": "string", "description": "本文の出所（例 tools/preset-voices/corpus.json）。" },
+    "notes": { "type": "array", "items": { "type": "string" } },
+
+    "presets": {
+      "type": "array",
+      "description": "話者 12 名。status が pending のものは一次 wav がまだ無い（VOICEROID2 4 名・CeVIO AI 1 名）。",
+      "items": { "$ref": "#/$defs/preset" }
+    }
+  },
+
+  "$defs": {
+    "preset": {
+      "type": "object",
+      "required": ["id", "display_name", "engine", "engine_speaker", "style", "rights_note", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,47}$",
+          "description": "ASCII の識別子。参照ボイス檔名（<id>.wav）と Irodori の voice id を兼ねる。例 vv_mochiko_sexy・co_tsukuyomi・vr2_akane_west。接頭辞＝vv_（VOICEVOX）・co_（COEIROINK）・vr2_（VOICEROID2）・cevio_（CeVIO AI）。"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "日本語の表示名＝本体（yomiwakechan2）に見せる話者名。例「もち子さん」「つくよみちゃん」「琴葉茜」。同じ話者で複数スタイルがある場合は「おふとんP（きざ）」のようにスタイルを添える。"
+        },
+        "engine": {
+          "type": "string",
+          "enum": ["voicevox", "coeiroink", "voiceroid2", "cevio_ai"],
+          "description": "一次 wav を作ったエンジン。"
+        },
+        "engine_speaker": {
+          "type": "string",
+          "description": "エンジン内での話者名（原文）。例「もち子さん」「KANA」「琴葉 茜」。"
+        },
+        "speaker_uuid": {
+          "type": ["string", "null"],
+          "description": "COEIROINK の speakerUuid。他エンジンでは null。"
+        },
+        "style": {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string", "description": "スタイル名（原文）。例「セクシー／あん子」「ないしょばなし」。" },
+            "id": {
+              "type": ["integer", "string", "null"],
+              "description": "エンジン内のスタイル id。VOICEVOX＝styleId(int)・COEIROINK＝styleId(int)・VOICEROID2＝プリセット名やボイス名(str)・無い場合 null。"
+            }
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["done", "pending", "skipped"],
+          "description": "done＝一次と二次が揃った／pending＝一次 wav 待ち（VOICEROID2 は別席 G3）／skipped＝decisions 27 で今回は飛ばす（CeVIO AI 弦巻マキ 英）。"
+        },
+
+        "primary": {
+          "type": ["object", "null"],
+          "description": "エンジンが読んだ素の地の文の wav（素材・配布物には入れない）。null＝まだ無い。",
+          "required": ["file", "duration_s", "sample_rate"],
+          "additionalProperties": false,
+          "properties": {
+            "file": { "type": "string", "description": "檔名（例 vv_mochiko_sexy_30s.wav）。置き場＝build/out/preset-work/primary/ と N: の写し。" },
+            "file_10s": { "type": ["string", "null"], "description": "10 s 版の檔名（比較用）。" },
+            "duration_s": { "type": "number", "description": "実測秒数（verify_wavs.py）。" },
+            "duration_10s_s": { "type": ["number", "null"] },
+            "sample_rate": { "type": "integer", "description": "Hz。VOICEVOX＝24000・COEIROINK＝44100。" },
+            "channels": { "type": "integer" },
+            "bits": { "type": "integer" },
+            "text_id": { "type": "string", "description": "corpus.json の primary のどれか（text_30s / text_10s）。" },
+            "peak_dbfs": { "type": ["number", "null"] },
+            "rms_dbfs": { "type": ["number", "null"] }
+          }
+        },
+
+        "secondary": {
+          "type": ["object", "null"],
+          "description": "一次を参照ボイスにして Irodori-TTS-Server で合成した wav＝これがリリース版のテンプレート参照ボイス。実体＝voices/presets/<id>.wav。",
+          "required": ["file", "duration_s", "sample_rate", "text", "irodori"],
+          "additionalProperties": false,
+          "properties": {
+            "file": { "type": "string", "description": "檔名（<id>.wav）。置き場＝voices/presets/。" },
+            "duration_s": { "type": "number" },
+            "sample_rate": { "type": "integer" },
+            "channels": { "type": "integer" },
+            "bits": { "type": "integer" },
+            "peak_dbfs": { "type": ["number", "null"] },
+            "rms_dbfs": { "type": ["number", "null"] },
+            "text_id": { "type": "string", "description": "corpus.json の secondary のどれか（expressive_30s / greeting_10s）。" },
+            "text": { "type": "string", "description": "生成に使った本文（逐語）。" },
+            "ref_variant": {
+              "type": "string",
+              "enum": ["30s", "10s"],
+              "description": "参照に使った一次 wav の版。既定は 30s。"
+            },
+            "ref_10s_file": { "type": ["string", "null"], "description": "10 s 参照で作った比較用二次 wav（<id>_ref10_secondary.wav）。採用しなかった側は配布しない。" },
+            "irodori": {
+              "type": "object",
+              "description": "生成に使った irodori パラメータ（POST /v1/audio/speech の irodori 欄）。",
+              "required": ["num_steps", "seed"],
+              "additionalProperties": true,
+              "properties": {
+                "num_steps": { "type": "integer", "description": "decisions 10＝既定 40。" },
+                "seed": { "type": "integer", "description": "再現のため固定。" }
+              }
+            },
+            "server": {
+              "type": "object",
+              "description": "生成に使ったサーバの素性。",
+              "additionalProperties": true,
+              "properties": {
+                "hf_checkpoint": { "type": "string" },
+                "model_precision": { "type": "string" },
+                "codec_precision": { "type": "string" },
+                "port": { "type": "integer" },
+                "device": { "type": "string" }
+              }
+            },
+            "elapsed_s": { "type": ["number", "null"], "description": "合成にかかった秒数。" }
+          }
+        },
+
+        "rights_note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "権利の注記。decisions 18＝司令官が「個人利用・商用・有償でも再配布可」と確認済み（確認日 2026-09-04）。ただし席は推測で断定しない＝規約原文の所在と確認日付を licenses/ の台帳に記す。この欄には『誰が・いつ確認したか』と『規約原文は未取得』の別を必ず書く。"
+        },
+        "rights_confirmed_by": { "type": "string", "description": "例「司令官（mugonkun）」。" },
+        "rights_confirmed_at": { "type": "string", "description": "確認日（例 2026-09-04）。" },
+        "rights_source_fetched": {
+          "type": "boolean",
+          "description": "各エンジン／キャラの規約原文を席が取得して読んだか。false＝未取得（司令官の口頭確認のみ）。"
+        },
+        "generated_at": { "type": "string", "description": "この 1 名の二次 wav を作った時刻（ISO 8601）。" }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    便 P（プリセット話者の参照ボイス）VOICEROID2 一次 wav 取り出し道具。
+
+    VOICEROID2 は API を持たない 32bit WPF アプリなので、Codeer.Friendly で GUI を駆動して
+    ［音声保存］を押し、その後に出る Win32 ネイティブ保存ダイアログ（#32770）へ檔名を流し込む。
+
+    Codeer.Friendly 系は操作側プロセスが .NET Framework であることを要求し、かつアタッチ先と
+    同アーキテクチャである必要があるため net48 / x86 で建てる（yomiwakechan2 の Voiceroid2Bridge
+    と同じ構成。あちらの csproj のコメントに書かれた事実に倣った＝檔はコピーしていない）。
+
+    停止域：yomiwakechan2 の檔は 1 行も変えない。本道具は新規実装。
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <PlatformTarget>x86</PlatformTarget>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Vr2SaveTool</RootNamespace>
+    <AssemblyName>Vr2SaveTool</AssemblyName>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <EnableDefaultItems>false</EnableDefaultItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Vr2Ui.cs" />
+    <Compile Include="NativeDialogs.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Codeer.Friendly.Windows" Version="2.18.0" />
+    <PackageReference Include="Codeer.Friendly.Windows.Grasp" Version="2.16.0" />
+    <PackageReference Include="Codeer.Friendly.Windows.NativeStandardControls" Version="2.20.0" />
+    <PackageReference Include="RM.Friendly.WPFStandardControls" Version="1.63.0" />
+  </ItemGroup>
+
+</Project>

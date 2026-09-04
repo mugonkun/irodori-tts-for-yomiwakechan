@@ -61,3 +61,12 @@
 32. 〔設計席の判断・依頼文 §2-2〕**ポートは 18088 で確定**。本体側は D-9（`IrodoriConstants.cs:35` の固定値と `App.xaml.cs:131` の baseUrl 受け渡し）の改修が必ずセット＝便 F の票に明記（`docs/contract.md` §9）。
 33. 〔設計席の判断〕**`/params` の `cfg_scale_caption` の既定は 3.0（API 実効値）**。gradio 初期値 4.0 は説明文の注記に残す。`IRODORI_DEFAULT_CFG_SCALE_TEXT` を動かすと caption 側の既定も連動する副作用を `/params` の note に書く。
 34. 〔設計席の判断〕**GPU 同定は UUID**（`torch.cuda.get_device_properties(i).uuid`・`nvidia-smi -L` は NVIDIA 専用の高速路）。`CUDA_VISIBLE_DEVICES` に UUID 形式（`GPU-xxxx`）を渡す経路は調査に実射記録が無いので、便 B（RTX 実射）で確かめてから採否を決める。それまでランチャは UUID→index 解決＋`cuda:N` で指定する。
+
+### 便 P（プリセット話者）の事実と判断 — 2026-09-05
+
+35. **一次 wav は 12 名中 11 名を席が生成した**（VOICEVOX 2・COEIROINK 5・VOICEROID2 4）。VOICEROID2 は本体に wav 取り出しが無いため `tools/preset-voices/Vr2SaveTool/`（net48 x86・Codeer.Friendly・音声保存ボタン→WPF 設定窓→Win32 保存ダイアログ）を新規実装して通した。一次は再生成しても sha256 が一致（決定的）。弦巻マキ（英）は裁定 27 のとおり司令官提供待ち。
+36. **二次 wav は私設サーバ（8090・`.venv-rocm` を読むだけ・ROCm bf16・v4.1-Small・seed 1234・40 steps）で生成**。稼働機の 8088 と C:/irodori-TTS-server/ は無改変（上流に .pyc 0 件を確認）。生成物は再現的（前席と 1 バイトも違わない）。
+37. **`voices/presets/*.wav`（席が Irodori で生成した二次ボイス）はリポにコミットする**（設計席の判断）。裁定 22 の「第三者バイナリ」には当たらない＝自作の生成物・配布物の同梱資産（11 本・32 MB）。一次 wav（各エンジンの出力）は `N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/primary/` に保全しリポには入れない。
+38. **プリセットの音量は正規化しない**。参照用途では上流が参照クリップごとに −16 dB へ正規化する（`ref_normalize_db=-16.0`・サーバの info 行で確認）ので、檔の RMS のばらつき（−16.6〜−23.8 dBFS）は合成結果に効かない。UI の試聴再生でだけ差が出る＝ランチャ側で再生時に揃えるかは便 D で判断。
+39. **末尾切れの是正**＝検分席の所見（採用 11 本中 7 本の末尾 50 ms の RMS が全体 RMS を超える＝語の途中で終端）。同じ本文・同じ参照で seed を変え、末尾が減衰する射を機械的に採る（`tools/preset-voices/verify_wavs.py` に末尾判定を足す）。参照は 30 s 版を既定とし、司令官の試聴（`docs/preset-voices-listening.md`）で話者ごとに 10 s 版へ差し替えてよい。
+40. 便 C の暖機設計に効く実測（二次席）＝私設サーバの読込 18.98 s・spawn→ready 21.1 s。**未見の参照ボイス形状に当たるたびに decode_latent が跳ねる**（VOICEVOX/COEIROINK 参照で 0.6〜1.0 s → 最初の VOICEROID2 参照で 14.8 s・MIOpen の workspace 不足警告と同時）。暖機は no_ref 短文だけでなく、利用者が実際に使う参照ボイスで 1 本ずつ撃つのが確実。146 字の本文は `chunk_min_chars=80` で 2 分割される。
