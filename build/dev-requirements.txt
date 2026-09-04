@@ -1,0 +1,52 @@
+# build/dev-requirements.txt -- development / contract-test dependencies (CPU only).
+#
+# THE PRIMARY PATH IS build/dev-venv.ps1, WHICH DOES NOT READ THIS FILE.
+# It installs build/out/ledger-log/requirements-<variant>.pruned.txt with
+# --no-deps, so the dev box holds exactly what ledger/runtime-cpu.json pins and
+# the two cannot drift.  Use that whenever the ledger has been generated.
+#
+# This file is the fallback: the smallest set that lets tests/contract/ run when
+# build/out/ledger-log/ does not exist yet (a fresh clone, or seat S2 working
+# before make-ledger.ps1 has been run).  It was the set used to build .venv-dev
+# and prove A-5 on 2026-09-04.  Resolve with uv:
+#
+#     uv venv --python 3.12 .venv-dev
+#     uv pip install --python .venv-dev -r build/dev-requirements.txt
+#
+# uv's default index strategy is "first-index": torch and torchaudio are taken
+# from the PyTorch CPU index below, everything else falls through to PyPI.
+# (pip merges indexes instead and may pick a CUDA build -- use uv.)
+--index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://pypi.org/simple
+
+# --- runtime imports of upstream/Irodori-TTS-Server/src/irodori_openai_tts ---
+fastapi>=0.115.0
+pydantic-settings>=2.6.0
+python-dotenv>=1.0.1
+python-multipart>=0.0.9
+soundfile>=0.13.1
+uvicorn[standard]>=0.32.0
+
+# --- runtime imports of upstream/Irodori-TTS/irodori_tts (import time only) ---
+# torch/torchaudio are pinned by both upstream pyproject.toml files to >=2.10,<2.11.
+torch>=2.10.0,<2.11.0
+torchaudio>=2.10.0,<2.11.0
+huggingface-hub>=0.34.0
+safetensors>=0.7.0
+pyyaml>=6.0
+tqdm>=4.67.3
+
+# --- test tools ---
+httpx>=0.27.0
+pytest>=8.0.0
+
+# NOT installed here, on purpose:
+#   * transformers / sentencepiece / silentcipher / dacvae / numba / llvmlite
+#     are imported lazily (only when a checkpoint is actually loaded), so the
+#     contract tests in tests/contract/ do not need them.  Real CPU synthesis
+#     (acceptance A-4) runs against build/out/runtime-cpu/, which is assembled
+#     from ledger/runtime-cpu.json -- not from this file.
+#   * torchcodec is deliberately dropped (see ledger/README.md); patches/0001
+#     keeps torchaudio's load/save working without it.
+#   * gradio / wandb / datasets / torchdata / peft / matplotlib / IPython /
+#     jedi / pandas / pyarrow are dropped for the same reason.

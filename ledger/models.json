@@ -1,0 +1,225 @@
+{
+  "schema": 1,
+  "name": "models",
+  "generated": "2026-09-04",
+  "generator": "build/make-ledger.ps1",
+  "sha256_source": "huggingface api /api/models/<repo>/tree/<rev>: lfs.oid for LFS files (that field is the sha256), git blob sha1 otherwise",
+  "notes": [
+    "silentcipher calls snapshot_download(repo_id=\"sony/silentcipher\") with no allow_patterns, so the whole repo is fetched (upstream silentcipher/server.py:475).",
+    "sony/silentcipher stores its .ckpt files as ordinary git blobs, not LFS, so only a git blob sha1 is available from the API."
+  ],
+  "repos": [
+    {
+      "kind": "hf-repo",
+      "role": "checkpoint",
+      "repo": "Aratako/Irodori-TTS-v4.1-Small",
+      "revision": "2b28324dc263ed5e6638b3cf3dd94c82ead07b4b",
+      "head_at_generation": "2b28324dc263ed5e6638b3cf3dd94c82ead07b4b",
+      "hf_cache_dir": "models--Aratako--Irodori-TTS-v4.1-Small",
+      "file_count": 6,
+      "total_bytes": 3071026631,
+      "files": [
+        {
+          "path": ".gitattributes",
+          "size": 1519,
+          "sha256": null,
+          "git_blob_sha1": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small/resolve/2b28324dc263ed5e6638b3cf3dd94c82ead07b4b/.gitattributes"
+        },
+        {
+          "path": "EMOJI_ANNOTATIONS.md",
+          "size": 3403,
+          "sha256": null,
+          "git_blob_sha1": "8892270bd49c55756f109b52b6c085f731b27b44",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small/resolve/2b28324dc263ed5e6638b3cf3dd94c82ead07b4b/EMOJI_ANNOTATIONS.md"
+        },
+        {
+          "path": "README.md",
+          "size": 6950,
+          "sha256": null,
+          "git_blob_sha1": "d19a88e9906d393a7a6cd12c7dce9d2ffa8c07e9",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small/resolve/2b28324dc263ed5e6638b3cf3dd94c82ead07b4b/README.md"
+        },
+        {
+          "path": "model.safetensors",
+          "size": 3064295596,
+          "sha256": "c85de88c01700cb53538e706f128ebcb1b8513ad21d7d0e75f58bc82cdbf89f6",
+          "git_blob_sha1": "a05806b2a21742e82a3a51cdf04e6a70d00077d9",
+          "verify": "sha256",
+          "url": "https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small/resolve/2b28324dc263ed5e6638b3cf3dd94c82ead07b4b/model.safetensors"
+        },
+        {
+          "path": "tokenizer/tokenizer.json",
+          "size": 6718495,
+          "sha256": null,
+          "git_blob_sha1": "1b9a8b7e5e8d37174e6b9e9655cdbd0c9b456af7",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small/resolve/2b28324dc263ed5e6638b3cf3dd94c82ead07b4b/tokenizer/tokenizer.json"
+        },
+        {
+          "path": "tokenizer/tokenizer_config.json",
+          "size": 668,
+          "sha256": null,
+          "git_blob_sha1": "e59d0be2a7fd2bc7f7b85136e46c65a41c1c3634",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small/resolve/2b28324dc263ed5e6638b3cf3dd94c82ead07b4b/tokenizer/tokenizer_config.json"
+        }
+      ]
+    },
+    {
+      "kind": "hf-repo",
+      "role": "codec",
+      "repo": "Aratako/Semantic-DACVAE-Japanese-32dim",
+      "revision": "47376ee24834d7a05a48ebabfe3cde29b3c5e214",
+      "head_at_generation": "47376ee24834d7a05a48ebabfe3cde29b3c5e214",
+      "hf_cache_dir": "models--Aratako--Semantic-DACVAE-Japanese-32dim",
+      "file_count": 3,
+      "total_bytes": 429626712,
+      "files": [
+        {
+          "path": ".gitattributes",
+          "size": 1519,
+          "sha256": null,
+          "git_blob_sha1": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/Aratako/Semantic-DACVAE-Japanese-32dim/resolve/47376ee24834d7a05a48ebabfe3cde29b3c5e214/.gitattributes"
+        },
+        {
+          "path": "README.md",
+          "size": 5128,
+          "sha256": null,
+          "git_blob_sha1": "d97a7ea23c0653bc8d323e53d7d22b90bd1ee29b",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/Aratako/Semantic-DACVAE-Japanese-32dim/resolve/47376ee24834d7a05a48ebabfe3cde29b3c5e214/README.md"
+        },
+        {
+          "path": "weights.pth",
+          "size": 429620065,
+          "sha256": "db120339c5ee7eca1912cdf29bc612b947a0808e69c3cebfb4936b45a762c1d5",
+          "git_blob_sha1": "3a92e126da9ed6a54af8b1da5a7daac23646d118",
+          "verify": "sha256",
+          "url": "https://huggingface.co/Aratako/Semantic-DACVAE-Japanese-32dim/resolve/47376ee24834d7a05a48ebabfe3cde29b3c5e214/weights.pth"
+        }
+      ]
+    },
+    {
+      "kind": "hf-repo",
+      "role": "watermark",
+      "repo": "sony/silentcipher",
+      "revision": "a1c4d021905e0dc5b24be5f68db5fc4dba410ee1",
+      "head_at_generation": "a1c4d021905e0dc5b24be5f68db5fc4dba410ee1",
+      "hf_cache_dir": "models--sony--silentcipher",
+      "file_count": 13,
+      "total_bytes": 70328696,
+      "files": [
+        {
+          "path": ".gitattributes",
+          "size": 1519,
+          "sha256": null,
+          "git_blob_sha1": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/.gitattributes"
+        },
+        {
+          "path": "16_khz/97561_iteration/dec_c.ckpt",
+          "size": 2008794,
+          "sha256": "7581ba4e4282f88d15b972fd8b7cb45e280e7238837a5e4c8b009478a1784cd7",
+          "git_blob_sha1": "788b72399a21cc6116a56b2feaed36332c0ef3bd",
+          "verify": "sha256",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/16_khz/97561_iteration/dec_c.ckpt"
+        },
+        {
+          "path": "16_khz/97561_iteration/dec_m_0.ckpt",
+          "size": 9543554,
+          "sha256": "bf443c7298f6994284082c0039bf824c70560cd437869bf6f2643b1482fcba71",
+          "git_blob_sha1": "07acb4ae25fbc4283dae985955dd9239638edf89",
+          "verify": "sha256",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/16_khz/97561_iteration/dec_m_0.ckpt"
+        },
+        {
+          "path": "16_khz/97561_iteration/enc_c.ckpt",
+          "size": 170429,
+          "sha256": "b6473d71ddf69262a0cbe51aa833d47fad6ba36436e4434392e633069093bb27",
+          "git_blob_sha1": "5c3cb92f83419476a51410c3e247715c3243c2d8",
+          "verify": "sha256",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/16_khz/97561_iteration/enc_c.ckpt"
+        },
+        {
+          "path": "16_khz/97561_iteration/hparams.yaml",
+          "size": 1556,
+          "sha256": null,
+          "git_blob_sha1": "a5d7d441945f84f89dba103dcfd726e4d0e00119",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/16_khz/97561_iteration/hparams.yaml"
+        },
+        {
+          "path": "16_khz/97561_iteration/opt.ckpt",
+          "size": 23396974,
+          "sha256": "6f7563f8a08e3a4653dc38e8abe8236c4478c51cd51bff5165cfd3c078af9b67",
+          "git_blob_sha1": "b13eacb19e88528651da9289be8f35634d429f2a",
+          "verify": "sha256",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/16_khz/97561_iteration/opt.ckpt"
+        },
+        {
+          "path": "44_1_khz/73999_iteration/dec_c.ckpt",
+          "size": 2008794,
+          "sha256": "c23b57635172b2fbd3a8531d15ba76b5885a10d0fe902ccb823c521c56041b33",
+          "git_blob_sha1": "ce74bc63e15f2b9b363d43213569f78eecc9612a",
+          "verify": "sha256",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/44_1_khz/73999_iteration/dec_c.ckpt"
+        },
+        {
+          "path": "44_1_khz/73999_iteration/dec_m_0.ckpt",
+          "size": 9554818,
+          "sha256": "829540c058270d29788f05294894d45bf436e44add0e1099422242ebb94b7088",
+          "git_blob_sha1": "4e06843aa6fa68e208598f67da07095ba5c4f367",
+          "verify": "sha256",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/44_1_khz/73999_iteration/dec_m_0.ckpt"
+        },
+        {
+          "path": "44_1_khz/73999_iteration/enc_c.ckpt",
+          "size": 184765,
+          "sha256": "ff64f80d2391fdfc888e4103c499be4a2c958e59626587a1eab6db93204814c7",
+          "git_blob_sha1": "928873b36fbbc803633edf39b071247df03b5efc",
+          "verify": "sha256",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/44_1_khz/73999_iteration/enc_c.ckpt"
+        },
+        {
+          "path": "44_1_khz/73999_iteration/hparams.yaml",
+          "size": 1474,
+          "sha256": null,
+          "git_blob_sha1": "41c69dfaabdf288dd8ecc8f0aa59f73d211537e8",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/44_1_khz/73999_iteration/hparams.yaml"
+        },
+        {
+          "path": "44_1_khz/73999_iteration/opt.ckpt",
+          "size": 23448174,
+          "sha256": "f129597d7b5459be0455c43d9df12b6a842cbb95344024ebe297fb2516cfd6d1",
+          "git_blob_sha1": "9c972c7ed9a8997c03d0bcc9dc6a238134a1024c",
+          "verify": "sha256",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/44_1_khz/73999_iteration/opt.ckpt"
+        },
+        {
+          "path": "README.md",
+          "size": 7794,
+          "sha256": null,
+          "git_blob_sha1": "ae92acaa0ad71ff4061b9c955070262a24375073",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/README.md"
+        },
+        {
+          "path": "config.json",
+          "size": 51,
+          "sha256": null,
+          "git_blob_sha1": "55945ba983190a14e19267f19b745da44d14b87f",
+          "verify": "git-blob-sha1",
+          "url": "https://huggingface.co/sony/silentcipher/resolve/a1c4d021905e0dc5b24be5f68db5fc4dba410ee1/config.json"
+        }
+      ]
+    }
+  ]
+}

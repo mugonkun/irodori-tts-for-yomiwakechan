@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "name": "runtime-rocm-gfx1151",
+  "generated": null,
+  "generator": "build/make-ledger.ps1 (template only -- not yet resolved)",
+  "status": "template",
+  "python": "3.12.10",
+  "python_tag": "cp312",
+  "platform_tag": "win_amd64",
+  "torch_index": "https://stable.repo.amd.com/rocm/whl-next/",
+  "seed": {
+    "note": "Facts from the running Radeon box, read-only (decisions.md 24). Convoy C fills this in.",
+    "torch": "torch==2.13.0+rocm10.0.0",
+    "torchaudio": "torchaudio==2.11.0.2+rocm10.0.0",
+    "torch_extra": "torch[device-gfx1151]",
+    "hip": "7.15",
+    "sentencepiece": "sentencepiece==0.2.1"
+  },
+  "count": 0,
+  "items": []
+}

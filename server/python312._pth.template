@@ -1,0 +1,6 @@
+python312.zip
+.
+@RUNTIME_DIR@/site-packages
+@APP_DIR@/server
+@APP_DIR@/server/upstream/Irodori-TTS
+@APP_DIR@/server/upstream/Irodori-TTS-Server/src

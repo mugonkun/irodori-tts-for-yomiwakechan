@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: irodori-tts-for-yomiwakechan <noreply@example.invalid>
+Date: Fri, 4 Sep 2026 00:00:00 +0900
+Subject: [PATCH] audio io: also fall back to soundfile on ImportError
+
+torchaudio 2.10 routes torchaudio.load()/save() through TorchCodec and raises
+ImportError -- not RuntimeError -- when torchcodec is not installed:
+
+    torchaudio/_torchcodec.py:80-86    (load_with_torchcodec)
+    torchaudio/_torchcodec.py:244-250  (save_with_torchcodec)
+
+        try:
+            from torchcodec.decoders import AudioDecoder
+        except ImportError as e:
+            raise ImportError(
+                "TorchCodec is required for load_with_torchcodec. "
+                "Please install torchcodec to use this function."
+            ) from e
+
+The three soundfile fallbacks in this repository only catch RuntimeError, so on
+a torchcodec-free install reference-audio loading and wav writing abort with
+ImportError instead of taking the fallback that is already sitting right there.
+Reproduced with torch 2.10.0+cpu / torchaudio 2.10.0+cpu on Windows 11,
+CPython 3.12.14:
+
+    >>> torchaudio.load("nope.wav")
+    ImportError: TorchCodec is required for load_with_torchcodec. ...
+    >>> torchaudio.save("nope.wav", torch.zeros(1, 10), 16000)
+    ImportError: TorchCodec is required for save_with_torchcodec. ...
+
+Widening the three except clauses to (RuntimeError, ImportError) changes
+nothing where torchcodec is installed -- that path never raises ImportError --
+and lets the existing soundfile fallback do its job where it is not.
+
+Base: 8224dafb46d0aba89209a8f905f1cb7e3299d9c1
+---
+diff --git a/irodori_tts/codec.py b/irodori_tts/codec.py
+index f1d4067..2a1bc1f 100644
+--- a/irodori_tts/codec.py
++++ b/irodori_tts/codec.py
+@@ -269,7 +269,7 @@ class DACVAECodec:
+     def encode_file(self, path: str | Path) -> torch.Tensor:
+         try:
+             wav, sr = torchaudio.load(str(path))
+-        except RuntimeError:
++        except (RuntimeError, ImportError):
+             import soundfile as sf
+ 
+             data, sr = sf.read(str(path), dtype="float32")
+diff --git a/irodori_tts/inference_runtime.py b/irodori_tts/inference_runtime.py
+index 8044bba..1175eb4 100644
+--- a/irodori_tts/inference_runtime.py
++++ b/irodori_tts/inference_runtime.py
+@@ -1515,7 +1515,7 @@ def clear_cached_runtime() -> None:
+ def _load_audio(path: str | Path) -> tuple[torch.Tensor, int]:
+     try:
+         return torchaudio.load(str(path))
+-    except RuntimeError:
++    except (RuntimeError, ImportError):
+         import soundfile as sf
+ 
+         data, sr = sf.read(str(path), dtype="float32")
+@@ -1533,7 +1533,7 @@ def save_wav(path: str | Path, audio: torch.Tensor, sample_rate: int) -> Path:
+     audio_cpu = audio.detach().to(device="cpu", dtype=torch.float32)
+     try:
+         torchaudio.save(str(out_path), audio_cpu, sample_rate)
+-    except RuntimeError:
++    except (RuntimeError, ImportError):
+         import soundfile as sf
+ 
+         audio_np = audio_cpu.squeeze(0).numpy() if audio_cpu.shape[0] == 1 else audio_cpu.T.numpy()
+-- 
+2.51.0
+

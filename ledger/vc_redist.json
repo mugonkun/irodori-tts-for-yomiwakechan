@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "name": "vc-redist",
+  "generated": "2026-09-04",
+  "generator": "build/make-ledger.ps1",
+  "items": [
+    {
+      "kind": "installer",
+      "name": "vc_redist.x64",
+      "version": "14.44.35211.0",
+      "url": "https://download.visualstudio.microsoft.com/download/pr/9d270333-8b7b-4f96-9458-6fcdb2ec0b25/CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B/VC_redist.x64.exe",
+      "fallback_url": "https://aka.ms/vs/17/release/vc_redist.x64.exe",
+      "sha256": "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b",
+      "size": 25635768,
+      "sha256_source": "downloaded from the pinned URL and hashed by build/make-ledger.ps1",
+      "sha256_in_url": "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b",
+      "sha256_matches_url_segment": true,
+      "silent_args": [
+        "/install",
+        "/quiet",
+        "/norestart"
+      ],
+      "docs_url": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
+      "license": "Microsoft Software License Terms (Visual Studio) -- Distributable Code",
+      "license_url": "https://visualstudio.microsoft.com/license-terms/",
+      "notes": [
+        "Needed because python-embed ships vcruntime140.dll and vcruntime140_1.dll but not msvcp140.dll, and torch/lib/c10.dll imports MSVCP140.dll (research/lab/notes/22 section 3b).",
+        "The aka.ms link floats to whatever the current release is; url above is the version-pinned direct link that aka.ms resolved to on the generation date."
+      ]
+    }
+  ]
+}

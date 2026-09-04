@@ -7,3 +7,15 @@
 *.iss  text eol=crlf
 # research/ は調査便の写し＝バイト列をそのまま保存（改行の正規化をしない）
 research/** -text
+# patches/*.patch は LF 固定。`* text=auto` のままだと core.autocrlf=true の機体で再 clone 時に
+# CRLF になり、「LF の写し + CRLF の差分」だけが `git apply` に当たらない（patches/README.md の表）。
+# tests/contract/test_patch_file.py::test_patch_file_is_lf_only もこの 1 行が無いと再 clone 後に落ちる。
+*.patch -text
+# licenses/ の許諾文は「原文とバイト同一」であることが証拠（licenses/README.md §1 が sha256 と
+# バイト数を載せている）。`* text=auto` のままだと core.autocrlf=true の機体で再 clone した時点で
+# CRLF になり、載せた sha256 が全部嘘になる（しかも build/check-licenses.ps1 の逐語比較は改行を
+# 正規化してから比べるので気づけない）。build/assemble-app.ps1 はこの木をそのまま配布物へ写す。
+licenses/**/LICENSE      -text
+licenses/**/LICENSE.*    -text
+licenses/**/COPYING      -text
+licenses/**/NOTICE       -text
