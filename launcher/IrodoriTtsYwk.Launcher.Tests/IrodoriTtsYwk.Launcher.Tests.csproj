@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>IrodoriTtsYwk.Launcher.Tests</RootNamespace>
+    <!-- 参照先が WPF／WinForms のアセンブリなので、同じ土台を引く -->
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <!--
+    テストは**純ロジックだけ**（依頼文の作法）。継ぎ目は public コンストラクタで、
+    InternalsVisibleTo は使わない（本体 yomiwakechan2 の流儀）。
+    版は機体の NuGet キャッシュに在る物に固定＝外に出ずに復元できる。
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\IrodoriTtsYwk.Launcher\IrodoriTtsYwk.Launcher.csproj" />
+  </ItemGroup>
+
+</Project>

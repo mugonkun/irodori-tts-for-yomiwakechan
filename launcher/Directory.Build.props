@@ -1,0 +1,40 @@
+<Project>
+
+  <!--
+    launcher/ の共通設定（便 D・骨組み席・2026-09-05）。
+    正典＝decisions.md（51＝SelfContained publish・52＝日本語 UI）。設計＝docs/design/ben-d-launcher.md。
+
+    ImplicitUsings は **disable**。UseWPF と UseWindowsForms（トレイの NotifyIcon＝裁定 52 の常駐）を
+    同時に有効にすると、暗黙 using が入る System.Windows.Forms と明示 using の System.Windows で
+    Application・MessageBox・Point・Color 等が曖昧参照になる。using は 1 檔ずつ書く。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Platforms>AnyCPU</Platforms>
+    <EnableDefaultNoneItems>true</EnableDefaultNoneItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- 警告 0 を目指す（-warnaserror は付けない＝依頼文の作法） -->
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <!--
+    版の一元定義（本体 yomiwakechan2.csproj の型を倣う）。AppDisplayVersion（v 前置の表示形）が
+    唯一の定義箇所で、数値版はここから v を剥いで導出する。外部台本（build/release-build.ps1）は
+    この行を機械読取する。IncludeSourceRevisionInInformationalVersion=false は SDK 既定の
+    「+コミット SHA」付加を止めて表示版を素の v0.1.0 に保つため。
+    0.1.0 は server/ywk_server.py の YWK_VERSION と揃えてある（/ywk/status.version と同じ数字）。
+  -->
+  <PropertyGroup>
+    <AppDisplayVersion>v0.1.0</AppDisplayVersion>
+    <Version>$(AppDisplayVersion.TrimStart('v'))</Version>
+    <InformationalVersion>$(AppDisplayVersion)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Product>irodori-TTS for 読み分けちゃん</Product>
+    <Company>irodori-tts-for-yomiwakechan</Company>
+    <Copyright>非公式のランチャです。Aratako 氏および Irodori-TTS とは無関係です。</Copyright>
+  </PropertyGroup>
+
+</Project>

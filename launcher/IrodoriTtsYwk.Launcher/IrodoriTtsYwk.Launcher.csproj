@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <!-- トレイ常駐は System.Windows.Forms.NotifyIcon（依頼文の作法・WPF に相当物が無い） -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>IrodoriTtsYwk.Launcher</RootNamespace>
+    <AssemblyName>IrodoriTtsYwk.Launcher</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+
+  <!--
+    試し撃ちの再生（裁定 52＝NAudio・MIT・再生時に −16 dBFS 相当へ揃える）。
+    メタパッケージ NAudio ではなく WaveOutEvent を含む NAudio.WinMM（＋依存の NAudio.Core）だけを
+    引く＝本体 yomiwakechan2 と同じ選び方・同じ版（2.2.1）。
+  -->
+  <ItemGroup>
+    <PackageReference Include="NAudio.WinMM" Version="2.2.1" />
+  </ItemGroup>
+
+  <!--
+    publish 経路限定の上流 pin 焼き込み（本体の TitleSuffix／ExpiryDate と同型）。
+    build/release-build.ps1 が -p:UpstreamIrodoriTts=8224daf -p:UpstreamIrodoriTtsServer=841fb7c で
+    渡したときだけ AssemblyMetadata として embed され、Contracts/AppVersion が実行時に読む。
+    未指定（通常の Debug/Release ビルド全部）は条件不成立＝属性自体が embed されず、
+    AppVersion.UpstreamIrodoriTts は null（＝開発ビルド）を返す。
+    値をリポに書かないのは、正典が decisions.md 3 と ledger/*.json の upstream 欄だからである
+    （二重定義を作らない＝release-build.ps1 が台帳から読んで渡す）。
+  -->
+  <ItemGroup Condition="'$(UpstreamIrodoriTts)' != ''">
+    <AssemblyMetadata Include="UpstreamIrodoriTts" Value="$(UpstreamIrodoriTts)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UpstreamIrodoriTtsServer)' != ''">
+    <AssemblyMetadata Include="UpstreamIrodoriTtsServer" Value="$(UpstreamIrodoriTtsServer)" />
+  </ItemGroup>
+
+</Project>

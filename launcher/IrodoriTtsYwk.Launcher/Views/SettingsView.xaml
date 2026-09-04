@@ -1,0 +1,174 @@
+<UserControl x:Class="IrodoriTtsYwk.Launcher.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             AutomationProperties.AutomationId="SettingsView">
+  <!--
+    設定（設計書 §3・§5・裁定 65・67・69）。編集は写しの上で行い「適用」で初めて書く。
+    変種の自動切替はしない（裁定 4）＝ドライバが下限に届かないときも勧めるだけ。
+  -->
+  <UserControl.Resources>
+    <Style x:Key="Head" TargetType="TextBlock">
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Margin" Value="0,14,0,6" />
+    </Style>
+    <Style x:Key="Note" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="#666666" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="0,2,0,0" />
+    </Style>
+  </UserControl.Resources>
+
+  <DockPanel Margin="12">
+
+    <Border DockPanel.Dock="Bottom" Padding="0,10,0,0">
+      <StackPanel>
+        <WrapPanel>
+          <Button Content="適用" Padding="18,5" Margin="0,0,8,0"
+                  AutomationProperties.AutomationId="SettingsApplyButton"
+                  Command="{Binding ApplyCommand}" />
+          <Button Content="取り消し" Padding="14,5"
+                  AutomationProperties.AutomationId="SettingsRevertButton"
+                  Command="{Binding RevertCommand}" />
+        </WrapPanel>
+        <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="SettingsMessageText"
+                   Text="{Binding Message, Mode=OneWay}" />
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <StackPanel MaxWidth="720" HorizontalAlignment="Left">
+
+        <TextBlock Text="GPU" Style="{StaticResource Head}" Margin="0,0,0,6" />
+        <DockPanel>
+          <Button DockPanel.Dock="Right" Content="数え直す" Padding="12,3" Margin="8,0,0,0"
+                  AutomationProperties.AutomationId="SettingsRefreshGpuButton"
+                  Command="{Binding RefreshGpusCommand}" />
+          <ComboBox AutomationProperties.AutomationId="SettingsGpuCombo"
+                    ItemsSource="{Binding Gpus}"
+                    SelectedItem="{Binding SelectedGpu, Mode=TwoWay}"
+                    DisplayMemberPath="Label" />
+        </DockPanel>
+        <TextBlock Style="{StaticResource Note}"
+                   AutomationProperties.AutomationId="SettingsGpuMessageText"
+                   Text="{Binding GpuMessage, Mode=OneWay}" />
+        <TextBlock Style="{StaticResource Note}"
+                   AutomationProperties.AutomationId="SettingsDriverText"
+                   Text="{Binding DriverText, Mode=OneWay}" />
+        <TextBlock Style="{StaticResource Note}"
+                   Text="選んだ GPU は UUID で覚えます（起動のたびに番号へ解決します）。" />
+
+        <TextBlock Text="実行系の種類（変種）" Style="{StaticResource Head}" />
+        <ComboBox AutomationProperties.AutomationId="SettingsVariantCombo"
+                  ItemsSource="{Binding VariantChoices}"
+                  SelectedItem="{Binding Variant, Mode=TwoWay}" />
+        <TextBlock Style="{StaticResource Note}"
+                   AutomationProperties.AutomationId="SettingsVariantNameText"
+                   Text="{Binding VariantDisplayName, Mode=OneWay}" />
+
+        <TextBlock Text="精度（上級者）" Style="{StaticResource Head}" />
+        <ComboBox AutomationProperties.AutomationId="SettingsPrecisionCombo"
+                  ItemsSource="{Binding PrecisionChoices}"
+                  SelectedItem="{Binding PrecisionChoice, Mode=TwoWay}"
+                  IsEnabled="{Binding PrecisionEnabled, Mode=OneWay}" />
+        <TextBlock Style="{StaticResource Note}"
+                   AutomationProperties.AutomationId="SettingsPrecisionNoteText"
+                   Text="{Binding PrecisionNote, Mode=OneWay}" />
+
+        <TextBlock Text="ポート" Style="{StaticResource Head}" />
+        <TextBox Width="120" HorizontalAlignment="Left"
+                 AutomationProperties.AutomationId="SettingsPortBox"
+                 Text="{Binding Port, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+        <TextBlock Style="{StaticResource Note}"
+                   AutomationProperties.AutomationId="SettingsPortNoteText"
+                   Text="{Binding PortNote, Mode=OneWay}" />
+
+        <TextBlock Text="暖機" Style="{StaticResource Head}" />
+        <CheckBox Content="サーバが待機になったら暖機を撃つ"
+                  AutomationProperties.AutomationId="SettingsWarmupCheck"
+                  IsChecked="{Binding WarmupOnStart, Mode=TwoWay}" />
+        <TextBlock Margin="0,8,0,2" Text="段（秒・カンマ区切り）" />
+        <TextBox AutomationProperties.AutomationId="SettingsWarmupStagesBox"
+                 Text="{Binding WarmupStagesInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+        <TextBlock Margin="0,8,0,2" Text="撃つ話者（カンマ区切り・空＝段だけ）" />
+        <TextBox AutomationProperties.AutomationId="SettingsWarmupVoicesBox"
+                 Text="{Binding WarmupVoicesInput, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+        <TextBlock Style="{StaticResource Note}"
+                   Text="暖機の最中でも合成はできます（本物の要求が必ず勝ち、走っている 1 射の分だけ待たされます）。" />
+
+        <TextBlock Text="参照潜在キャッシュ" Style="{StaticResource Head}" />
+        <CheckBox Content="話者の登録時に参照潜在（.pt）を焼く"
+                  IsThreeState="True"
+                  AutomationProperties.AutomationId="SettingsPrecomputeCheck"
+                  IsChecked="{Binding PrecomputeOnStart, Mode=TwoWay}" />
+        <TextBlock Style="{StaticResource Note}"
+                   AutomationProperties.AutomationId="SettingsPrecomputeNoteText"
+                   Text="{Binding PrecomputeNote, Mode=OneWay}" />
+        <TextBlock Style="{StaticResource Note}"
+                   Text="中間（■）＝変種の既定に任せる・チェック＝必ず焼く・空＝焼かない。" />
+
+        <TextBlock Text="GPU キャッシュの解放間隔" Style="{StaticResource Head}" />
+        <TextBox Width="120" HorizontalAlignment="Left"
+                 AutomationProperties.AutomationId="SettingsEmptyCacheBox"
+                 Text="{Binding EmptyCacheInterval, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+        <TextBlock Style="{StaticResource Note}"
+                   AutomationProperties.AutomationId="SettingsEmptyCacheNoteText"
+                   Text="{Binding EmptyCacheNote, Mode=OneWay}" />
+
+        <TextBlock Text="起動" Style="{StaticResource Head}" />
+        <CheckBox Content="ランチャの起動と同時にサーバを起こす"
+                  AutomationProperties.AutomationId="SettingsAutoStartCheck"
+                  IsChecked="{Binding AutoStartServer, Mode=TwoWay}" />
+        <CheckBox Margin="0,6,0,0" Content="GPU メモリの欄を状態タブに出す"
+                  AutomationProperties.AutomationId="SettingsShowMemoryCheck"
+                  IsChecked="{Binding ShowMemoryPanel, Mode=TwoWay}" />
+        <TextBlock Margin="0,8,0,2" Text="待機になるまでの上限（秒・0＝変種の既定）" />
+        <TextBox Width="120" HorizontalAlignment="Left"
+                 AutomationProperties.AutomationId="SettingsReadyTimeoutBox"
+                 Text="{Binding ReadyTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+        <TextBlock Style="{StaticResource Note}"
+                   AutomationProperties.AutomationId="SettingsReadyTimeoutNoteText"
+                   Text="{Binding ReadyTimeoutNote, Mode=OneWay}" />
+
+        <TextBlock Text="データの置き場" Style="{StaticResource Head}" />
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="データ" Margin="0,0,10,4" Foreground="#555555" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Margin="0,0,0,4" TextTrimming="CharacterEllipsis"
+                     AutomationProperties.AutomationId="SettingsDataDirText"
+                     Text="{Binding DataDirText, Mode=OneWay}" />
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="モデル" Margin="0,0,10,4" Foreground="#555555" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Margin="0,0,0,4" TextTrimming="CharacterEllipsis"
+                     AutomationProperties.AutomationId="SettingsModelDirText"
+                     Text="{Binding ModelDirText, Mode=OneWay}" />
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="話者" Margin="0,0,10,4" Foreground="#555555" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Margin="0,0,0,4" TextTrimming="CharacterEllipsis"
+                     AutomationProperties.AutomationId="SettingsVoicesDirText"
+                     Text="{Binding VoicesDirText, Mode=OneWay}" />
+          <TextBlock Grid.Row="3" Grid.Column="0" Text="実行系" Margin="0,0,10,4" Foreground="#555555" />
+          <TextBlock Grid.Row="3" Grid.Column="1" Margin="0,0,0,4" TextTrimming="CharacterEllipsis"
+                     AutomationProperties.AutomationId="SettingsRuntimeRootText"
+                     Text="{Binding RuntimeRootText, Mode=OneWay}" />
+          <TextBlock Grid.Row="4" Grid.Column="0" Text="配布樹" Margin="0,0,10,4" Foreground="#555555" />
+          <TextBlock Grid.Row="4" Grid.Column="1" Margin="0,0,0,4" TextTrimming="CharacterEllipsis"
+                     AutomationProperties.AutomationId="SettingsAppDirText"
+                     Text="{Binding AppDirText, Mode=OneWay}" />
+        </Grid>
+        <TextBlock Style="{StaticResource Note}"
+                   Text="置き場の移動はまだ対応していません（配布樹は読むだけ・書き込みはすべてデータの下に入ります）。" />
+
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

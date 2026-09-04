@@ -1,0 +1,124 @@
+<Window x:Class="IrodoriTtsYwk.Launcher.Views.FirstRunWizard"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="初回取得" Height="640" Width="900"
+        MinHeight="480" MinWidth="720"
+        WindowStartupLocation="CenterOwner"
+        AutomationProperties.AutomationId="FirstRunWizard">
+  <!--
+    初回取得（設計書 §6・受け入れ条件 D-5＝利用者操作 ≤ 6）。
+    通知（そのまま表示）→同意→変種→取得→展開→モデル→起動→完了。
+    段の中身は ViewModels/FirstRunViewModel に在る。
+  -->
+  <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+  </Window.Resources>
+
+  <DockPanel Margin="16">
+
+    <!-- 見出し -->
+    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+      <StackPanel Orientation="Horizontal">
+        <TextBlock FontSize="18" FontWeight="Bold"
+                   AutomationProperties.AutomationId="FirstRunStepTitle"
+                   Text="{Binding StepTitle, Mode=OneWay}" />
+        <TextBlock Margin="12,0,0,0" VerticalAlignment="Bottom" Foreground="#666666"
+                   AutomationProperties.AutomationId="FirstRunStepNumber"
+                   Text="{Binding StepNumberText, Mode=OneWay}" />
+      </StackPanel>
+    </StackPanel>
+
+    <!-- 下の操作帯 -->
+    <Border DockPanel.Dock="Bottom" Padding="0,12,0,0">
+      <StackPanel>
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,8"
+                   AutomationProperties.AutomationId="FirstRunMessageText"
+                   Text="{Binding Message, Mode=OneWay}" />
+        <StackPanel Orientation="Horizontal">
+          <Button Content="戻る" Padding="14,5" Margin="0,0,8,0"
+                  AutomationProperties.AutomationId="FirstRunBackButton"
+                  Command="{Binding BackCommand}" />
+          <Button Padding="18,5" Margin="0,0,8,0"
+                  AutomationProperties.AutomationId="FirstRunNextButton"
+                  Content="{Binding NextButtonText, Mode=OneWay}"
+                  Command="{Binding NextCommand}" />
+          <Button Content="中断" Padding="14,5"
+                  AutomationProperties.AutomationId="FirstRunCancelButton"
+                  Command="{Binding CancelCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <Grid>
+      <!-- 通知（そのまま表示＝裁定 46・要約しない） -->
+      <DockPanel Visibility="{Binding IsNoticesStep, Converter={StaticResource BoolToVis}}">
+        <!--
+          通知文を読み込めていないときは同意できない（裁定 46）。
+          印を付けられてしまうと acceptedNoticesSha256 に null が残り、
+          LGPL-2.1 の libsndfile の通知（裁定 28）を出さずに取得へ進む路ができる。
+        -->
+        <CheckBox DockPanel.Dock="Bottom" Margin="0,10,0,0"
+                  Content="上の通知を読み、初回取得で第三者物が自分の機体に入ることに同意します。"
+                  AutomationProperties.AutomationId="FirstRunAcceptCheck"
+                  IsEnabled="{Binding CanAcceptNotices, Mode=OneWay}"
+                  IsChecked="{Binding Accepted, Mode=TwoWay}" />
+        <TextBox AutomationProperties.AutomationId="FirstRunNoticesBox"
+                 IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto"
+                 FontFamily="Consolas, MS Gothic" FontSize="12"
+                 Text="{Binding NoticesText, Mode=OneWay}" />
+      </DockPanel>
+
+      <!-- 変種の選択 -->
+      <StackPanel Visibility="{Binding IsVariantStep, Converter={StaticResource BoolToVis}}">
+        <TextBlock Text="実行系の種類" FontWeight="Bold" Margin="0,0,0,6" />
+        <ComboBox Width="420" HorizontalAlignment="Left"
+                  AutomationProperties.AutomationId="FirstRunVariantCombo"
+                  ItemsSource="{Binding VariantChoices}"
+                  SelectedItem="{Binding Variant, Mode=TwoWay}" />
+        <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="FirstRunVariantNameText"
+                   Text="{Binding VariantDisplayName, Mode=OneWay}" />
+        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="#555555"
+                   AutomationProperties.AutomationId="FirstRunVariantNoteText"
+                   Text="{Binding VariantNote, Mode=OneWay}" />
+        <TextBlock Margin="0,12,0,0" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="FirstRunDriverText"
+                   Text="{Binding DriverText, Mode=OneWay}" />
+        <TextBlock Margin="0,12,0,0" FontWeight="Bold" Text="取得の見積り" />
+        <TextBlock Margin="0,4,0,0" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="FirstRunSizeText"
+                   Text="{Binding SizeText, Mode=OneWay}" />
+        <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Foreground="#666666" FontSize="11"
+                   Text="取得は途中で中断できます。次に開いたときは続きから取り直します（檔ごとに sha256 で検証します）。" />
+      </StackPanel>
+
+      <!-- 取得・展開・モデル・起動 -->
+      <DockPanel Visibility="{Binding IsWorkStep, Converter={StaticResource BoolToVis}}">
+        <StackPanel DockPanel.Dock="Top">
+          <ProgressBar Height="18"
+                       AutomationProperties.AutomationId="FirstRunProgressBar"
+                       Minimum="0" Maximum="1"
+                       Value="{Binding ProgressFraction, Mode=OneWay}" />
+          <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" FontFamily="Consolas, MS Gothic"
+                     AutomationProperties.AutomationId="FirstRunProgressText"
+                     Text="{Binding ProgressText, Mode=OneWay}" />
+        </StackPanel>
+        <ListBox Margin="0,12,0,0"
+                 AutomationProperties.AutomationId="FirstRunTrailList"
+                 ItemsSource="{Binding Trail}" />
+      </DockPanel>
+
+      <!-- 完了 -->
+      <StackPanel Visibility="{Binding IsDoneStep, Converter={StaticResource BoolToVis}}">
+        <TextBlock Text="準備ができました。" FontSize="16" FontWeight="Bold" />
+        <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
+                   Text="「試し撃ち」のタブで、本文と話者を選んで 1 発鳴らしてみてください。" />
+        <ListBox Margin="0,12,0,0" Height="220"
+                 AutomationProperties.AutomationId="FirstRunDoneTrailList"
+                 ItemsSource="{Binding Trail}" />
+      </StackPanel>
+    </Grid>
+
+  </DockPanel>
+</Window>

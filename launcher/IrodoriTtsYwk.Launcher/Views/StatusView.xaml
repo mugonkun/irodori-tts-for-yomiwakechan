@@ -1,0 +1,116 @@
+<UserControl x:Class="IrodoriTtsYwk.Launcher.Views.StatusView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             AutomationProperties.AutomationId="StatusView">
+  <!--
+    状態帯（設計書 §2・裁定 67 ⑶）。束縛先は ViewModels/StatusViewModel。
+    UIA 検分（受け入れ条件 D-7）のために、読む値と押す物すべてに AutomationId を付ける。
+  -->
+  <UserControl.Resources>
+    <Style x:Key="LabelText" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="#555555" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="ValueText" TargetType="TextBlock">
+      <Setter Property="Margin" Value="0,0,24,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+  </UserControl.Resources>
+
+  <Grid Margin="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <!-- 1 行目＝状態と理由（受け入れ条件 D-1＝理由 1 行が必ず出る） -->
+    <Border Grid.Row="0" Padding="12,10" Background="#EEF3FA" CornerRadius="4">
+      <StackPanel>
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Text="状態" Style="{StaticResource LabelText}" />
+          <TextBlock x:Name="StateValue" FontSize="18" FontWeight="Bold"
+                     AutomationProperties.AutomationId="StatusStateText"
+                     Text="{Binding StateText, Mode=OneWay}" />
+          <TextBlock Text="デバイス" Style="{StaticResource LabelText}" Margin="24,0,8,0" />
+          <TextBlock AutomationProperties.AutomationId="StatusDeviceText"
+                     Style="{StaticResource ValueText}"
+                     Text="{Binding DeviceText, Mode=OneWay}" />
+        </StackPanel>
+        <TextBlock AutomationProperties.AutomationId="StatusReasonText"
+                   Margin="0,6,0,0" TextWrapping="Wrap" Foreground="#A03030"
+                   Text="{Binding Reason, Mode=OneWay}" />
+        <TextBlock AutomationProperties.AutomationId="StatusUpstreamMismatchText"
+                   Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#A05000"
+                   Text="{Binding UpstreamMismatch, Mode=OneWay}" />
+        <!-- 選んだ GPU と、実際に載った GPU の突合（裁定 34＝同定は UUID） -->
+        <TextBlock AutomationProperties.AutomationId="StatusGpuMismatchText"
+                   Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#A05000"
+                   Text="{Binding GpuMismatch, Mode=OneWay}" />
+        <!-- 走行中に「適用」した設定は次回の起動から効く（状態帯は走っている個体を名乗る） -->
+        <TextBlock AutomationProperties.AutomationId="StatusSettingsPendingText"
+                   Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#606060"
+                   Text="{Binding SettingsPendingText, Mode=OneWay}" />
+      </StackPanel>
+    </Border>
+
+    <!-- 2 行目＝GPU・変種・接続先（裁定 34＝UUID は下 6 桁だけ出す） -->
+    <WrapPanel Grid.Row="1" Margin="0,10,0,0">
+      <TextBlock Text="GPU" Style="{StaticResource LabelText}" />
+      <TextBlock AutomationProperties.AutomationId="StatusGpuText"
+                 Style="{StaticResource ValueText}" Text="{Binding GpuText, Mode=OneWay}" />
+      <TextBlock Text="変種" Style="{StaticResource LabelText}" />
+      <TextBlock AutomationProperties.AutomationId="StatusVariantText"
+                 Style="{StaticResource ValueText}" Text="{Binding VariantText, Mode=OneWay}" />
+      <TextBlock Text="接続先" Style="{StaticResource LabelText}" />
+      <TextBlock AutomationProperties.AutomationId="StatusEndpointText"
+                 Style="{StaticResource ValueText}" Text="{Binding EndpointText, Mode=OneWay}" />
+    </WrapPanel>
+
+    <!-- 3 行目＝暖機と事前計算（契約 ⑺ 7-2・7-3） -->
+    <WrapPanel Grid.Row="2" Margin="0,6,0,0">
+      <TextBlock Text="暖機" Style="{StaticResource LabelText}" />
+      <TextBlock AutomationProperties.AutomationId="StatusWarmupText"
+                 Style="{StaticResource ValueText}" Text="{Binding WarmupText, Mode=OneWay}" />
+      <TextBlock Text="参照潜在" Style="{StaticResource LabelText}" />
+      <TextBlock AutomationProperties.AutomationId="StatusPrecomputeText"
+                 Style="{StaticResource ValueText}" Text="{Binding PrecomputeText, Mode=OneWay}" />
+    </WrapPanel>
+
+    <!-- 4 行目＝GPU メモリ（裁定 67 ⑵⑶。/ywk/status.memory が無ければ「未対応」） -->
+    <Border x:Name="MemoryPanel" Grid.Row="3" Margin="0,10,0,0" Padding="10,8"
+            Background="#F6F6F6" CornerRadius="4"
+            AutomationProperties.AutomationId="StatusMemoryPanel">
+      <StackPanel>
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Text="GPU メモリ" Style="{StaticResource LabelText}" />
+          <TextBlock AutomationProperties.AutomationId="StatusMemoryText"
+                     Style="{StaticResource ValueText}" Text="{Binding MemoryText, Mode=OneWay}" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+          <TextBlock Text="参照ボイスの概算" Style="{StaticResource LabelText}" />
+          <TextBlock AutomationProperties.AutomationId="StatusVoiceMemoryText"
+                     Style="{StaticResource ValueText}" Text="{Binding VoiceMemoryText, Mode=OneWay}" />
+        </StackPanel>
+        <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#666666" FontSize="11"
+                   Text="wav 参照の話者は載せるたびに 0.7 GB 級を使い、焼いた参照潜在（.pt）は増えません。数字は概算です。" />
+      </StackPanel>
+    </Border>
+
+    <!-- 5 行目＝ログ末尾 20 行（受け入れ条件 D-4＝422 の本文 echo は畳む） -->
+    <DockPanel Grid.Row="4" Margin="0,10,0,0">
+      <TextBlock DockPanel.Dock="Top" Text="ログ（末尾 20 行）" Style="{StaticResource LabelText}" />
+      <TextBox x:Name="LogBox"
+               AutomationProperties.AutomationId="StatusLogBox"
+               IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+               VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+               FontFamily="Consolas, MS Gothic"
+               Text="{Binding LogText, Mode=OneWay}"
+               TextChanged="OnLogChanged" />
+    </DockPanel>
+  </Grid>
+</UserControl>

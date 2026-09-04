@@ -1,0 +1,15 @@
+<Application x:Class="IrodoriTtsYwk.Launcher.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+  <!--
+    ShutdownMode=OnExplicitShutdown＝**トレイ常駐**（裁定 6＝起動主体は配布版）。
+    窓を閉じてもアプリは残り、サーバは走り続ける。終わるのはトレイの「終了」だけ。
+    StartupUri は置かない＝窓は App.OnStartup が作る（単一起動の判定が先に立つため）。
+  -->
+  <Application.Resources>
+    <ResourceDictionary>
+      <!-- 3 席が View の資源をここへ足す（Views/ の ResourceDictionary を MergedDictionaries で） -->
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

@@ -30,8 +30,16 @@
 | `dacvae/LICENSE` | コーデックの由来 `facebookresearch/dacvae` | **Apache-2.0** | **原文** | `https://raw.githubusercontent.com/facebookresearch/dacvae/main/LICENSE` | **2026-09-04**（UTC 13:57） | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` / 11,358 B。**5 リビジョン全部で sha256 一致**（`research/lab/notes/16` (a)）。**§4 も読むこと** |
 | `irodori-tts-for-yomiwakechan/LICENSE` | **本リポジトリの自作分** | **MIT**（`Copyright (c) 2026 mugonkun`） | **自作** | — | 2026-09-04 | — |
 | `first-run-notices.md` | 初回取得で利用者の機体に入る第三者物の通知 | — | 自作（逐語は `research/lab/notes/22` から） | — | 2026-09-04 | **配布物に入れる**（初回取得 UI が取得前に表示＝`decisions.md` 46） |
+| `dotnet/README.md` | ランチャの exe に焼かれる第三者物の記帳（**裁定 51 の例外**） | — | 自作 | — | 2026-09-05 | — |
+| `dotnet/dotnet-runtime-LICENSE.txt` | .NET ランタイム 10.0.11（`Microsoft.NETCore.App.Runtime.win-x64`・SelfContained publish で 1 exe に焼かれる） | **MIT**（`Copyright (c) .NET Foundation and Contributors`） | **原文** | NuGet の runtime pack（`microsoft.netcore.app.runtime.win-x64/10.0.11/LICENSE.TXT`） | 2026-09-05 | `d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b` / 1,139 B |
+| `dotnet/windowsdesktop-runtime-LICENSE.txt` | WPF／WinForms ランタイム 10.0.11（`Microsoft.WindowsDesktop.App.Runtime.win-x64`・同上） | **MIT**（同上） | **原文** | NuGet の runtime pack（`microsoft.windowsdesktop.app.runtime.win-x64/10.0.11/LICENSE`） | 2026-09-05 | `a89886665765362eb77e0f8e26602c924520041d1711b2eedc136434fe4d01ab` / 1,137 B |
+| `dotnet/dotnet-runtime-THIRD-PARTY-NOTICES.txt` | .NET ランタイムが同梱する第三者物の通知 | 各記載 | **原文** | NuGet の runtime pack（同 10.0.11 の `THIRD-PARTY-NOTICES.TXT`） | 2026-09-05 | `6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21` / 78,041 B |
 
-**檔は 9 件**（この `README.md` を含む）。`build/check-licenses.ps1` はこの表の行と実檔を突合する。
+**檔は 13 件**（この `README.md` を含む）。`build/check-licenses.ps1` はこの表の行と実檔を突合する。
+`dotnet/` の 4 件は**便 D（ランチャ）が足した**＝裁定 51 で SelfContained publish（1 exe）が確定し、
+.NET ランタイム（MIT）が成果物に焼かれるようになったため。**版が上がったらこの 4 行も更新する**
+（`licenses/dotnet/README.md` §1 に版の読み方を書いた）。NAudio 2.2.1 の許諾全文が未取得である旨は
+同 §3 に欠落として記帳してある。
 
 ---
 

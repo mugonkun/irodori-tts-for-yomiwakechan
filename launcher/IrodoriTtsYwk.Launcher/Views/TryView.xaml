@@ -1,0 +1,119 @@
+<UserControl x:Class="IrodoriTtsYwk.Launcher.Views.TryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             AutomationProperties.AutomationId="TryView">
+  <!--
+    試し撃ち（裁定 15）。本文＋話者＋主要パラメータ→合成→再生／保存。
+    「既定に戻す」は**欄を空にする**ことで表す（契約 ⑶＝載せない欄は既定が効く）。
+    再生は −16 dBFS 相当に揃える（裁定 52）。保存は生の wav（揃えない）。
+  -->
+  <Grid Margin="12">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" />
+      <ColumnDefinition Width="300" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <Border Grid.Row="0" Grid.ColumnSpan="2" Padding="10,8" Background="#FFF6E5" CornerRadius="4">
+      <TextBlock x:Name="ConcurrencyText" TextWrapping="Wrap" Foreground="#7A5200"
+                 AutomationProperties.AutomationId="TryConcurrencyText" />
+    </Border>
+
+    <!-- 本文 -->
+    <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,10,10,0">
+      <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+        <TextBlock Text="本文" FontWeight="Bold" />
+        <TextBlock HorizontalAlignment="Right" Foreground="#666666"
+                   AutomationProperties.AutomationId="TryInputLengthText"
+                   Text="{Binding InputLengthText, Mode=OneWay}" />
+      </DockPanel>
+      <TextBox AutomationProperties.AutomationId="TryInputBox"
+               AcceptsReturn="True" TextWrapping="Wrap"
+               VerticalScrollBarVisibility="Auto"
+               Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}" />
+    </DockPanel>
+
+    <!-- パラメータ -->
+    <ScrollViewer Grid.Row="1" Grid.Column="1" Margin="0,10,0,0" VerticalScrollBarVisibility="Auto">
+      <StackPanel>
+        <TextBlock Text="話者" FontWeight="Bold" />
+        <ComboBox Margin="0,2,0,10"
+                  AutomationProperties.AutomationId="TryVoiceCombo"
+                  ItemsSource="{Binding Voices}"
+                  SelectedItem="{Binding SelectedVoice, Mode=TwoWay}" />
+
+        <TextBlock Text="サンプリング歩数" FontWeight="Bold" />
+        <StackPanel Orientation="Horizontal" Margin="0,2,0,10">
+          <Button Content="10" Width="44" Padding="0,3" Margin="0,0,6,0"
+                  AutomationProperties.AutomationId="TryStepsPreset10"
+                  Click="OnSteps10Click" />
+          <Button Content="40" Width="44" Padding="0,3" Margin="0,0,10,0"
+                  AutomationProperties.AutomationId="TryStepsPreset40"
+                  Click="OnSteps40Click" />
+          <TextBox Width="70"
+                   AutomationProperties.AutomationId="TryStepsBox"
+                   Text="{Binding NumStepsInput, UpdateSourceTrigger=LostFocus}" />
+        </StackPanel>
+
+        <TextBlock Text="演技指示（caption・空＝既定）" FontWeight="Bold" />
+        <TextBox Margin="0,2,0,10" Height="60" AcceptsReturn="True" TextWrapping="Wrap"
+                 VerticalScrollBarVisibility="Auto"
+                 AutomationProperties.AutomationId="TryCaptionBox"
+                 Text="{Binding Caption, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock Text="cfg_scale_text（空＝既定）" />
+        <TextBox Margin="0,2,0,8"
+                 AutomationProperties.AutomationId="TryCfgTextBox"
+                 Text="{Binding CfgScaleTextInput, UpdateSourceTrigger=LostFocus}" />
+
+        <TextBlock Text="cfg_scale_caption（空＝既定 3.0）" />
+        <TextBox Margin="0,2,0,8"
+                 AutomationProperties.AutomationId="TryCfgCaptionBox"
+                 Text="{Binding CfgScaleCaptionInput, UpdateSourceTrigger=LostFocus}" />
+
+        <TextBlock Text="cfg_scale_speaker（空＝既定）" />
+        <TextBox Margin="0,2,0,8"
+                 AutomationProperties.AutomationId="TryCfgSpeakerBox"
+                 Text="{Binding CfgScaleSpeakerInput, UpdateSourceTrigger=LostFocus}" />
+
+        <TextBlock Text="読み速さ（0.25〜4.0・空＝既定）" />
+        <TextBox Margin="0,2,0,8"
+                 AutomationProperties.AutomationId="TrySpeedBox"
+                 Text="{Binding SpeedInput, UpdateSourceTrigger=LostFocus}" />
+
+        <TextBlock Text="乱数の種（空＝毎回変わる）" />
+        <TextBox Margin="0,2,0,8"
+                 AutomationProperties.AutomationId="TrySeedBox"
+                 Text="{Binding Seed, UpdateSourceTrigger=LostFocus}" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- 操作 -->
+    <WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,10,0,0">
+      <Button Content="合成して再生" Padding="16,5" Margin="0,0,8,6"
+              AutomationProperties.AutomationId="TrySynthesizeButton"
+              Command="{Binding SynthesizeCommand}" />
+      <Button Content="もう一度再生" Padding="12,5" Margin="0,0,8,6"
+              AutomationProperties.AutomationId="TryReplayButton"
+              Command="{Binding ReplayCommand}" />
+      <Button Content="停止" Padding="12,5" Margin="0,0,8,6"
+              AutomationProperties.AutomationId="TryStopButton"
+              Command="{Binding StopCommand}" />
+      <Button Content="wav に保存…" Padding="12,5" Margin="0,0,8,6"
+              AutomationProperties.AutomationId="TrySaveButton"
+              Click="OnSaveClick" />
+      <TextBlock VerticalAlignment="Center" Margin="12,0,0,0" FontFamily="Consolas, MS Gothic"
+                 AutomationProperties.AutomationId="TryResultText"
+                 Text="{Binding ResultText, Mode=OneWay}" />
+    </WrapPanel>
+
+    <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Margin="0,8,0,0" TextWrapping="Wrap"
+               AutomationProperties.AutomationId="TryMessageText"
+               Text="{Binding Message, Mode=OneWay}" />
+  </Grid>
+</UserControl>

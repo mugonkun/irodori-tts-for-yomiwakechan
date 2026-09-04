@@ -72,3 +72,140 @@ gradio を依存から外すと配布サイズも 43〜82 MB 減る。
 - `upstream/` は読むだけ（`__pycache__` を作らない＝`PYTHONDONTWRITEBYTECODE=1`）。
 - `C:/IrodoriTTS/`・`C:/irodori-TTS-server/`・`yomiwakechan2` に書かない。
 - 第三者バイナリをリポ内（`build/out/` と `.venv-dev/` 以外）に置かない。
+
+---
+
+## 6. 骨組みが入った（2026-09-05・便 D・骨組み席）
+
+**§3「決まっていないこと」のうち 3 件が決まった**（設計書 `docs/design/ben-d-launcher.md` §9 に逐語）。
+残り 2 件（「デフォルト」の削除可否・話者 100 件級の所要）は実装席へ持ち越し。
+
+### 6-1 いま在る物
+
+| 物 | 中身 |
+|---|---|
+| `IrodoriTtsYwk.sln` | 2 プロジェクト（本体＋テスト） |
+| `Directory.Build.props` | net10.0-windows・nullable・**ImplicitUsings=disable**・版の一元定義（`AppDisplayVersion`） |
+| `IrodoriTtsYwk.Launcher/App.xaml(.cs)` | 単一起動（Mutex）・トレイ（開く／サーバ起動／停止／終了）・終了時にツリー kill |
+| `IrodoriTtsYwk.Launcher/AppServices.cs` | **組み立ての 1 箇所**。実装席はここへ自分の実装を差す |
+| `IrodoriTtsYwk.Launcher/Views/MainWindow.xaml(.cs)` | **空の枠**（`MainTabs` に TabItem を足す） |
+| `IrodoriTtsYwk.Launcher/Contracts/` | 共有の型 9 群（下） |
+| `IrodoriTtsYwk.Launcher.Tests/` | 純ロジック 46 本（実機・GPU・HTTP に触れない） |
+
+### 6-2 共有の契約（`IrodoriTtsYwk.Launcher.Contracts`）
+
+| # | 型 | 何を約束するか |
+|---|---|---|
+| ⑴ | `LedgerFile`・`LedgerItem`・`ModelsLedger`・`VcRedistLedger` | `ledger/*.json` と 1 対 1。`Urls` が url→fallback_url の順を持つ |
+| ⑵ | `IDownloader`（`DownloadRequest`／`DownloadProgress`／`DownloadResult`） | Range 再開・sha256・`.part`→Rename・進捗（bytes／ETA） |
+| ⑶ | `IRuntimeInstaller`・`IPthWriter`・`PthTemplate` | wheel／sdist／archive／python-embed の展開と `._pth`（`PthTemplate.Render` は純関数） |
+| ⑷ | `IServerProcess`・`ServerState`・`ServerLogParser`・`ServerExitCodes`・`ServerEnvironment` | 状態機械・stderr の行読み・exit 2／3 の理由 1 行・env の組み立て |
+| ⑸ | `IWrapperClient`・`WrapperResult<T>`・応答の型一式 | `/health`・`/params`・`/ywk/status`・`/ywk/voices`・`/v1/audio/speech`・`/ywk/warmup`・`/ywk/voices/precompute`（**口が無ければ `Available=false`**） |
+| ⑹ | `IGpuEnumerator`・`GpuInfo`・`GpuResolver`・`IDriverCheck`・`DriverRequirement` | UUID 保存→index 解決・ドライバの下限（cu130 ≥ 580／cu126 ≥ 560.76） |
+| ⑺ | `IVoiceStore`・`IVoicesJsonWriter`・`VoiceIds` | `voices.ywk.json` と上流の `voices.json`・「デフォルト」の常在と並び |
+| ⑻ | `LauncherSettings`・`ISettingsStore`・`JsonSettingsStore` | `settings.json`（原子的保存・壊れていても既定で立ち上がる） |
+| ⑼ | `AppPaths`・`RuntimeVariants`・`AppVersion` | 導入先と利用者データの分割・変種の 2 系統の名前・版と上流 pin |
+
+### 6-3 実装席への申し送り
+
+1. **`AppServices` に差す**。`Server`・`Wrapper`・`Downloader`・`RuntimeInstaller`・`GpuEnumerator`・
+   `VoiceStore`・`VoicesJsonWriter` が空いている。差し替えは起動の 1 度だけ。
+2. **純関数はもう在る**＝`ServerEnvironment.Build`・`ServerLogParser.Classify`／`NextState`・
+   `PthTemplate.Render`・`GpuResolver.ResolveIndex`・`DriverRequirement.Check`・`VoiceIds.Order`。
+   同じ判断を 3 席で 3 回書かない。
+3. **テストは純ロジックだけ**（継ぎ目は public コンストラクタ・`InternalsVisibleTo` は使わない）。
+4. **煙試験は私設ポート**（18094 以降）で、終わったら必ずツリー kill。8088・7861 は起こさない。
+
+```powershell
+dotnet build launcher\IrodoriTtsYwk.sln --nologo     # 警告 0
+dotnet test  launcher\IrodoriTtsYwk.sln --nologo     # 46 本
+```
+
+---
+
+## 7. 画面が入った（2026-09-05・便 D・L3 席＝Views／ViewModels）
+
+**§3「決まっていないこと」の 1（画面の構成）が決まった。**残る 2 件（「デフォルト」の削除可否・
+話者 100 件級の所要）は据え置き＝前者は**削除できない**方に倒した（契約 ⑷ 4-2 の常在に合わせた・
+`VoiceRow.CanRemove` が偽）。
+
+### 7-1 樹
+
+```
+launcher/IrodoriTtsYwk.Launcher/
+  Mvvm/          ObservableObject.cs・RelayCommand.cs（自前・依存追加なし）
+  ViewModels/    MainViewModel（束ねる）・StatusViewModel・VoicesViewModel・TryViewModel・
+                 SettingsViewModel・AboutViewModel・FirstRunViewModel
+                 ＋純関数の道具＝UiText・MemoryEstimate・ReleaseFlavor・LogTail・
+                   SpeechRequestBuilder・VoiceRow(Builder)・VoiceNameValidator・
+                   WarmupStagesText・NumericInput
+  Audio/         IAudioPlayer・NAudioPlayer（NAudio・MIT）・WavInfo・WavGain（どちらも純関数）
+  Views/         MainWindow（5 タブ）・StatusView・VoicesView・TryView・SettingsView・
+                 AboutView・FirstRunWizard（窓）
+```
+
+### 7-2 決めた 4 つ（後続が前提にしてよい）
+
+1. **ViewModel は WPF の型に触れない**。`Dispatcher` も持たない＝**スレッド跨ぎの marshal は View の
+   仕事**（`MainWindow` が `Dispatcher.BeginInvoke` で ViewModel を呼ぶ）。おかげで ViewModel は
+   xUnit から素で作れる（継ぎ目は public コンストラクタ・`InternalsVisibleTo` は使わない）。
+   `CommandManager.RequerySuggested` も使わない（可否は `RaiseCanExecuteChanged` を明示で叩く）。
+2. **選択肢は配布樹が決める**（`ReleaseFlavors`）＝`ledger/runtime-rocm-*.json` を持つ配布物は
+   Radeon 版で、CUDA の選択肢を出さない（裁定 5）。さらに**台帳が実在する変種だけ**に絞る＝
+   取得の始まらない選択肢を見せない。版の種類を exe に焼かないので、同じ exe が両リリースで動く。
+3. **「既定に戻す」は欄を空にすることで表す**（`NumericInput`・`SpeechRequestBuilder`）＝
+   空欄は `null`（載せない）・`0` は `0`（載せる）。上流は範囲検査を持たないので、
+   歩数・読み速さ・seed は**撃つ前に 0 s で弾く**（`SpeechRequestBuilder.Build`）。
+4. **試聴・再生は wav だけ**＝`NAudio.WinMM` と `NAudio.Core` に `Mp3FileReader`／`AudioFileReader`
+   が入っていない（2026-09-05 に nupkg の型一覧を機械で確認）。依存を増やさないので、参照として
+   受ける 8 拡張子のうち **wav 以外の試聴が「未対応」**になる（登録・合成には影響しない）。
+   再生の音量は裁定 52 のとおり **−16 dBFS 相当へ揃える**が、**檔は 1 バイトも書き換えない**
+   （`WavGain.ComputeGain` は純関数・持ち上げは山が 1.0 を超えない上限で頭打ち）。
+
+### 7-3 UIA の名前（受け入れ条件 D-7・`probe/d-launch-probe.ps1` が使う）
+
+主要コントロールに `AutomationProperties.AutomationId` を振ってある。実測（この機体・2026-09-05・
+私設データディレクトリ・**サーバも GPU も起こさずに**窓だけ立てて `UIAutomationClient` で読んだ）＝
+
+| 画面 | 拾える id（抜粋） |
+|---|---|
+| 窓 | `MainWindow`・`MainTabs`・`MainStartButton`・`MainStopButton`・`MainFirstRunButton`・`MainStateText`・`MainEndpointText`・`MainVersionText`・`MainHeaderText` |
+| タブ | `TabStatus`・`TabVoices`・`TabTry`・`TabSettings`・`TabAbout` |
+| 状態 | `StatusStateText`・`StatusReasonText`・`StatusGpuText`・`StatusVariantText`・`StatusEndpointText`・`StatusDeviceText`・`StatusWarmupText`・`StatusPrecomputeText`・`StatusMemoryPanel`／`StatusMemoryText`・`StatusVoiceMemoryText`・`StatusLogBox`・`StatusUpstreamMismatchText` |
+| 話者 | `VoicesGrid`・`VoicesBrowseButton`・`VoicesSourcePathBox`・`VoicesNewNameBox`・`VoicesNewCaptionBox`・`VoicesAddButton`・`VoicesPreviewButton`・`VoicesStopPreviewButton`・`VoicesRemoveButton`・`VoicesRefreshButton`・`VoicesPrecomputeButton`・`VoicesMessageText` |
+| 試し撃ち | `TryInputBox`・`TryInputLengthText`・`TryVoiceCombo`・`TryStepsPreset10`／`TryStepsPreset40`／`TryStepsBox`・`TryCaptionBox`・`TryCfgTextBox`／`TryCfgCaptionBox`／`TryCfgSpeakerBox`・`TrySpeedBox`・`TrySeedBox`・`TrySynthesizeButton`・`TryReplayButton`・`TryStopButton`・`TrySaveButton`・`TryResultText`・`TryMessageText` |
+| 設定 | `SettingsGpuCombo`・`SettingsRefreshGpuButton`・`SettingsDriverText`・`SettingsVariantCombo`・`SettingsPrecisionCombo`・`SettingsPortBox`・`SettingsWarmupCheck`／`SettingsWarmupStagesBox`／`SettingsWarmupVoicesBox`・`SettingsPrecomputeCheck`・`SettingsEmptyCacheBox`・`SettingsAutoStartCheck`・`SettingsShowMemoryCheck`・`SettingsReadyTimeoutBox`・`SettingsDataDirText`／`SettingsModelDirText`／`SettingsVoicesDirText`／`SettingsRuntimeRootText`／`SettingsAppDirText`・`SettingsApplyButton`／`SettingsRevertButton`・`SettingsMessageText` |
+| このアプリについて | `AboutDisclaimerText`・`AboutVersionText`・`AboutUpstreamText`・`AboutWatermarkText`・`AboutEthicsText`・`AboutLicensesDirText`・`AboutNoticesPathText`・`AboutLicenseList` |
+| 初回取得 | `FirstRunWizard`・`FirstRunStepTitle`・`FirstRunStepNumber`・`FirstRunNoticesBox`・`FirstRunAcceptCheck`・`FirstRunVariantCombo`・`FirstRunVariantNoteText`・`FirstRunDriverText`・`FirstRunSizeText`・`FirstRunProgressBar`／`FirstRunProgressText`・`FirstRunTrailList`・`FirstRunBackButton`／`FirstRunNextButton`／`FirstRunCancelButton`・`FirstRunMessageText` |
+
+**タブの中身は選ぶまで作られない**（WPF の `TabControl` は遅延生成）＝台本は `SelectionItemPattern`
+でタブを選んでから、そのタブの id を探すこと。
+
+### 7-4 ライセンスの索引（裁定 51 の記帳先）
+
+exe に焼かれる第三者物の許諾文は **`licenses/dotnet/`**（`licenses/README.md` §1 の索引表にも
+1 対 1 で載っている＝`build/check-licenses.ps1` が突合する）。
+
+| 檔 | 中身 |
+|---|---|
+| `licenses/dotnet/README.md` | 何が焼かれ、どの版で、どこから写したかの逐語（＋欠落の記帳） |
+| `licenses/dotnet/dotnet-runtime-LICENSE.txt` | .NET ランタイム（`Microsoft.NETCore.App.Runtime.win-x64`）の MIT |
+| `licenses/dotnet/windowsdesktop-runtime-LICENSE.txt` | WPF／WinForms ランタイムの MIT |
+| `licenses/dotnet/dotnet-runtime-THIRD-PARTY-NOTICES.txt` | .NET ランタイムが同梱する第三者物の通知 |
+
+**NAudio 2.2.1（MIT）の全文は未取得**＝nupkg が SPDX の名乗りと `licenseUrl` しか持たない
+（`licenses/dotnet/README.md` §3 に欠落として記帳済み・卓の裁定待ち）。**L3 席は NAudio の版も
+参照の仕方も変えていない**（`NAudio.WinMM` 2.2.1 のまま・`WaveOutEvent`／`WaveFileReader`／
+`VolumeSampleProvider` の 3 型だけを使う）。
+
+### 7-5 検分（この機体・2026-09-05）
+
+```powershell
+dotnet build launcher\IrodoriTtsYwk.sln --nologo   # 警告 0・エラー 0
+dotnet test  launcher\IrodoriTtsYwk.sln --nologo   # 356 本（うち L3 が 130 本）
+```
+
+窓の煙試験は**私設のデータディレクトリ**（`YWK_LAUNCHER_DATA_DIR`）に
+`autoStartServer:false`・`port:18094` の `settings.json` を置き、`YWK_LAUNCHER_RUNTIME_DIR` を
+**渡さずに**（＝`python.exe` が見つからず子プロセスが起きない形で）立てた。**8088・18088・7861 を
+含めどのポートも開いていないこと**を `Get-NetTCPConnection` で確認し、終わったらツリー kill した。

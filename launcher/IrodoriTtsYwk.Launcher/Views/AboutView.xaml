@@ -1,0 +1,52 @@
+<UserControl x:Class="IrodoriTtsYwk.Launcher.Views.AboutView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             AutomationProperties.AutomationId="AboutView">
+  <!--
+    このアプリについて（裁定 1＝非公式・Aratako 氏とは無関係を冒頭に出す）。
+    版と上流 pin は Contracts/AppVersion が唯一の読み口（publish でだけ焼かれる）。
+  -->
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+
+      <TextBlock Text="irodori-TTS for 読み分けちゃん" FontSize="20" FontWeight="Bold" />
+
+      <Border Margin="0,10,0,0" Padding="12,10" Background="#FFF1F1" CornerRadius="4">
+        <TextBlock x:Name="DisclaimerText" TextWrapping="Wrap" Foreground="#8A2020"
+                   AutomationProperties.AutomationId="AboutDisclaimerText" />
+      </Border>
+
+      <TextBlock Text="版" FontWeight="Bold" Margin="0,16,0,4" />
+      <TextBlock x:Name="VersionText" AutomationProperties.AutomationId="AboutVersionText" />
+      <TextBlock x:Name="UpstreamText" Margin="0,2,0,0" TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="AboutUpstreamText" />
+
+      <TextBlock Text="電子透かし" FontWeight="Bold" Margin="0,16,0,4" />
+      <TextBlock x:Name="WatermarkText" TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="AboutWatermarkText" />
+
+      <TextBlock Text="参照ボイスの扱い" FontWeight="Bold" Margin="0,16,0,4" />
+      <TextBlock x:Name="EthicsText" TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="AboutEthicsText" />
+
+      <TextBlock Text="ライセンスの所在" FontWeight="Bold" Margin="0,16,0,4" />
+      <TextBlock TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="AboutLicensesDirText"
+                 Text="{Binding LicensesDirText, Mode=OneWay}" />
+      <TextBlock Margin="0,4,0,0" TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="AboutNoticesPathText"
+                 Text="{Binding NoticesPathText, Mode=OneWay}" />
+      <ItemsControl x:Name="LicenseList" Margin="0,6,0,0"
+                    AutomationProperties.AutomationId="AboutLicenseList">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Margin="12,1,0,1" Text="{Binding}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="#666666" FontSize="11"
+                 Text="実行系・モデル・vc_redist は配布物に入っていません。初回取得で、取得台帳の URL と sha256 に従って利用者の機体へ入ります。各許諾文はその展開先に残ります。" />
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
