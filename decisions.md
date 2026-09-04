@@ -70,3 +70,15 @@
 38. **プリセットの音量は正規化しない**。参照用途では上流が参照クリップごとに −16 dB へ正規化する（`ref_normalize_db=-16.0`・サーバの info 行で確認）ので、檔の RMS のばらつき（−16.6〜−23.8 dBFS）は合成結果に効かない。UI の試聴再生でだけ差が出る＝ランチャ側で再生時に揃えるかは便 D で判断。
 39. **末尾切れの是正**＝検分席の所見（採用 11 本中 7 本の末尾 50 ms の RMS が全体 RMS を超える＝語の途中で終端）。同じ本文・同じ参照で seed を変え、末尾が減衰する射を機械的に採る（`tools/preset-voices/verify_wavs.py` に末尾判定を足す）。参照は 30 s 版を既定とし、司令官の試聴（`docs/preset-voices-listening.md`）で話者ごとに 10 s 版へ差し替えてよい。
 40. 便 C の暖機設計に効く実測（二次席）＝私設サーバの読込 18.98 s・spawn→ready 21.1 s。**未見の参照ボイス形状に当たるたびに decode_latent が跳ねる**（VOICEVOX/COEIROINK 参照で 0.6〜1.0 s → 最初の VOICEROID2 参照で 14.8 s・MIOpen の workspace 不足警告と同時）。暖機は no_ref 短文だけでなく、利用者が実際に使う参照ボイスで 1 本ずつ撃つのが確実。146 字の本文は `chunk_min_chars=80` で 2 分割される。
+
+### 便 A（骨格＋ビルド）の完了と設計席の裁定 — 2026-09-05
+
+41. **便 A 完了**（コミット fa05f63）。受け入れ条件 A-1〜A-8 を Radeon 機で実走して全緑＝CPU 変種の組み立て（台帳 101 item・903 MB・git/pip/uv 不使用）・パッチ 3 ハンク適用（submodule 無傷）・`/params` 1〜4 ms・CPU fp32 実合成（参照ボイス経由の 2 発目でパッチ適用を証明）・契約テスト 175 本・licenses 突合・第三者バイナリ 0 件。敵対検分 3 席（契約・ビルド・ライセンス）の high 9 件・medium 15 件は是正済み。
+42. **依存解決の override `protobuf>=5.29.0` を採る**。理由＝descript-audiotools が引く protobuf 3.19.6 は `-nspkg.pth` を要し、`import site` を書かない `._pth` 運用（裁定の実射正本）と両立しない。実解は 7.36.1（調査便の lab 箱と同版）。
+43. **取得台帳の kind に `sdist` を足す**（argbind・randomname は PyPI に wheel が無い）。展開は tar.exe（Windows 10 1803 以降の標準）。ランチャ（便 D）は .NET の tar 実装で同じ台帳を読む。
+44. **numba／llvmlite（約 130 MB）は当面残す**。調査便は「両コードベースに import 0 件」と記録しているが、外す証明（A-4 の実合成）は便 B の CUDA 実射と一緒に行う。
+45. **`IRODORI_DEFAULT_VOICE=デフォルト` を wrapper が焼く**（setdefault）。`/params` の `request.voice` が既定「デフォルト」を名乗る以上、voice 省略が上流の 400 になるのは矛盾。
+46. **`licenses/first-run-notices.md` は配布物に入れる**。設計書 §1 の「配布物には入れない」は第三者物のことであり通知文ではない＝表現の誤り。設計書・檔冒頭・licenses/README・assemble-app の除外・check-licenses の検査を「入れる」に揃える。ランチャは初回取得前にこの檔を表示する。
+47. **SSE（`stream_format:"sse"`）は受ける**（上流の機能を殺さない）。本体は使わない。契約文書に枠の形（`event: audio_chunk`／`done`／`error`・取消不可）を書く。
+48. **caption と seed の空文字は wrapper が「未指定」に畳む**（上流は空 caption を 400 にする）。本体の新アダプタ（便 F）は「空は欄ごと省略」の現行規則のままで通るが、契約の文言が変わったことを便 F の票に書く。
+49. 台帳の運用注意＝torch の pin URL は `download-r2.pytorch.org`（index の href の実体）で `download.pytorch.org` を fallback_url に持つ／`models.json` は pin した revision の全檔を持つので既存キャッシュに対する `--check-only` は README 等を file_missing と報告する（異常ではない）／初回取得後に `refs/main` を書かないと `HF_HUB_OFFLINE=1` で上流の読み込みが落ちる（是正済み・テストで釘）。
