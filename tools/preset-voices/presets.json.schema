@@ -88,11 +88,21 @@
 
         "secondary": {
           "type": ["object", "null"],
-          "description": "一次を参照ボイスにして Irodori-TTS-Server で合成した wav＝これがリリース版のテンプレート参照ボイス。実体＝voices/presets/<id>.wav。",
-          "required": ["file", "duration_s", "sample_rate", "text", "irodori"],
+          "description": "一次を参照ボイスにして Irodori-TTS-Server で合成した wav＝これがリリース版のテンプレート参照ボイス。実体＝voices/presets/<id>.wav。md5・size_bytes はその実檔から測った値（make_presets.py が書く）。",
+          "required": ["file", "md5", "size_bytes", "duration_s", "sample_rate", "text", "irodori", "tail"],
           "additionalProperties": false,
           "properties": {
             "file": { "type": "string", "description": "檔名（<id>.wav）。置き場＝voices/presets/。" },
+            "md5": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{32}$",
+              "description": "voices/presets/<id>.wav の MD5（小文字 32 桁）。受け渡し先（N:）の写しとの突合に使う。"
+            },
+            "size_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "voices/presets/<id>.wav の実バイト数。"
+            },
             "duration_s": { "type": "number" },
             "sample_rate": { "type": "integer" },
             "channels": { "type": "integer" },
@@ -121,23 +131,55 @@
                   "description": "decisions 39 の seed 掃引の記録（掃引して採った話者だけ）。",
                   "additionalProperties": true,
                   "properties": {
-                    "seeds": { "type": "array", "items": { "type": "integer" }, "description": "試した seed の列（1234 から順）。" },
+                    "seeds": {
+                      "type": "array",
+                      "items": { "type": "integer" },
+                      "description": "その話者に用意した seed の列。掃引を 2 度回すと話者ごとに起点が違う（規則を強めたあと、月読アイと ちび式じい だけ 1235 から撃ち直した）ので、話者ごとに別の列が入りうる。前の run で書かれた行は列そのものが残っていないので、実際に撃った seed（seeds_tried）が入る。"
+                    },
+                    "seeds_tried": {
+                      "type": "array",
+                      "items": { "type": "integer" },
+                      "description": "実際に撃った seed（clean が出た時点で止まるので seeds より短いことが多い）。"
+                    },
                     "adopted_seed": { "type": "integer" },
                     "adopted_trim_tail": { "type": "boolean" },
-                    "tries": { "type": "integer", "description": "clean が出るまでに撃った回数。" }
+                    "tries": { "type": "integer", "description": "clean が出るまでに撃った回数。" },
+                    "tail_rule": { "type": "string", "description": "その掃引で clean の判定に使った規則の逐語。" }
                   }
                 }
               }
             },
             "tail": {
               "type": "object",
-              "description": "末尾判定（decisions 39・tools/preset-voices/verify_wavs.py）。末尾 50 ms の RMS が全体 RMS より 20 dB 以上低ければ clean、それ以外は tail_suspect（語の途中で終端している疑い）。",
+              "description": "末尾判定（decisions 39・tools/preset-voices/verify_wavs.py）。3 条件すべてを満たしたときだけ clean＝⒜ 末尾 50 ms の RMS が全体 RMS より 20 dB 以上低い／⒝ その RMS が絶対値で −40 dBFS 以下／⒞ 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（−60 dBFS 以下は無音として除く）。1 つでも外れたら tail_suspect（語の途中で終端している疑い）。⒜ だけだった旧規則は、いったん無音に落ちてから鳴り出して切れる檔を Δ=−20.19 dB の縁で通してしまった。",
+              "required": ["verdict", "rule"],
               "additionalProperties": true,
               "properties": {
-                "window_ms": { "type": ["number", "null"], "description": "末尾判定に使った窓（ミリ秒・既定 50）。" },
-                "tail_rms_dbfs": { "type": ["number", "null"] },
-                "tail_delta_db": { "type": ["number", "null"], "description": "tail_rms_dbfs − rms_dbfs。−20 以下なら clean。末尾が振幅 0 なら null。" },
-                "margin_db": { "type": ["number", "null"], "description": "clean の閾（既定 20 dB）。" },
+                "window_ms": { "type": ["number", "null"], "description": "⒜⒝ が見る末尾の窓（ミリ秒・既定 50）。" },
+                "tail_rms_dbfs": { "type": ["number", "null"], "description": "末尾 50 ms の RMS（dBFS）。振幅ちょうど 0 なら null。" },
+                "tail_delta_db": { "type": ["number", "null"], "description": "⒜ tail_rms_dbfs − rms_dbfs。−20 以下なら合格。末尾が振幅 0 なら null。" },
+                "margin_db": { "type": ["number", "null"], "description": "⒜ の閾（既定 20 dB）。" },
+                "delta_clean": { "type": ["boolean", "null"], "description": "⒜ を満たしたか。" },
+                "abs_dbfs": { "type": ["number", "null"], "description": "⒝ の閾（既定 −40 dBFS）。" },
+                "abs_clean": { "type": ["boolean", "null"], "description": "⒝ を満たしたか。" },
+                "profile_ms": { "type": ["number", "null"], "description": "⒞ 形を見る末尾の長さ（既定 300 ms）。" },
+                "step_ms": { "type": ["number", "null"], "description": "⒞ 刻み（既定 25 ms）。" },
+                "final_ms": { "type": ["number", "null"], "description": "⒞ 立ち上がりを許さない末端の長さ（既定 100 ms）。" },
+                "floor_dbfs": { "type": ["number", "null"], "description": "⒞ これ以下の区間は無音として立ち上がりに数えない（既定 −60 dBFS）。" },
+                "rise_limit_db": { "type": ["number", "null"], "description": "⒞ 区間ごとに許す立ち上がり（既定 +0.5 dB）。" },
+                "rise_db": { "type": ["number", "null"], "description": "⒞ 最後の 100 ms で実測した最大の立ち上がり。末端が全部無音なら null。" },
+                "rise_clean": { "type": ["boolean", "null"], "description": "⒞ を満たしたか。" },
+                "profile_dbfs": {
+                  "type": ["array", "null"],
+                  "items": { "type": ["number", "null"] },
+                  "description": "末尾 300 ms を 25 ms 刻みで測った RMS(dBFS) の並び（古い順・12 個）。振幅 0 の区間は null。司令官が目で末尾の形を追えるように残す。"
+                },
+                "fail_reasons": {
+                  "type": "array",
+                  "items": { "type": "string", "enum": ["delta", "abs", "rise"] },
+                  "description": "外れた条件。空なら clean。"
+                },
+                "rule": { "type": "string", "description": "適用した規則の逐語（verify_wavs.tail_rule_text）。" },
                 "verdict": { "type": ["string", "null"], "enum": ["clean", "tail_suspect", null] }
               }
             },

@@ -18,6 +18,9 @@ seed 掃引モード（--sweep-seed・decisions 39）:
   clean になった最初の seed を採る。8 個で出なければ irodori.trim_tail=false で同じ seed 列を
   もう一巡する（上流 SamplingRequest.trim_tail＝潜在の平坦点で音を切る仕組み。false にすると
   推定長 target_samples まで残す）。採用 seed と試行回数は台帳に残す。
+  末尾判定は verify_wavs.py の 3 条件（⒜ 相対 Δ≦−20 dB・⒝ 絶対 ≦−40 dBFS・
+  ⒞ 末尾 300 ms を 25 ms 刻みで見て最後の 100 ms に立ち上がりが無い）をそのまま使う。
+  起点を変えたいときは --sweep-seed-start（例 1235＝直前の採用 seed の次から）。
 
 使い方:
     python run_secondary.py [--work <preset-work>] [--port 8090] [--also-ref10]
@@ -43,7 +46,9 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from verify_wavs import analyze as _analyze_wav  # noqa: E402 — 同じディレクトリの道具
+import verify_wavs as _vw  # noqa: E402 — 同じディレクトリの道具
+from verify_wavs import analyze as _analyze_wav  # noqa: E402
+from verify_wavs import tail_rule_text as _tail_rule_text  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 VENV_PY = Path("C:/irodori-TTS-server/Irodori-TTS-Server/.venv-rocm/Scripts/python.exe")
@@ -189,9 +194,26 @@ def wait_ready(port: int, proc: subprocess.Popen, timeout_s: float, log_path: Pa
 # ---------------------------------------------------------------- 末尾判定（decisions 39）
 
 
-def tail_of(path: Path, tail_ms: float = 50.0, tail_margin_db: float = 20.0) -> dict:
-    """verify_wavs.analyze を掛けて末尾判定の欄だけ抜く。"""
-    a = _analyze_wav(path, -50.0, 0.999, tail_ms, tail_margin_db)
+def tail_params(args) -> dict:
+    """末尾判定の窓と閾を 1 つの辞書に畳む（verify_wavs.analyze のキーワードと同名）。"""
+    return {
+        "tail_ms": args.tail_ms,
+        "tail_margin_db": args.tail_margin_db,
+        "tail_abs_dbfs": args.tail_abs_dbfs,
+        "tail_profile_ms": args.tail_profile_ms,
+        "tail_step_ms": args.tail_step_ms,
+        "tail_final_ms": args.tail_final_ms,
+        "tail_rise_db": args.tail_rise_db,
+        "tail_floor_dbfs": args.tail_floor_dbfs,
+    }
+
+
+def tail_of(path: Path, tp: dict) -> dict:
+    """verify_wavs.analyze を掛けて末尾判定の欄だけ抜く（3 条件・decisions 39）。"""
+    kw = dict(tp)
+    tail_ms = kw.pop("tail_ms")
+    tail_margin_db = kw.pop("tail_margin_db")
+    a = _analyze_wav(path, -50.0, 0.999, tail_ms, tail_margin_db, **kw)
     return {
         "duration_s": a["duration_s"],
         "rms_dbfs": a["rms_dbfs"],
@@ -199,28 +221,42 @@ def tail_of(path: Path, tail_ms: float = 50.0, tail_margin_db: float = 20.0) -> 
         "tail_delta_db": a["tail_delta_db"],
         "tail_clean": a["tail_clean"],
         "tail_verdict": a["tail_verdict"],
+        # 足した 2 条件（⒝ 絶対値・⒞ 立ち上がり無し）の内訳も残す
+        "tail_delta_clean": a["tail_delta_clean"],
+        "tail_abs_clean": a["tail_abs_clean"],
+        "tail_rise_db": a["tail_rise_db"],
+        "tail_rise_clean": a["tail_rise_clean"],
+        "tail_profile_dbfs": a["tail_profile_dbfs"],
+        "tail_fail_reasons": a["tail_fail_reasons"],
     }
 
 
-def tail_suspect_ids(out_dir: Path, ids: list[str], tail_ms: float, tail_margin_db: float) -> list[str]:
+def tail_suspect_ids(out_dir: Path, ids: list[str], tp: dict) -> list[str]:
     """採用版（<id>_secondary.wav）のうち末尾が tail_suspect の id を拾う。"""
     picked: list[str] = []
     for vid in ids:
         f = out_dir / f"{vid}_secondary.wav"
         if not f.is_file():
             continue
-        t = tail_of(f, tail_ms, tail_margin_db)
+        t = tail_of(f, tp)
         if not t["tail_clean"]:
             picked.append(vid)
-            print(f"[tail] tail_suspect: {vid}  Δ={t['tail_delta_db']} dB", flush=True)
+            print(
+                f"[tail] tail_suspect: {vid}  Δ={t['tail_delta_db']} dB "
+                f"tail50={t['tail_rms_dbfs']} dBFS rise={t['tail_rise_db']} dB "
+                f"why={'+'.join(t['tail_fail_reasons'])}",
+                flush=True,
+            )
     return picked
 
 
 def merge_result(logs: Path, sweep_report: dict) -> Path:
     """掃引の結果を既存の run_secondary.result.json に畳み込む。
 
-    掃引は 7 本しか作らないので、そのまま上書きすると 11 名 22 本の台帳が消える。
+    掃引は数本しか作らないので、そのまま上書きすると 11 名 22 本の台帳が消える。
     voice が一致する項目だけ差し替え、掃引の記録を seed_sweep として足す。
+    seed_sweep.results も voice ごとに畳む（前回の掃引で採った話者の記録を消さない）。
+    各行は自分の run の seeds と規則を持つので、run をまたいでも読める。
     """
     rp = logs / "run_secondary.result.json"
     base: dict = {}
@@ -235,14 +271,28 @@ def merge_result(logs: Path, sweep_report: dict) -> Path:
         items.append(adopted.pop(it.get("voice"), it))
     items.extend(adopted.values())
     base["items"] = items
+
+    # 掃引の行も voice ごとに畳む（今回撃たなかった話者の前回の記録を残す）。
+    new_rows = {r["voice"]: r for r in sweep_report.get("sweep", [])}
+    rows: list[dict] = []
+    for r in (base.get("seed_sweep") or {}).get("results", []):
+        rows.append(new_rows.pop(r.get("voice"), r))
+    rows.extend(new_rows.values())
+
     base["seed_sweep"] = {
         "generated_at": sweep_report["generated_at"],
         "seeds": sweep_report["seeds"],
         "tail_window_ms": sweep_report["tail_window_ms"],
         "tail_margin_db": sweep_report["tail_margin_db"],
+        "tail_abs_dbfs": sweep_report["tail_abs_dbfs"],
+        "tail_profile_ms": sweep_report["tail_profile_ms"],
+        "tail_step_ms": sweep_report["tail_step_ms"],
+        "tail_final_ms": sweep_report["tail_final_ms"],
+        "tail_rise_db": sweep_report["tail_rise_db"],
+        "tail_floor_dbfs": sweep_report["tail_floor_dbfs"],
         "tail_rule": sweep_report["tail_rule"],
         "trim_tail_fallback": sweep_report["trim_tail_fallback"],
-        "results": sweep_report["sweep"],
+        "results": rows,
     }
     rp.write_text(json.dumps(base, ensure_ascii=False, indent=2), encoding="utf-8")
     return rp
@@ -270,10 +320,23 @@ def main() -> int:
     ap.add_argument("--sweep-seed-start", type=int, default=1234, help="掃引の起点 seed（既定 1234）")
     ap.add_argument("--no-trim-fallback", action="store_true",
                     help="seed を使い切っても clean が出ない時に irodori.trim_tail=false を試す経路を切る")
-    ap.add_argument("--tail-ms", type=float, default=50.0, help="末尾判定の窓（ミリ秒・既定 50）")
-    ap.add_argument("--tail-margin-db", type=float, default=20.0,
-                    help="末尾 RMS が全体 RMS よりこの dB 以上低ければ clean（既定 20）")
+    ap.add_argument("--tail-ms", type=float, default=_vw.TAIL_MS, help="末尾判定の窓（ミリ秒・既定 50）")
+    ap.add_argument("--tail-margin-db", type=float, default=_vw.TAIL_MARGIN_DB,
+                    help="⒜ 末尾 RMS が全体 RMS よりこの dB 以上低いこと（既定 20）")
+    ap.add_argument("--tail-abs-dbfs", type=float, default=_vw.TAIL_ABS_DBFS,
+                    help="⒝ 末尾 RMS の絶対上限 dBFS（既定 -40）")
+    ap.add_argument("--tail-profile-ms", type=float, default=_vw.TAIL_PROFILE_MS,
+                    help="⒞ 形を見る末尾の長さ（既定 300 ms）")
+    ap.add_argument("--tail-step-ms", type=float, default=_vw.TAIL_STEP_MS,
+                    help="⒞ 刻み（既定 25 ms）")
+    ap.add_argument("--tail-final-ms", type=float, default=_vw.TAIL_FINAL_MS,
+                    help="⒞ 立ち上がりを許さない末端の長さ（既定 100 ms）")
+    ap.add_argument("--tail-rise-db", type=float, default=_vw.TAIL_RISE_DB,
+                    help="⒞ 区間ごとに許す立ち上がり dB（既定 0.5）")
+    ap.add_argument("--tail-floor-dbfs", type=float, default=_vw.TAIL_FLOOR_DBFS,
+                    help="⒞ これ以下は無音として立ち上がりに数えない dBFS（既定 -60）")
     args = ap.parse_args()
+    tp = tail_params(args)
 
     work = Path(args.work).resolve()
     primary_dir = work / "primary"
@@ -306,7 +369,7 @@ def main() -> int:
                 raise SystemExit(f"--sweep-ids に知らない id がある: {unknown}")
             ids = want
         else:
-            ids = tail_suspect_ids(out_dir, ids, args.tail_ms, args.tail_margin_db)
+            ids = tail_suspect_ids(out_dir, ids, tp)
             if not ids:
                 print("[sweep] 末尾 tail_suspect の採用版が無い。何もしない。", flush=True)
                 return 0
@@ -365,7 +428,13 @@ def main() -> int:
                 "seeds": seeds,
                 "tail_window_ms": args.tail_ms,
                 "tail_margin_db": args.tail_margin_db,
-                "tail_rule": "tail_delta_db = tail50_dbfs - rms_dbfs ; clean ⇔ tail_delta_db <= -20.0",
+                "tail_abs_dbfs": args.tail_abs_dbfs,
+                "tail_profile_ms": args.tail_profile_ms,
+                "tail_step_ms": args.tail_step_ms,
+                "tail_final_ms": args.tail_final_ms,
+                "tail_rise_db": args.tail_rise_db,
+                "tail_floor_dbfs": args.tail_floor_dbfs,
+                "tail_rule": _tail_rule_text(**tp),
                 "trim_tail_fallback": not args.no_trim_fallback,
                 "sweep": [],
             }
@@ -441,7 +510,7 @@ def main() -> int:
                             continue
                         elapsed = time.perf_counter() - t0
                         tmp.write_bytes(wav)
-                        t = tail_of(tmp, args.tail_ms, args.tail_margin_db)
+                        t = tail_of(tmp, tp)
                         attempts.append(
                             {
                                 "seed": seed,
@@ -453,9 +522,12 @@ def main() -> int:
                             }
                         )
                         mark = "clean" if t["tail_clean"] else "TAIL?"
+                        why = f" why={'+'.join(t['tail_fail_reasons'])}" if t["tail_fail_reasons"] else ""
                         print(
                             f"[sweep] {voice_id} seed={seed} trim_tail={trim_tail} "
-                            f"{t['duration_s']:.2f}s Δ={t['tail_delta_db']} dB [{mark}] {elapsed:.1f} s",
+                            f"{t['duration_s']:.2f}s Δ={t['tail_delta_db']} dB "
+                            f"tail50={t['tail_rms_dbfs']} dBFS rise={t['tail_rise_db']} dB "
+                            f"[{mark}]{why} {elapsed:.1f} s",
                             flush=True,
                         )
                         if t["tail_clean"]:
@@ -488,6 +560,9 @@ def main() -> int:
                 row = {
                     "id": vid,
                     "voice": voice_id,
+                    # この行を撃った run の条件（run をまたいで畳んでも読めるように行に持たせる）
+                    "seeds": seeds,
+                    "tail_rule": _tail_rule_text(**tp),
                     "adopted": bool(adopted),
                     "adopted_seed": adopted["seed"] if adopted else None,
                     "adopted_trim_tail": adopted["trim_tail"] if adopted else None,
@@ -496,15 +571,31 @@ def main() -> int:
                 }
                 if not adopted:
                     ok = [a for a in attempts if "error" not in a]
-                    best = min(ok, key=lambda a: a["tail_delta_db"] if a["tail_delta_db"] is not None else -999) if ok else None
+                    # 外れた条件が少ない順 → Δ が小さい順。3 条件になったので単純な Δ 最小では選べない。
+                    best = (
+                        min(
+                            ok,
+                            key=lambda a: (
+                                len(a.get("tail_fail_reasons") or []),
+                                a["tail_delta_db"] if a["tail_delta_db"] is not None else -999,
+                            ),
+                        )
+                        if ok
+                        else None
+                    )
                     row["best_tail_delta_db"] = best["tail_delta_db"] if best else None
+                    row["best_tail_rms_dbfs"] = best["tail_rms_dbfs"] if best else None
+                    row["best_tail_rise_db"] = best["tail_rise_db"] if best else None
+                    row["best_tail_fail_reasons"] = best.get("tail_fail_reasons") if best else None
                     row["best_seed"] = best["seed"] if best else None
                     row["best_trim_tail"] = best["trim_tail"] if best else None
                     row["why"] = (
                         f"seed {seeds[0]}〜{seeds[-1]} の {len(seeds)} 個"
                         + ("" if args.no_trim_fallback else "＋trim_tail=false の一巡")
                         + f"（計 {len(attempts)} 射）で末尾 clean が出なかった。"
-                        + (f"最良は seed={best['seed']} trim_tail={best['trim_tail']} Δ={best['tail_delta_db']} dB。"
+                        + (f"最良は seed={best['seed']} trim_tail={best['trim_tail']} "
+                           f"Δ={best['tail_delta_db']} dB tail50={best['tail_rms_dbfs']} dBFS "
+                           f"rise={best['tail_rise_db']} dB 外れた条件={'+'.join(best.get('tail_fail_reasons') or []) or 'なし'}。"
                            if best else "全射が失敗した。")
                     )
                     print(f"[unres] {voice_id}: {row['why']}", flush=True)

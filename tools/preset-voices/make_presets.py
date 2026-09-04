@@ -13,6 +13,9 @@
   voices/presets.json           （形＝tools/preset-voices/presets.json.schema）
   voices/presets/<id>.wav       （--copy を付けた時だけ。採用した二次を置く）
 
+secondary.md5 と secondary.size_bytes は **実檔**（voices/presets/<id>.wav・--copy の複写後）から測る。
+secondary.tail は verify_secondary.json の 3 条件判定（decisions 39）をそのまま写す。
+
 使い方:
     python make_presets.py [--work <preset-work>] [--out <presets.json>]
                            [--ref-variant 30s|10s] [--copy]
@@ -21,10 +24,15 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
+import sys
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from verify_wavs import tail_rule_text as _tail_rule_text  # noqa: E402 — 同じディレクトリの道具
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -109,6 +117,14 @@ def _actual_device(runsec: dict) -> str | None:
     return None
 
 
+def _md5(p: Path) -> str:
+    h = hashlib.md5()
+    with p.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def _index_verify(report: dict | None) -> dict[str, dict]:
     if not report:
         return {}
@@ -133,7 +149,11 @@ def main() -> int:
     gen_co = _load(work / "primary" / "gen_coeiroink.result.json")
     gen_vr2 = _load(work / "primary" / "gen_voiceroid2.result.json")
     vpri = _index_verify(_load(work / "logs" / "verify_primary.json"))
-    vsec = _index_verify(_load(work / "logs" / "verify_secondary.json"))
+    vsec_report = _load(work / "logs" / "verify_secondary.json")
+    vsec = _index_verify(vsec_report)
+    # 台帳に載せる末尾判定の規則は「その測定に実際に使われた規則」を採る（verify_secondary.json の頭）。
+    # 無ければ道具の既定を文字にする。
+    tail_rule = (vsec_report or {}).get("tail_rule") or _tail_rule_text()
     runsec = _load(work / "logs" / "run_secondary.result.json") or {}
 
     # 一次の生成記録を id -> variant -> item に畳む
@@ -195,6 +215,22 @@ def main() -> int:
         other = sec_items.get(other_key)
         if s:
             v = vsec.get(s["file"], {})
+
+            # 実檔（voices/presets/<id>.wav）を先に置いてから md5・size_bytes を測る。
+            # --copy が無い場合は既に置いてある実檔、それも無ければ生成元（secondary/）を測る。
+            src = Path(s["path"])
+            if args.copy and src.is_file():
+                presets_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, presets_dir / f"{vid}.wav")
+                copied += 1
+            actual = presets_dir / f"{vid}.wav"
+            if not actual.is_file():
+                actual = src
+            md5 = _md5(actual) if actual.is_file() else None
+            size_bytes = actual.stat().st_size if actual.is_file() else None
+            if md5 is None:
+                print(f"[warn] 実檔が無いので md5/size_bytes を書けない: {vid}")
+
             # irodori 欄は「その 1 本を実際に撃った時の値」を採る（seed 掃引で話者ごとに seed が違う）。
             req_ir = ((s.get("request") or {}).get("irodori")) or {}
             irodori = {
@@ -205,14 +241,24 @@ def main() -> int:
                 irodori["trim_tail"] = req_ir["trim_tail"]
             row = sweep_rows.get(voice_key)
             if row and row.get("adopted"):
+                # seed 列は「その話者を撃った run のもの」を採る。掃引を 2 度回すと
+                # 話者ごとに起点が違う（例＝月読アイは 1235 から撃ち直した）ので、
+                # 台帳の頭にある最新 run の列を全員に当てはめると嘘になる。
+                # 行が自分の列を持たない（前の run で書かれた行）ときは attempts から実際に撃った seed を拾う。
+                tried = sorted({a["seed"] for a in row.get("attempts", []) if a.get("seed") is not None})
                 irodori["seed_sweep"] = {
-                    "seeds": sweep.get("seeds"),
+                    "seeds": row.get("seeds") or tried or sweep.get("seeds"),
+                    "seeds_tried": tried,
                     "adopted_seed": row["adopted_seed"],
                     "adopted_trim_tail": row["adopted_trim_tail"],
                     "tries": row["tries"],
+                    "tail_rule": row.get("tail_rule") or sweep.get("tail_rule"),
                 }
             entry["secondary"] = {
                 "file": f"{vid}.wav",
+                # 実檔から測った素性（schema で required）。N: の写しとの突合はこの md5 で行う。
+                "md5": md5,
+                "size_bytes": size_bytes,
                 "duration_s": v.get("duration_s"),
                 "sample_rate": v.get("sample_rate"),
                 "channels": v.get("channels"),
@@ -224,12 +270,27 @@ def main() -> int:
                 "ref_variant": args.ref_variant,
                 "ref_10s_file": other["file"] if other else None,
                 "irodori": irodori,
-                # 末尾判定（decisions 39）＝verify_wavs.py。clean＝末尾 50 ms の RMS が全体 RMS より 20 dB 以上低い。
+                # 末尾判定（decisions 39）＝verify_wavs.py の 3 条件。
+                # ⒜ 相対 Δ≦−20 dB・⒝ 絶対 ≦−40 dBFS・⒞ 末尾 300 ms を 25 ms 刻みで見て
+                # 最後の 100 ms に +0.5 dB を超える立ち上がりが無い（−60 dBFS 以下は無音）。
                 "tail": {
                     "window_ms": v.get("tail_window_ms"),
                     "tail_rms_dbfs": v.get("tail_rms_dbfs"),
                     "tail_delta_db": v.get("tail_delta_db"),
                     "margin_db": v.get("tail_margin_db"),
+                    "delta_clean": v.get("tail_delta_clean"),
+                    "abs_dbfs": v.get("tail_abs_dbfs"),
+                    "abs_clean": v.get("tail_abs_clean"),
+                    "profile_ms": v.get("tail_profile_ms"),
+                    "step_ms": v.get("tail_step_ms"),
+                    "final_ms": v.get("tail_final_ms"),
+                    "floor_dbfs": v.get("tail_floor_dbfs"),
+                    "rise_limit_db": v.get("tail_rise_limit_db"),
+                    "rise_db": v.get("tail_rise_db"),
+                    "rise_clean": v.get("tail_rise_clean"),
+                    "profile_dbfs": v.get("tail_profile_dbfs"),
+                    "fail_reasons": v.get("tail_fail_reasons", []),
+                    "rule": tail_rule,
                     "verdict": v.get("tail_verdict"),
                 },
                 "server": {
@@ -246,13 +307,6 @@ def main() -> int:
             }
             entry["generated_at"] = runsec.get("generated_at")
 
-            if args.copy:
-                src = Path(s["path"])
-                if src.is_file():
-                    presets_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(src, presets_dir / f"{vid}.wav")
-                    copied += 1
-
         presets.append(entry)
 
     doc = {
@@ -268,6 +322,12 @@ def main() -> int:
             "status skipped＝decisions 27（CeVIO AI 弦巻マキ 英）。secondary が null の行は二次 wav がまだ無い。",
             "rights_source_fetched は全行 false＝規約原文は席が未取得。司令官の確認のみ（decisions 18）。",
             "ref_variant は 30s／10s の両方を生成済み。聴いて良い方に差し替えてよい（ref_10s_file が対の檔）。",
+            "secondary.md5 / secondary.size_bytes は voices/presets/<id>.wav の実檔から測った値"
+            "（make_presets.py が --copy の複写後に測る）。N: の写しとの突合はこの md5 で行う。",
+            "secondary.tail は 3 条件の末尾判定（decisions 39）＝⒜ 相対 Δ≦−20 dB・⒝ 絶対 ≦−40 dBFS・"
+            "⒞ 末尾 300 ms を 25 ms 刻みで見て最後の 100 ms に +0.5 dB を超える立ち上がりが無い"
+            "（−60 dBFS 以下は無音扱い）。⒜ だけの旧規則は、いったん無音に落ちてから鳴り出して切れる檔を"
+            "Δ=−20.19 dB の縁で通してしまった（月読アイ）。規則の逐語は secondary.tail.rule に入る。",
         ],
         "presets": presets,
     }

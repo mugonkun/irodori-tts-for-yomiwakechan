@@ -118,21 +118,50 @@ Hz・ch・bit・秒・RMS・ピーク・先頭末尾の無音長・クリップ�
 
 二次 wav はサーバがピーク正規化するため全本が `norm` になる。これは正常。
 
-### 末尾判定（decisions 39）
+### 末尾判定（decisions 39・2026-09-05 に 3 条件へ強めた）
 
-行末に `tail50=<末尾 50 ms の RMS> Δ=<全体 RMS との差> [clean|TAIL?]` が付く。定義は
+行末に `tail50=<末尾 50 ms の RMS> Δ=<全体 RMS との差> [clean|TAIL?] rise=<最後の 100 ms の最大立ち上がり> [why=...]`
+が付く。**3 条件すべて**を満たしたときだけ `clean`。1 つでも外れたら `TAIL?`（＝`tail_suspect`）。
 
 ```
-tail_delta_db = tail50_dbfs - rms_dbfs
-clean  ⇔  tail_delta_db <= -20.0
+⒜ 相対   tail_delta_db = tail50_dbfs - rms_dbfs  <= -20.0
+⒝ 絶対   tail50_dbfs                              <= -40.0 dBFS
+⒞ 立ち上がり無し
+   末尾 300 ms を 25 ms 刻みに割り（12 区間）、最後の 100 ms（4 区間）の各区間が
+   直前の区間より +0.5 dB を超えて上がっていない＝単調減衰。
+   ただし -60 dBFS 以下の区間は「無音」とみなし、立ち上がりに数えない。
 ```
 
-自然に言い終わった音は末尾が減衰する。減衰していない（`TAIL?`＝`tail_suspect`）＝**語の途中で終端している疑い**。
-窓と閾は `--tail-ms 50` `--tail-margin-db 20` で動かせる。末尾が振幅ちょうど 0 なら `Δ=-inf` で clean。
+自然に言い終わった音は末尾が減衰する。減衰していない＝**語の途中で終端している疑い**。
 
-JSON には各本に `tail_window_ms`・`tail_rms_dbfs`・`tail_delta_db`・`tail_margin_db`・`tail_clean`・
-`tail_verdict` が、台帳の頭に `tail_clean`（本数）・`tail_suspect`・`tail_suspect_files`・`tail_rule` が入る。
-既存の欄は 1 つも消していない。
+**なぜ 3 条件にしたか。** ⒜ だけの旧規則は、末尾がいったん無音に落ちてから**また鳴り出して切れる**檔を
+取り逃がした。月読アイの seed 1234 版は Δ＝**−20.19 dB**（閾は −20.0）で 0.19 dB だけ通り抜けたが、
+終端 0.5 s のうち 0.325 s が無音のあと −58→−36 dBFS へ立ち上がったまま檔が終わっていた。
+⒝ が絶対水準（−36 dBFS は静かではない）で、⒞ が形（立ち上がり +2.68 dB）で押さえる。
+
+窓と閾は全部口から動かせる。
+
+| 引数 | 既定 | 効く条件 |
+|------|------|----------|
+| `--tail-ms` | 50 | ⒜⒝ が見る末尾の窓（ミリ秒） |
+| `--tail-margin-db` | 20 | ⒜ 全体 RMS との差の閾 |
+| `--tail-abs-dbfs` | -40 | ⒝ 末尾 RMS の絶対上限 |
+| `--tail-profile-ms` | 300 | ⒞ 形を見る末尾の長さ |
+| `--tail-step-ms` | 25 | ⒞ 刻み |
+| `--tail-final-ms` | 100 | ⒞ 立ち上がりを許さない末端の長さ |
+| `--tail-rise-db` | 0.5 | ⒞ 区間ごとに許す立ち上がり（測定の揺れ分） |
+| `--tail-floor-dbfs` | -60 | ⒞ これ以下は無音として立ち上がりに数えない |
+
+末尾が振幅ちょうど 0 なら `Δ=-inf`・`rise=none` で 3 条件とも満たす＝clean。
+`rise=none` は「最後の 100 ms が全部 -60 dBFS 以下＝無音」の意味で、比べる相手が無かったということ。
+
+JSON には各本に **既存の欄**（`tail_window_ms`・`tail_rms_dbfs`・`tail_delta_db`・`tail_margin_db`・
+`tail_clean`・`tail_verdict`）に加えて `tail_delta_clean`・`tail_abs_dbfs`・`tail_abs_clean`・
+`tail_profile_ms`・`tail_step_ms`・`tail_final_ms`・`tail_floor_dbfs`・`tail_rise_limit_db`・
+**`tail_profile_dbfs`**（25 ms 刻みの並び 12 個・末尾の形を目で追える）・`tail_rise_db`・
+`tail_rise_checked`・`tail_rise_clean`・`tail_fail_reasons`（`delta`/`abs`/`rise`）が入る。
+台帳の頭には `tail_clean`（本数）・`tail_suspect`・`tail_suspect_files`・`tail_rule`（逐語）・
+`tail_fail_by_reason` が入る。**既存の欄は 1 つも消していない。**
 
 ---
 
@@ -195,9 +224,9 @@ python .\run_secondary.py --sweep-seed --sweep-ids "vv_mochiko_sexy,co_tsukuyomi
 | `--sweep-seed` | 掃引モードに入る（参照は 30 s 版のまま・10 s 版は撃たない） |
 | `--sweep-ids <id,id>` | 掃引する id を名指し（既定＝tail_suspect を自動で拾う） |
 | `--sweep-max-seeds 8` | 試す seed の個数（既定 8＝1234〜1241） |
-| `--sweep-seed-start 1234` | 起点の seed |
+| `--sweep-seed-start 1234` | 起点の seed。**一度採った seed から撃ち直すときは次の番号を渡す**（例 `--sweep-seed-start 1235`） |
 | `--no-trim-fallback` | seed を使い切っても clean が出ない時の `trim_tail=false` の一巡を切る |
-| `--tail-ms` / `--tail-margin-db` | 末尾判定の窓と閾（既定 50 ms／20 dB） |
+| `--tail-ms` ほか 8 つ | 末尾判定の窓と閾。名も既定も `verify_wavs.py` と同じ（上の表） |
 
 seed を使い切っても clean が出なければ、**本文を変えずに** `irodori.trim_tail=false` で同じ seed 列を
 もう一巡する。`trim_tail` は上流 `SamplingRequest`（`upstream/Irodori-TTS/irodori_tts/inference_runtime.py:242`）の欄で、
@@ -208,11 +237,17 @@ seed を使い切っても clean が出なければ、**本文を変えずに** 
 
 - 射ごとの wav＝`secondary\sweep\<id>_seed<N>[_notrim].wav`（全射を残す）
 - 採用した本は `secondary\<id>_secondary.wav` を**上書き**する
-- 掃引の台帳＝`logs\run_secondary.sweep.json`
+- 掃引の台帳＝`logs\run_secondary.sweep.json`（**その run の分だけ**。前の run の記録は入らない）
 - `logs\run_secondary.result.json` には採用分の項目だけを畳み込み（他の話者の記録は消さない）、
-  `seed_sweep` として採用 seed・試行回数・全射の測定を足す
+  `seed_sweep` として採用 seed・試行回数・全射の測定を足す。
+  `seed_sweep.results` も **voice ごとに畳む**ので、掃引を 2 度回しても前の run で採った話者の行は消えない。
+  行ごとに自分の `seeds`（その run の seed 列）と `tail_rule` を持つ＝run をまたいでも何の規則でいつ採ったか読める。
 
 掃引のあとは `verify_wavs.py` を掛け直してから §5 の `make_presets.py --copy` を打つ。
+
+**実績（2026-09-05）。** 1 度目＝旧規則（⒜ のみ）で 6 本を 1234 起点で掃引して採用。
+2 度目＝規則を 3 条件に強めたら 2 本（月読アイ・ちび式じい）が落ちたので `--sweep-seed-start 1235` で撃ち直し、
+ちび式じい は 1 射目（seed 1235）、月読アイ は 4 射目（seed 1238）で clean。`trim_tail=false` の一巡は要らなかった。
 
 ---
 
@@ -231,6 +266,27 @@ python .\make_presets.py --copy --ref-variant 10s
 
 台帳には 12 名全員が載る（`status` が `pending` の 4 名と `skipped` の 1 名は
 `primary` / `secondary` が `null`）。形は `presets.json.schema`（JSON Schema 2020-12）。
+
+`secondary` の `md5`（小文字 32 桁）と `size_bytes` は **実檔**（`voices/presets/<id>.wav`・`--copy` の複写後）
+から測る。`tail` 節（3 条件の判定・25 ms 刻みの並び・規則の逐語）と併せて **schema で required**。
+N: の写しとの突合はこの `md5` で行う。
+
+形を確かめる（`jsonschema` は使い捨てで足りる）。
+
+```powershell
+uv run --no-project --with jsonschema python -c @'
+import json, sys
+from jsonschema import Draft202012Validator
+base = r"C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan"
+schema = json.load(open(base + r"\tools\preset-voices\presets.json.schema", encoding="utf-8"))
+doc = json.load(open(base + r"\voices\presets.json", encoding="utf-8"))
+Draft202012Validator.check_schema(schema)
+errs = sorted(Draft202012Validator(schema).iter_errors(doc), key=lambda e: list(e.absolute_path))
+for e in errs: print("NG", list(e.absolute_path), e.message)
+print("schema OK" if not errs else f"{len(errs)} errors")
+sys.exit(1 if errs else 0)
+'@
+```
 
 30 s 参照と 10 s 参照の**両方を聴いて**良い方を選ぶ（席は音を聴けない＝**司令官の試聴が要る**）。
 話者ごとに別の版を採りたい場合は、`--copy` で一括して置いたあと、

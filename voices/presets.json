@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-05T00:49:26+0900",
+  "generated_at": "2026-09-05T01:18:57+0900",
   "corpus": "tools/preset-voices/corpus.json",
   "notes": [
     "decisions.md 17・18・26・27 が正典。設計＝docs/design/ben-p-preset-voices.md。",
@@ -8,7 +8,9 @@
     "VOICEROID2 の 4 名は API が無いので GUI 駆動で一次 wav を取り出した（tools/preset-voices/gen_voiceroid2.py ＋ Vr2SaveTool・2026-09-05・設計書 §6）。",
     "status skipped＝decisions 27（CeVIO AI 弦巻マキ 英）。secondary が null の行は二次 wav がまだ無い。",
     "rights_source_fetched は全行 false＝規約原文は席が未取得。司令官の確認のみ（decisions 18）。",
-    "ref_variant は 30s／10s の両方を生成済み。聴いて良い方に差し替えてよい（ref_10s_file が対の檔）。"
+    "ref_variant は 30s／10s の両方を生成済み。聴いて良い方に差し替えてよい（ref_10s_file が対の檔）。",
+    "secondary.md5 / secondary.size_bytes は voices/presets/<id>.wav の実檔から測った値（make_presets.py が --copy の複写後に測る）。N: の写しとの突合はこの md5 で行う。",
+    "secondary.tail は 3 条件の末尾判定（decisions 39）＝⒜ 相対 Δ≦−20 dB・⒝ 絶対 ≦−40 dBFS・⒞ 末尾 300 ms を 25 ms 刻みで見て最後の 100 ms に +0.5 dB を超える立ち上がりが無い（−60 dBFS 以下は無音扱い）。⒜ だけの旧規則は、いったん無音に落ちてから鳴り出して切れる檔をΔ=−20.19 dB の縁で通してしまった（月読アイ）。規則の逐語は secondary.tail.rule に入る。"
   ],
   "presets": [
     {
@@ -40,6 +42,8 @@
       },
       "secondary": {
         "file": "vv_mochiko_sexy.wav",
+        "md5": "0d2e0175c9db9f68dbd57a1ae2939440",
+        "size_bytes": 2953004,
         "duration_s": 30.76,
         "sample_rate": 48000,
         "channels": 1,
@@ -56,17 +60,16 @@
           "seed_sweep": {
             "seeds": [
               1234,
-              1235,
-              1236,
-              1237,
-              1238,
-              1239,
-              1240,
-              1241
+              1235
+            ],
+            "seeds_tried": [
+              1234,
+              1235
             ],
             "adopted_seed": 1235,
             "adopted_trim_tail": true,
-            "tries": 2
+            "tries": 2,
+            "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
           }
         },
         "tail": {
@@ -74,6 +77,32 @@
           "tail_rms_dbfs": -52.14,
           "tail_delta_db": -35.37,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": -3.21,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -20.34,
+            -22.63,
+            -29.69,
+            -31.25,
+            -24.48,
+            -24.93,
+            -25.82,
+            -26.58,
+            -29.79,
+            -35.64,
+            -49.25,
+            -64.86
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -117,25 +146,72 @@
       },
       "secondary": {
         "file": "vv_chibishikijii.wav",
+        "md5": "247aef80633cdec0a526f7b1fdf785bb",
+        "size_bytes": 3041324,
         "duration_s": 31.68,
         "sample_rate": 48000,
         "channels": 1,
         "bits": 16,
-        "peak_dbfs": 0.0,
-        "rms_dbfs": -19.06,
+        "peak_dbfs": -0.01,
+        "rms_dbfs": -18.87,
         "text_id": "expressive_30s",
         "text": "みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉",
         "ref_variant": "30s",
         "ref_10s_file": "vv_chibishikijii_ref10_secondary.wav",
         "irodori": {
           "num_steps": 40,
-          "seed": 1234
+          "seed": 1235,
+          "seed_sweep": {
+            "seeds": [
+              1235,
+              1236,
+              1237,
+              1238,
+              1239,
+              1240,
+              1241,
+              1242
+            ],
+            "seeds_tried": [
+              1235
+            ],
+            "adopted_seed": 1235,
+            "adopted_trim_tail": true,
+            "tries": 1,
+            "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
+          }
         },
         "tail": {
           "window_ms": 50.0,
-          "tail_rms_dbfs": -52.0,
-          "tail_delta_db": -32.94,
+          "tail_rms_dbfs": -65.19,
+          "tail_delta_db": -46.32,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -64.38,
+            -65.81,
+            -65.33,
+            -62.99,
+            -64.23,
+            -64.14,
+            -64.5,
+            -64.31,
+            -64.85,
+            -64.56,
+            -65.18,
+            -65.21
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -146,7 +222,7 @@
           "device": "cuda",
           "device_configured": "auto"
         },
-        "elapsed_s": 8.08
+        "elapsed_s": 7.83
       },
       "generated_at": "2026-09-05T00:12:38+0900"
     },
@@ -179,6 +255,8 @@
       },
       "secondary": {
         "file": "co_tsukuyomi.wav",
+        "md5": "cdc00aba07b74734c4eb041d0ff5bed4",
+        "size_bytes": 2711084,
         "duration_s": 28.24,
         "sample_rate": 48000,
         "channels": 1,
@@ -200,12 +278,21 @@
               1237,
               1238,
               1239,
-              1240,
-              1241
+              1240
+            ],
+            "seeds_tried": [
+              1234,
+              1235,
+              1236,
+              1237,
+              1238,
+              1239,
+              1240
             ],
             "adopted_seed": 1240,
             "adopted_trim_tail": true,
-            "tries": 7
+            "tries": 7,
+            "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
           }
         },
         "tail": {
@@ -213,6 +300,32 @@
           "tail_rms_dbfs": -76.44,
           "tail_delta_db": -59.43,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -71.23,
+            -72.51,
+            -73.0,
+            -84.63,
+            -84.82,
+            -71.78,
+            -71.22,
+            -71.2,
+            -73.05,
+            -87.83,
+            -76.79,
+            -76.11
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -256,6 +369,8 @@
       },
       "secondary": {
         "file": "co_kana_naisho.wav",
+        "md5": "ef329c245e6ffeb3e99c85c8d5c5760a",
+        "size_bytes": 3194924,
         "duration_s": 33.28,
         "sample_rate": 48000,
         "channels": 1,
@@ -272,17 +387,16 @@
           "seed_sweep": {
             "seeds": [
               1234,
-              1235,
-              1236,
-              1237,
-              1238,
-              1239,
-              1240,
-              1241
+              1235
+            ],
+            "seeds_tried": [
+              1234,
+              1235
             ],
             "adopted_seed": 1235,
             "adopted_trim_tail": true,
-            "tries": 2
+            "tries": 2,
+            "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
           }
         },
         "tail": {
@@ -290,6 +404,32 @@
           "tail_rms_dbfs": -72.81,
           "tail_delta_db": -53.77,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -77.09,
+            -76.72,
+            -76.64,
+            -73.58,
+            -71.71,
+            -72.35,
+            -71.21,
+            -71.85,
+            -83.37,
+            -80.28,
+            -72.87,
+            -72.74
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -333,6 +473,8 @@
       },
       "secondary": {
         "file": "co_mana_isshoukenmei.wav",
+        "md5": "4755b737e0ca204dd9f27e34a4025767",
+        "size_bytes": 2895404,
         "duration_s": 30.16,
         "sample_rate": 48000,
         "channels": 1,
@@ -352,6 +494,32 @@
           "tail_rms_dbfs": -74.94,
           "tail_delta_db": -57.93,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -73.26,
+            -73.34,
+            -72.51,
+            -72.32,
+            -72.49,
+            -72.74,
+            -72.14,
+            -72.76,
+            -71.07,
+            -71.98,
+            -73.69,
+            -76.71
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -395,6 +563,8 @@
       },
       "secondary": {
         "file": "co_ofutonp_kiza.wav",
+        "md5": "3dbf8574a43906903aaf9a20ad1a768d",
+        "size_bytes": 2937644,
         "duration_s": 30.6,
         "sample_rate": 48000,
         "channels": 1,
@@ -415,13 +585,20 @@
               1236,
               1237,
               1238,
-              1239,
-              1240,
-              1241
+              1239
+            ],
+            "seeds_tried": [
+              1234,
+              1235,
+              1236,
+              1237,
+              1238,
+              1239
             ],
             "adopted_seed": 1239,
             "adopted_trim_tail": true,
-            "tries": 6
+            "tries": 6,
+            "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
           }
         },
         "tail": {
@@ -429,6 +606,32 @@
           "tail_rms_dbfs": -74.11,
           "tail_delta_db": -54.17,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -66.53,
+            -79.57,
+            -76.17,
+            -72.53,
+            -71.27,
+            -71.45,
+            -79.81,
+            -80.57,
+            -73.21,
+            -72.36,
+            -73.83,
+            -74.41
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -472,6 +675,8 @@
       },
       "secondary": {
         "file": "co_ofutonp_normal_v2.wav",
+        "md5": "42c0d52851157bb6a4bd24b0bdd8bc3b",
+        "size_bytes": 2526764,
         "duration_s": 26.32,
         "sample_rate": 48000,
         "channels": 1,
@@ -493,12 +698,21 @@
               1237,
               1238,
               1239,
-              1240,
-              1241
+              1240
+            ],
+            "seeds_tried": [
+              1234,
+              1235,
+              1236,
+              1237,
+              1238,
+              1239,
+              1240
             ],
             "adopted_seed": 1240,
             "adopted_trim_tail": true,
-            "tries": 7
+            "tries": 7,
+            "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
           }
         },
         "tail": {
@@ -506,6 +720,32 @@
           "tail_rms_dbfs": -78.2,
           "tail_delta_db": -57.7,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -35.14,
+            -35.92,
+            -37.02,
+            -37.94,
+            -39.12,
+            -42.71,
+            -49.89,
+            -66.27,
+            -76.74,
+            -79.65,
+            -78.92,
+            -77.59
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -549,6 +789,8 @@
       },
       "secondary": {
         "file": "vr2_akane_west.wav",
+        "md5": "d42b02df8615c49250d4cea46e33b534",
+        "size_bytes": 3352364,
         "duration_s": 34.92,
         "sample_rate": 48000,
         "channels": 1,
@@ -565,17 +807,16 @@
           "seed_sweep": {
             "seeds": [
               1234,
-              1235,
-              1236,
-              1237,
-              1238,
-              1239,
-              1240,
-              1241
+              1235
+            ],
+            "seeds_tried": [
+              1234,
+              1235
             ],
             "adopted_seed": 1235,
             "adopted_trim_tail": true,
-            "tries": 2
+            "tries": 2,
+            "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
           }
         },
         "tail": {
@@ -583,6 +824,32 @@
           "tail_rms_dbfs": -73.42,
           "tail_delta_db": -56.73,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -71.97,
+            -71.74,
+            -71.99,
+            -71.57,
+            -71.11,
+            -71.47,
+            -72.52,
+            -71.73,
+            -72.28,
+            -71.23,
+            -71.86,
+            -75.89
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -626,6 +893,8 @@
       },
       "secondary": {
         "file": "vr2_yoshida.wav",
+        "md5": "a52ec2c99e30c8ce85787cda4ee7a22c",
+        "size_bytes": 2384684,
         "duration_s": 24.84,
         "sample_rate": 48000,
         "channels": 1,
@@ -645,6 +914,32 @@
           "tail_rms_dbfs": -73.75,
           "tail_delta_db": -49.96,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -72.27,
+            -73.14,
+            -72.39,
+            -72.87,
+            -72.48,
+            -72.95,
+            -71.89,
+            -71.86,
+            -73.37,
+            -73.04,
+            -74.34,
+            -73.24
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -688,40 +983,75 @@
       },
       "secondary": {
         "file": "vr2_tsukuyomi_ai.wav",
+        "md5": "572f6f5434a47f36c345b7d71f9abf6c",
+        "size_bytes": 3433004,
         "duration_s": 35.76,
         "sample_rate": 48000,
         "channels": 1,
         "bits": 16,
-        "peak_dbfs": 0.0,
-        "rms_dbfs": -16.6,
+        "peak_dbfs": -0.0,
+        "rms_dbfs": -16.53,
         "text_id": "expressive_30s",
         "text": "みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉",
         "ref_variant": "30s",
         "ref_10s_file": "vr2_tsukuyomi_ai_ref10_secondary.wav",
         "irodori": {
           "num_steps": 40,
-          "seed": 1234,
+          "seed": 1238,
           "seed_sweep": {
             "seeds": [
-              1234,
               1235,
               1236,
               1237,
               1238,
               1239,
               1240,
-              1241
+              1241,
+              1242
             ],
-            "adopted_seed": 1234,
+            "seeds_tried": [
+              1235,
+              1236,
+              1237,
+              1238
+            ],
+            "adopted_seed": 1238,
             "adopted_trim_tail": true,
-            "tries": 1
+            "tries": 4,
+            "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
           }
         },
         "tail": {
           "window_ms": 50.0,
-          "tail_rms_dbfs": -36.79,
-          "tail_delta_db": -20.19,
+          "tail_rms_dbfs": -72.6,
+          "tail_delta_db": -56.07,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -72.01,
+            -71.13,
+            -71.05,
+            -72.51,
+            -72.06,
+            -71.1,
+            -71.26,
+            -72.4,
+            -71.7,
+            -73.33,
+            -71.56,
+            -73.95
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
@@ -732,7 +1062,7 @@
           "device": "cuda",
           "device_configured": "auto"
         },
-        "elapsed_s": 9.7
+        "elapsed_s": 6.11
       },
       "generated_at": "2026-09-05T00:12:38+0900"
     },
@@ -765,6 +1095,8 @@
       },
       "secondary": {
         "file": "vr2_tsukuyomi_shota.wav",
+        "md5": "de8e6b63d838560621191e3a8dc20976",
+        "size_bytes": 3141164,
         "duration_s": 32.72,
         "sample_rate": 48000,
         "channels": 1,
@@ -784,6 +1116,32 @@
           "tail_rms_dbfs": -73.0,
           "tail_delta_db": -56.07,
           "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -75.23,
+            -72.02,
+            -71.6,
+            -72.01,
+            -71.63,
+            -72.24,
+            -71.15,
+            -71.67,
+            -82.14,
+            -79.29,
+            -73.35,
+            -72.68
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
           "verdict": "clean"
         },
         "server": {
