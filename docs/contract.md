@@ -151,6 +151,7 @@
   | 読込中・読込失敗（503） | `ywk_runtime_unavailable` |
   | 配布版の前段検査（3-2） | `ywk_unknown_field`・`ywk_out_of_range`・`ywk_type_error`・`ywk_invalid_enum`・`ywk_literal_top_level`・`ywk_voice_and_no_ref`・`ywk_voice_and_reference`・`ywk_unsupported_response_format`・`ywk_invalid_body`・`ywk_validation_error` |
   | 暖機の口（⑺ 7-2・**本体は叩かない**） | `ywk_warmup_running`（409）・`ywk_warmup_unknown_id`（404） |
+  | 事前計算の口（⑺ 7-3・**本体は叩かない**） | `ywk_precompute_running`（409・`DELETE /ywk/voices/{id}/latent` も走行中は同じ）・`ywk_precompute_unknown_id`（404）・`ywk_unknown_voice`（400・`ids` に知らない名／**404**・`DELETE /ywk/voices/{id}/latent` の知らない話者） |
   | 上記以外の 4xx／5xx | `ywk_upstream_error`／`ywk_server_error`（404 は `ywk_not_found`・405 は `ywk_method_not_allowed`） |
 
 - **エラー body に絶対パスを 1 件も出さない**。上流は⒜未知 voice の 400 で `voices` ディレクトリの
@@ -227,13 +228,14 @@
 ```json
 {"object": "list",
  "data": [{"id": "デフォルト", "object": "voice", "display_name": "デフォルト",
-           "preset": false, "no_ref": true},
+           "preset": false, "no_ref": true, "latent": false, "latent_stale": false},
           {"id": "琴葉茜", "object": "voice", "display_name": "琴葉茜（関西弁）",
-           "preset": true, "no_ref": false}]}
+           "preset": true, "no_ref": false, "latent": true, "latent_stale": false}]}
 ```
 
 - 形は上流互換（`{"object":"list","data":[…]}`）だが、**パス欄（`ref_wav`・`ref_wavs`・`ref_latent`・
-  `ref_latents`・`ref_embed`）を落とし**、`display_name`・`preset`・`no_ref` を足す。
+  `ref_latents`・`ref_embed`）を落とし**、`display_name`・`preset`・`no_ref`・
+  `latent`・`latent_stale`（4-4）を足す。
   上流は `ref_wav` に**利用者の絶対パスをそのまま返す**（実射＝`research/lab/notes/37` §3-1）ので、
   配布版はこの route を差し替える。
 - **「デフォルト」が必ず 1 件・先頭**。上流の並びは `sorted()`＝コードポイント順で日本語は
@@ -275,21 +277,94 @@
 
 - **`voices/` と `voices.json` を書くのは配布版だけ**。本体は書かない・消さない・
   wav のパスを持たない。本体がやるのは「一覧から名前で選ぶ」ことだけ。
+- **配布版の中では、`voices.json` を書くのはランチャ（便 D）と wrapper の 2 つ**である。
+  wrapper が書くのは⑺ 7-3 の事前計算が走ったときだけで、**触るのは焼いた話者の欄 1 個**
+  （`ref_latent` に差し替え・他の鍵は残す・檔全体は temp→`os.replace` で置換）。
+  ⇒ **ランチャは `voices.json` を握りっぱなしにせず、書くときに読み直す**こと。
+  `voices/voices.ywk.json`（表示名・preset）は wrapper が**読むだけ**で、こちらは触らない。
 - **上流の書き込み 3 口は口ごと外してある**＝`POST /v1/audio/voices`・
   `PUT /v1/audio/voices/{id}`・`DELETE /v1/audio/voices/{id}` は 404／405 を返す。
   理由＝本体も配布版 UI も使わない口であり（D-3）、api_key を持たない設計
   （`decisions.md` 31）では**登録口が開いていること自体が利用者機に残る唯一の書き込み面**
   だから（multipart/form-data は CORS の simple request＝preflight なしで届く）。
   読みの `GET /v1/audio/voices/{id}`（檔名・大きさ・更新時刻だけ）は残す。
+- **話者を消すときは 4 つを消す**（Radeon 版で潜在を焼いた後・裁定 65）。wrapper が書いた alias 欄は
+  **wav より長生きする**＝`resolve()` は別名を走査より先に読む（`voices.py:80-88`）ので、
+  `voices/` の wav を消しても `voices.json` の `{"ref_latent":"latents/…"}` が残る限り
+  **話者は一覧に残り `.pt` から鳴り続ける**。上流の書き込み 3 口は外してある（上記）ので、
+  便 D は次の 4 つを消す＝⒜ `voices.json` の当該話者の欄 ⒝ `voices/latents/<stem>.pt`
+  ⒞ `voices/latents/<stem>.json` ⒟ 元の参照 wav。
+  **⒜〜⒞ は口 1 本で済む**＝`DELETE /ywk/voices/{id}/latent`（⑺ 7-3）が alias を wav へ戻し
+  2 檔を消すので、便 D が檔を直接いじる必要があるのは ⒟ だけである。
 - 話者メタ（表示名・caption 既定・既定パラメータ）は**上流に置き場が無い**
   （`VoiceSpec` はパス 5 欄＋`no_ref` の 7 欄だけ・余分な鍵は無警告で捨てられる実射＝
   `research/lab/notes/37` §3-4）＝配布版の独自台帳（`voices/voices.ywk.json`）が持つ。
 - **プリセット話者 12 名**をリリース版に同梱する予定（`decisions.md` 17・生成は便 P）。
   一覧では `preset: true` で区別できる。
 
+### 4-4 参照潜在（`latent`・`latent_stale`）＝**Radeon 版では話者登録時に潜在を焼く**
+
+**`decisions.md` 65**（裁定 11 を Radeon 版に限って覆した）。Radeon（gfx1151）では
+**話者を切り替えるたびに `prepare_reference` が 0.95〜1.44 s** かかる（`docs/radeon.md` §7-6 の実測）。
+参照 wav を**一度だけ**潜在に焼いて `.pt` で渡すと、ここが **1 発目 10.4〜11.5 ms・以後 1.2〜1.5 ms**
+になり、**参照長にまったく依らなくなる**（VRAM も増えない＝`research/lab/notes/40-rocm-warmup.md` §6-2）。
+
+- **一覧の 2 欄**（どちらも **bool**・パスは出さない）：
+  - `latent`＝この話者が**焼かれた `.pt` から鳴る**（`.pt` が実在する）。
+  - `latent_stale`＝焼いてはあるが、**元の wav が変わった／消えた**＝いま鳴る声は
+    `voices/` の檔と違う。ランチャはここに印を出し、焼き直しを促す。
+    **`<stem>.json` が無いときの読みは檔の在り処で分かれる**＝
+    ⒜ **配布版の置き場ではない `.pt`**（alias が `latents/<stem>.pt` 以外を指す）は
+    `latent: true`・`latent_stale: false`＝素性が判らない檔を「古い」と名乗って上書きさせない。
+    ⒝ **配布版の置き場そのもの**（`latents/<stem>.pt`＝`<stem>` は話者 id の sha256 を含むので
+    偶然その名になることはない）は `latent_stale: true`＝**配布版が焼いた物の地図を失った**状態で、
+    健全と名乗らせない（名乗らせると、alias はもう wav を指さず sidecar も無いので
+    **その話者は二度と焼き直せないまま「異常なし」に見える**）。
+- **置き場は `voices/latents/<ascii-stem>.pt`**（`<stem>.json` が隣）。**`voices_dir` 直下には置かない**。
+  理由 2 つ＝⑴ 上流の走査は `voices_dir` **直下 1 段だけ**なので、`.pt` が**話者として一覧に増えない**
+  ⑵ 上流の走査では**同 stem の `.wav` が `.pt` に勝つ**（`research/report/irodori-native-handoff-2026-09-04.md`
+  §1-7 ⒝＝無警告）。別ディレクトリなら stem が衝突しない。
+  `<stem>` は話者 id の sha256 先頭 12 桁を必ず含む ASCII（話者名は日本語でよい＝4-1）。
+- **経路は alias 1 本**＝`voices.json` の当該話者を
+  `{"<話者名>": {"ref_latent": "latents/<stem>.pt"}}` に**書き換える**（相対パス＝アプリを移せる）。
+  **`ref_wav` は残さない**＝上流は波形と潜在の同時指定を 400 にする（`app.py:1062-1067`）し、
+  `VoiceSpec` にはどちらを優先するかを書く欄が無い。`resolve()` は**別名を走査より先に読む**
+  （`voices.py:80-88`）ので、`voices/` に wav 檔が残っていても潜在が勝つ。
+- **元の wav は消さない**。`<stem>.json` が wav の **sha256** と符号化の 3 条件
+  （`normalize_db`・`ensure_max`・`max_ref_seconds`）**＋チェックポイント**
+  （`checkpoint`＝`IRODORI_HF_CHECKPOINT` の実効値・判れば `latent_dim` も）を持ち、
+  これが**焼き直しの地図**になる（alias が `.pt` を指した後、`VoiceSpec` はもう wav を知らない）。
+  **`<stem>.json` は wav と対の檔である**＝消すと地図を失う。sidecar の `schema` は **2**
+  （1 はチェックポイント欄が無い＝素性を保証できないので 1 度だけ焼き直す）。
+  - **チェックポイントが鍵に要る理由**＝上流の潜在経路は**形と `latent_dim` しか見ない**
+    （`inference_runtime.py:906-912`・`_coerce_latent_shape` 同 :136-147）。この機体の
+    `latent_dim` は **32**＝**次元が同じ別モデルで焼いた `.pt` は無警告で通る**。
+    `GET /params` は `checkpoint.hf` を外に出しており、ランチャが差し替えられる面である。
+    チェックポイントが変われば `latent_stale: true`。
+- **地図を失っても諦めない**＝`<stem>.json` が無く alias が配布版の置き場を指しているときは、
+  wrapper が元 wav を 2 つの経路で引き直す＝⑴ `voices/voices.ywk.json` の
+  `ref_wav`／`ref_wavs`（便 D の台帳・wrapper は読むだけ）⑵ 上流と同じ走査の命名
+  `voices/<話者 id>.<拡張子>`（`voices.py:165-183`＝プリセット wav を `voices/` に置く形）。
+  **どちらでも辿れないときだけ**焼けない＝`force:true` の要求は `skipped` ではなく
+  **`failed`（理由つき）**で終える（⑺ 7-3）。
+- **焼いた後は要求時の `ref_normalize_db` が効かない**＝正規化は**焼くときに済んでいる**。
+  上流の潜在経路は `ref_normalize_db`／`ref_ensure_max` を読まない（`inference_runtime.py:903-924`）。
+  配布版は焼くときに `IRODORI_DEFAULT_REF_NORMALIZE_DB`（既定 −16.0）と
+  `IRODORI_DEFAULT_REF_ENSURE_MAX`（既定 true）＝**要求時の既定と同じ値**を使うので、
+  既定のまま使う限り音は変わらない。この 3 条件（＋チェックポイント）が変わると `latent_stale` が立つ。
+- **CUDA 版は既定で焼かない**（`decisions.md` 11＝GPU では節約が 40〜115 ms しかない）。
+  口は変種に依らず在る（⑺ 7-3）。
+
+題目（4-4 の追補）＝`sidecarを失うと配布版の潜在はstaleになる`／`他人のptはsidecarが無くてもstaleにしない`／
+`sidecarを失っても走査のwavから焼き直せる`／`sidecarを失っても台帳のwavから焼き直せる`／
+`チェックポイントも鍵のうち`／`schema1のsidecarは1度だけ焼き直す`／
+`潜在を外すとaliasがwavへ戻る`／`潜在を外してもランチャの欄は残る`。
+
 題目＝`norefのfalseは参照ではない`／`一覧の先頭にデフォルトが常在する`／`voicesjsonが無くてもデフォルトで合成200`／
 `voicesjsonが壊れても500ではなく1件と理由`／`一覧にnoneが0件`／`noneの別名は正規化されて200`／
-`一覧の応答に絶対パスが0件`／`日本語話者名で合成200`／`上流の書き込み3口が外れている`。
+`一覧の応答に絶対パスが0件`／`日本語話者名で合成200`／`上流の書き込み3口が外れている`／
+`一覧にlatentとlatentstaleが載る`／`焼いた話者はrefwavではなくreflatentで鳴る`／
+`潜在は一覧に話者として増えない`。
 
 ---
 
@@ -407,6 +482,12 @@
     `cuda` と名乗る**ので、CUDA 機と Radeon 機を分けるのはこの 2 欄である（CUDA ビルドでは
     `gcnArchName` 属性が無い＝両方 `null`・CPU に載っているときも `null`）。
     実測の形＝`research/lab/notes/29-gpu-designation-lab.md` :317。
+  - **`precompute`**（`object`）＝⑺ 7-3 の参照潜在の事前計算の記録。`warmup` と同じ形の
+    走行記録で、**欄は `state`／`id`／`done`／`total`／`last`／`error`**
+    （＋`elapsed_s`・内訳 `built`／`reused`／`skipped`／`failed`）。
+    **`state` は `idle|running|done|failed|cancelled`**。走ったことが無ければ
+    `{"state":"idle","id":null,"done":0,"total":0,…}`。**変種に依らず必ず在る欄**で、
+    CUDA 版では既定で `idle` のまま（⑷ 4-4）。
 - **`warmup` は⑺ 7-2 の暖機の記録**に育った（便 C）。便 A が約束した `state`・`shots` の 2 欄は
   そのままの意味で残っている。
 - **Radeon 版は精度が bf16 に固定**（`decisions.md` 5・36）＝`IRODORI_MODEL_PRECISION=fp32` を
@@ -425,11 +506,11 @@
 
 題目＝`ywkstatusのdeviceactualは実測値でモデル未読込ならnull`／`ywkstatusに絶対パスが0件`／
 `ywkstatusが変種を名乗る`／`ywkstatusのdeviceにhipとgcnarchが載る`／`rocm変種はfp32指定でexit2`／
-`rocm変種はMIOpenのdbを利用者データ配下に置く`。
+`rocm変種はMIOpenのdbを利用者データ配下に置く`／`ywkstatusにprecomputeの欄が在る`。
 
 ---
 
-## ⑺ 先読み（7-1・**予約**）と暖機（7-2・**便 C で実装済み**）
+## ⑺ 先読み（7-1・**予約**）・暖機（7-2）・参照潜在の事前計算（7-3）
 
 ### 7-1 先読み（`POST /ywk/prefetch`）＝**予約**＝便 A では `available: false`
 
@@ -515,6 +596,73 @@
 `暖機は上流のセマフォに並ぶ`／`暖機のbodyの検査`／`起動時暖機はenvで走る`／
 `SSEの間もカウンタを握る`／`SSEが失敗してもカウンタは下りる`／
 `暖機の射も保証された話者を解決する`／`暖機のrunは保証された話者で止まらない`。
+
+### 7-3 参照潜在の事前計算（`POST /ywk/voices/precompute`）＝**ランチャの口。本体は叩かない**
+
+**話者の参照 wav を 1 回だけ潜在（`.pt`）に焼いて、以後の話者切替を 1 秒級から ms 級にする口。**
+形の詳細（置き場・alias・`latent`／`latent_stale`）は⑷ 4-4。ここは**口と走行記録**だけ。
+`decisions.md` 65（裁定 11 を Radeon 版に限って覆した）。
+
+| 口 | body | 応答 |
+|---|---|---|
+| `POST /ywk/voices/precompute` | `{"ids":["琴葉茜","月読アイ"]}` **または** `{"all":true}`（＋任意 `force`） | **202** `{"id","total","state":"running"}` ／ 走行中は **409** `ywk_precompute_running` |
+| `DELETE /ywk/voices/precompute/{id}` | — | **200** `{"id","state","cancel_requested"}`／別の id は **404** `ywk_precompute_unknown_id` |
+| `DELETE /ywk/voices/{話者 id}/latent` | — | **200** `{"id","state":"reverted\|absent","alias":"ref_wav\|ref_wavs\|removed\|unchanged","removed":[…]}`／知らない話者は **404** `ywk_unknown_voice`／走行中は **409** `ywk_precompute_running` |
+| `GET /ywk/status` | — | `precompute` 欄（下） |
+
+- **`ids` と `all` はどちらか一方**（両方＝400 `ywk_invalid_body`・どちらも無し＝400 `ywk_out_of_range`）。
+  `all:true` の対象は**「デフォルト」と `no_ref`／`ref_embed` を除く全話者**＝`total` はその数。
+  `ids` に**知らない話者名があれば 1 件も走らずに 400** `ywk_unknown_voice`（暖機と違い、走る前に判る）。
+  `force:true` は**変わっていなくても焼き直す**＝だから **`force` で焼けなかったものは `skipped` にしない**
+  ＝元 wav を辿れない話者（sidecar を失い ⑷ 4-4 の 2 経路でも引き直せない）は **`failed`＋理由**で終える。
+  「参照なし」「`ref_embed`」は `force` でも `skipped`（焼く物が元から無い）。
+- **潜在を外す口**＝`DELETE /ywk/voices/{話者 id}/latent`。alias を**元の wav へ戻し**
+  （`<stem>.json` の `sources`・無ければ ⑷ 4-4 の引き直し 2 経路）、`latents/<stem>.pt` と
+  `<stem>.json` を消す。alias 欄の**他の鍵は残す**（残る鍵が無ければ欄ごと落として上流の走査に返す）。
+  **書き換えの順は「alias が先・檔の削除が後」**＝途中に届いた要求が消える寸前の `.pt` を掴まない。
+  焼いてなければ `state:"absent"`（200・冪等）。`removed` は **`voices_dir` からの相対**（絶対パスを出さない）。
+  **配布版の置き場ではない `.pt`**（利用者が自分で置いた物）は **alias から外すだけで檔は消さない**
+  ＝`removed` は空配列（人の檔を消さない・⑷ 4-4 の「素性が判らない檔」と同じ扱い）。
+  **事前計算の走行中は 409**（走者が alias を書き戻すため）。これが ⑷ 4-3 の「話者を消す 4 つ」の ⒜〜⒞ を担う。
+- **既定 ON は `rocm-*` だけ**＝env `YWK_PRECOMPUTE_ON_START`（**未設定なら変種で決まる＝`rocm-*` は 1・
+  `cuda`／`cpu` は 0**・明示すれば両方向に上書き）。ON なら **ready 直後に `all` を 1 回**走らせる。
+  口そのものは**変種に依らず在る**（CUDA 機で試したい利用者は叩ける）。
+- **優先度は暖機と同じ作法**＝本物の `POST /v1/audio/speech` が走っている間は**次の 1 件の前で待つ**
+  （最大 **30 s**・以後は 1 件だけ焼いて再確認）。焼く処理そのものも**上流の合成セマフォ**に並ぶので、
+  本物が待たされるのは**最大で 1 件ぶん**（1 件 0.37〜0.90 s＝`40` §6-2）。
+  **取消旗は run ごとに別**（暖機は暖機の・事前計算は事前計算の旗を見る）で、**run が終われば下ろす**
+  ＝旗は「走っている run への合図」であって処理系の状態ではない。1 本にすると
+  ⑴ 暖機を 1 度取り消した後は事前計算が本物にまったく譲らなくなり
+  ⑵ 事前計算の `DELETE` が待ちを破れず取消が最大 30 s 遅れる。
+- **取消は「次の 1 件を焼かない」ところまで**＝走っている 1 件は最後まで走る（7-2・⑶ 3-4 と同じ粒度）。
+  **本物が走っている最中でも `DELETE` は即座に効く**（待ちを破る）。
+- **失敗は run を止めない**（**暖機とはここが違う**）。暖機が 1 射目で止まるのは、話者名を間違えれば
+  後続の射も全部間違いだから。事前計算の 12 件は**互いに独立**で、1 本の壊れた wav のせいで
+  残り 11 名が 1 秒級を払い続ける方が悪い。**最初の理由を `error` に残し、`state` は `failed`** で終える。
+- **1 件 1 行のログ**（`id`・`state`・`frames`・`ms`）。焼いた wav は残す（⑷ 4-4）。
+- **`/ywk/status.precompute` の形**：
+
+```json
+{"state":"idle|running|done|failed|cancelled","id":"…|null","done":0,"total":0,
+ "built":0,"reused":0,"skipped":0,"failed":0,"elapsed_s":0.0,
+ "last":{"id":"琴葉茜","state":"built|reused|skipped|failed","reason":null,"frames":750,"ms":612.4},
+ "error":null}
+```
+
+  - `built`＝焼いた／`reused`＝**wav も条件も変わっていないので焼かなかった**（alias だけ確かめる）／
+    `skipped`＝**焼く物が無い**（「デフォルト」等の参照なし・`ref_embed`・元の wav を辿れない。
+    ただし `force:true` で辿れないものは `failed`＝上記）／
+    `failed`＝例外。`done` は**着手した件数**＝4 つの合計。
+  - `error` は**絶対パスを畳んだ 1 行**（⑶ 3-3 と同じ規則）。
+- **body の検査は⑶ 3-2 と同じ規律**＝未知欄は `ywk_unknown_field`・型違いは `ywk_type_error`・
+  `ids` は最大 256 件・空配列や「どちらも無し」は `ywk_out_of_range`。
+
+題目＝`事前計算は202でidとtotalを返す`／`走行中に重ねると409`／`取消は次の1件の前で止まる`／
+`本物の要求が来たら次の1件の前で待つ`／`本物が飛んでいても取消は即座に効く`／
+`取消旗はrunを跨がない`／`暖機を取り消した後でも事前計算は本物に譲る`／`焼き直しは元wavのsha256で決まる`／
+`aliasがreflatentに書き換わりrefwavは残らない`／`一覧のlatent欄`／`cuda変種では既定OFF`／
+`1件の失敗が他を巻き込まない`／`知らない話者名は走る前に400`／`bodyの検査`／
+`forceで辿れない話者はfailed`／`参照なしはforceでもskipped`／`潜在を外す口`。
 
 ---
 

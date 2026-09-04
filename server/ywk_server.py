@@ -10,6 +10,15 @@ One file.  It imports the upstream FastAPI app unmodified and adds what the
   then one short shot per speaker, yielding to every real request (便 C 設計書
   §2-3).  Radeon needs it -- an unseen output/reference shape costs seconds the
   first time MIOpen meets it (research/lab/notes/40).
+* ``POST``/``DELETE /ywk/voices/precompute`` -- the 裁定 65 reference-latent
+  cache: the reference wav of every speaker is encoded once into
+  ``<voices_dir>/latents/<ascii-stem>.pt`` and ``voices.json``'s alias is pointed
+  at it, which takes ``prepare_reference`` from 0.95..1.44 s per speaker switch
+  to ~11 ms (research/lab/notes/40 §6-2).  Default-on for the ``rocm-*``
+  variants only; decisions.md 11 keeps the CUDA build without it.
+* ``DELETE /ywk/voices/{id}/latent`` -- the road back out of that bake: the alias
+  goes back on the wav and the two files are removed, so deleting a speaker is
+  an API call rather than a hand edit of ``voices.json`` (contract ⑷ 4-3).
 * ``GET /v1/audio/voices`` -- replaced: absolute paths dropped, 「デフォルト」
   always present and first, ``display_name`` / ``preset`` added, and a broken
   ``voices.json`` answers "0 件＋理由" instead of 500 (§4-4, contract ⑼ D-8).
@@ -41,8 +50,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import concurrent.futures
+import hashlib
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -311,6 +322,11 @@ from fastapi.routing import APIRoute  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
 
 from irodori_openai_tts import app as upstream  # noqa: E402
+
+#: The extensions the upstream's own ``voices_dir`` scan accepts (voices.py:11-20).
+#: Read, never written: the recovery road in ``_recovered_wav_sources`` has to
+#: look for exactly the files that scan would have turned into a speaker.
+from irodori_openai_tts.voices import VOICE_EXTENSIONS  # noqa: E402
 
 import ywk_params  # noqa: E402
 from ywk_params import (  # noqa: E402
@@ -928,6 +944,9 @@ def _default_voice_entry() -> dict[str, Any]:
         "display_name": DEFAULT_VOICE_ID,
         "preset": False,
         "no_ref": True,
+        # The reserved speaker has no reference to precompute (§8).
+        "latent": False,
+        "latent_stale": False,
     }
 
 
@@ -956,6 +975,11 @@ def _voice_list_with_reason() -> tuple[list[dict[str, Any]], str | None]:
     items: list[dict[str, Any]] = []
     for voice in specs:
         entry = meta.get(voice.voice_id, {})
+        # 裁定 65: two booleans, not the path -- "is this speaker served from a
+        # precomputed latent" and "has the wav it was made from changed since".
+        # The path itself stays out for the same reason the five reference
+        # fields do (design §4-4).
+        has_latent, stale = latent_status(voice)
         items.append(
             {
                 "id": voice.voice_id,
@@ -965,6 +989,8 @@ def _voice_list_with_reason() -> tuple[list[dict[str, Any]], str | None]:
                 "display_name": str(entry.get("display_name") or voice.voice_id),
                 "preset": bool(entry.get("preset", False)),
                 "no_ref": bool(voice.no_ref),
+                "latent": has_latent,
+                "latent_stale": stale,
             }
         )
     if not any(item["id"] == DEFAULT_VOICE_ID for item in items):
@@ -1233,8 +1259,27 @@ if _upstream_lifespan is not None:
             # IRODORI_PRELOAD load has finished.
             note_device_once()
             # The warmup thread queues on the upstream's asyncio semaphore, so
-            # it needs the loop the server actually runs on (§7).
+            # it needs the loop the server actually runs on (§7).  The
+            # precompute worker (§8) borrows the same handle for the same
+            # reason.
             _warmup_loop = asyncio.get_running_loop()
+            # Precompute first: its items cost 0.37..0.90 s each (research 40
+            # §6-2) against several seconds per warmup shot, so starting it
+            # ahead makes it likely that the warmup's speaker shots already go
+            # down the latent path.  Both threads yield to real requests and
+            # both queue on the upstream semaphore, so overlapping is safe --
+            # it is only the ordering that is a preference, not a guarantee.
+            if precompute_on_start_enabled():
+                try:
+                    started_pc = start_precompute(ids=None)
+                except PrecomputeBusy:  # pragma: no cover -- nothing else can be running yet
+                    logger.warning("precompute on start: a run is already going")
+                else:
+                    logger.info(
+                        "precompute on start: id=%s total=%d",
+                        started_pc["id"],
+                        started_pc["total"],
+                    )
             options = warmup_on_start_options()
             if options is not None:
                 try:
@@ -1251,6 +1296,7 @@ if _upstream_lifespan is not None:
                 yield
             finally:
                 _warmup_cancel.set()
+                _precompute_cancel.set()
                 with _pending_cond:
                     _pending_cond.notify_all()
                 _warmup_loop = None
@@ -1379,6 +1425,7 @@ def ywk_status() -> dict[str, Any]:
             "error": voices_error,
         },
         "warmup": warmup_snapshot(),
+        "precompute": precompute_snapshot(),
     }
 
 
@@ -1500,17 +1547,27 @@ class _real_request_in_flight:  # noqa: N801 -- a context manager used as a verb
         return None
 
 
-def _wait_until_quiet(timeout: float) -> bool:
+def _wait_until_quiet(timeout: float, *, cancel: threading.Event | None = None) -> bool:
     """Block until no real request is in flight.  True if it went quiet.
 
     False means the deadline passed (or the run was cancelled): the caller fires
     one shot anyway and asks again, which is what bounds the wait a real request
     can suffer at one warmup shot rather than a whole plan.
+
+    ``cancel`` is **the caller's own** cancel flag -- the warmup passes
+    ``_warmup_cancel``, the precompute ``_precompute_cancel``.  It used to read
+    ``_warmup_cancel`` unconditionally, which broke the 裁定 65 discipline in
+    both directions: a precompute's ``DELETE`` could not break the wait (the
+    cancel landed up to ``PRECOMPUTE_QUIET_WAIT_S``＝30 s later, and the route's
+    ``notify_all`` was a no-op), and a warmup cancelled once left the flag set,
+    after which the precompute stopped yielding to real requests at all
+    (契約 ⑺ 7-3 の「本物が走っている間は次の 1 件の前で待つ」).  Passing ``None``
+    means "no run owns this wait": it waits out the whole timeout.
     """
     deadline = time.monotonic() + max(0.0, float(timeout))
     with _pending_cond:
         while _pending_real_requests > 0:
-            if _warmup_cancel.is_set():
+            if cancel is not None and cancel.is_set():
                 return False
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -1598,13 +1655,38 @@ def _finish_warmup(run_id: str, state: str, error: str | None) -> None:
         _warmup["finished_at"] = time.monotonic()
 
 
+def _clear_cancel_flag(
+    flag: threading.Event, lock: threading.Lock, record: dict[str, Any], run_id: str
+) -> None:
+    """Drop a run's cancel flag when that run ends.
+
+    The flag is **a signal to the thread that is running**, not a property of
+    the process: leaving it set after the run finished made every later
+    ``_wait_until_quiet`` return "not quiet" at once, so the next background job
+    stopped yielding to real requests.  The ownership check under the record's
+    own lock is what keeps this from clearing a *newer* run's cancel: ``start_*``
+    writes the new id under the same lock, and ``DELETE`` can only set the flag
+    for a run whose id is already in the record.
+    """
+    with lock:
+        if record["id"] == run_id:
+            flag.clear()
+
+
 def _warmup_run(run_id: str, shots: list[dict[str, Any]], text: str) -> None:
+    try:
+        _warmup_run_shots(run_id, shots, text)
+    finally:
+        _clear_cancel_flag(_warmup_cancel, _warmup_lock, _warmup, run_id)
+
+
+def _warmup_run_shots(run_id: str, shots: list[dict[str, Any]], text: str) -> None:
     total = len(shots)
     for index, shot in enumerate(shots, start=1):
         if _warmup_cancel.is_set():
             _finish_warmup(run_id, "cancelled", None)
             return
-        quiet = _wait_until_quiet(WARMUP_QUIET_WAIT_S)
+        quiet = _wait_until_quiet(WARMUP_QUIET_WAIT_S, cancel=_warmup_cancel)
         if _warmup_cancel.is_set():
             _finish_warmup(run_id, "cancelled", None)
             return
@@ -1697,7 +1779,7 @@ def _fire_warmup_shot(shot: dict[str, Any], text: str) -> None:
             semaphore = _acquire_upstream_slot()
         except _SlotBusy as exc:
             last_error = exc
-            _wait_until_quiet(WARMUP_QUIET_WAIT_S)
+            _wait_until_quiet(WARMUP_QUIET_WAIT_S, cancel=_warmup_cancel)
             continue
         try:
             upstream._synthesize_once(runtime, sampling_request)
@@ -1923,7 +2005,1174 @@ def warmup_on_start_options() -> dict[str, Any] | None:
 
 
 # --------------------------------------------------------------------------
-# 8. startup checks
+# 8. reference-latent precompute (decisions.md 65)
+#
+# Why it exists: on gfx1151 every *speaker switch* costs ``prepare_reference``
+# 0.95..1.44 s the first time that reference is seen in a process, and the first
+# VOICEROID2-shaped reference of a session cost 14.8 s (docs/radeon.md §7-6,
+# decisions.md 40).  Encoding the reference once into a ``.pt`` and handing the
+# upstream ``ref_latent`` instead of ``ref_wav`` deletes that cost outright:
+# 10.4..11.5 ms on the first shot and 1.2..1.5 ms afterwards, independent of the
+# reference length, with no VRAM increase (research/lab/notes/40 §6-2).
+# decisions.md 11 said the distribution would not carry this; decisions.md 65
+# reopened it **for the Radeon build only**.
+#
+# Three things the upstream forces on the design:
+#
+# ⑴ ``_load_reference_latent`` reads the file with
+#    ``torch.load(path, map_location="cpu", weights_only=True)`` and hands the
+#    result straight to ``_coerce_latent_shape``
+#    (inference_runtime.py:906-909), which calls ``.ndim`` on it.  So the file
+#    must hold **one bare tensor**, not a dict -- a dict survives
+#    ``weights_only=True`` and then dies on ``.ndim``.  Shape is ``(T, D)`` or
+#    ``(1, T, D)``; ``D`` must equal ``model_cfg.latent_dim``.  dtype is free:
+#    line 912 casts with ``.to(dtype=runtime_dtype)``, which is what lets the
+#    distribution store fp32 and still serve a bf16 runtime (research U-REF-6
+#    leaves bf16 portability unverified, so fp32 it is).
+#
+# ⑵ ``VoiceRegistry._scan_voice_files`` walks ``voices_dir`` **one level deep**
+#    and lets a ``.wav`` win over a ``.pt`` of the same stem (research handoff
+#    §1-7 ⒝).  Writing the ``.pt`` into ``voices_dir/latents/`` therefore avoids
+#    both traps at once: the scan never sees it (the speaker list stays exactly
+#    as long as it was) and the stem cannot collide with the wav.  The only way
+#    to reach it is the alias, and ``resolve()`` reads aliases *before* the scan
+#    (voices.py:80-88), so the alias always wins.
+#
+# ⑶ ``VoiceSpec`` has no room for metadata (7 fields, extras dropped without a
+#    warning), so the key that says "this latent still matches its wav" lives in
+#    a sidecar ``<stem>.json`` next to the ``.pt``: the sha256 of every source
+#    wav plus the three encode parameters.  A changed wav flips
+#    ``latent_stale`` in the speaker list and the next run rebuilds.
+# --------------------------------------------------------------------------
+
+#: Subdirectory of ``voices_dir`` the ``.pt`` files live in.  Never scanned by
+#: the upstream registry -- that is the whole point (see ⑵ above).
+PRECOMPUTE_SUBDIR = "latents"
+#: 2 = the sidecar's ``params`` carries ``checkpoint`` (and ``latent_dim`` when a
+#: loaded runtime could name it).  A schema-1 sidecar names no checkpoint, so it
+#: cannot be vouched for and rebakes once (``_params_match``).
+PRECOMPUTE_SCHEMA = 2
+
+_PRECOMPUTE_MAX_IDS = 256
+#: Attempts per item when the upstream synthesis queue answers "full".
+_PRECOMPUTE_SLOT_ATTEMPTS = 3
+#: Same ceiling the warmup uses: wait this long for the real requests to drain
+#: before encoding one more reference anyway (設計書 §2-3 の作法).
+PRECOMPUTE_QUIET_WAIT_S = WARMUP_QUIET_WAIT_S
+
+#: Fields of an alias entry that name a reference.  Pointing an alias at a
+#: latent means clearing every one of them: the upstream 400s on
+#: ``ref_wav`` + ``ref_latent`` together ("Waveform and latent references cannot
+#: be combined", app.py:1062-1067), and research handoff §1-7 records that a
+#: latent can only be expressed through the alias in the first place.
+_ALIAS_REFERENCE_KEYS = ("ref_wav", "ref_wavs", "ref_latent", "ref_latents", "ref_embed", "no_ref")
+
+_precompute_lock = threading.Lock()
+_precompute_cancel = threading.Event()
+_precompute_thread: threading.Thread | None = None
+
+_PRECOMPUTE_IDLE: dict[str, Any] = {
+    "state": "idle",
+    "id": None,
+    "done": 0,
+    "total": 0,
+    "built": 0,
+    "reused": 0,
+    "skipped": 0,
+    "failed": 0,
+    "started_at": None,
+    "finished_at": None,
+    "last": None,
+    "error": None,
+}
+_precompute: dict[str, Any] = dict(_PRECOMPUTE_IDLE)
+
+#: ``voices.json`` is rewritten in place by the worker thread and read by every
+#: request; one lock keeps a read-modify-write from losing a neighbour's entry.
+_alias_lock = threading.Lock()
+
+#: ``(size, mtime_ns) -> sha256`` per path.  ``latent_stale`` is answered on
+#: every ``GET /ywk/voices`` and ``GET /ywk/status``, and hashing twelve 30 s
+#: references is ~34 MB of reading; after the first pass this is stat-only.
+_digest_cache: dict[str, tuple[int, int, str]] = {}
+_digest_lock = threading.Lock()
+
+
+class PrecomputeBusy(Exception):
+    """A run is already going; the POST answers 409."""
+
+    def __init__(self, run_id: str | None) -> None:
+        super().__init__(run_id or "")
+        self.id = run_id
+
+
+def _voices_root() -> Path:
+    return upstream.settings.voices_dir.expanduser()
+
+
+def latents_dir() -> Path:
+    return _voices_root() / PRECOMPUTE_SUBDIR
+
+
+def _alias_file() -> Path:
+    path = getattr(upstream.settings, "voice_aliases_file", None)
+    if path is None:
+        return _voices_root() / "voices.json"
+    return Path(path).expanduser()
+
+
+_ASCII_UNSAFE = re.compile(r"[^A-Za-z0-9_-]+")
+
+
+def latent_stem(voice_id: str) -> str:
+    """An ASCII, collision-free file stem for a speaker id.
+
+    Speaker ids are allowed to be Japanese (contract ⑷ 4-1), but the ``.pt``
+    lands on a Windows filesystem next to a sidecar and inside a JSON alias
+    value, so it is kept to ``[A-Za-z0-9_-]``.  The readable part is only a
+    convenience for whoever opens the directory; the twelve hex digits of the
+    id's sha256 are what make it unique and stable -- two speakers whose names
+    differ only in characters the regex folds still get different stems.
+    """
+    digest = hashlib.sha256(str(voice_id).encode("utf-8")).hexdigest()[:12]
+    safe = _ASCII_UNSAFE.sub("-", str(voice_id)).strip("-")[:48].strip("-")
+    return f"{safe}-{digest}" if safe else f"ywk-{digest}"
+
+
+def latent_paths(voice_id: str) -> tuple[Path, Path]:
+    """``(<stem>.pt, <stem>.json)`` for a speaker id."""
+    stem = latent_stem(voice_id)
+    root = latents_dir()
+    return root / f"{stem}.pt", root / f"{stem}.json"
+
+
+def latent_alias_value(voice_id: str) -> str:
+    """What goes into ``voices.json`` -- relative, so the app can be moved.
+
+    ``_resolve_voice_path`` (voices.py:245-249) joins a relative alias onto
+    ``voices_dir``, so this never becomes an absolute path in the file the
+    launcher ships.
+    """
+    return f"{PRECOMPUTE_SUBDIR}/{latent_stem(voice_id)}.pt"
+
+
+def file_digest(path: Path) -> str | None:
+    """sha256 of a file, cached on ``(size, mtime_ns)``.  ``None`` if unreadable."""
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    key = str(path)
+    with _digest_lock:
+        cached = _digest_cache.get(key)
+    if cached is not None and cached[0] == stat.st_size and cached[1] == stat.st_mtime_ns:
+        return cached[2]
+    hasher = hashlib.sha256()
+    try:
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1 << 20), b""):
+                hasher.update(block)
+    except OSError:
+        return None
+    digest = hasher.hexdigest()
+    with _digest_lock:
+        _digest_cache[key] = (stat.st_size, stat.st_mtime_ns, digest)
+    return digest
+
+
+def _relative_source(path: Path) -> str:
+    """Store a source path relative to ``voices_dir`` when it lives under it."""
+    try:
+        return path.resolve().relative_to(_voices_root().resolve()).as_posix()
+    except (OSError, ValueError):
+        return str(path)
+
+
+def _resolve_source(value: str) -> Path:
+    raw = Path(str(value)).expanduser()
+    if raw.is_absolute():
+        return raw
+    return _voices_root() / raw
+
+
+def read_sidecar(voice_id: str) -> dict[str, Any] | None:
+    """The ``<stem>.json`` beside the ``.pt``, or ``None``.  Never raises."""
+    _, sidecar = latent_paths(voice_id)
+    try:
+        with sidecar.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _sidecar_sources(sidecar: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(sidecar, dict):
+        return []
+    sources = sidecar.get("sources")
+    if not isinstance(sources, list):
+        return []
+    return [item for item in sources if isinstance(item, dict) and item.get("path")]
+
+
+def _sources_match(sidecar: dict[str, Any] | None) -> bool:
+    """Do the wavs on disk still hash to what the sidecar recorded?"""
+    sources = _sidecar_sources(sidecar)
+    if not sources:
+        return False
+    for item in sources:
+        path = _resolve_source(str(item.get("path")))
+        recorded = item.get("sha256")
+        if not isinstance(recorded, str) or not recorded:
+            return False
+        if file_digest(path) != recorded:
+            return False
+    return True
+
+
+def points_at_our_latent(voice: Any) -> bool:
+    """Does this speaker's alias name the file **we** would have written?
+
+    ``latents/<stem>.pt`` carries twelve hex digits of the speaker id's sha256
+    (:func:`latent_stem`), so nobody arrives at that exact path by accident: a
+    ``.pt`` sitting there is one the distribution baked.  Every other latent --
+    one the owner dropped in themselves, or a hand-written alias -- stays out of
+    reach of the rebuild and the ``latent_stale`` verdict below.
+    """
+    single = getattr(voice, "ref_latent", None)
+    if not single or list(getattr(voice, "ref_latents", None) or []):
+        return False
+    voice_id = str(getattr(voice, "voice_id", ""))
+    if not voice_id:
+        return False
+    try:
+        return Path(str(single)).expanduser() == latent_paths(voice_id)[0]
+    except (OSError, ValueError):
+        return False
+
+
+def latent_status(voice: Any) -> tuple[bool, bool]:
+    """``(latent, latent_stale)`` for one ``VoiceSpec`` (contract ⑷ 4-1).
+
+    ``latent`` -- this speaker is served from a precomputed ``.pt`` that is
+    actually on disk.  ``latent_stale`` -- it is, but the wav it was made from
+    has changed or gone (or the encode knobs did), so the voice being spoken is
+    no longer the voice the file in ``voices/`` holds.
+
+    A missing sidecar reads two different ways, and the *path* is what tells
+    them apart.  A ``.pt`` at some other location is a file the distribution did
+    not make: nothing is known about its provenance, and claiming staleness
+    would push the launcher to overwrite something its owner put there
+    deliberately -- so it stays **not stale**.  A ``.pt`` at our own
+    ``latents/<stem>.pt`` with no ``<stem>.json`` beside it is *ours with the map
+    lost*, and reporting that as healthy is exactly how a speaker became
+    permanently unbakeable: the alias no longer names a wav, the sidecar that
+    remembered it is gone, and the list said everything was fine.  That one is
+    **stale**, which is the launcher's cue to rebuild it (契約 ⑷ 4-4).
+
+    Never raises: it is called from ``GET /ywk/status``.
+    """
+    try:
+        single = getattr(voice, "ref_latent", None)
+        paths = [str(single)] if single else []
+        paths += [str(item) for item in list(getattr(voice, "ref_latents", None) or []) if item]
+        if not paths:
+            return False, False
+        if not all(Path(item).expanduser().is_file() for item in paths):
+            return True, True
+        sidecar = read_sidecar(str(getattr(voice, "voice_id", "")))
+        if sidecar is None:
+            return True, points_at_our_latent(voice)
+        if not _sources_match(sidecar):
+            return True, True
+        return True, not _params_match(sidecar, _encode_params(_live_runtime()))
+    except Exception:  # noqa: BLE001 -- a status field must never be the failure
+        return False, False
+
+
+# ---- alias rewriting -----------------------------------------------------
+
+
+def _read_alias_payload() -> dict[str, Any]:
+    """``voices.json`` as a dict.  Missing is ``{}``; broken raises.
+
+    Broken has to raise: silently starting from ``{}`` would drop 「デフォルト」
+    and every speaker the launcher wrote, which is a far worse outcome than one
+    failed precompute item.
+    """
+    path = _alias_file()
+    if not path.is_file():
+        return {}
+    with path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    if not isinstance(payload, dict):
+        raise ValueError("voices.json must contain a JSON object")
+    return payload
+
+
+def _write_alias_payload(payload: dict[str, Any]) -> None:
+    path = _alias_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_name(path.name + ".ywk-tmp")
+    with temp.open("w", encoding="utf-8", newline="\n") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2, sort_keys=False)
+        handle.write("\n")
+    _replace_atomically(temp, path)
+
+
+def point_alias_at_latent(voice_id: str) -> bool:
+    """Rewrite ``voices.json`` so this speaker resolves through its ``.pt``.
+
+    The wav alias is **not** kept alongside: the upstream 400s when a spec
+    carries both a waveform and a latent (app.py:1062-1067), and a
+    ``VoiceSpec`` has nowhere to record which of the two it prefers.  Any other
+    key on the entry (something a future launcher wrote) is left alone.
+
+    Returns whether the file was actually written.
+    """
+    value = latent_alias_value(voice_id)
+    with _alias_lock:
+        payload = _read_alias_payload()
+        current = payload.get(voice_id)
+        entry = dict(current) if isinstance(current, dict) else {}
+        for key in _ALIAS_REFERENCE_KEYS:
+            entry.pop(key, None)
+        entry["ref_latent"] = value
+        if isinstance(current, dict) and current == entry:
+            return False
+        payload[voice_id] = entry
+        _write_alias_payload(payload)
+    return True
+
+
+def revert_alias_from_latent(voice_id: str, sidecar: dict[str, Any] | None) -> str:
+    """Undo :func:`point_alias_at_latent` -- the road back to the wav.
+
+    Why this exists at all: the alias the wrapper writes **outlives the wav**.
+    The upstream reads aliases before it scans (voices.py:80-88), so deleting
+    ``voices/<話者>.wav`` does not delete the speaker -- it keeps answering from
+    the ``.pt``, and the three upstream write ports are closed (⑷ 4-3), so 便 D
+    had no way back except editing files by hand.
+
+    Returns what the entry ended up as: ``"ref_wav"`` / ``"ref_wavs"`` when the
+    sidecar (or the recovery road) could name the audio again, ``"removed"``
+    when nothing else was left on the entry and it was dropped so the upstream
+    scan can own the speaker again, and ``"unchanged"`` when there was no latent
+    alias to undo.
+    """
+    with _alias_lock:
+        payload = _read_alias_payload()
+        current = payload.get(voice_id)
+        if not isinstance(current, dict) or not current.get("ref_latent"):
+            return "unchanged"
+        entry = dict(current)
+        for key in _ALIAS_REFERENCE_KEYS:
+            entry.pop(key, None)
+
+        sources = [str(_resolve_source(str(item["path"]))) for item in _sidecar_sources(sidecar)]
+        if not sources:
+            sources = _recovered_wav_sources(voice_id)
+        shape = "removed"
+        if len(sources) == 1:
+            entry["ref_wav"] = _relative_source(Path(sources[0]))
+            shape = "ref_wav"
+        elif sources:
+            entry["ref_wavs"] = [_relative_source(Path(item)) for item in sources]
+            shape = "ref_wavs"
+
+        if entry:
+            payload[voice_id] = entry
+        else:
+            # An entry with no keys at all resolves to a ``VoiceSpec`` with no
+            # reference, which is worse than no entry: dropping it hands the
+            # speaker back to the scan (voices.py:165-183).
+            payload.pop(voice_id, None)
+        _write_alias_payload(payload)
+        return shape
+
+
+def drop_latent(voice_id: str) -> dict[str, Any]:
+    """Point the alias back at the wav and delete the two files (⑷ 4-4).
+
+    The order matters: the alias is rewritten **first**, so a request that lands
+    mid-way resolves through the wav rather than through a ``.pt`` that is about
+    to disappear.
+    """
+    sidecar_payload = read_sidecar(voice_id)
+    pt_path, sidecar_path = latent_paths(voice_id)
+    existed = pt_path.is_file() or sidecar_path.is_file()
+    shape = revert_alias_from_latent(voice_id, sidecar_payload)
+
+    removed: list[str] = []
+    for path in (pt_path, sidecar_path):
+        try:
+            path.unlink()
+        except OSError:
+            continue
+        removed.append(f"{PRECOMPUTE_SUBDIR}/{path.name}")
+    return {
+        "id": voice_id,
+        "state": "reverted" if (existed or shape != "unchanged") else "absent",
+        "alias": shape,
+        "removed": removed,
+    }
+
+
+# ---- encoding ------------------------------------------------------------
+
+
+def _load_reference_audio(path: str | Path) -> tuple[Any, int]:
+    """The upstream's own loader, so the precompute reads what synthesis reads.
+
+    The ``except (RuntimeError, ImportError)`` around it is the same widening
+    ``patches/0001`` applies to ``_load_audio`` itself (decisions.md 30):
+    torchaudio 2.10 routes ``load()`` through TorchCodec and raises
+    **ImportError** when torchcodec is absent, which the upstream's own
+    ``except RuntimeError`` does not catch.  The patch fixes that inside the
+    *copy* under ``build/out/``; repeating the fallback here means the wrapper
+    does not silently depend on the patch having been applied -- and it is the
+    same soundfile road the patch takes, so the two agree.
+    """
+    from irodori_tts.inference_runtime import _load_audio  # noqa: PLC0415
+
+    try:
+        return _load_audio(str(path))
+    except ImportError:
+        import soundfile as sf  # noqa: PLC0415
+        import torch  # noqa: PLC0415
+
+        data, sample_rate = sf.read(str(path), dtype="float32")
+        wav = torch.from_numpy(data)
+        wav = wav.unsqueeze(0) if wav.ndim == 1 else wav.T
+        return wav, sample_rate
+
+
+def encode_reference_latent(
+    runtime: Any,
+    wav_paths: list[str],
+    *,
+    normalize_db: float | None,
+    ensure_max: bool,
+    max_ref_seconds: float | None,
+) -> Any:
+    """Encode reference wavs exactly the way ``_load_reference_latent`` would.
+
+    Same order, same knobs, same trimming as the waveform branch
+    (inference_runtime.py:934-974) -- ``_load_audio`` -> seconds trim on a single
+    clip -> ``encode_waveform(normalize_db=…, ensure_max=…)`` -> ``.cpu()`` ->
+    concatenate -> trim to ``max_ref_seconds`` in latent steps.  That is the
+    recipe ``research/lab/kit-cuda/ref-bench/ref_bench_voices.py`` :296-335 used
+    and research/lab/notes/40 §6-2 measured, so the latent this writes is the
+    latent the wav path would have produced at request time.
+
+    Returns a **2-D fp32 CPU tensor** ``(T, D)``: fp32 because bf16 round-trips
+    are unverified (research U-REF-6) and the runtime casts on load anyway
+    (inference_runtime.py:912), 2-D because ``_coerce_latent_shape`` accepts
+    ``(T, D)`` and ``(1, T, D)`` and the smaller one leaves no ambiguity.
+    """
+    import torch  # noqa: PLC0415
+
+    codec = getattr(runtime, "codec", None)
+    if codec is None:
+        raise RuntimeError("the loaded runtime has no codec to encode with")
+
+    max_steps: int | None = None
+    if max_ref_seconds is not None and float(max_ref_seconds) > 0:
+        try:
+            hop = float(int(codec.model.hop_length))
+            rate = float(codec.sample_rate)
+            if hop > 0 and rate > 0:
+                max_steps = max(1, math.ceil(float(max_ref_seconds) * rate / hop))
+        except (AttributeError, TypeError, ValueError):
+            max_steps = None
+
+    pieces: list[Any] = []
+    for path in wav_paths:
+        wav, sample_rate = _load_reference_audio(path)
+        if len(wav_paths) == 1 and max_ref_seconds is not None and float(max_ref_seconds) > 0:
+            max_samples = max(1, int(float(max_ref_seconds) * float(sample_rate)))
+            if wav.shape[1] > max_samples:
+                wav = wav[:, :max_samples]
+        piece = codec.encode_waveform(
+            wav.unsqueeze(0),
+            sample_rate=int(sample_rate),
+            normalize_db=normalize_db,
+            ensure_max=bool(ensure_max),
+        ).cpu()
+        if piece.shape[1] == 0:
+            raise ValueError("the reference waveform produced an empty latent")
+        pieces.append(piece)
+        if max_steps is not None and sum(int(item.shape[1]) for item in pieces) >= max_steps:
+            break
+
+    latent = torch.cat(pieces, dim=1)
+    if max_steps is not None and latent.shape[1] > max_steps:
+        latent = latent[:, :max_steps]
+    return latent[0].to(dtype=torch.float32).contiguous()
+
+
+def _encode_params(runtime: Any) -> dict[str, Any]:
+    """Everything the encode depends on, read off the live settings.
+
+    Three of these are the loudness knobs the waveform path would have used.
+    The fourth is the **checkpoint**, and it is here because nothing downstream
+    would ever notice it changing: a latent lives in *that model's* latent
+    space, and the upstream's latent branch checks only the shape and
+    ``latent_dim`` (``inference_runtime.py:906-912`` and ``_coerce_latent_shape``
+    :136-147).  Two checkpoints of the same width -- 32 on this machine -- would
+    swap without a word, and the launcher does expose the checkpoint
+    (``/params.checkpoint.hf``), so ``IRODORI_HF_CHECKPOINT`` is a knob a user
+    can turn.  ``latent_dim`` rides along when a loaded runtime can name it.
+    """
+    live = upstream.settings
+    normalize = getattr(live, "default_ref_normalize_db", -16.0)
+    checkpoint = getattr(live, "hf_checkpoint", None)
+    latent_dim = getattr(getattr(runtime, "model_cfg", None), "latent_dim", None)
+    return {
+        "normalize_db": None if normalize is None else float(normalize),
+        "ensure_max": bool(getattr(live, "default_ref_ensure_max", True)),
+        "max_ref_seconds": (
+            None
+            if runtime is None
+            else _as_optional_positive(getattr(runtime, "default_max_ref_seconds", None))
+        ),
+        "checkpoint": None if checkpoint is None else str(checkpoint),
+        "latent_dim": None if latent_dim is None else int(latent_dim),
+    }
+
+
+def _as_optional_positive(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
+
+
+def _params_match(sidecar: dict[str, Any] | None, params: dict[str, Any]) -> bool:
+    """Were the stored parameters the ones we would use now?
+
+    ``max_ref_seconds`` and ``latent_dim`` are only compared when the runtime
+    could tell us what they are: with no model loaded the answer is unknown, and
+    "unknown" must not read as "changed" or every status call would claim the
+    cache is stale.  ``checkpoint`` is not like that -- it comes off the settings
+    and is always known -- so a sidecar that does not name one cannot be vouched
+    for and reads as a mismatch (schema 1 wrote no checkpoint; those latents are
+    rebaked once, which costs 0.37..0.90 s each).
+    """
+    if not isinstance(sidecar, dict):
+        return False
+    stored = sidecar.get("params")
+    if not isinstance(stored, dict):
+        return False
+    if bool(stored.get("ensure_max")) != bool(params["ensure_max"]):
+        return False
+    left, right = stored.get("normalize_db"), params["normalize_db"]
+    if (left is None) != (right is None):
+        return False
+    if left is not None and abs(float(left) - float(right)) > 1e-6:
+        return False
+    checkpoint = params.get("checkpoint")
+    if checkpoint is not None and str(stored.get("checkpoint") or "") != str(checkpoint):
+        return False
+    dim = params.get("latent_dim")
+    if dim is not None:
+        held = stored.get("latent_dim")
+        try:
+            if held is None or int(held) != int(dim):
+                return False
+        except (TypeError, ValueError):
+            return False
+    want = params["max_ref_seconds"]
+    if want is None:
+        return True
+    have = stored.get("max_ref_seconds")
+    if have is None:
+        return False
+    return abs(float(have) - float(want)) <= 1e-6
+
+
+# ---- one speaker ---------------------------------------------------------
+
+
+#: Why a speaker had no wav to encode.  The first two are "there never was one
+#: and never will be"; the third is "there was one and the trail is broken",
+#: which is the only one ``force:true`` turns into a failure (契約 ⑺ 7-3).
+_NO_WAV_NO_REF = "no_ref"
+_NO_WAV_REF_EMBED = "ref_embed"
+_NO_WAV_UNTRACEABLE = "untraceable"
+
+
+def _recovered_wav_sources(voice_id: str) -> list[str]:
+    """Find the reference audio again when ``<stem>.json`` is gone.
+
+    Once the alias names the ``.pt``, the live ``VoiceSpec`` no longer mentions a
+    wav and the sidecar is the only map back -- so losing the sidecar used to
+    make a speaker permanently unbakeable, ``force:true`` included, while the
+    list still called it healthy.  Two roads back, both of them naming rules the
+    distribution already owns:
+
+    ⑴ ``voices/voices.ywk.json`` -- 便 D's own speaker ledger, which the wrapper
+       reads (⑷ 4-3) -- may carry ``ref_wav`` / ``ref_wavs`` for the speaker;
+    ⑵ the upstream's own scan naming, ``voices/<話者 id>.<拡張子>``: that is how a
+       preset wav dropped into ``voices/`` becomes a speaker in the first place
+       (``_scan_voice_files``, voices.py:165-183), and the file is still there
+       after the alias took over -- the alias merely wins (voices.py:80-88).
+
+    Only files that exist come back, in that order.  The caller asks only when
+    the alias points at *our* ``latents/<stem>.pt``, so a latent someone else
+    put there is never rebuilt from a same-named wav.
+    """
+    if not voice_id or voice_id in {".", ".."} or any(ch in voice_id for ch in "/\\"):
+        # Not a plain file stem: the upstream scan could not have produced it,
+        # and joining it onto ``voices_dir`` would leave the directory.
+        return []
+    out: list[str] = []
+    entry = _voice_meta().get(voice_id) or {}
+    listed: list[Any] = []
+    single = entry.get("ref_wav")
+    if isinstance(single, str) and single.strip():
+        listed.append(single)
+    many = entry.get("ref_wavs")
+    if isinstance(many, list):
+        listed += [item for item in many if isinstance(item, str) and item.strip()]
+    for value in listed:
+        path = _resolve_source(str(value))
+        if path.is_file() and str(path) not in out:
+            out.append(str(path))
+    if out:
+        return out
+    for suffix in sorted(VOICE_EXTENSIONS):
+        candidate = _voices_root() / f"{voice_id}{suffix}"
+        if candidate.is_file():
+            return [str(candidate)]
+    return []
+
+
+def _wav_sources_for(
+    voice: Any, sidecar: dict[str, Any] | None
+) -> tuple[list[str], str | None, str | None]:
+    """The wavs to encode for this speaker, or a reason there are none.
+
+    Once the alias has been rewritten the live ``VoiceSpec`` no longer names a
+    wav -- it names the ``.pt``.  The sidecar is what remembers where the audio
+    came from, which is also what makes a rebuild after a wav edit possible; the
+    recovery above is what makes a rebuild possible after the sidecar itself is
+    lost.  The third element says *which kind* of "none" this is.
+    """
+    if bool(getattr(voice, "no_ref", False)):
+        return [], "参照なしの話者（潜在は要らない）", _NO_WAV_NO_REF
+    if getattr(voice, "ref_embed", None):
+        return [], "ref_embed の話者（潜在の対象外）", _NO_WAV_REF_EMBED
+    paths: list[str] = []
+    single = getattr(voice, "ref_wav", None)
+    if single:
+        paths.append(str(single))
+    paths += [str(item) for item in list(getattr(voice, "ref_wavs", None) or []) if item]
+    if paths:
+        return paths, None, None
+    recorded = [str(_resolve_source(str(item["path"]))) for item in _sidecar_sources(sidecar)]
+    if recorded:
+        return recorded, None, None
+    if points_at_our_latent(voice):
+        recovered = _recovered_wav_sources(str(getattr(voice, "voice_id", "")))
+        if recovered:
+            return recovered, None, None
+        return (
+            [],
+            "sidecar（latents/<stem>.json）が無く、元の参照 wav も辿れない"
+            "（wav と <stem>.json は対で扱う＝契約 ⑷ 4-4）",
+            _NO_WAV_UNTRACEABLE,
+        )
+    return [], "参照 wav が無い（潜在の元が辿れない）", _NO_WAV_UNTRACEABLE
+
+
+def precompute_one(voice_id: str, *, force: bool = False) -> dict[str, Any]:
+    """Build (or reuse) one speaker's ``.pt`` and point its alias at it.
+
+    Returns ``{"id", "state": "built"|"reused"|"skipped", "reason", …}``.
+    Raises on a real failure (unknown speaker, unreadable wav, broken
+    ``voices.json``); the runner turns that into a ``failed`` item.
+    """
+    import torch  # noqa: PLC0415
+
+    voice = upstream.voice_registry.resolve(voice_id)
+    sidecar = read_sidecar(voice_id)
+    wav_paths, reason, why = _wav_sources_for(voice, sidecar)
+    if not wav_paths:
+        if force and why == _NO_WAV_UNTRACEABLE:
+            # ``force`` is the launcher saying "bake it again whatever the state
+            # of the cache".  Answering ``skipped`` there reports the speaker
+            # healthy while nothing was rebuilt and nothing can be -- the one
+            # place the operator has to be told (契約 ⑺ 7-3).
+            raise RuntimeError(reason)
+        return {"id": voice_id, "state": "skipped", "reason": reason}
+
+    pt_path, sidecar_path = latent_paths(voice_id)
+    stem_sources = [_relative_source(Path(item)) for item in wav_paths]
+    params = _encode_params(_live_runtime())
+
+    fresh = (
+        not force
+        and pt_path.is_file()
+        and sidecar is not None
+        and [str(item.get("path")) for item in _sidecar_sources(sidecar)] == stem_sources
+        and _sources_match(sidecar)
+        and _params_match(sidecar, params)
+    )
+    if fresh:
+        rewritten = point_alias_at_latent(voice_id)
+        return {
+            "id": voice_id,
+            "state": "reused",
+            "reason": None,
+            "alias_rewritten": rewritten,
+            "frames": _sidecar_frames(sidecar),
+        }
+
+    runtime = upstream.runtime_manager.get()
+    params = _encode_params(runtime)
+
+    last_error: Exception | None = None
+    latent = None
+    for _attempt in range(_PRECOMPUTE_SLOT_ATTEMPTS):
+        try:
+            semaphore = _acquire_upstream_slot()
+        except _SlotBusy as exc:
+            last_error = exc
+            _wait_until_quiet(PRECOMPUTE_QUIET_WAIT_S, cancel=_precompute_cancel)
+            continue
+        try:
+            latent = encode_reference_latent(
+                runtime,
+                wav_paths,
+                normalize_db=params["normalize_db"],
+                ensure_max=params["ensure_max"],
+                max_ref_seconds=params["max_ref_seconds"],
+            )
+        finally:
+            _release_upstream_slot(semaphore)
+        break
+    if latent is None:
+        raise RuntimeError(
+            f"synthesis slot was busy for {_PRECOMPUTE_SLOT_ATTEMPTS} attempts: {last_error}"
+        )
+
+    latent_dim = getattr(getattr(runtime, "model_cfg", None), "latent_dim", None)
+    if latent_dim is not None and int(latent.shape[-1]) != int(latent_dim):
+        raise ValueError(
+            f"encoded latent has width {int(latent.shape[-1])}, "
+            f"but the checkpoint's latent_dim is {int(latent_dim)}"
+        )
+
+    pt_path.parent.mkdir(parents=True, exist_ok=True)
+    temp = pt_path.with_name(pt_path.name + ".ywk-tmp")
+    torch.save(latent, str(temp))
+    _replace_atomically(temp, pt_path)
+
+    payload = {
+        "schema": PRECOMPUTE_SCHEMA,
+        "engine": ywk_params.ENGINE,
+        "version": YWK_VERSION,
+        "voice_id": voice_id,
+        "sources": [
+            {
+                "path": _relative_source(Path(item)),
+                "sha256": file_digest(Path(item)),
+                "bytes": _file_size(Path(item)),
+            }
+            for item in wav_paths
+        ],
+        "params": params,
+        "latent": {
+            "shape": [int(size) for size in latent.shape],
+            "dtype": str(latent.dtype),
+            "frames": int(latent.shape[0]),
+            "bytes": _file_size(pt_path),
+        },
+    }
+    temp_json = sidecar_path.with_name(sidecar_path.name + ".ywk-tmp")
+    with temp_json.open("w", encoding="utf-8", newline="\n") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+    _replace_atomically(temp_json, sidecar_path)
+
+    rewritten = point_alias_at_latent(voice_id)
+    return {
+        "id": voice_id,
+        "state": "built",
+        "reason": None,
+        "alias_rewritten": rewritten,
+        "frames": int(latent.shape[0]),
+    }
+
+
+def _replace_atomically(temp: Path, target: Path) -> None:
+    """``os.replace`` with a short retry -- Windows can refuse a busy target.
+
+    ``torch.load`` opens the ``.pt`` with the CPython default share mode, which
+    does **not** include ``FILE_SHARE_DELETE``, so a replace that lands while a
+    real request is reading the old latent raises ``PermissionError``.  The read
+    is milliseconds long (research 40 §6-2 measured 10.4..11.5 ms for the whole
+    of ``prepare_reference``), so a few short retries close the window; if it
+    still refuses, the exception stands and the item is recorded as failed
+    rather than half-written.
+    """
+    for attempt in range(5):
+        try:
+            os.replace(temp, target)
+            return
+        except PermissionError:
+            if attempt == 4:
+                raise
+            time.sleep(0.05 * (attempt + 1))
+
+
+def _file_size(path: Path) -> int | None:
+    try:
+        return int(path.stat().st_size)
+    except OSError:
+        return None
+
+
+def _sidecar_frames(sidecar: dict[str, Any] | None) -> int | None:
+    if not isinstance(sidecar, dict):
+        return None
+    latent = sidecar.get("latent")
+    if not isinstance(latent, dict):
+        return None
+    frames = latent.get("frames")
+    return int(frames) if isinstance(frames, int) else None
+
+
+# ---- the run -------------------------------------------------------------
+
+
+def precompute_targets(ids: list[str] | None) -> list[str]:
+    """The speaker ids a run will walk.  ``None`` means "every speaker"."""
+    if ids is not None:
+        return list(ids)
+    try:
+        specs = list(upstream.voice_registry.list())
+    except (OSError, ValueError):
+        return []
+    out: list[str] = []
+    for voice in specs:
+        voice_id = str(getattr(voice, "voice_id", ""))
+        if not voice_id or voice_id == DEFAULT_VOICE_ID:
+            continue
+        if bool(getattr(voice, "no_ref", False)) or getattr(voice, "ref_embed", None):
+            continue
+        out.append(voice_id)
+    return out
+
+
+def precompute_snapshot() -> dict[str, Any]:
+    """``/ywk/status.precompute``."""
+    with _precompute_lock:
+        state = dict(_precompute)
+    started = state.pop("started_at")
+    finished = state.pop("finished_at")
+    if started is None:
+        elapsed = 0.0
+    else:
+        elapsed = round((finished if finished is not None else time.monotonic()) - started, 3)
+    state["elapsed_s"] = elapsed
+    return state
+
+
+def start_precompute(*, ids: list[str] | None = None, force: bool = False) -> dict[str, Any]:
+    """Start one run in a background thread.  Raises :class:`PrecomputeBusy`."""
+    global _precompute_thread
+
+    targets = precompute_targets(ids)
+    run_id = uuid.uuid4().hex[:12]
+    with _precompute_lock:
+        if _precompute["state"] == "running":
+            raise PrecomputeBusy(_precompute["id"])
+        _precompute.update(
+            state="running",
+            id=run_id,
+            done=0,
+            total=len(targets),
+            built=0,
+            reused=0,
+            skipped=0,
+            failed=0,
+            started_at=time.monotonic(),
+            finished_at=None,
+            last=None,
+            error=None,
+        )
+    _precompute_cancel.clear()
+    thread = threading.Thread(
+        target=_precompute_run,
+        args=(run_id, targets, bool(force)),
+        name="ywk-precompute",
+        daemon=True,
+    )
+    _precompute_thread = thread
+    try:
+        thread.start()
+    except RuntimeError as exc:  # out of threads: do not leave the record "running"
+        _finish_precompute(run_id, "failed", scrub_text(f"{type(exc).__name__}: {exc}"))
+        raise
+    return {"id": run_id, "total": len(targets), "state": "running"}
+
+
+def _finish_precompute(run_id: str, state: str, error: str | None) -> None:
+    with _precompute_lock:
+        if _precompute["id"] != run_id:  # a newer run owns the record
+            return
+        _precompute["state"] = state
+        if error is not None:
+            _precompute["error"] = error
+        _precompute["finished_at"] = time.monotonic()
+
+
+def _precompute_run(run_id: str, voice_ids: list[str], force: bool) -> None:
+    try:
+        _precompute_run_items(run_id, voice_ids, force)
+    finally:
+        _clear_cancel_flag(_precompute_cancel, _precompute_lock, _precompute, run_id)
+
+
+def _precompute_run_items(run_id: str, voice_ids: list[str], force: bool) -> None:
+    """One item at a time, yielding to real requests before each (裁定 65).
+
+    Unlike the warmup, a failed item does **not** stop the run: the warmup's
+    "stop at the first failure" rule exists because a bad speaker id there means
+    every later shot is wrong too, while here one unreadable wav among twelve
+    presets must not cost the other eleven their latent.  The run still ends in
+    ``failed`` -- with the first reason in ``error`` -- so nothing is swallowed.
+    """
+    total = len(voice_ids)
+    first_error: str | None = None
+    for index, voice_id in enumerate(voice_ids, start=1):
+        if _precompute_cancel.is_set():
+            _finish_precompute(run_id, "cancelled", None)
+            return
+        quiet = _wait_until_quiet(PRECOMPUTE_QUIET_WAIT_S, cancel=_precompute_cancel)
+        if _precompute_cancel.is_set():
+            _finish_precompute(run_id, "cancelled", None)
+            return
+        if not quiet:
+            logger.info(
+                "precompute %d/%d runs with %d real request(s) still in flight",
+                index,
+                total,
+                pending_real_requests(),
+            )
+        started = time.perf_counter()
+        try:
+            outcome = precompute_one(voice_id, force=force)
+        except Exception as exc:  # noqa: BLE001 -- one speaker must not kill the run
+            message = scrub_text(f"{type(exc).__name__}: {exc}")
+            outcome = {"id": voice_id, "state": "failed", "reason": message}
+            if first_error is None:
+                first_error = f"{voice_id}: {message}"
+            logger.warning("precompute %d/%d failed: id=%s error=%s", index, total, voice_id, message)
+        elapsed_ms = (time.perf_counter() - started) * 1000.0
+        last = {
+            "id": voice_id,
+            "state": outcome["state"],
+            "reason": outcome.get("reason"),
+            "frames": outcome.get("frames"),
+            "ms": round(elapsed_ms, 1),
+        }
+        with _precompute_lock:
+            if _precompute["id"] != run_id:
+                return
+            _precompute["done"] = index
+            _precompute["last"] = last
+            key = outcome["state"]
+            if key in {"built", "reused", "skipped", "failed"}:
+                _precompute[key] = int(_precompute[key]) + 1
+            if first_error is not None and _precompute["error"] is None:
+                _precompute["error"] = first_error
+        if outcome["state"] != "failed":
+            # One line per speaker, like the warmup's one line per shot.
+            logger.info(
+                "precompute %d/%d id=%s state=%s frames=%s ms=%.0f",
+                index,
+                total,
+                voice_id,
+                outcome["state"],
+                outcome.get("frames"),
+                elapsed_ms,
+            )
+    _finish_precompute(run_id, "done" if first_error is None else "failed", first_error)
+
+
+def precompute_options(body: Any) -> dict[str, Any]:
+    """Check the ``POST /ywk/voices/precompute`` body (contract ⑶ 3-2 の規律)."""
+    if body is None:
+        body = {}
+    if not isinstance(body, dict):
+        raise YwkRequestError("request body must be a JSON object", code="ywk_invalid_body")
+    for key in body:
+        if key not in {"ids", "all", "force"}:
+            raise YwkRequestError(f"unknown field: {key}", code="ywk_unknown_field", param=key)
+
+    take_all = body.get("all")
+    if take_all is not None and not isinstance(take_all, bool):
+        raise YwkRequestError("all must be a boolean", code="ywk_type_error", param="all")
+    force = body.get("force")
+    if force is not None and not isinstance(force, bool):
+        raise YwkRequestError("force must be a boolean", code="ywk_type_error", param="force")
+
+    ids_raw = body.get("ids")
+    ids: list[str] | None = None
+    if ids_raw is not None:
+        if not isinstance(ids_raw, list):
+            raise YwkRequestError(
+                "ids must be an array of strings", code="ywk_type_error", param="ids"
+            )
+        if len(ids_raw) > _PRECOMPUTE_MAX_IDS:
+            raise YwkRequestError(
+                f"ids must hold at most {_PRECOMPUTE_MAX_IDS} entries (got {len(ids_raw)})",
+                code="ywk_out_of_range",
+                param="ids",
+            )
+        ids = []
+        for item in ids_raw:
+            if not isinstance(item, str) or not item.strip():
+                raise YwkRequestError(
+                    "ids entries must be non-empty strings", code="ywk_type_error", param="ids"
+                )
+            value = item.strip()
+            if value not in ids:
+                ids.append(value)
+
+    if ids is not None and take_all:
+        raise YwkRequestError(
+            "send ids or all:true, not both", code="ywk_invalid_body", param="ids"
+        )
+    if ids is None and not take_all:
+        raise YwkRequestError(
+            'send {"ids":[…]} or {"all":true}', code="ywk_out_of_range", param="ids"
+        )
+    if ids is not None and not ids:
+        raise YwkRequestError(
+            "ids must hold at least one speaker id", code="ywk_out_of_range", param="ids"
+        )
+
+    if ids is not None:
+        unknown = [item for item in ids if not _registry_knows(item)]
+        if unknown:
+            raise YwkRequestError(
+                f"unknown voice: {', '.join(unknown[:8])}",
+                code="ywk_unknown_voice",
+                param="ids",
+            )
+    return {"ids": ids, "force": bool(force)}
+
+
+@app.post("/ywk/voices/precompute")
+async def ywk_start_precompute(request: Request):  # noqa: ANN201
+    raw = await request.body()
+    if raw.strip():
+        try:
+            body = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            return ywk_error(f"request body is not valid JSON: {exc}", code="ywk_invalid_body")
+    else:
+        body = {}
+
+    try:
+        options = precompute_options(body)
+    except YwkRequestError as exc:
+        return ywk_error(exc.message, code=exc.code, param=exc.param)
+
+    try:
+        started = start_precompute(**options)
+    except PrecomputeBusy as exc:
+        return ywk_error(
+            f"事前計算が走行中（id={exc.id}）。"
+            f"終わりを待つか DELETE /ywk/voices/precompute/{exc.id} で止める。",
+            status_code=409,
+            code="ywk_precompute_running",
+        )
+    return JSONResponse(status_code=202, content=started)
+
+
+@app.delete("/ywk/voices/precompute/{run_id}")
+def ywk_cancel_precompute(run_id: str):  # noqa: ANN201
+    """Cancel: the runner stops **before the next speaker**.
+
+    The encode already on the device runs to the end, exactly like the warmup's
+    cancel (contract ⑺ 7-2) and the upstream's own lack of cancellation (⑶ 3-4).
+    """
+    with _precompute_lock:
+        current = _precompute["id"]
+        state = _precompute["state"]
+    if current != run_id:
+        return ywk_error(
+            f"unknown precompute id: {run_id}",
+            status_code=404,
+            code="ywk_precompute_unknown_id",
+        )
+    if state != "running":
+        return {"id": run_id, "state": state, "cancel_requested": False}
+    _precompute_cancel.set()
+    with _pending_cond:  # wake a thread parked in _wait_until_quiet
+        _pending_cond.notify_all()
+    return {"id": run_id, "state": "cancelling", "cancel_requested": True}
+
+
+@app.delete("/ywk/voices/{voice_id}/latent")
+def ywk_drop_latent(voice_id: str):  # noqa: ANN201
+    """Undo the bake for one speaker: alias back to the wav, two files gone.
+
+    Without this the alias the wrapper writes is a one-way door.  ``resolve()``
+    reads aliases before it scans (voices.py:80-88) and the upstream's three
+    write ports are closed (⑷ 4-3), so 便 D deleting ``voices/<話者>.wav`` would
+    leave the speaker in the list, still speaking, from a ``.pt`` nothing points
+    at any more.  This is the port that makes ⑷ 4-4's four-file deletion an API
+    call instead of a file-by-file chore.
+    """
+    if not _registry_knows(voice_id):
+        return ywk_error(
+            f"unknown voice: {voice_id}", status_code=404, code="ywk_unknown_voice"
+        )
+    with _precompute_lock:
+        running = _precompute["state"] == "running"
+        run_id = _precompute["id"]
+    if running:
+        # The runner would write the alias straight back.
+        return ywk_error(
+            f"事前計算が走行中（id={run_id}）。"
+            f"終わりを待つか DELETE /ywk/voices/precompute/{run_id} で止める。",
+            status_code=409,
+            code="ywk_precompute_running",
+        )
+    try:
+        return drop_latent(voice_id)
+    except (OSError, ValueError) as exc:
+        return ywk_error(
+            f"潜在を外せなかった: {type(exc).__name__}: {exc}",
+            status_code=500,
+            code="ywk_server_error",
+        )
+
+
+def precompute_on_start_enabled() -> bool:
+    """Default **on for ``rocm-*`` only** (decisions.md 11 / 65).
+
+    decisions.md 11 refused the latent cache for the distribution at large: on a
+    CUDA GPU the saving is 40..115 ms and not worth the moving parts.  decisions
+    65 granted it to the Radeon build, where the same switch costs 0.95..1.44 s.
+    So the route exists on every variant and only the Radeon variants fire it by
+    themselves.  ``YWK_PRECOMPUTE_ON_START`` overrides in both directions.
+    """
+    raw = os.environ.get("YWK_PRECOMPUTE_ON_START")
+    if raw is None or str(raw).strip() == "":
+        return variant_is_rocm()
+    return _truthy(raw)
+
+
+# --------------------------------------------------------------------------
+# 9. startup checks
 # --------------------------------------------------------------------------
 
 # The routes above changed the schema; drop FastAPI's cached copy.

@@ -56,7 +56,16 @@ def test_voices_carry_no_absolute_path(client):
     assert ":\\" not in body and ":/" not in body
     assert str(VOICES) not in body
     for item in response.json()["data"]:
-        assert set(item) == {"id", "object", "display_name", "preset", "no_ref"}
+        assert set(item) == {
+            "id",
+            "object",
+            "display_name",
+            "preset",
+            "no_ref",
+            # 裁定 65 added these two; they are booleans, never a path.
+            "latent",
+            "latent_stale",
+        }
 
 
 def test_default_voice_reports_no_ref(client):

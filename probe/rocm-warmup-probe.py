@@ -33,6 +33,7 @@ HTTP で話しかけて数値を JSON で返す。数値は測った物だけを
 from __future__ import annotations
 
 import argparse
+import datetime
 import hashlib
 import io
 import json
@@ -136,13 +137,22 @@ def speech_body(voice: str, text: str, num_steps: int | None) -> dict[str, Any]:
     return body
 
 
+def utc_now() -> str:
+    """UTC の刻（ps1 の GPU 標本 CSV と同じ書式＝射ごとの窓を切るため）。"""
+    return datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
 def fire(base: str, name: str, voice: str, text: str, num_steps: int | None) -> dict[str, Any]:
     body = speech_body(voice, text, num_steps)
+    started_utc = utc_now()
     ans = http(base, "/v1/audio/speech", method="POST", payload=body)
+    ended_utc = utc_now()
     seconds = wav_seconds(ans.body) if ans.status == 200 else None
     row: dict[str, Any] = {
         "name": name,
         "voice": voice,
+        "started_utc": started_utc,
+        "ended_utc": ended_utc,
         "text_chars": len(text),
         "num_steps": num_steps,
         "http_status": ans.status,
@@ -348,6 +358,129 @@ def step_status(args: argparse.Namespace) -> dict[str, Any]:
     return {"step": "status", "label": args.label, "status": status(args.base)}
 
 
+# --------------------------------------------------------------------------- 裁定 65
+
+
+def voices_list(base: str) -> dict[str, Any]:
+    ans = http(base, "/ywk/voices", timeout=120.0)
+    body = ans.json()
+    if not isinstance(body, dict):
+        return {"_http_status": ans.status, "_body": ans.text()[:400]}
+    return body
+
+
+def step_voices(args: argparse.Namespace) -> dict[str, Any]:
+    """`GET /ywk/voices` の写し（`latent`／`latent_stale` を見る＝裁定 65）。"""
+    body = voices_list(args.base)
+    rows = body.get("data") if isinstance(body.get("data"), list) else []
+    return {
+        "step": "voices",
+        "label": args.label,
+        "count": body.get("count"),
+        "error": body.get("error"),
+        "latent_true": len([r for r in rows if r.get("latent") is True]),
+        "latent_stale_true": len([r for r in rows if r.get("latent_stale") is True]),
+        "data": rows,
+    }
+
+
+def poll_precompute(base: str, *, poll_s: float, timeout_s: float) -> dict[str, Any]:
+    """事前計算が終わるまで `/ywk/status.precompute` を読み、1 件ごとの ms を拾う。
+
+    `last` は 1 件分しか残らないので `done` が増えた瞬間に拾う（暖機の
+    `poll_warmup` と同じ作法）。2 件まとめて進んだら `missed_items` に記録する
+    ＝取り逃した ms を手で埋めない。
+    """
+    items: list[dict[str, Any]] = []
+    seen = 0
+    missed = False
+    started = time.perf_counter()
+    final: dict[str, Any] = {}
+    while True:
+        snap = status(base).get("precompute") or {}
+        done = int(snap.get("done") or 0)
+        if done > seen and snap.get("last"):
+            if done > seen + 1:
+                missed = True
+            last = dict(snap["last"])
+            last["index"] = done
+            last["at_s"] = round(time.perf_counter() - started, 3)
+            items.append(last)
+            seen = done
+        final = snap
+        if str(snap.get("state")) != "running":
+            break
+        if time.perf_counter() - started > timeout_s:
+            final = dict(final)
+            final["_timeout"] = True
+            break
+        time.sleep(poll_s)
+    return {
+        "items": items,
+        "final": final,
+        "missed_items": missed,
+        "wall_s": round(time.perf_counter() - started, 3),
+    }
+
+
+def step_precompute(args: argparse.Namespace) -> dict[str, Any]:
+    """`POST /ywk/voices/precompute` を撃ち、1 件ごとの ms と焼けた `.pt` を採る。"""
+    body: dict[str, Any] = {}
+    if args.ids:
+        body["ids"] = [v for v in args.ids.split(",") if v.strip()]
+    else:
+        body["all"] = True
+    if args.force:
+        body["force"] = True
+
+    before = step_voices(argparse.Namespace(base=args.base, label="before"))
+    started_utc = utc_now()
+    ans = http(args.base, "/ywk/voices/precompute", method="POST", payload=body, timeout=120.0)
+    out: dict[str, Any] = {
+        "step": "precompute",
+        "label": args.label,
+        "request": body,
+        "started_utc": started_utc,
+        "http_status": ans.status,
+        "response": ans.json(),
+        "voices_before": before,
+    }
+    if ans.status != 202:
+        out["error"] = ans.text()[:600]
+        out["ended_utc"] = utc_now()
+        return out
+
+    polled = poll_precompute(args.base, poll_s=args.poll, timeout_s=args.timeout)
+    out["ended_utc"] = utc_now()
+    out["items"] = polled["items"]
+    out["final"] = polled["final"]
+    out["missed_items"] = polled["missed_items"]
+    out["wall_s"] = polled["wall_s"]
+    out["voices_after"] = step_voices(argparse.Namespace(base=args.base, label="after"))
+
+    # 焼けた物を檔の側から数える（サーバの言い分と突き合わせるため）。
+    files: list[dict[str, Any]] = []
+    if args.latents_dir:
+        root = Path(args.latents_dir)
+        if root.is_dir():
+            for path in sorted(root.iterdir()):
+                if not path.is_file():
+                    continue
+                files.append({"name": path.name, "bytes": path.stat().st_size})
+    out["latent_files"] = files
+    out["latent_pt_count"] = len([f for f in files if f["name"].endswith(".pt")])
+    out["latent_pt_bytes"] = sum(f["bytes"] for f in files if f["name"].endswith(".pt"))
+    if args.aliases_file:
+        alias_path = Path(args.aliases_file)
+        if alias_path.is_file():
+            try:
+                out["voices_json"] = json.loads(alias_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:  # noqa: BLE001 - 読めない事実を残す
+                out["voices_json"] = None
+                out["voices_json_error"] = str(exc)[:300]
+    return out
+
+
 # --------------------------------------------------------------------------- main
 
 
@@ -410,6 +543,22 @@ def main(argv: list[str]) -> int:
     p.add_argument("--base", required=True)
     p.add_argument("--label", default="")
     p.set_defaults(func=step_status)
+
+    p = sub.add_parser("voices")
+    p.add_argument("--base", required=True)
+    p.add_argument("--label", default="")
+    p.set_defaults(func=step_voices)
+
+    p = sub.add_parser("precompute")
+    p.add_argument("--base", required=True)
+    p.add_argument("--ids", default="", help="空なら {\"all\": true}")
+    p.add_argument("--force", action="store_true")
+    p.add_argument("--latents-dir", default="", help="焼けた .pt を数える場所（任意）")
+    p.add_argument("--aliases-file", default="", help="書き換わった voices.json（任意）")
+    p.add_argument("--label", default="")
+    p.add_argument("--poll", type=float, default=0.05)
+    p.add_argument("--timeout", type=float, default=1800.0)
+    p.set_defaults(func=step_precompute)
 
     args = parser.parse_args(argv)
     result = args.func(args)

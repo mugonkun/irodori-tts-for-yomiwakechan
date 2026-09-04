@@ -196,6 +196,31 @@ def reset_warmup() -> None:
         ywk_server._pending_real_requests = 0
 
 
+def reset_precompute() -> None:
+    """Same treatment for the 裁定 65 precompute runner, and its caches.
+
+    ``ywk_server.file_digest`` memoises on ``(size, mtime_ns)``, and a test that
+    rewrites a reference wav inside the same millisecond would otherwise be
+    answered from the previous test's entry.
+    """
+    ywk_server._precompute_cancel.set()
+    with ywk_server._pending_cond:
+        ywk_server._pending_cond.notify_all()
+    thread = ywk_server._precompute_thread
+    if thread is not None and thread.is_alive():
+        thread.join(timeout=10)
+    ywk_server._precompute_thread = None
+    ywk_server._precompute_cancel.clear()
+    with ywk_server._precompute_lock:
+        ywk_server._precompute.clear()
+        ywk_server._precompute.update(ywk_server._PRECOMPUTE_IDLE)
+    with ywk_server._digest_lock:
+        ywk_server._digest_cache.clear()
+    latents = VOICES / ywk_server.PRECOMPUTE_SUBDIR
+    if latents.is_dir():
+        shutil.rmtree(latents, ignore_errors=True)
+
+
 @pytest.fixture(autouse=True)
 def baseline() -> Any:
     """Reset settings, voices and the fake runtime before every test."""
@@ -207,11 +232,14 @@ def baseline() -> Any:
     ywk_server._runtime_error = None
     ywk_server._device_logged = False
     reset_warmup()
+    reset_precompute()
+    os.environ.pop("YWK_PRECOMPUTE_ON_START", None)
     write_voices(aliases={DEFAULT_VOICE: {"no_ref": True}})
     fake = FakeRuntime()
     upstream.runtime_manager = FakeRuntimeManager(fake)
     yield fake
     reset_warmup()
+    reset_precompute()
 
 
 @pytest.fixture()

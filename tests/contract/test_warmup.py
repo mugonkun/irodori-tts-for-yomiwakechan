@@ -207,6 +207,25 @@ def test_delete_stops_before_the_next_shot(client, gated):
     assert len(gated.requests) == 1
 
 
+def test_the_cancel_flag_does_not_outlive_the_run(client, gated, ywk):
+    """A cancel is a signal to **the run**, not a property of the process.
+
+    The flag used to be cleared in one place only -- the *start* of the next
+    warmup -- so one ``DELETE`` left it set for the life of the process, and
+    ``_wait_until_quiet`` (which read it unconditionally) then answered "not
+    quiet, go ahead" to every later background job.  The visible cost was the
+    裁定 65 precompute: it stopped yielding to real requests entirely
+    (see ``test_precompute.py`` の同名の穴).
+    """
+    started = client.post("/ywk/warmup", json={"stages": [4, 8, 12]}).json()
+    assert gated.entered.acquire(timeout=WAIT_S)
+    assert client.delete(f"/ywk/warmup/{started['id']}").status_code == 200
+
+    gated.release.set()
+    assert wait_for_state(client, "cancelled", "done", "failed")["state"] == "cancelled"
+    assert wait_for(lambda: not ywk._warmup_cancel.is_set()), "the flag outlived the run"
+
+
 def test_delete_of_an_unknown_id_is_404(client):
     response = client.delete("/ywk/warmup/deadbeef")
     assert response.status_code == 404
