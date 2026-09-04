@@ -914,6 +914,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-ComputerRestorePoint
 > **「復元ポイントは作れなかった。理由は〈出たメッセージの逐語〉」と報告してから進む**か、
 > 司令官に「システムの保護を入れてよいか」を訊く。**黙って飛ばさない。**
 > なお復元ポイントは**ドライバの巻き戻しの保険**であって、3-11 の復旧経路の代わりではない。
+>
+> **実射で判ったこと（2026-09-05）＝`OK=True` でも作られていないことがある。**Windows は **1440 分（24 時間）以内に復元ポイントがあると新規を作らない**
+> （`SystemRestorePointCreationFrequency` の既定）。`Checkpoint-Computer` は警告を出して `$?` は True のまま返る。
+> **必ず `Get-ComputerRestorePoint` の `CreationTime` と `Description` を見て、いま作った説明文の点が無ければ「作られなかった」と報告する。**
+> 12900k-new では直近が 2026-09-03 21:43「Windows モジュール インストーラー」で、新規は作られず、報告した上で 3-6 に入った（`decisions.md` 82）。
 
 ---
 
@@ -1006,6 +1011,24 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$exe = 'C:\ywk\driver\53
 > | `EXIT=` に数字が出て返る | 昇格して走り切った | **3-7 へ**（数字の意味は 3-7 の `nvidia-smi` で決める） |
 >
 > **記録すること**＝⒜ と ⒝ のどちらを撃ったか・`ELEVATED =` の値・出た終了コードかメッセージの逐語。
+>
+> **実射で判ったこと（2026-09-05・12900k-new）＝設計席が CRD から押すときの 3 か条。**
+>
+> 1. **同意窓の「はい」は左のボタン**（既定でハイライトされているのは右の「いいえ」）。1 回目の 1223 は設計席がハイライトの方を押した誤りだった。
+> 2. **同意窓が出ている間、CRD 側はキー入力を一切送らない。**Escape や Enter は同意窓に当たって「いいえ」になる（2 回目の即 1223 はこれ）。
+> 3. ⒝ が 2 度とも 1223 なら **⒝ を撃ち直さず、設計席が CRD で「管理者: Windows PowerShell」を開き**（タスクバー右クリック → ターミナル（管理者）→ UAC「はい」）、その窓で
+>    `cd /` → `cd ywk` → `powershell -NoProfile -ExecutionPolicy Bypass -File run-b7-elevated.ps1` を撃つ（CRD の鍵盤は日本語配列に写るので `:` と `\` を打たない＝相対パスにする）。
+>    以後は遠隔席がログを読む（`C:\ywk\logs\step-B7-3-3-3-6-elevated.log`）。
+>
+> **`PromptOnSecureDesktop = 1` は CRD の妨げにならなかった**（この機体で実測＝同意窓は CRD に映り、押せた）。参考として 3-5 の `ELEVATED =` の隣に
+> `Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' | Select-Object EnableLUA,ConsentPromptBehaviorAdmin,ConsentPromptBehaviorUser,PromptOnSecureDesktop,FilterAdministratorToken`
+> を添えてよいが、**その値で「押せない」と断定しない**。
+>
+> **昇格ブロックを 1 本の .ps1 にまとめるときのログ書式**＝`Tee-Object -Append` は UTF-16LE で書くので、他の `step-*.log`（UTF-8）と揃わない。
+> `Out-File -Encoding utf8 -Append`（または `Add-Content -Encoding UTF8`）に揃える。1 行目だけ ASCII で作って残りを Tee-Object にすると混在する（実射で発生）。
+>
+> **実射の結果（2026-09-05）**＝`-s -noreboot -clean` は 173 秒で `EXIT=1` を返し、**再起動前の `nvidia-smi` がすでに 537.58 を返した**。
+> `EXIT=1` は NVIDIA インストーラの慣例では「再起動が要る」だが断定しない＝3-7 の表どおり `nvidia-smi` で「3-8 へ」に進み、3-8 で CUDA 初期化や synth が異常なら**そのとき**再起動の枝（経路 A）に入る。
 
 | 引数 | 意味 |
 |---|---|
@@ -1278,7 +1301,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "& C:\ywk\repo\probe\cuda
 
 ### 3-9　cu130 の落ち方を **1 回だけ**記録する（`decisions.md` 56）
 
-cu130（CUDA 13.0 ビルド）は 2023 年秋のドライバでは**落ちる想定**である。**これは失敗ではなく記録**であって、
+cu130（CUDA 13.0 ビルド）は 2023 年秋のドライバでは**GPU が見えなくなる**。**実射（537.58・2026-09-05）＝`import torch` は落ちない**（EXIT=0 で版を印字）。`cudaGetDeviceCount() returned cudaErrorNotSupported` の UserWarning だけ出て、`is_available=False`・`device_count=0`・`name=None` に**静かに退く**＝利用者から見ると「エラーで止まる」ではなく**黙った CPU 転落と同じ形**になる（配布版の variant 選択は `is_available()`＋`device_count` で決める＝`decisions.md` 80）。**これは失敗ではなく記録**であって、
 **測るのではなく、落ち方を 1 回だけ事実として残す**（56＝「降格後に測るのは cu126 のみ・cu130 の落ち方は事実として 1 回記録」）。
 
 **3-8 の ⑴⑵⑶ と同じ 3 点セットを、cu126 を cu130 に替えて 1 回だけ撃つ。**
