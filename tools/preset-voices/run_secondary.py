@@ -12,10 +12,21 @@ voices_dir と cwd は必ず自分の作業ディレクトリに向ける。
   4. POST /v1/audio/speech で二次を生成（既定は 30 s 参照。--also-ref10 で 10 s 版も）。
   5. 子プロセスをツリー kill。
 
+seed 掃引モード（--sweep-seed・decisions 39）:
+  末尾が切れている（verify_wavs.py の tail_verdict が tail_suspect）採用版について、
+  本文も参照も変えずに seed だけを 1234 から順に最大 8 個試し、生成のたびに末尾判定を掛けて
+  clean になった最初の seed を採る。8 個で出なければ irodori.trim_tail=false で同じ seed 列を
+  もう一巡する（上流 SamplingRequest.trim_tail＝潜在の平坦点で音を切る仕組み。false にすると
+  推定長 target_samples まで残す）。採用 seed と試行回数は台帳に残す。
+
 使い方:
     python run_secondary.py [--work <preset-work>] [--port 8090] [--also-ref10]
                             [--text expressive_30s|greeting_10s] [--only <id>]
                             [--ready-timeout 600] [--keep-server]
+
+    python run_secondary.py --sweep-seed [--sweep-ids id1,id2,...]
+                            [--sweep-max-seeds 8] [--sweep-seed-start 1234]
+                            [--no-trim-fallback]
 """
 
 from __future__ import annotations
@@ -30,6 +41,9 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from verify_wavs import analyze as _analyze_wav  # noqa: E402 — 同じディレクトリの道具
 
 REPO = Path(__file__).resolve().parents[2]
 VENV_PY = Path("C:/irodori-TTS-server/Irodori-TTS-Server/.venv-rocm/Scripts/python.exe")
@@ -172,6 +186,68 @@ def wait_ready(port: int, proc: subprocess.Popen, timeout_s: float, log_path: Pa
     raise SystemExit(f"{timeout_s:.0f} 秒たっても ready にならない。最後: {last}\n--- ログ末尾 ---\n{tail}")
 
 
+# ---------------------------------------------------------------- 末尾判定（decisions 39）
+
+
+def tail_of(path: Path, tail_ms: float = 50.0, tail_margin_db: float = 20.0) -> dict:
+    """verify_wavs.analyze を掛けて末尾判定の欄だけ抜く。"""
+    a = _analyze_wav(path, -50.0, 0.999, tail_ms, tail_margin_db)
+    return {
+        "duration_s": a["duration_s"],
+        "rms_dbfs": a["rms_dbfs"],
+        "tail_rms_dbfs": a["tail_rms_dbfs"],
+        "tail_delta_db": a["tail_delta_db"],
+        "tail_clean": a["tail_clean"],
+        "tail_verdict": a["tail_verdict"],
+    }
+
+
+def tail_suspect_ids(out_dir: Path, ids: list[str], tail_ms: float, tail_margin_db: float) -> list[str]:
+    """採用版（<id>_secondary.wav）のうち末尾が tail_suspect の id を拾う。"""
+    picked: list[str] = []
+    for vid in ids:
+        f = out_dir / f"{vid}_secondary.wav"
+        if not f.is_file():
+            continue
+        t = tail_of(f, tail_ms, tail_margin_db)
+        if not t["tail_clean"]:
+            picked.append(vid)
+            print(f"[tail] tail_suspect: {vid}  Δ={t['tail_delta_db']} dB", flush=True)
+    return picked
+
+
+def merge_result(logs: Path, sweep_report: dict) -> Path:
+    """掃引の結果を既存の run_secondary.result.json に畳み込む。
+
+    掃引は 7 本しか作らないので、そのまま上書きすると 11 名 22 本の台帳が消える。
+    voice が一致する項目だけ差し替え、掃引の記録を seed_sweep として足す。
+    """
+    rp = logs / "run_secondary.result.json"
+    base: dict = {}
+    if rp.is_file():
+        base = json.loads(rp.read_text(encoding="utf-8"))
+    if not base:
+        base = dict(sweep_report)
+        base["items"] = []
+    adopted = {i["voice"]: i for i in sweep_report.get("items", []) if "error" not in i}
+    items = []
+    for it in base.get("items", []):
+        items.append(adopted.pop(it.get("voice"), it))
+    items.extend(adopted.values())
+    base["items"] = items
+    base["seed_sweep"] = {
+        "generated_at": sweep_report["generated_at"],
+        "seeds": sweep_report["seeds"],
+        "tail_window_ms": sweep_report["tail_window_ms"],
+        "tail_margin_db": sweep_report["tail_margin_db"],
+        "tail_rule": sweep_report["tail_rule"],
+        "trim_tail_fallback": sweep_report["trim_tail_fallback"],
+        "results": sweep_report["sweep"],
+    }
+    rp.write_text(json.dumps(base, ensure_ascii=False, indent=2), encoding="utf-8")
+    return rp
+
+
 # ---------------------------------------------------------------- main
 
 
@@ -185,6 +261,18 @@ def main() -> int:
     ap.add_argument("--only", default=None, help="この id だけ生成する")
     ap.add_argument("--ready-timeout", type=float, default=600.0)
     ap.add_argument("--keep-server", action="store_true", help="終了時にサーバを落とさない（調査用）")
+    # ---- seed 掃引（decisions 39）
+    ap.add_argument("--sweep-seed", action="store_true",
+                    help="末尾が切れている採用版について seed を掃引し、clean になった最初の seed を採る")
+    ap.add_argument("--sweep-ids", default=None,
+                    help="掃引する id をカンマ区切りで指定（既定＝採用版が tail_suspect の id を自動で拾う）")
+    ap.add_argument("--sweep-max-seeds", type=int, default=8, help="試す seed の個数（既定 8）")
+    ap.add_argument("--sweep-seed-start", type=int, default=1234, help="掃引の起点 seed（既定 1234）")
+    ap.add_argument("--no-trim-fallback", action="store_true",
+                    help="seed を使い切っても clean が出ない時に irodori.trim_tail=false を試す経路を切る")
+    ap.add_argument("--tail-ms", type=float, default=50.0, help="末尾判定の窓（ミリ秒・既定 50）")
+    ap.add_argument("--tail-margin-db", type=float, default=20.0,
+                    help="末尾 RMS が全体 RMS よりこの dB 以上低ければ clean（既定 20）")
     args = ap.parse_args()
 
     work = Path(args.work).resolve()
@@ -208,9 +296,27 @@ def main() -> int:
     if not ids:
         raise SystemExit(f"--only {args.only!r} に一致する id がない。候補: {PRIMARY_IDS}")
 
+    seeds: list[int] = []
+    if args.sweep_seed:
+        seeds = [args.sweep_seed_start + k for k in range(max(1, args.sweep_max_seeds))]
+        if args.sweep_ids:
+            want = [s.strip() for s in args.sweep_ids.split(",") if s.strip()]
+            unknown = [w for w in want if w not in PRIMARY_IDS]
+            if unknown:
+                raise SystemExit(f"--sweep-ids に知らない id がある: {unknown}")
+            ids = want
+        else:
+            ids = tail_suspect_ids(out_dir, ids, args.tail_ms, args.tail_margin_db)
+            if not ids:
+                print("[sweep] 末尾 tail_suspect の採用版が無い。何もしない。", flush=True)
+                return 0
+        print(f"[sweep] 対象 {len(ids)} 本: {', '.join(ids)}", flush=True)
+        print(f"[sweep] seed: {seeds}", flush=True)
+
     # ---- 1. 参照ボイスを voices_dir に ASCII 檔名で置く
     refs: dict[str, list[str]] = {}
-    variants = ["30s"] + (["10s"] if args.also_ref10 else [])
+    # 掃引は「採用版」＝30 s 参照だけを撃つ（decisions 39＝参照は 30 s 版のまま）。
+    variants = ["30s"] if args.sweep_seed else ["30s"] + (["10s"] if args.also_ref10 else [])
     for vid in ids:
         placed = []
         for var in variants:
@@ -252,6 +358,18 @@ def main() -> int:
         "irodori_params": par,
         "items": [],
     }
+    if args.sweep_seed:
+        report.update(
+            {
+                "mode": "seed_sweep",
+                "seeds": seeds,
+                "tail_window_ms": args.tail_ms,
+                "tail_margin_db": args.tail_margin_db,
+                "tail_rule": "tail_delta_db = tail50_dbfs - rms_dbfs ; clean ⇔ tail_delta_db <= -20.0",
+                "trim_tail_fallback": not args.no_trim_fallback,
+                "sweep": [],
+            }
+        )
     rc = 0
     try:
         health = wait_ready(args.port, proc, args.ready_timeout, log_path)
@@ -285,8 +403,116 @@ def main() -> int:
             print(f"[warm] 暖機に失敗（続行する）: {exc}", flush=True)
             report["warmup"] = {"ok": False, "error": str(exc)[:1000]}
 
+        # ---- 4b. seed 掃引（decisions 39）
+        if args.sweep_seed:
+            sweep_dir = out_dir / "sweep"
+            sweep_dir.mkdir(parents=True, exist_ok=True)
+            for vid in refs:
+                voice_id = vid  # 掃引は 30 s 参照＝素の id
+                attempts: list[dict] = []
+                adopted: dict | None = None
+                # trim_tail=True で seed を掃引 → 出なければ trim_tail=False で同じ seed 列を一巡。
+                passes = [True] if args.no_trim_fallback else [True, False]
+                for trim_tail in passes:
+                    if adopted:
+                        break
+                    for seed in seeds:
+                        irodori = {"num_steps": par["num_steps"], "seed": seed}
+                        if not trim_tail:
+                            irodori["trim_tail"] = False
+                        payload = {
+                            "model": par["model"],
+                            "input": text,
+                            "voice": voice_id,
+                            "response_format": par["response_format"],
+                            "irodori": irodori,
+                        }
+                        suffix = "" if trim_tail else "_notrim"
+                        tmp = sweep_dir / f"{voice_id}_seed{seed}{suffix}.wav"
+                        t0 = time.perf_counter()
+                        try:
+                            wav, ctype = _post(f"{base}/v1/audio/speech", payload, timeout=1800.0)
+                        except Exception as exc:  # noqa: BLE001 — 1 射の失敗で掃引を止めない
+                            print(f"[NG]   {voice_id} seed={seed} trim_tail={trim_tail}: {exc}", flush=True)
+                            attempts.append(
+                                {"seed": seed, "trim_tail": trim_tail, "error": str(exc)[:1000]}
+                            )
+                            rc = 1
+                            continue
+                        elapsed = time.perf_counter() - t0
+                        tmp.write_bytes(wav)
+                        t = tail_of(tmp, args.tail_ms, args.tail_margin_db)
+                        attempts.append(
+                            {
+                                "seed": seed,
+                                "trim_tail": trim_tail,
+                                "file": tmp.name,
+                                "bytes": len(wav),
+                                "elapsed_s": round(elapsed, 2),
+                                **t,
+                            }
+                        )
+                        mark = "clean" if t["tail_clean"] else "TAIL?"
+                        print(
+                            f"[sweep] {voice_id} seed={seed} trim_tail={trim_tail} "
+                            f"{t['duration_s']:.2f}s Δ={t['tail_delta_db']} dB [{mark}] {elapsed:.1f} s",
+                            flush=True,
+                        )
+                        if t["tail_clean"]:
+                            name = f"{voice_id}_secondary.wav"
+                            dest = out_dir / name
+                            dest.write_bytes(wav)
+                            adopted = {
+                                "id": vid,
+                                "voice": voice_id,
+                                "ref_variant": "30s",
+                                "file": name,
+                                "path": str(dest),
+                                "bytes": len(wav),
+                                "content_type": ctype,
+                                "elapsed_s": round(elapsed, 2),
+                                "request": payload,
+                                "tail": t,
+                                "seed": seed,
+                                "trim_tail": trim_tail,
+                                "tries": len(attempts),
+                                "sweep_file": tmp.name,
+                            }
+                            report["items"].append(adopted)
+                            print(
+                                f"[adopt] {name}  seed={seed} trim_tail={trim_tail} "
+                                f"（{len(attempts)} 回目で clean）",
+                                flush=True,
+                            )
+                            break
+                row = {
+                    "id": vid,
+                    "voice": voice_id,
+                    "adopted": bool(adopted),
+                    "adopted_seed": adopted["seed"] if adopted else None,
+                    "adopted_trim_tail": adopted["trim_tail"] if adopted else None,
+                    "tries": len(attempts),
+                    "attempts": attempts,
+                }
+                if not adopted:
+                    ok = [a for a in attempts if "error" not in a]
+                    best = min(ok, key=lambda a: a["tail_delta_db"] if a["tail_delta_db"] is not None else -999) if ok else None
+                    row["best_tail_delta_db"] = best["tail_delta_db"] if best else None
+                    row["best_seed"] = best["seed"] if best else None
+                    row["best_trim_tail"] = best["trim_tail"] if best else None
+                    row["why"] = (
+                        f"seed {seeds[0]}〜{seeds[-1]} の {len(seeds)} 個"
+                        + ("" if args.no_trim_fallback else "＋trim_tail=false の一巡")
+                        + f"（計 {len(attempts)} 射）で末尾 clean が出なかった。"
+                        + (f"最良は seed={best['seed']} trim_tail={best['trim_tail']} Δ={best['tail_delta_db']} dB。"
+                           if best else "全射が失敗した。")
+                    )
+                    print(f"[unres] {voice_id}: {row['why']}", flush=True)
+                    rc = 1
+                report["sweep"].append(row)
+
         # ---- 4. 二次生成
-        for vid, voice_ids in refs.items():
+        for vid, voice_ids in (refs.items() if not args.sweep_seed else []):
             for voice_id in voice_ids:
                 name = f"{voice_id}_secondary.wav"
                 dest = out_dir / name
@@ -334,9 +560,15 @@ def main() -> int:
             log.close()
         except Exception:  # noqa: BLE001
             pass
-        rp = logs / "run_secondary.result.json"
-        rp.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"[done] 台帳: {rp}", flush=True)
+        if args.sweep_seed:
+            sp = logs / "run_secondary.sweep.json"
+            sp.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+            rp = merge_result(logs, report)
+            print(f"[done] 掃引の台帳: {sp}\n[done] 畳み込み先: {rp}", flush=True)
+        else:
+            rp = logs / "run_secondary.result.json"
+            rp.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"[done] 台帳: {rp}", flush=True)
 
     return rc
 

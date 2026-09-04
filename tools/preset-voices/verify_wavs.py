@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 """便 P — wav の諸元と品位を JSON にする（Python 3.13 標準ライブラリ＋struct のみ・numpy 不使用）。
 
-出す値: Hz・ch・bit・秒・RMS（dBFS）・ピーク（dBFS）・先頭/末尾の無音長・クリップ有無。
+出す値: Hz・ch・bit・秒・RMS（dBFS）・ピーク（dBFS）・先頭/末尾の無音長・クリップ有無
+       ・末尾判定（decisions 39）。
+
+末尾判定（tail_verdict）＝檔の末尾 50 ms の RMS が全体 RMS より 20 dB 以上低ければ `clean`、
+それ以外は `tail_suspect`（＝語の途中で終端している疑い）。式は
+
+    tail_delta_db = tail50_dbfs - rms_dbfs
+    clean  ⇔  tail_delta_db <= -20.0
+
+窓と余裕は --tail-ms / --tail-margin-db で動かせる。末尾が完全な無音（振幅 0）なら clean。
 
 使い方:
     python verify_wavs.py <wav か ディレクトリ> [...] [--out <report.json>]
                           [--silence-db -50] [--clip-threshold 0.999]
+                          [--tail-ms 50] [--tail-margin-db 20]
 """
 
 from __future__ import annotations
@@ -122,7 +132,13 @@ def _db(x: float) -> float | None:
     return round(20.0 * math.log10(x), 2)
 
 
-def analyze(path: Path, silence_db: float, clip_threshold: float) -> dict:
+def analyze(
+    path: Path,
+    silence_db: float,
+    clip_threshold: float,
+    tail_ms: float = 50.0,
+    tail_margin_db: float = 20.0,
+) -> dict:
     fmt, payload = _parse_wav(path)
     mono, frames = _samples_mono(fmt, payload)
     rate = fmt["sample_rate"]
@@ -167,6 +183,22 @@ def analyze(path: Path, silence_db: float, clip_threshold: float) -> dict:
     if all_silent:
         trail = 0
 
+    # 末尾判定（decisions 39）＝末尾 tail_ms の RMS が全体 RMS より tail_margin_db 以上低いか。
+    # 自然に言い終わった音は末尾が減衰する。減衰していない＝語の途中で終端している疑い。
+    tail_n = max(1, int(round(rate * tail_ms / 1000.0))) if rate else len(mono)
+    tail_n = min(tail_n, len(mono))
+    tail_seg = mono[-tail_n:]
+    tail_rms = math.sqrt(sum(v * v for v in tail_seg) / len(tail_seg))
+    tail_dbfs = _db(tail_rms)
+    if tail_dbfs is None or rms <= 0.0:
+        # 末尾が完全な無音（振幅ちょうど 0）＝減衰しきっている＝clean。
+        # 全体が無音なら比べる意味がないので clean 扱いにして all_silent の印に委ねる。
+        tail_delta_db = None
+        tail_clean = True
+    else:
+        tail_delta_db = round(tail_dbfs - _db(rms), 2)  # type: ignore[operator]
+        tail_clean = tail_delta_db <= -abs(tail_margin_db)
+
     return {
         "file": path.name,
         "path": str(path),
@@ -190,6 +222,14 @@ def analyze(path: Path, silence_db: float, clip_threshold: float) -> dict:
         "all_silent": all_silent,
         "silence_threshold_dbfs": silence_db,
         "clip_threshold": clip_threshold,
+        # ---- 末尾判定（decisions 39）
+        "tail_window_ms": round(tail_n / rate * 1000.0, 2) if rate else None,
+        "tail_rms": round(tail_rms, 8),
+        "tail_rms_dbfs": tail_dbfs,
+        "tail_delta_db": tail_delta_db,
+        "tail_margin_db": abs(tail_margin_db),
+        "tail_clean": tail_clean,
+        "tail_verdict": "clean" if tail_clean else "tail_suspect",
     }
 
 
@@ -199,6 +239,9 @@ def main() -> int:
     ap.add_argument("--out", default=None, help="JSON の出力先（省略時は標準出力のみ）")
     ap.add_argument("--silence-db", type=float, default=-50.0, help="無音とみなす dBFS（既定 -50）")
     ap.add_argument("--clip-threshold", type=float, default=0.999, help="クリップとみなす絶対値（既定 0.999）")
+    ap.add_argument("--tail-ms", type=float, default=50.0, help="末尾判定に使う窓のミリ秒（既定 50）")
+    ap.add_argument("--tail-margin-db", type=float, default=20.0,
+                    help="末尾 RMS が全体 RMS よりこの dB 以上低ければ clean（既定 20）")
     args = ap.parse_args()
 
     files: list[Path] = []
@@ -216,7 +259,7 @@ def main() -> int:
     items: list[dict] = []
     for f in files:
         try:
-            info = analyze(f, args.silence_db, args.clip_threshold)
+            info = analyze(f, args.silence_db, args.clip_threshold, args.tail_ms, args.tail_margin_db)
         except Exception as exc:  # noqa: BLE001 — 1 本の失敗で全体を落とさない
             info = {"file": f.name, "path": str(f), "error": repr(exc)}
         items.append(info)
@@ -231,23 +274,41 @@ def main() -> int:
                 flag = "norm"  # ピーク正規化（孤立した full scale）＝異常ではない
             else:
                 flag = "ok"
+            # 末尾判定は既存の行の末に足す（既存の欄の並びは変えない）。
+            tmark = "clean" if info["tail_clean"] else "TAIL?"
+            tdelta = "-inf" if info["tail_delta_db"] is None else f"{info['tail_delta_db']:+.2f}"
             print(
                 f"[{flag:^6}] {info['file']:<44} {info['duration_s']:>6.2f}s {info['sample_rate']:>6}Hz "
                 f"{info['channels']}ch/{info['bits']}bit  peak={info['peak_dbfs']} dBFS  "
                 f"rms={info['rms_dbfs']} dBFS  lead={info['lead_silence_s']}s trail={info['trail_silence_s']}s "
-                f"run={info['max_clip_run']}",
+                f"run={info['max_clip_run']}  tail50={info['tail_rms_dbfs']} dBFS "
+                f"Δ={tdelta} dB [{tmark}]",
                 flush=True,
             )
 
+    ok_items = [i for i in items if "error" not in i]
+    tail_clean = sum(1 for i in ok_items if i.get("tail_clean"))
+    tail_suspect = [i["file"] for i in ok_items if not i.get("tail_clean")]
     report = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "silence_threshold_dbfs": args.silence_db,
         "clip_threshold": args.clip_threshold,
+        "tail_window_ms": args.tail_ms,
+        "tail_margin_db": args.tail_margin_db,
+        "tail_rule": "tail_delta_db = tail50_dbfs - rms_dbfs ; clean ⇔ tail_delta_db <= -20.0",
         "count": len(items),
         "errors": sum(1 for i in items if "error" in i),
         "clipped": sum(1 for i in items if i.get("clipped")),
+        "tail_clean": tail_clean,
+        "tail_suspect": len(tail_suspect),
+        "tail_suspect_files": tail_suspect,
         "items": items,
     }
+    print(
+        f"[tail] clean {tail_clean} / {len(ok_items)} 本"
+        + (f"　tail_suspect: {', '.join(tail_suspect)}" if tail_suspect else ""),
+        flush=True,
+    )
     if args.out:
         op = Path(args.out)
         op.parent.mkdir(parents=True, exist_ok=True)

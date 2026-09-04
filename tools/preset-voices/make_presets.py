@@ -143,6 +143,9 @@ def main() -> int:
             gen_items.setdefault(it["id"], {})[it["variant"]] = it
 
     sec_items = {i["voice"]: i for i in runsec.get("items", []) if "error" not in i}
+    # seed 掃引（decisions 39）の記録。voice ごとに採用 seed と試行回数が入る。
+    sweep = runsec.get("seed_sweep") or {}
+    sweep_rows = {r["voice"]: r for r in sweep.get("results", [])}
     health = runsec.get("health", {}) or {}
     sec_text_id = runsec.get("text_id")
     sec_text = runsec.get("text")
@@ -192,6 +195,22 @@ def main() -> int:
         other = sec_items.get(other_key)
         if s:
             v = vsec.get(s["file"], {})
+            # irodori 欄は「その 1 本を実際に撃った時の値」を採る（seed 掃引で話者ごとに seed が違う）。
+            req_ir = ((s.get("request") or {}).get("irodori")) or {}
+            irodori = {
+                "num_steps": req_ir.get("num_steps", par["num_steps"]),
+                "seed": req_ir.get("seed", par["seed"]),
+            }
+            if "trim_tail" in req_ir:
+                irodori["trim_tail"] = req_ir["trim_tail"]
+            row = sweep_rows.get(voice_key)
+            if row and row.get("adopted"):
+                irodori["seed_sweep"] = {
+                    "seeds": sweep.get("seeds"),
+                    "adopted_seed": row["adopted_seed"],
+                    "adopted_trim_tail": row["adopted_trim_tail"],
+                    "tries": row["tries"],
+                }
             entry["secondary"] = {
                 "file": f"{vid}.wav",
                 "duration_s": v.get("duration_s"),
@@ -204,7 +223,15 @@ def main() -> int:
                 "text": sec_text,
                 "ref_variant": args.ref_variant,
                 "ref_10s_file": other["file"] if other else None,
-                "irodori": {"num_steps": par["num_steps"], "seed": par["seed"]},
+                "irodori": irodori,
+                # 末尾判定（decisions 39）＝verify_wavs.py。clean＝末尾 50 ms の RMS が全体 RMS より 20 dB 以上低い。
+                "tail": {
+                    "window_ms": v.get("tail_window_ms"),
+                    "tail_rms_dbfs": v.get("tail_rms_dbfs"),
+                    "tail_delta_db": v.get("tail_delta_db"),
+                    "margin_db": v.get("tail_margin_db"),
+                    "verdict": v.get("tail_verdict"),
+                },
                 "server": {
                     "hf_checkpoint": health.get("model", {}).get("hf_checkpoint"),
                     "model_precision": health.get("model", {}).get("model_precision"),

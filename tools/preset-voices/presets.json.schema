@@ -114,7 +114,31 @@
               "additionalProperties": true,
               "properties": {
                 "num_steps": { "type": "integer", "description": "decisions 10＝既定 40。" },
-                "seed": { "type": "integer", "description": "再現のため固定。" }
+                "seed": { "type": "integer", "description": "再現のため固定。話者ごとに違うことがある＝末尾切れの是正（decisions 39）で seed を掃引して採った値。" },
+                "trim_tail": { "type": "boolean", "description": "上流 SamplingRequest.trim_tail（既定 true＝潜在の平坦点で末尾を切る）。seed 掃引で clean が出ず false にした話者だけ現れる。" },
+                "seed_sweep": {
+                  "type": "object",
+                  "description": "decisions 39 の seed 掃引の記録（掃引して採った話者だけ）。",
+                  "additionalProperties": true,
+                  "properties": {
+                    "seeds": { "type": "array", "items": { "type": "integer" }, "description": "試した seed の列（1234 から順）。" },
+                    "adopted_seed": { "type": "integer" },
+                    "adopted_trim_tail": { "type": "boolean" },
+                    "tries": { "type": "integer", "description": "clean が出るまでに撃った回数。" }
+                  }
+                }
+              }
+            },
+            "tail": {
+              "type": "object",
+              "description": "末尾判定（decisions 39・tools/preset-voices/verify_wavs.py）。末尾 50 ms の RMS が全体 RMS より 20 dB 以上低ければ clean、それ以外は tail_suspect（語の途中で終端している疑い）。",
+              "additionalProperties": true,
+              "properties": {
+                "window_ms": { "type": ["number", "null"], "description": "末尾判定に使った窓（ミリ秒・既定 50）。" },
+                "tail_rms_dbfs": { "type": ["number", "null"] },
+                "tail_delta_db": { "type": ["number", "null"], "description": "tail_rms_dbfs − rms_dbfs。−20 以下なら clean。末尾が振幅 0 なら null。" },
+                "margin_db": { "type": ["number", "null"], "description": "clean の閾（既定 20 dB）。" },
+                "verdict": { "type": ["string", "null"], "enum": ["clean", "tail_suspect", null] }
               }
             },
             "server": {

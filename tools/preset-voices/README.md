@@ -118,6 +118,22 @@ Hz・ch・bit・秒・RMS・ピーク・先頭末尾の無音長・クリップ�
 
 二次 wav はサーバがピーク正規化するため全本が `norm` になる。これは正常。
 
+### 末尾判定（decisions 39）
+
+行末に `tail50=<末尾 50 ms の RMS> Δ=<全体 RMS との差> [clean|TAIL?]` が付く。定義は
+
+```
+tail_delta_db = tail50_dbfs - rms_dbfs
+clean  ⇔  tail_delta_db <= -20.0
+```
+
+自然に言い終わった音は末尾が減衰する。減衰していない（`TAIL?`＝`tail_suspect`）＝**語の途中で終端している疑い**。
+窓と閾は `--tail-ms 50` `--tail-margin-db 20` で動かせる。末尾が振幅ちょうど 0 なら `Δ=-inf` で clean。
+
+JSON には各本に `tail_window_ms`・`tail_rms_dbfs`・`tail_delta_db`・`tail_margin_db`・`tail_clean`・
+`tail_verdict` が、台帳の頭に `tail_clean`（本数）・`tail_suspect`・`tail_suspect_files`・`tail_rule` が入る。
+既存の欄は 1 つも消していない。
+
 ---
 
 ## 4. 二次 wav を作る
@@ -160,6 +176,43 @@ python .\run_secondary.py --also-ref10
 ```powershell
 python .\verify_wavs.py "$W\secondary" --out "$W\logs\verify_secondary.json"
 ```
+
+### 4-2. 末尾が切れている本を seed 掃引で直す（decisions 39）
+
+本文も参照も変えずに **seed だけ**を 1234 から順に振り、生成のたびに末尾判定を掛けて
+**clean になった最初の seed を採る**。
+
+```powershell
+# 採用版（secondary\<id>_secondary.wav）のうち tail_suspect の本を自動で拾って掃引
+python .\run_secondary.py --sweep-seed
+
+# id を名指しする場合
+python .\run_secondary.py --sweep-seed --sweep-ids "vv_mochiko_sexy,co_tsukuyomi"
+```
+
+| 引数 | 意味 |
+|------|------|
+| `--sweep-seed` | 掃引モードに入る（参照は 30 s 版のまま・10 s 版は撃たない） |
+| `--sweep-ids <id,id>` | 掃引する id を名指し（既定＝tail_suspect を自動で拾う） |
+| `--sweep-max-seeds 8` | 試す seed の個数（既定 8＝1234〜1241） |
+| `--sweep-seed-start 1234` | 起点の seed |
+| `--no-trim-fallback` | seed を使い切っても clean が出ない時の `trim_tail=false` の一巡を切る |
+| `--tail-ms` / `--tail-margin-db` | 末尾判定の窓と閾（既定 50 ms／20 dB） |
+
+seed を使い切っても clean が出なければ、**本文を変えずに** `irodori.trim_tail=false` で同じ seed 列を
+もう一巡する。`trim_tail` は上流 `SamplingRequest`（`upstream/Irodori-TTS/irodori_tts/inference_runtime.py:242`）の欄で、
+既定 `true` のとき潜在の平坦点（`find_flattening_point`）で音を切る。`false` にすると推定長 `target_samples`
+まで残すので、平坦点の誤検出で語尾が落ちた本が救えることがある。
+
+出力。
+
+- 射ごとの wav＝`secondary\sweep\<id>_seed<N>[_notrim].wav`（全射を残す）
+- 採用した本は `secondary\<id>_secondary.wav` を**上書き**する
+- 掃引の台帳＝`logs\run_secondary.sweep.json`
+- `logs\run_secondary.result.json` には採用分の項目だけを畳み込み（他の話者の記録は消さない）、
+  `seed_sweep` として採用 seed・試行回数・全射の測定を足す
+
+掃引のあとは `verify_wavs.py` を掛け直してから §5 の `make_presets.py --copy` を打つ。
 
 ---
 
