@@ -37,12 +37,17 @@
 | B-1 | `assemble-runtime -Variant cu130` が RTX 機で台帳だけから組み上がる（`fallback_url` の sha256 も 1 度突き合わせる） | 設計書 §0 |
 | B-2 | `ywk_fetch_models` が 3 リポ 22 檔を取得・検証し `refs/main` を書く | `decisions.md` 49 |
 | B-3 | **U-8**＝vc_redist 未導入で `import torch` がどう落ちるか（逐語）→ 台帳の直リンクで導入 → 通る | 設計書 §0 |
-| B-4 | cu130・bf16 の実射＝短文 RTF ≤ 0.25／長文 ≤ 0.10／参照 10〜30 s ≤ 0.35／10 steps 短文 ≤ 0.10・コールド 1 発目 ≤ 2.0 s・VRAM bf16 ≤ 3.2 GiB・kill 後 10 s で idle | `docs/acceptance.md` 速度 1〜3・コールド・VRAM |
+| B-4 | cu130・bf16 の実射＝短文 40 steps 参照なし RTF ≤ 0.25／長文 40 steps 参照なし ≤ 0.10／**40 steps の参照あり（ref10・ref30）≤ 0.35**／短文 10 steps 参照なし ≤ 0.10／**短文 10 steps の参照あり（ref10・ref30）≤ 0.15**・コールド 1 発目 ≤ 2.0 s・VRAM bf16 ≤ 3.2 GiB・kill 後 10 s で idle・`device` の `uuid` と `pci_bus_id` が非 null | `docs/acceptance.md` 速度 1〜3・コールド・VRAM（予算の全 12 行は `probe/bench_cases.json` の `budgets.rtf`） |
 | B-5 | 未見の参照形状の 1 発目（11 プリセット順撃ち）が CUDA でどう振る舞うか＝暖機を CUDA でも既定 ON にするかの根拠 | `research/lab/notes/33` §5・`decisions.md` 40 |
 | B-6 | cu126 変種を組んで同じベンチ＝cu130 と ±5 % | 設計書 §0 |
-| B-7 | **U-14**＝2023 年秋のドライバ（R537／R545）で cu126 が動くか（`import torch`・`is_available()`・実合成 1 射） | `docs/acceptance.md` ドライバ行 |
-| B-8 | clone した木で `build/run-tests.ps1` が緑（`.gitattributes` の CRLF 対策の実証） | 設計書 §0 |
-| B-9 | 結果を `N:\temp_for_claudecode_agents\irodori-ywk\rtx\` へ・停止域の証明 | `decisions.md` 21 |
+| B-7 | **U-14**＝2023 年秋のドライバ（**537.58** 第一候補・545.84 代案）に降格して cu126 が動くか（`import torch`・`is_available()`／`device_count`・`nvidia-smi`・実合成 1 射）＋cu130 の落ち方を 1 回記録。**台本では独立した最終ブロック＝§3**（`decisions.md` 56） | `docs/acceptance.md` ドライバ行 |
+| B-8 | clone した木で `build/run-tests.ps1` が緑（`.gitattributes` の CRLF 対策の実証）＝**判定は `EXIT=0` と pytest が印字した行の逐語。本数は台本に書かない**（bundle の HEAD の木で決まる） | 設計書 §0 |
+| B-9 | 結果を `N:\temp_for_claudecode_agents\irodori-ywk\rtx\` へ・`SUMMARY.md`・停止域の証明 | `decisions.md` 21 |
+
+**合否の読み方**＝`probe/cuda-bench.ps1` の走行は **`EXIT=0` かつ `status.txt` の `CHECKS=OK`** で合格。
+終了コードが表すのは「撃った全射が 200 で wav を返した」1 点だけで、`GET /health`・`/params`・`/ywk/status` の
+可否は `checks[]` にしか乗らない（`CHECKS=` の行はそれを `status.txt` に出したもの）。
+`budget_checks` の不合格は**測定であって不合格ではない**（`rtf_http` は kit の `rtf_synth` より必ず大きい）。
 
 **任意（時間が余れば・台本 §2 の末尾）**
 
@@ -56,9 +61,20 @@
 結果の写し＝`N:\…\results-ssd\`（`decisions.md` 21＝「好きにしてよい」）。
 
 **RTX 3090 機の停止域**＝**D:・E:・F: ドライブは触らない**。Windows ごと壊してよい。
-**ドライバの入れ替え（U-14）は `decisions.md` 50 で司令官が承諾済み**（2026-09-05・「入れ替え承諾」）＝
-もう「明示の一言待ち」ではない。ただし台本の順どおり **B-1〜B-6・B-8・B-9 を終えて結果を N: に写してから**
-着手する（`decisions.md` 20・22・50）。
+
+**ドライバの入れ替え（U-14・台本 §3）の関門は 2 つ**（`decisions.md` 50 → **56** → **70・71・72**）＝
+
+- **関門⑵＝司令官の承諾**が**その遠隔席のセッションの中に在る**こと（56＝セッション間で許可を持ち回らない）。
+  **`decisions.md` 72 で司令官が遠隔席の会話に先に書いたので、これは充足済み**（恒久降格・戻し不要・
+  `RunOnce`＋`claude -c` の自動再起動可）。ただし**本席の申し送りを承諾の代わりにしない**（71）。
+- **関門⑴＝チェックポイントと設計席の確認返信**＝**B-1〜B-6・B-8・B-9 を終えて結果を N: に写し**、
+  `N:\…\irodori-ywk\rtx\SUMMARY.md` に **`入れ替え前の測定完了`** と記し、
+  **設計席へ返信して確認の返信を受け取る**。
+
+**両方揃うまで §3 に着手しない。**降格後に測るのは **cu126 のみ**、**cu130 は落ち方を 1 回記録するだけ**（56）。
+**591.86 への復旧は不要＝恒久降格**（70）。**再起動**は、司令官がその会話で明示していれば
+`decisions.md` 66 の仕込み（`RunOnce`＋`claude -c`）で席が自分で撃ってよいが、**本席の指示だけでは撃たない**（71）。
+`docs/acceptance.md` の数値は遠隔席では書き換えない＝設計席に申し送る。
 
 ### 便 C（Radeon 機・実射と暖機）
 

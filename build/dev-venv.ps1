@@ -39,6 +39,7 @@ Write-YwkLog -Message ('uv: ' + $uv.Version)
 
 $reqPath = Join-Path $RepoRoot ('build\out\ledger-log\requirements-' + $Variant + '.pruned.txt')
 $fallback = Join-Path $RepoRoot 'build\dev-requirements.txt'
+$usedFallback = $false
 $noDeps = $true
 if (-not (Test-Path -LiteralPath $reqPath)) {
     if (-not (Test-Path -LiteralPath $fallback)) {
@@ -49,6 +50,7 @@ if (-not (Test-Path -LiteralPath $reqPath)) {
     # spec, not a closure, so this path must resolve dependencies.
     Write-YwkLog -Level 'WARN' -Message ($reqPath + ' not found; falling back to build\dev-requirements.txt (run make-ledger.ps1 for the exact ledger set)')
     $reqPath = $fallback
+    $usedFallback = $true
     $noDeps = $false
 }
 $torchIndex = 'https://download.pytorch.org/whl/' + $Variant
@@ -100,7 +102,7 @@ if ($r2.ExitCode -ne 0) {
 # Smoke: the box must be able to import what the contract tests import.
 $check = Invoke-YwkNative -FilePath $venvPython -Environment $env2 -Arguments @(
     '-c',
-    'import sys,torch,fastapi,httpx,pytest,transformers,soundfile;print(sys.version.split()[0]);print(torch.__version__);print(transformers.__version__)'
+    ('import sys,torch,fastapi,httpx,pytest,soundfile;print(sys.version.split()[0]);print(torch.__version__);' + $(if ($usedFallback) { 'print("transformers: not installed (fallback set)")' } else { 'import transformers;print(transformers.__version__)' }))
 ) -TimeoutSeconds 600
 if ($check.ExitCode -ne 0) {
     Write-YwkLog -Level 'FAIL' -Message ($check.StdErr.Trim())

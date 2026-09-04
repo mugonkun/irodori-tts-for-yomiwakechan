@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "name": "ywk-cuda-bench-cases",
+  "generated": "2026-09-05",
+  "seat": "\u4fbf B \u9053\u5177\u5e2d\uff08opus\uff09",
+  "purpose": "probe/cuda_bench.py \u304c\u8aad\u3080\u6761\u4ef6\u8868\u3002docs/acceptance.md \u306e\u300c\u901f\u5ea6\u300d\u300c\u30b3\u30fc\u30eb\u30c9\u300d\u300cVRAM\u300d\u884c\uff08\u53d7\u3051\u5165\u308c\u6761\u4ef6 B-4\u30fbB-5\u30fbB-6\uff09\u3092 RTX 3090 \u6a5f\u3067\u5b9f\u6e2c\u3059\u308b\u305f\u3081\u306e\u3082\u306e\u3002",
+
+  "source": {
+    "frozen_text_from": "research/lab/kit-cuda/cases.json",
+    "frozen_text_note": "caption\u30fbcases.short.text\u30fbcases.long.text\u30fbexpected_audio_seconds_cpu \u306e 4 \u5024\u306f kit-cuda/cases.json \u304b\u3089\u306e\u9010\u8a9e\u306e\u5199\u3057\uff081 \u6587\u5b57\u3082\u5909\u3048\u3066\u3044\u306a\u3044\uff09\u3002kit \u306e _comment \u306e\u9010\u8a9e\u3092 frozen_text_upstream_comment \u306b\u6b8b\u3059\u3002\u3053\u3053\u3092\u66f8\u304d\u63db\u3048\u308b\u3068 research/lab/notes/21\u30fb24\u30fb25\u30fb27\u30fb33 \u306e\u5b9f\u6e2c\u3068\u6bd4\u3079\u3089\u308c\u306a\u304f\u306a\u308b\u3002",
+    "frozen_text_upstream_comment": "11-lab-setup.md 5 \u7bc0\u306e CPU \u57fa\u6e96\u6e2c\u5b9a\u3068\u540c\u4e00\u306e\u6587\u9762\u3002\u3053\u3053\u3092\u66f8\u304d\u63db\u3048\u308b\u3068 CPU \u5b9f\u6e2c\u3068\u306e\u6bd4\u8f03\u304c\u3067\u304d\u306a\u304f\u306a\u308b\u3002",
+    "rtf_definition_from": "research/lab/kit-cuda/bench_infer.py",
+    "ssd_operation_from": "research/lab/kit-cuda/README-ssd.md",
+    "reference_wavs_from": "voices/presets/*.wav\uff08voices/presets.json \u306e secondary.file\uff09",
+    "budgets_from": "docs/acceptance.md \u306e\u300c\u901f\u5ea6\u300d\u300c\u30b3\u30fc\u30eb\u30c9\u300d\u300cVRAM\u300d\u884c"
+  },
+
+  "notes": [
+    "\u3053\u306e\u53f0\u672c\u306f wrapper \u306e HTTP\uff08127.0.0.1:<port>\uff09\u3092\u53e9\u304f\u3002kit-cuda/bench_infer.py \u306f upstream infer.py \u3092\u540c\u4e00\u30d7\u30ed\u30bb\u30b9\u3067\u56de\u3057\u3066\u3044\u305f\u306e\u3067\u3001\u6e2c\u308b\u3082\u306e\u304c\u9055\u3046\uff08rtf_definitions \u3092\u898b\u308b\u3053\u3068\uff09\u3002",
+    "caption \u306f kit \u3068\u540c\u3058\u304f\u3059\u3079\u3066\u306e case \u306b\u4e57\u305b\u308b\u3002kit-cuda/bench_infer.py \u306f cases.json \u306b caption \u304c\u3042\u308c\u3070\u7121\u6761\u4ef6\u306b --caption \u3092\u8db3\u3057\u3066\u3044\u305f\uff08bench_infer.py \u306e CASE_META \u7bc0\uff09\u306e\u3067\u3001notes 21\u30fb24\u30fb25\u30fb27\u30fb33 \u306e\u6570\u5024\u306f\u3059\u3079\u3066 caption \u3042\u308a\u3067\u3042\u308b\u3002caption \u3092\u843d\u3068\u3059\u3068\u305d\u306e\u5b9f\u6e2c\u3068\u4e26\u3079\u3089\u308c\u306a\u3044\u3002",
+    "precision \u306f\u8981\u6c42\u6b04\u3067\u306f\u306a\u304f\u8d77\u52d5\u6642 env\uff08IRODORI_MODEL_PRECISION / IRODORI_CODEC_PRECISION\uff09\u3002\u3057\u305f\u304c\u3063\u3066\u6761\u4ef6\u8868\u306e precision \u8ef8\u306f\u300c1 \u8d70\u884c\uff1d1 precision\u300d\u3067\u5b9f\u73fe\u3059\u308b\uff1dprobe/cuda-bench.ps1 -Precision bf16 \u3092 1 \u56de\u3001\u5225\u306e precision \u3092\u898b\u308b\u306a\u3089\u3082\u3046 1 \u56de\u8d70\u3089\u305b\u308b\u3002JSON \u306b\u306f /ywk/status \u304c\u540d\u4e57\u3063\u305f\u5b9f\u5024\u3092\u8a18\u9332\u3059\u308b\u3002",
+    "seed \u306f 1234 \u56fa\u5b9a\uff08kit \u306e ref_bench_voices.py \u306e\u65e2\u5b9a\u3068\u540c\u3058\uff09\u3002\u672a\u6307\u5b9a\u3060\u3068\u30c1\u30e3\u30f3\u30af\u3054\u3068\u306b\u5225\u306e\u7a2e\u306b\u306a\u308a\u3001\u51fa\u529b\u5c3a\u304c\u5c04\u3054\u3068\u306b\u3076\u308c\u3066 RTF \u306e\u5206\u6bcd\u304c\u52d5\u304f\u3002",
+    "\u53c2\u7167\u6761\u4ef6\u306f\u300cvoices_dir \u306b <voice_id>.wav \u3092\u7f6e\u3044\u3066 voice=<voice_id> \u3067\u64c3\u3064\u300d\uff08\u4e0a\u6d41 voices.py \u306e _scan_voice_files \u304c\u62e1\u5f35\u5b50\u3092\u9664\u3044\u305f stem \u3092 voice_id \u306b\u3059\u308b\uff09\u3002\u65e5\u672c\u8a9e\u540d\u3067\u64c3\u3061\u305f\u3051\u308c\u3070 voices.json \u306e alias\uff08\u5024\u304c\u6587\u5b57\u5217\u306a\u3089 ref_wav \u306b\u306a\u308b\uff1a\u4e0a\u6d41 voices.py \u306e _parse_alias\uff09\u3092\u4f7f\u3046\u3002cuda-bench.ps1 \u306f\u4e21\u65b9\u3092\u66f8\u304f\u3002",
+    "reference \u8ef8\u306e ref10\uff0810 s \u53c2\u7167\uff09\u306f\u3001\u914d\u5e03\u7269\u306e\u4e8c\u6b21 wav\uff08voices/presets/<id>.wav\uff09\u306e\u5148\u982d 10.0 s \u3092\u5207\u3063\u3066\u4f5c\u308b\uff08cuda-bench.ps1 \u304c cuda_bench.py --trim-wav \u3067\u4f5c\u308b\u30fbPCM \u306e\u982d\u5207\u308a\u3060\u3051\u3067\u518d\u7b26\u53f7\u5316\u3057\u306a\u3044\uff09\u3002",
+    "\u9053\u5177\u5e2d\u306e\u5b9f\u6e2c\uff082026-09-05\uff09\uff1dbuild/out/preset-work/secondary/*_ref10_secondary.wav \u306f 10 s \u306e\u53c2\u7167\u30af\u30ea\u30c3\u30d7\u3067\u306f\u306a\u3044\u300225.08\u301c36.00 s \u3042\u308b\uff08voices/presets/<id>.wav \u3068\u307b\u307c\u540c\u3058\u9577\u3055\uff09\u3002\u3053\u308c\u306f\u300c10 s \u306e\u4e00\u6b21 wav \u3092\u53c2\u7167\u306b\u4f7f\u3063\u3066\u751f\u6210\u3057\u305f\u4e8c\u6b21 wav\u300d\uff08presets.json \u306e secondary.ref_10s_file\uff09\u3067\u3042\u308a\u3001\u53c2\u7167\u30af\u30ea\u30c3\u30d7\u306e\u9577\u3055\u3068\u3057\u3066\u306f 30 s \u7d1a\u3067\u3042\u308b\u3002\u3053\u308c\u3092 10 s \u6761\u4ef6\u306b\u4f7f\u3046\u3068 prepare_reference \u306e\u53c2\u7167\u9577\u4f9d\u5b58\uff08notes/33 \u8868 1\uff09\u3092\u8aa4\u3063\u3066\u5831\u544a\u3059\u308b\u306e\u3067\u4f7f\u308f\u306a\u3044\u3002",
+    "ref10 \u306e\u5143\u3092 build/out/preset-work/primary/<id>_10s.wav\uff089.75\u301c11.71 s\u30fb44.1 kHz\u30fb\u5404\u30a8\u30f3\u30b8\u30f3\u306e\u4e00\u6b21 wav\uff09\u306b\u3057\u305f\u3044\u5834\u5408\u306f cuda-bench.ps1 -Ref10Wav <path> \u3067\u5dee\u3057\u66ff\u3048\u3089\u308c\u308b\u3002\u305f\u3060\u3057\u4e00\u6b21 wav \u306f\u914d\u5e03\u7269\u3067\u306f\u306a\u304f RTX \u6a5f\u306b\u306f\u5c4a\u3044\u3066\u3044\u306a\u3044\uff08N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/primary/ \u306b\u4fdd\u5168\uff09\u3002",
+    "budgets \u306e\u5024\u306f kit \u306e RTF \u5b9a\u7fa9\uff08total_to_decode \u00f7 audio_seconds\uff09\u3067\u6e2c\u3089\u308c\u305f\u5b9f\u6e2c\u306b\u5bfe\u3057\u3066\u7f6e\u304b\u308c\u3066\u3044\u308b\u3002\u672c\u53f0\u672c\u304c\u6e2c\u308b rtf_http \u306f\u305d\u308c\u3088\u308a\u5fc5\u305a\u5927\u304d\u3044\u306e\u3067\u3001\u4e88\u7b97\u5224\u5b9a\u306f\u3042\u304f\u307e\u3067\u53c2\u8003\u3068\u3057\u3066\u51fa\u3059\uff08\u65e2\u5b9a\u3067\u306f\u975e\u30bc\u30ed\u7d42\u4e86\u306b\u3057\u306a\u3044\uff1acuda-bench.ps1 -FailOnBudget \u3067\u53b3\u3057\u304f\u3067\u304d\u308b\uff09\u3002"
+  ],
+
+  "caption": "\u843d\u3061\u7740\u3044\u305f\u5973\u6027\u306e\u58f0\u3067\u3001\u4e01\u5be7\u306b\u8a71\u3059\u3002",
+
+  "cases": {
+    "short": {
+      "label": "\u77ed\u6587",
+      "text": "\u3053\u3093\u306b\u3061\u306f\u3001\u8aad\u307f\u5206\u3051\u3061\u3083\u3093\u306e\u30c6\u30b9\u30c8\u3067\u3059\u3002",
+      "expected_audio_seconds_cpu": 3.76
+    },
+    "long": {
+      "label": "\u9577\u6587",
+      "text": "\u8aad\u307f\u5206\u3051\u3061\u3083\u30932 \u306f\u3001\u914d\u4fe1\u4e2d\u306e\u8aad\u307f\u4e0a\u3052\u3092\u62c5\u5f53\u3059\u308b\u30bd\u30d5\u30c8\u3067\u3059\u3002\u4eca\u65e5\u306f\u4e5d\u756a\u76ee\u306e\u30a8\u30f3\u30b8\u30f3\u3068\u3057\u3066\u3001\u5f69\u308a\u97f3\u58f0\u5408\u6210\u3092\u8a66\u3057\u3066\u3044\u307e\u3059\u3002",
+      "expected_audio_seconds_cpu": 10.92
+    }
+  },
+
+  "conditions": {
+    "cases": ["short", "long"],
+    "steps": [40, 10],
+    "precision": ["bf16"],
+    "reference": ["none", "ref10", "ref30"],
+    "order": "case \u2192 steps \u2192 reference\uff0812 \u6761\u4ef6\uff09",
+    "shots_per_condition": "1 \u767a\u76ee\uff08first\uff09\uff0b warm \u00d7 --warm-reps\uff08\u65e2\u5b9a 3\u30fb\u4e2d\u592e\u5024\u3092\u63a1\u308b\uff09",
+    "run_cold": "\u8d70\u884c\u5168\u4f53\u306e\u6700\u521d\u306e 1 \u767a\uff08short\u30fb40 steps\u30fbnone \u306e first\uff09\u3092 run_cold \u3068\u3057\u3066\u5225\u306b\u8a18\u9332\u3059\u308b\uff1d\u53d7\u3051\u5165\u308c\u6761\u4ef6\u300c\u30b3\u30fc\u30eb\u30c9\u300d\u884c\u306e\u5bfe\u8c61\u3002"
+  },
+
+  "request": {
+    "path": "/v1/audio/speech",
+    "template": {
+      "model": "irodori-tts",
+      "response_format": "wav",
+      "irodori": {"seed": 1234}
+    },
+    "note": "input \u306b case.text\u3001irodori.caption \u306b\u4e0a\u306e caption\u3001irodori.num_steps \u306b steps\u3001voice \u306b\u53c2\u7167\u6761\u4ef6\u306e voice \u3092\u5165\u308c\u308b\u3002response_format \u306f wav \u56fa\u5b9a\uff08\u88c1\u5b9a 8\u30fb\u8a2d\u8a08\u66f8 \u00a74-5 \u2464\uff09\u3002"
+  },
+
+  "reference_voices": {
+    "primary_preset_id": "vv_mochiko_sexy",
+    "primary_preset_display_name": "\u3082\u3061\u5b50\u3055\u3093",
+    "primary_preset_reason": "voices/presets.json \u306e\u5148\u982d\u884c\u3002secondary 30.76 s\u30fb48 kHz\u30fbmono\u30fb16 bit\u3067 30 s \u7d1a\u306e\u4ee3\u8868\u3068\u3057\u3066\u4f7f\u3046\u3002-ReferencePresetId \u3067\u5dee\u3057\u66ff\u3048\u3089\u308c\u308b\u3002",
+    "none": {
+      "voice": "\u30c7\u30d5\u30a9\u30eb\u30c8",
+      "note": "\u53c2\u7167\u306a\u3057\u3002\u88c1\u5b9a 16\u30fb45\uff1dwrapper \u304c\u300c\u30c7\u30d5\u30a9\u30eb\u30c8\u300d\u3092\u53c2\u7167\u306a\u3057\u5408\u6210\u306b\u7573\u3080\u3002voices.json \u306b {\"\u30c7\u30d5\u30a9\u30eb\u30c8\": {\"no_ref\": true}} \u304c\u8981\u308b\u3002"
+    },
+    "ref10": {
+      "voice_id_suffix": "_ref10",
+      "seconds": 10.0,
+      "made_by": "cuda_bench.py --trim-wav voices/presets/<id>.wav --trim-out <voices_dir>/<id>_ref10.wav --trim-seconds 10.0",
+      "note": "\u5148\u982d 10.0 s \u306e PCM \u982d\u5207\u308a\u3002\u518d\u7b26\u53f7\u5316\u30fb\u6b63\u898f\u5316\u3092\u3057\u306a\u3044\uff08\u88c1\u5b9a 38\uff1d\u4e0a\u6d41\u304c\u53c2\u7167\u30af\u30ea\u30c3\u30d7\u3054\u3068\u306b \u221216 dB \u3078\u6b63\u898f\u5316\u3059\u308b\uff09\u3002"
+    },
+    "ref30": {
+      "voice_id_suffix": "",
+      "seconds_range": [24.84, 35.76],
+      "source": "voices/presets/<id>.wav",
+      "note": "\u914d\u5e03\u7269\u306e\u4e8c\u6b21 wav \u305d\u306e\u3082\u306e\u3002docs/acceptance.md \u306e\u300c\u53c2\u7167 10\u301c30 s\u300d\u884c\u306e\u4e0a\u7aef\u5074\u3002"
+    }
+  },
+
+  "preset_sweep": {
+    "purpose": "\u53d7\u3051\u5165\u308c\u6761\u4ef6 B-5\uff1d\u672a\u898b\u306e\u53c2\u7167\u5f62\u72b6\u306e 1 \u767a\u76ee\u304c CUDA \u3067\u3069\u3046\u632f\u308b\u821e\u3046\u304b\u3002\u4fbf C\uff08Radeon\uff09\u3068\u540c\u3058\u89b3\u6e2c\u3092 CUDA \u3067\u3084\u308b\u3002",
+    "expectation": "research/lab/notes/33 \u00a75\uff1dCUDA \u306b\u306f ROCm \u306e\u3088\u3046\u306a\u53c2\u7167\u9577\u3054\u3068\u306e\u521d\u898b\u7f70\u304c\u7121\u3044\uff08cold \u306f 0.88\u301c1.46 s\uff09\u3002\u88c1\u5b9a 40\uff1dROCm \u3067\u306f\u6700\u521d\u306e VOICEROID2 \u53c2\u7167\u3067 decode_latent \u304c 14.8 s \u306b\u8df3\u306d\u305f\u3002\u3053\u306e\u5dee\u304c\u518d\u73fe\u3059\u308c\u3070 CUDA \u5074\u306e\u6696\u6a5f\u3092\u65e2\u5b9a OFF \u306b\u3067\u304d\u308b\u6839\u62e0\u306b\u306a\u308b\u3002",
+    "case": "short",
+    "steps": 40,
+    "reference": "ref30",
+    "shots_per_preset": 1,
+    "order_note": "voices/presets.json \u306e\u4e26\u3073\u9806\u306e\u307e\u307e\u3002\u30a8\u30f3\u30b8\u30f3\u304c VOICEVOX \u2192 COEIROINK \u2192 VOICEROID2 \u306e\u9806\u306b\u306a\u308b\u306e\u3067\u3001\u4fbf C \u304c\u898b\u305f\u300c\u6700\u521d\u306e VOICEROID2 \u53c2\u7167\u300d\u306e\u5883\u76ee\uff08vr2_akane_west\uff09\u304c 8 \u672c\u76ee\u306b\u6765\u308b\u3002",
+    "presets": [
+      {"id": "vv_mochiko_sexy",      "display_name": "\u3082\u3061\u5b50\u3055\u3093",                          "engine": "voicevox",   "ref30_seconds": 30.76},
+      {"id": "vv_chibishikijii",     "display_name": "\u3061\u3073\u5f0f\u3058\u3044",                        "engine": "voicevox",   "ref30_seconds": 31.68},
+      {"id": "co_tsukuyomi",         "display_name": "\u3064\u304f\u3088\u307f\u3061\u3083\u3093",                  "engine": "coeiroink", "ref30_seconds": 28.24},
+      {"id": "co_kana_naisho",       "display_name": "KANA\uff08\u306a\u3044\u3057\u3087\u3070\u306a\u3057\uff09",      "engine": "coeiroink", "ref30_seconds": 33.28},
+      {"id": "co_mana_isshoukenmei", "display_name": "MANA\uff08\u3044\u3063\u3057\u3087\u3046\u3051\u3093\u3081\u3044\uff09", "engine": "coeiroink", "ref30_seconds": 30.16},
+      {"id": "co_ofutonp_kiza",      "display_name": "\u304a\u3075\u3068\u3093P\uff08\u304d\u3056\uff09",            "engine": "coeiroink", "ref30_seconds": 30.6},
+      {"id": "co_ofutonp_normal_v2", "display_name": "\u304a\u3075\u3068\u3093P\uff08\u306e\u30fc\u307e\u308bv2\uff09",  "engine": "coeiroink", "ref30_seconds": 26.32},
+      {"id": "vr2_akane_west",       "display_name": "\u7434\u8449\u831c\uff08\u95a2\u897f\u5f01\uff09",            "engine": "voiceroid2", "ref30_seconds": 34.92},
+      {"id": "vr2_yoshida",          "display_name": "\u5409\u7530\u304f\u3093",                          "engine": "voiceroid2", "ref30_seconds": 24.84},
+      {"id": "vr2_tsukuyomi_ai",     "display_name": "\u6708\u8aad\u30a2\u30a4",                          "engine": "voiceroid2", "ref30_seconds": 35.76},
+      {"id": "vr2_tsukuyomi_shota",  "display_name": "\u6708\u8aad\u30b7\u30e7\u30a6\u30bf",                    "engine": "voiceroid2", "ref30_seconds": 32.72}
+    ],
+    "absent": [
+      {"id": "cevio_maki_en", "display_name": "\u5f26\u5dfb\u30de\u30ad\uff08\u82f1\u8a9e\uff09", "reason": "decisions.md 27\uff1d\u4e00\u6b21 wav \u672a\u751f\u6210\uff08\u53f8\u4ee4\u5b98\u63d0\u4f9b\u5f85\u3061\uff09\u3002presets.json \u306e status \u306f skipped\u3002"}
+    ]
+  },
+
+  "budgets": {
+    "basis": "docs/acceptance.md\uff08\u5b9f\u6e2c\u306f kit \u306e rtf_synth \u5b9a\u7fa9\uff09",
+    "cold_max_seconds": 2.0,
+    "vram_max_mib": {"bf16": 3277, "fp32": 4915},
+    "vram_note": "docs/acceptance.md \u306e VRAM \u884c\u306e\u6539\u8a02\u6ce8\u8a18\uff1abf16 \u306e\u30d4\u30fc\u30af\u306f\u51fa\u529b\u6f5c\u5728\u30d5\u30ec\u30fc\u30e0\u6570 S_lat \u306b\u6bd4\u4f8b\u3059\u308b\uff08\u22483.5 MB/\u30d5\u30ec\u30fc\u30e0\u30fb14.5 s \u51fa\u529b\u3067 3.17 GiB\uff09\u3002nvidia-smi \u306e memory.used \u306f\u30d7\u30ed\u30bb\u30b9\u5168\u4f53\u306e\u5360\u6709\u3067\u3042\u3063\u3066 torch \u306e allocator \u306e\u30d4\u30fc\u30af\u3068\u306f\u5225\u7269\u3002",
+    "rtf": [
+      {"case": "short", "steps": 40, "reference": "none",  "precision": "bf16", "max_rtf": 0.25, "measured_ref": "notes/27\uff1a0.215"},
+      {"case": "long",  "steps": 40, "reference": "none",  "precision": "bf16", "max_rtf": 0.10, "measured_ref": "notes/27\uff1a0.084"},
+      {"case": "short", "steps": 40, "reference": "ref10", "precision": "bf16", "max_rtf": 0.35, "measured_ref": "notes/33\uff1a0.27\u301c0.32"},
+      {"case": "short", "steps": 40, "reference": "ref30", "precision": "bf16", "max_rtf": 0.35, "measured_ref": "notes/33\uff1a0.29\u301c0.34"},
+      {"case": "long",  "steps": 40, "reference": "ref10", "precision": "bf16", "max_rtf": 0.35, "measured_ref": "notes/33\uff1a0.12\u301c0.15"},
+      {"case": "long",  "steps": 40, "reference": "ref30", "precision": "bf16", "max_rtf": 0.35, "measured_ref": "notes/33\uff1a0.13\u301c0.16"},
+      {"case": "short", "steps": 10, "reference": "none",  "precision": "bf16", "max_rtf": 0.10, "measured_ref": "notes/33\uff1a0.090"},
+      {"case": "short", "steps": 10, "reference": "ref10", "precision": "bf16", "max_rtf": 0.15, "measured_ref": "notes/33\uff1a0.11\u301c0.15"},
+      {"case": "short", "steps": 10, "reference": "ref30", "precision": "bf16", "max_rtf": 0.15, "measured_ref": "notes/33\uff1a0.13\u301c0.14"},
+      {"case": "short", "steps": 40, "reference": "none",  "precision": "fp32", "max_rtf": 0.40, "measured_ref": "notes/33\uff1a0.247"},
+      {"case": "short", "steps": 40, "reference": "ref10", "precision": "fp32", "max_rtf": 0.40, "measured_ref": "notes/33\uff1a0.31\u301c0.35"},
+      {"case": "short", "steps": 40, "reference": "ref30", "precision": "fp32", "max_rtf": 0.40, "measured_ref": "notes/33\uff1a0.34\u301c0.39"}
+    ],
+    "cpu_note": "CPU \u5909\u7a2e\uff08fp32\uff09\u306f docs/acceptance.md \u3067 RTF \u2264 4.0\uff08\u901f\u3055\u306f\u8981\u6c42\u5916\u30fb\u88c1\u5b9a 13\uff09\u3002\u4e57\u3089\u306a\u3044\u6761\u4ef6\u306f\u5224\u5b9a\u3057\u306a\u3044\u3002",
+    "cpu_max_rtf": 4.0
+  },
+
+  "vram_probe": {
+    "command": ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader"],
+    "when": "\u5404\u5c04\u306e\u76f4\u5f8c\uff08\u5fdc\u7b54\u3092\u53d7\u3051\u53d6\u3063\u305f\u76f4\u5f8c\uff09\u30fb\u8d77\u52d5\u524d\uff08idle\uff09\u30fbready \u76f4\u5f8c\u30fbkill \u5f8c 10 s",
+    "absent_behavior": "nvidia-smi \u304c PATH \u306b\u7121\u3051\u308c\u3070 VRAM \u6b04\u306f null\uff08CPU \u5909\u7a2e\u306e\u4e7e\u8d70\u3067\u306f\u3053\u308c\u304c\u6b63\u3057\u3044\u632f\u308b\u821e\u3044\uff09"
+  }
+}

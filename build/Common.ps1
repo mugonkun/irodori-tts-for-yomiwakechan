@@ -244,6 +244,12 @@ function Invoke-YwkNative {
     <#
       .SYNOPSIS
         Run an external program, capture stdout+stderr, return a hashtable.
+      .PARAMETER StdioEncoding
+        How to decode the child's output. '' (default) keeps whatever the running .NET does,
+        which is what every caller written before this parameter existed relies on. Pass
+        'console' for the Windows console tools (taskkill, robocopy, nvidia-smi) and 'utf8'
+        for git and for python run with PYTHONIOENCODING=utf-8. See the body for why one
+        blanket answer is wrong.
       .OUTPUTS
         @{ ExitCode = <int>; StdOut = <string>; StdErr = <string> }
     #>
@@ -253,7 +259,8 @@ function Invoke-YwkNative {
         [string[]]$Arguments = @(),
         [string]$WorkingDirectory = $null,
         [hashtable]$Environment = $null,
-        [int]$TimeoutSeconds = 0
+        [int]$TimeoutSeconds = 0,
+        [ValidateSet('', 'console', 'utf8')][string]$StdioEncoding = ''
     )
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $FilePath
@@ -269,6 +276,34 @@ function Invoke-YwkNative {
     $psi.RedirectStandardError = $true
     $psi.UseShellExecute = $false
     $psi.CreateNoWindow = $true
+    # -StdioEncoding decides how the child's BYTES become text. There is no single right
+    # answer, which is why it is a per-call choice and why the default changes nothing:
+    #   'console' -- the console (OEM) code page, CP932 on this ja-JP machine. Correct for the
+    #                console programs that ship with Windows: taskkill, robocopy, nvidia-smi.
+    #                .NET Core (PowerShell 7) defaults a redirected stream to UTF-8 and turns
+    #                every CP932 byte into U+FFFD, so a taskkill line lands in the log as
+    #                mojibake unless this is asked for.
+    #   'utf8'    -- correct for git (it writes commit subjects as UTF-8) and for python run
+    #                with PYTHONIOENCODING=utf-8. .NET Framework (Windows PowerShell 5.1)
+    #                defaults to the console code page, so a Japanese commit subject came back
+    #                mangled there -- measured 2026-09-05 in MANIFEST.json repo.head_line.
+    #   ''        -- whatever the running .NET defaults to. This is what every existing caller
+    #                gets, so no script that has not asked for a change sees one.
+    if ($StdioEncoding -eq 'console') {
+        try {
+            $enc = [System.Console]::OutputEncoding
+            if ($null -ne $enc) {
+                $psi.StandardOutputEncoding = $enc
+                $psi.StandardErrorEncoding = $enc
+            }
+        } catch {
+            # No console attached (a hosted runspace, a service). Leave the default: a worse
+            # decoding of non-ASCII output is not worth failing a build over.
+        }
+    } elseif ($StdioEncoding -eq 'utf8') {
+        $psi.StandardOutputEncoding = New-Object System.Text.UTF8Encoding($false)
+        $psi.StandardErrorEncoding = New-Object System.Text.UTF8Encoding($false)
+    }
     if (-not [string]::IsNullOrEmpty($WorkingDirectory)) {
         $psi.WorkingDirectory = $WorkingDirectory
     }
