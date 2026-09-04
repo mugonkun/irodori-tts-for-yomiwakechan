@@ -35,6 +35,8 @@ installer/output/
 installer/runtime/
 dist/
 out/
+# research/lab/out/ は調査の生データの写し（軽い JSON・index HTML のみ）
+!research/lab/out/
 
 # 埋め込み Python・venv・キャッシュ
 python-embed*/

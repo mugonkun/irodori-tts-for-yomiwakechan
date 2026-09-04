@@ -1,0 +1,165 @@
+{
+ "health_voices": {
+  "dir": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices",
+  "dir_exists": true,
+  "files": 3
+ },
+ "voices_list": {
+  "object": "list",
+  "data": [
+   {
+    "id": "alice",
+    "object": "voice",
+    "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices\\alice.wav",
+    "ref_wavs": null,
+    "ref_latent": null,
+    "ref_latents": null,
+    "ref_embed": null,
+    "no_ref": false
+   },
+   {
+    "id": "none",
+    "object": "voice",
+    "ref_wav": null,
+    "ref_wavs": null,
+    "ref_latent": null,
+    "ref_latents": null,
+    "ref_embed": null,
+    "no_ref": true
+   },
+   {
+    "id": "ok_name-1",
+    "object": "voice",
+    "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices\\ok_name-1.wav",
+    "ref_wavs": null,
+    "ref_latent": null,
+    "ref_latents": null,
+    "ref_embed": null,
+    "no_ref": false
+   },
+   {
+    "id": "ずんだもん",
+    "object": "voice",
+    "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices\\ずんだもん.wav",
+    "ref_wavs": null,
+    "ref_latent": null,
+    "ref_latents": null,
+    "ref_embed": null,
+    "no_ref": false
+   },
+   {
+    "id": "デフォルト",
+    "object": "voice",
+    "ref_wav": null,
+    "ref_wavs": null,
+    "ref_latent": null,
+    "ref_latents": null,
+    "ref_embed": null,
+    "no_ref": true
+   },
+   {
+    "id": "四国めたん",
+    "object": "voice",
+    "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices\\alice.wav",
+    "ref_wavs": null,
+    "ref_latent": null,
+    "ref_latents": null,
+    "ref_embed": null,
+    "no_ref": false
+   },
+   {
+    "id": "空白 入り",
+    "object": "voice",
+    "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices\\alice.wav",
+    "ref_wavs": null,
+    "ref_latent": null,
+    "ref_latents": null,
+    "ref_embed": null,
+    "no_ref": false
+   }
+  ]
+ },
+ "upload": {
+  "ずんだもん2": {
+   "status": 400,
+   "body": "{\"error\":{\"message\":\"voice_id must contain only ASCII letters, numbers, underscores, or hyphens.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}"
+  },
+  "ok_name-1": {
+   "status": 409,
+   "body": "{\"error\":{\"message\":\"Voice 'ok_name-1' already exists. Use PUT to replace it.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}"
+  },
+  "空白 入り2": {
+   "status": 400,
+   "body": "{\"error\":{\"message\":\"voice_id must contain only ASCII letters, numbers, underscores, or hyphens.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}"
+  }
+ },
+ "resolve": {
+  "ずんだもん": {
+   "ok": true,
+   "voice_id": "ずんだもん",
+   "no_ref": false,
+   "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices\\ずんだもん.wav"
+  },
+  "四国めたん": {
+   "ok": true,
+   "voice_id": "四国めたん",
+   "no_ref": false,
+   "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices\\alice.wav"
+  },
+  "空白 入り": {
+   "ok": true,
+   "voice_id": "空白 入り",
+   "no_ref": false,
+   "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices\\alice.wav"
+  },
+  "デフォルト": {
+   "ok": true,
+   "voice_id": "デフォルト",
+   "no_ref": true,
+   "ref_wav": null
+  },
+  "none": {
+   "ok": true,
+   "voice_id": "none",
+   "no_ref": true,
+   "ref_wav": null
+  },
+  "デフォルト2": {
+   "ok": false,
+   "err": "KeyError: \"Unknown voice='デフォルト2'. Put a reference audio file in C:\\\\Users\\\\mugonkun\\\\source\\\\repos\\\\irodori-native-research\\\\lab\\\\tmp\\\\36\\\\voices, add an alias file, or use voice='none'.\""
+  },
+  "alice": {
+   "ok": true,
+   "voice_id": "alice",
+   "no_ref": false,
+   "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\36\\voices\\alice.wav"
+  }
+ },
+ "precision_device": {
+  "cpu/fp32": {
+   "ok": true,
+   "device": "cpu",
+   "dtype": "torch.float32"
+  },
+  "cpu/bf16": {
+   "ok": false,
+   "err": "ValueError: precision='bf16' currently requires CUDA or XPU device."
+  },
+  "cuda/fp32": {
+   "ok": false,
+   "err": "ValueError: CUDA device requested but torch.cuda.is_available() is False."
+  },
+  "auto/fp32": {
+   "ok": true,
+   "device": "cpu",
+   "dtype": "torch.float32"
+  }
+ },
+ "list_devices": [
+  "cpu"
+ ],
+ "default_device": "cpu",
+ "precisions_cpu": [
+  "fp32"
+ ]
+}

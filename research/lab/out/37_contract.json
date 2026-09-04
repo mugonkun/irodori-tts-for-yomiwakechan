@@ -1,0 +1,2678 @@
+{
+  "a": {
+    "routes": {
+      "/openapi.json": {
+        "status": 200,
+        "content_type": "application/json",
+        "bytes": 10850
+      },
+      "/docs": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "bytes": 1032
+      },
+      "/redoc": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "bytes": 914
+      },
+      "/docs/oauth2-redirect": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "bytes": 3012
+      }
+    },
+    "openapi_with_api_key": {
+      "status": 200,
+      "bytes": 10850
+    },
+    "docs_with_api_key": {
+      "status": 200
+    },
+    "openapi_version": "3.1.0",
+    "info": {
+      "title": "Irodori-TTS OpenAI-compatible API",
+      "version": "0.1.0"
+    },
+    "paths": [
+      "/health",
+      "/v1/audio/speech",
+      "/v1/audio/voices",
+      "/v1/audio/voices/{voice_id}",
+      "/v1/models"
+    ],
+    "schema_names": [
+      "Body_replace_voice_v1_audio_voices__voice_id__put",
+      "Body_upload_voice_v1_audio_voices_post",
+      "HTTPValidationError",
+      "IrodoriOptions",
+      "SpeechRequest",
+      "ValidationError"
+    ],
+    "IrodoriOptions_raw": {
+      "properties": {
+        "caption": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Caption"
+        },
+        "ref_wav": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ref Wav"
+        },
+        "ref_wavs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ref Wavs"
+        },
+        "ref_latent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ref Latent"
+        },
+        "ref_latents": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ref Latents"
+        },
+        "ref_embed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ref Embed"
+        },
+        "no_ref": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "No Ref"
+        },
+        "seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Seconds"
+        },
+        "duration_scale": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Duration Scale"
+        },
+        "min_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Min Seconds"
+        },
+        "max_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Max Seconds"
+        },
+        "max_ref_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Max Ref Seconds"
+        },
+        "ref_normalize_db": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ref Normalize Db"
+        },
+        "ref_ensure_max": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ref Ensure Max"
+        },
+        "num_steps": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Num Steps"
+        },
+        "t_schedule_mode": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "linear",
+                "sway"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "T Schedule Mode"
+        },
+        "sway_coeff": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sway Coeff"
+        },
+        "num_candidates": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Num Candidates"
+        },
+        "decode_mode": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "sequential",
+                "batch"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Decode Mode"
+        },
+        "cfg_scale_text": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cfg Scale Text"
+        },
+        "cfg_scale_caption": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cfg Scale Caption"
+        },
+        "cfg_scale_speaker": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cfg Scale Speaker"
+        },
+        "cfg_guidance_mode": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "independent",
+                "joint",
+                "alternating"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cfg Guidance Mode"
+        },
+        "cfg_scale": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cfg Scale"
+        },
+        "cfg_min_t": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cfg Min T"
+        },
+        "cfg_max_t": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cfg Max T"
+        },
+        "truncation_factor": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Truncation Factor"
+        },
+        "rescale_k": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rescale K"
+        },
+        "rescale_sigma": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rescale Sigma"
+        },
+        "context_kv_cache": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Context Kv Cache"
+        },
+        "speaker_kv_scale": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Speaker Kv Scale"
+        },
+        "speaker_kv_min_t": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Speaker Kv Min T"
+        },
+        "speaker_kv_max_layers": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Speaker Kv Max Layers"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Seed"
+        },
+        "trim_tail": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Trim Tail"
+        },
+        "tail_window_size": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Tail Window Size"
+        },
+        "tail_std_threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Tail Std Threshold"
+        },
+        "tail_mean_threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Tail Mean Threshold"
+        },
+        "max_text_len": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Max Text Len"
+        },
+        "max_caption_len": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Max Caption Len"
+        },
+        "lora_adapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Lora Adapter"
+        },
+        "chunking_enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Chunking Enabled"
+        },
+        "chunk_min_chars": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Chunk Min Chars"
+        },
+        "first_sentence_chunk_min_chars": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "First Sentence Chunk Min Chars"
+        }
+      },
+      "additionalProperties": true,
+      "type": "object",
+      "title": "IrodoriOptions"
+    },
+    "SpeechRequest_raw": {
+      "properties": {
+        "model": {
+          "type": "string",
+          "title": "Model"
+        },
+        "input": {
+          "type": "string",
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Input"
+        },
+        "voice": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Voice"
+        },
+        "response_format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Response Format"
+        },
+        "speed": {
+          "type": "number",
+          "maximum": 4.0,
+          "minimum": 0.25,
+          "title": "Speed",
+          "default": 1.0
+        },
+        "stream_format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Stream Format"
+        },
+        "irodori": {
+          "$ref": "#/components/schemas/IrodoriOptions"
+        }
+      },
+      "additionalProperties": true,
+      "type": "object",
+      "required": [
+        "model",
+        "input"
+      ],
+      "title": "SpeechRequest"
+    },
+    "IrodoriOptions_field_count": 44,
+    "SpeechRequest_field_count": 7,
+    "IrodoriOptions_additionalProperties": true,
+    "SpeechRequest_additionalProperties": true,
+    "IrodoriOptions_fields": {
+      "caption": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "ref_wav": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "ref_wavs": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "ref_latent": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "ref_latents": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "ref_embed": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "no_ref": {
+        "type": [
+          "boolean",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "seconds": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "duration_scale": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "min_seconds": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "max_seconds": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "max_ref_seconds": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "ref_normalize_db": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "ref_ensure_max": {
+        "type": [
+          "boolean",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "num_steps": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "t_schedule_mode": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "linear",
+          "sway"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "sway_coeff": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "num_candidates": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "decode_mode": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "sequential",
+          "batch"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "cfg_scale_text": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "cfg_scale_caption": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "cfg_scale_speaker": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "cfg_guidance_mode": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "independent",
+          "joint",
+          "alternating"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "cfg_scale": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "cfg_min_t": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "cfg_max_t": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "truncation_factor": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "rescale_k": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "rescale_sigma": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "context_kv_cache": {
+        "type": [
+          "boolean",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "speaker_kv_scale": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "speaker_kv_min_t": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "speaker_kv_max_layers": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "seed": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "trim_tail": {
+        "type": [
+          "boolean",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "tail_window_size": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "tail_std_threshold": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "tail_mean_threshold": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "max_text_len": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "max_caption_len": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "lora_adapter": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "chunking_enabled": {
+        "type": [
+          "boolean",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "chunk_min_chars": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "first_sentence_chunk_min_chars": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      }
+    },
+    "SpeechRequest_fields": {
+      "model": {
+        "type": "string",
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "input": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096,
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "voice": {
+        "type": [
+          "string",
+          "object",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "response_format": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "speed": {
+        "type": "number",
+        "default": 1.0,
+        "minimum": 0.25,
+        "maximum": 4.0,
+        "has_default": true,
+        "has_range": true,
+        "description": null
+      },
+      "stream_format": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      },
+      "irodori": {
+        "type": null,
+        "has_default": false,
+        "has_range": false,
+        "description": null
+      }
+    },
+    "stats_IrodoriOptions": {
+      "count": 44,
+      "with_default_non_null": [],
+      "with_default_null": [],
+      "without_default": [
+        "caption",
+        "cfg_guidance_mode",
+        "cfg_max_t",
+        "cfg_min_t",
+        "cfg_scale",
+        "cfg_scale_caption",
+        "cfg_scale_speaker",
+        "cfg_scale_text",
+        "chunk_min_chars",
+        "chunking_enabled",
+        "context_kv_cache",
+        "decode_mode",
+        "duration_scale",
+        "first_sentence_chunk_min_chars",
+        "lora_adapter",
+        "max_caption_len",
+        "max_ref_seconds",
+        "max_seconds",
+        "max_text_len",
+        "min_seconds",
+        "no_ref",
+        "num_candidates",
+        "num_steps",
+        "ref_embed",
+        "ref_ensure_max",
+        "ref_latent",
+        "ref_latents",
+        "ref_normalize_db",
+        "ref_wav",
+        "ref_wavs",
+        "rescale_k",
+        "rescale_sigma",
+        "seconds",
+        "seed",
+        "speaker_kv_max_layers",
+        "speaker_kv_min_t",
+        "speaker_kv_scale",
+        "sway_coeff",
+        "t_schedule_mode",
+        "tail_mean_threshold",
+        "tail_std_threshold",
+        "tail_window_size",
+        "trim_tail",
+        "truncation_factor"
+      ],
+      "with_range": [],
+      "with_enum": {
+        "t_schedule_mode": [
+          "linear",
+          "sway"
+        ],
+        "decode_mode": [
+          "sequential",
+          "batch"
+        ],
+        "cfg_guidance_mode": [
+          "independent",
+          "joint",
+          "alternating"
+        ]
+      },
+      "with_description": []
+    },
+    "stats_SpeechRequest": {
+      "count": 7,
+      "with_range": [
+        "speed"
+      ],
+      "required": [
+        "model",
+        "input"
+      ]
+    },
+    "SamplingRequest_count": 43,
+    "SamplingRequest_defaults": {
+      "text": null,
+      "caption": null,
+      "ref_wav": null,
+      "ref_wavs": null,
+      "ref_latent": null,
+      "ref_latents": null,
+      "ref_embed": null,
+      "no_ref": false,
+      "ref_normalize_db": -16.0,
+      "ref_ensure_max": true,
+      "num_candidates": 1,
+      "decode_mode": "sequential",
+      "seconds": null,
+      "duration_scale": 1.0,
+      "min_seconds": 0.5,
+      "max_seconds": 30.0,
+      "max_ref_seconds": null,
+      "max_text_len": null,
+      "max_caption_len": null,
+      "num_steps": 40,
+      "cfg_scale_text": 3.0,
+      "cfg_scale_caption": 3.0,
+      "cfg_scale_speaker": 5.0,
+      "cfg_guidance_mode": "independent",
+      "cfg_scale": null,
+      "cfg_min_t": 0.5,
+      "cfg_max_t": 1.0,
+      "truncation_factor": null,
+      "rescale_k": null,
+      "rescale_sigma": null,
+      "context_kv_cache": true,
+      "speaker_kv_scale": null,
+      "speaker_kv_min_t": null,
+      "speaker_kv_max_layers": null,
+      "speaker_uncond_mode": "mask",
+      "seed": null,
+      "t_schedule_mode": "linear",
+      "sway_coeff": -1.0,
+      "trim_tail": true,
+      "tail_window_size": 20,
+      "tail_std_threshold": 0.05,
+      "tail_mean_threshold": 0.1,
+      "lora_adapter": null
+    },
+    "only_in_SamplingRequest": [
+      "speaker_uncond_mode"
+    ],
+    "only_in_IrodoriOptions": [
+      "chunk_min_chars",
+      "chunking_enabled",
+      "first_sentence_chunk_min_chars"
+    ],
+    "default_table": [
+      {
+        "field": "caption",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "cfg_guidance_mode",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": "independent",
+        "Settings_default": "independent",
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "cfg_max_t",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 1.0,
+        "Settings_default": 1.0,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "cfg_min_t",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 0.5,
+        "Settings_default": 0.5,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "cfg_scale",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "cfg_scale_caption",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 3.0,
+        "Settings_default": "<no-env>",
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "cfg_scale_speaker",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 5.0,
+        "Settings_default": 5.0,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "cfg_scale_text",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 3.0,
+        "Settings_default": 3.0,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "context_kv_cache",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": true,
+        "Settings_default": true,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "decode_mode",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": "sequential",
+        "Settings_default": "sequential",
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "duration_scale",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 1.0,
+        "Settings_default": 1.0,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "lora_adapter",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "max_caption_len",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "max_ref_seconds",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": null
+      },
+      {
+        "field": "max_seconds",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 30.0,
+        "Settings_default": 30.0,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "max_text_len",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "min_seconds",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 0.5,
+        "Settings_default": 0.5,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "no_ref",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": false,
+        "Settings_default": "<no-env>",
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "num_candidates",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 1,
+        "Settings_default": 1,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "num_steps",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 40,
+        "Settings_default": 40,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "ref_embed",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "ref_ensure_max",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": true,
+        "Settings_default": true,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "ref_latent",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "ref_latents",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "ref_normalize_db",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": -16.0,
+        "Settings_default": -16.0,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "ref_wav",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "ref_wavs",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "rescale_k",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "rescale_sigma",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "seconds",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "seed",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "speaker_kv_max_layers",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "speaker_kv_min_t",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "speaker_kv_scale",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      },
+      {
+        "field": "sway_coeff",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": -1.0,
+        "Settings_default": -1.0,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "t_schedule_mode",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": "linear",
+        "Settings_default": "linear",
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "tail_mean_threshold",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 0.1,
+        "Settings_default": 0.1,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "tail_std_threshold",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 0.05,
+        "Settings_default": 0.05,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "tail_window_size",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": 20,
+        "Settings_default": 20,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "trim_tail",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": true,
+        "Settings_default": true,
+        "schema_hides_real_default": true
+      },
+      {
+        "field": "truncation_factor",
+        "openapi_default": "<absent>",
+        "SamplingRequest_default": null,
+        "Settings_default": "<no-env>"
+      }
+    ],
+    "schema_hides_real_default": [
+      "cfg_guidance_mode",
+      "cfg_max_t",
+      "cfg_min_t",
+      "cfg_scale_caption",
+      "cfg_scale_speaker",
+      "cfg_scale_text",
+      "context_kv_cache",
+      "decode_mode",
+      "duration_scale",
+      "max_seconds",
+      "min_seconds",
+      "no_ref",
+      "num_candidates",
+      "num_steps",
+      "ref_ensure_max",
+      "ref_normalize_db",
+      "sway_coeff",
+      "t_schedule_mode",
+      "tail_mean_threshold",
+      "tail_std_threshold",
+      "tail_window_size",
+      "trim_tail"
+    ],
+    "env_overrides_dataclass": [],
+    "typo_in_nest": {
+      "status": 200,
+      "num_steps_seen": 40
+    },
+    "toplevel_bypasses_literal": {
+      "status": 200,
+      "t_schedule_mode": "zigzag",
+      "decode_mode": "nonsense",
+      "cfg_guidance_mode": "bogus"
+    },
+    "nest_enforces_literal": {
+      "status": 422,
+      "body": {
+        "error": {
+          "message": "1 validation error:\n  {'type': 'literal_error', 'loc': ('body', 'irodori', 't_schedule_mode'), 'msg': \"Input should be 'linear' or 'sway'\", 'input': 'zigzag', 'ctx': {'expected': \"'linear' or 'sway'\"}}\n\n  File \"C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\upstream\\Irodori-TTS-Server\\src\\irodori_openai_tts\\app.py\", line 314, in create_speech\n    POST /v1/audio/speech",
+          "type": "invalid_request_error",
+          "param": null,
+          "code": null
+        }
+      }
+    },
+    "speed_out_of_range": {
+      "status": 422
+    },
+    "num_steps_negative": {
+      "status": 200,
+      "seen": -5,
+      "body": null
+    },
+    "cfg_scale_text_999": {
+      "status": 200,
+      "seen": 999.0
+    },
+    "num_steps_string_in_nest": {
+      "status": 422,
+      "body": {
+        "error": {
+          "message": "1 validation error:\n  {'type': 'int_parsing', 'loc': ('body', 'irodori', 'num_steps'), 'msg': 'Input should be a valid integer, unable to parse string as an integer', 'input': 'たくさん'}\n\n  File \"C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\upstream\\Irodori-TTS-Server\\src\\irodori_openai_tts\\app.py\", line 314, in create_speech\n    POST /v1/audio/speech",
+          "type": "invalid_request_error",
+          "param": null,
+          "code": null
+        }
+      }
+    },
+    "num_steps_string_toplevel": {
+      "status": 400,
+      "seen": null,
+      "body": {
+        "error": {
+          "message": "num_steps must be an integer.",
+          "type": "invalid_request_error",
+          "param": null,
+          "code": null
+        }
+      }
+    },
+    "health": {
+      "status": "ok",
+      "model": {
+        "id": "irodori-tts",
+        "hf_checkpoint": "Aratako/Irodori-TTS-v4-Small",
+        "model_device": "auto",
+        "codec_device": "auto",
+        "model_precision": "fp32",
+        "codec_precision": "fp32",
+        "compile_model": false,
+        "compile_dynamic": false
+      },
+      "runtime": {
+        "preload": false,
+        "loaded": true,
+        "loading": false,
+        "checkpoint": null,
+        "load_timeout": 300.0,
+        "max_concurrent_synthesis": 1,
+        "synthesis_wait_timeout": 300.0
+      },
+      "voices": {
+        "dir": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices",
+        "dir_exists": true,
+        "files": 0
+      },
+      "defaults": {
+        "response_format": "wav",
+        "chunking_enabled": true,
+        "chunk_min_chars": 80,
+        "first_sentence_chunk_min_chars": null
+      }
+    }
+  },
+  "b": {
+    "GET_voices": {
+      "status": 200,
+      "body": {
+        "object": "list",
+        "data": [
+          {
+            "id": "1234",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\1234.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "UPPER",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\UPPER.WAV",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "alice",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\alice.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "dot.name",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\dot.name.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "emoji😊",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\emoji😊.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "inv",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\inv.speaker.safetensors",
+            "no_ref": false
+          },
+          {
+            "id": "n-hyphen_under",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\n-hyphen_under.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "none",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": true
+          },
+          {
+            "id": "precomputed",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": null,
+            "ref_latent": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\precomputed.pt",
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "with space",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\with space.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "ずんだもん",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\ずんだもん.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "四国 めたん",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\四国 めたん.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "春日部つむぎ",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\春日部つむぎ.mp3",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          }
+        ]
+      }
+    },
+    "ids": [
+      "1234",
+      "UPPER",
+      "alice",
+      "dot.name",
+      "emoji😊",
+      "inv",
+      "n-hyphen_under",
+      "none",
+      "precomputed",
+      "with space",
+      "ずんだもん",
+      "四国 めたん",
+      "春日部つむぎ"
+    ],
+    "synthesize_by_id": {
+      "ずんだもん": {
+        "status": 200,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\ずんだもん.wav",
+        "body": null
+      },
+      "四国 めたん": {
+        "status": 200,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\四国 めたん.wav",
+        "body": null
+      },
+      "with space": {
+        "status": 200,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\with space.wav",
+        "body": null
+      },
+      "emoji😊": {
+        "status": 200,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\emoji😊.wav",
+        "body": null
+      },
+      "UPPER": {
+        "status": 200,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\UPPER.WAV",
+        "body": null
+      },
+      "alice": {
+        "status": 200,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\alice.wav",
+        "body": null
+      },
+      "1234": {
+        "status": 200,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\1234.wav",
+        "body": null
+      },
+      "dot.name": {
+        "status": 200,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\dot.name.wav",
+        "body": null
+      }
+    },
+    "upload": {
+      "upload_ascii": {
+        "filename": "newvoice.wav",
+        "voice_id": null,
+        "status": 201,
+        "body": {
+          "id": "newvoice",
+          "object": "voice_file",
+          "filename": "newvoice.wav",
+          "bytes": 6444,
+          "created_at": 1788518128
+        }
+      },
+      "upload_jp_filename": {
+        "filename": "新しい声.wav",
+        "voice_id": null,
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "voice_id must contain only ASCII letters, numbers, underscores, or hyphens.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "upload_jp_voice_id": {
+        "filename": "another.wav",
+        "voice_id": "ずんだもん2",
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "voice_id must contain only ASCII letters, numbers, underscores, or hyphens.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "upload_space_voice_id": {
+        "filename": "another2.wav",
+        "voice_id": "four koku",
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "voice_id must contain only ASCII letters, numbers, underscores, or hyphens.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "upload_dot_voice_id": {
+        "filename": "another3.wav",
+        "voice_id": "dot.id",
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "voice_id must contain only ASCII letters, numbers, underscores, or hyphens.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "upload_ok_voice_id": {
+        "filename": "another4.wav",
+        "voice_id": "zundamon_2-b",
+        "status": 201,
+        "body": {
+          "id": "zundamon_2-b",
+          "object": "voice_file",
+          "filename": "zundamon_2-b.wav",
+          "bytes": 6444,
+          "created_at": 1788518128
+        }
+      },
+      "upload_ext_pt": {
+        "filename": "latent.pt",
+        "voice_id": "latent1",
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "Unsupported voice file extension '.pt'. Use one of: .aac, .flac, .m4a, .mp3, .ogg, .opus, .wav, .webm.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "upload_dup": {
+        "filename": "alice.wav",
+        "voice_id": null,
+        "status": 409,
+        "body": {
+          "error": {
+            "message": "Voice 'alice' already exists. Use PUT to replace it.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      }
+    },
+    "GET_one": {
+      "alice": {
+        "status": 200,
+        "body": {
+          "id": "alice",
+          "object": "voice_file",
+          "filename": "alice.wav",
+          "bytes": 6444,
+          "created_at": 1788518128
+        }
+      },
+      "ずんだもん": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "voice_id must contain only ASCII letters, numbers, underscores, or hyphens.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "with space": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "voice_id must contain only ASCII letters, numbers, underscores, or hyphens.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "dot.name": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "voice_id must contain only ASCII letters, numbers, underscores, or hyphens.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      }
+    },
+    "DELETE_one": {
+      "ずんだもん": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "voice_id must contain only ASCII letters, numbers, underscores, or hyphens.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "alice": {
+        "status": 200,
+        "body": {
+          "id": "alice",
+          "object": "voice_file",
+          "deleted": true
+        }
+      }
+    },
+    "files_after_delete": [
+      "1234.wav",
+      "UPPER.WAV",
+      "dot.name.wav",
+      "emoji😊.wav",
+      "inv.speaker.safetensors",
+      "n-hyphen_under.wav",
+      "newvoice.wav",
+      "precomputed.pt",
+      "with space.wav",
+      "zundamon_2-b.wav",
+      "ずんだもん.wav",
+      "四国 めたん.wav",
+      "春日部つむぎ.mp3"
+    ],
+    "alias_GET_voices": {
+      "status": 200,
+      "body": {
+        "object": "list",
+        "data": [
+          {
+            "id": "none",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": true
+          },
+          {
+            "id": "zunda",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": null,
+            "ref_latent": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda.pt",
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "zunda_10s",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "zunda_30s",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_30s.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "ずんだもん",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": [
+              "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+              "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_30s.wav"
+            ],
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "ずんだもん（潜在）",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": null,
+            "ref_latent": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda.pt",
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "デフォルト",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": true
+          },
+          {
+            "id": "四国 めたん",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "絶対パス",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          }
+        ]
+      }
+    },
+    "alias_synth": {
+      "ずんだもん": {
+        "status": 200,
+        "no_ref": false,
+        "ref_wav": null,
+        "ref_wavs": [
+          "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+          "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_30s.wav"
+        ],
+        "ref_latent": null,
+        "body": null
+      },
+      "四国 めたん": {
+        "status": 200,
+        "no_ref": false,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+        "ref_wavs": null,
+        "ref_latent": null,
+        "body": null
+      },
+      "ずんだもん（潜在）": {
+        "status": 200,
+        "no_ref": false,
+        "ref_wav": null,
+        "ref_wavs": null,
+        "ref_latent": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda.pt",
+        "body": null
+      },
+      "デフォルト": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "ref_wavs": null,
+        "ref_latent": null,
+        "body": null
+      },
+      "絶対パス": {
+        "status": 200,
+        "no_ref": false,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+        "ref_wavs": null,
+        "ref_latent": null,
+        "body": null
+      }
+    },
+    "hot_reload": {
+      "before": [
+        "none",
+        "zunda",
+        "zunda_10s",
+        "zunda_30s",
+        "ずんだもん",
+        "ずんだもん（潜在）",
+        "デフォルト",
+        "四国 めたん",
+        "絶対パス"
+      ],
+      "after_add": [
+        "hot_added",
+        "none",
+        "zunda",
+        "zunda_10s",
+        "zunda_30s",
+        "ずんだもん",
+        "ずんだもん（潜在）",
+        "デフォルト",
+        "四国 めたん",
+        "絶対パス"
+      ],
+      "after_remove": [
+        "none",
+        "zunda",
+        "zunda_10s",
+        "zunda_30s",
+        "ずんだもん",
+        "ずんだもん（潜在）",
+        "デフォルト",
+        "四国 めたん",
+        "絶対パス"
+      ]
+    },
+    "broken_alias_GET": {
+      "status": 500,
+      "body": {
+        "error": {
+          "message": "Expecting property name enclosed in double quotes: line 1 column 3 (char 2)",
+          "type": "server_error",
+          "param": null,
+          "code": null
+        }
+      }
+    },
+    "broken_alias_speech_noref": {
+      "status": 200
+    },
+    "broken_alias_health": {
+      "status": 200
+    },
+    "direct_ref_wav": {
+      "status": 200,
+      "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+      "caption": "怒っている"
+    },
+    "direct_ref_wav_missing": {
+      "status": 200,
+      "body": null
+    },
+    "alias_points_missing": {
+      "status": 200,
+      "body": null
+    },
+    "alias_points_missing_list": {
+      "status": 200,
+      "ids": [
+        "none",
+        "zunda",
+        "zunda_10s",
+        "zunda_30s",
+        "欠番"
+      ]
+    },
+    "alias_extra_keys_list": {
+      "status": 200,
+      "body": {
+        "object": "list",
+        "data": [
+          {
+            "id": "none",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": true
+          },
+          {
+            "id": "zunda",
+            "object": "voice",
+            "ref_wav": null,
+            "ref_wavs": null,
+            "ref_latent": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda.pt",
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "zunda_10s",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "zunda_30s",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_30s.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          },
+          {
+            "id": "メタ入り",
+            "object": "voice",
+            "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda_10s.wav",
+            "ref_wavs": null,
+            "ref_latent": null,
+            "ref_latents": null,
+            "ref_embed": null,
+            "no_ref": false
+          }
+        ]
+      }
+    },
+    "alias_extra_keys_synth": {
+      "status": 200,
+      "caption": null,
+      "num_steps": 40,
+      "cfg_scale_caption": 3.0
+    },
+    "VoiceSpec_fields": [
+      "voice_id",
+      "ref_wav",
+      "ref_wavs",
+      "ref_latent",
+      "ref_latents",
+      "ref_embed",
+      "no_ref"
+    ]
+  },
+  "c": {
+    "voice_word": {
+      "デフォルト": {
+        "status": 400,
+        "no_ref": null,
+        "ref_wav": null,
+        "body": {
+          "error": {
+            "message": "\"Unknown voice='デフォルト'. Put a reference audio file in C:\\\\Users\\\\mugonkun\\\\source\\\\repos\\\\irodori-native-research\\\\lab\\\\tmp37\\\\voices, add an alias file, or use voice='none'.\"",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "default": {
+        "status": 400,
+        "no_ref": null,
+        "ref_wav": null,
+        "body": {
+          "error": {
+            "message": "\"Unknown voice='default'. Put a reference audio file in C:\\\\Users\\\\mugonkun\\\\source\\\\repos\\\\irodori-native-research\\\\lab\\\\tmp37\\\\voices, add an alias file, or use voice='none'.\"",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "none": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "None": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "NONE": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "no_ref": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "no-ref": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "null": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "text-only": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "TEXT-ONLY": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      " none ": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "デフォルト ": {
+        "status": 400,
+        "no_ref": null,
+        "ref_wav": null,
+        "body": {
+          "error": {
+            "message": "\"Unknown voice='デフォルト'. Put a reference audio file in C:\\\\Users\\\\mugonkun\\\\source\\\\repos\\\\irodori-native-research\\\\lab\\\\tmp37\\\\voices, add an alias file, or use voice='none'.\"",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      }
+    },
+    "voice_shape": {
+      "omitted": {
+        "status": 400,
+        "no_ref": null,
+        "ref_wav": null,
+        "body": {
+          "error": {
+            "message": "'No voice was provided and IRODORI_DEFAULT_VOICE is not set.'",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "null": {
+        "status": 400,
+        "no_ref": null,
+        "ref_wav": null,
+        "body": {
+          "error": {
+            "message": "'No voice was provided and IRODORI_DEFAULT_VOICE is not set.'",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "empty": {
+        "status": 400,
+        "no_ref": null,
+        "ref_wav": null,
+        "body": {
+          "error": {
+            "message": "'No voice was provided and IRODORI_DEFAULT_VOICE is not set.'",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "dict_none": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "no_ref_only": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "no_ref_toplevel": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "no_ref_with_unknown_voice": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      }
+    },
+    "default_voice_env": {
+      "none": {
+        "status": 200,
+        "no_ref": true,
+        "ref_wav": null,
+        "body": null
+      },
+      "デフォルト": {
+        "status": 400,
+        "no_ref": null,
+        "ref_wav": null,
+        "body": {
+          "error": {
+            "message": "\"Unknown voice='デフォルト'. Put a reference audio file in C:\\\\Users\\\\mugonkun\\\\source\\\\repos\\\\irodori-native-research\\\\lab\\\\tmp37\\\\voices, add an alias file, or use voice='none'.\"",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "zunda": {
+        "status": 200,
+        "no_ref": false,
+        "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda.wav",
+        "body": null
+      }
+    },
+    "alias_default_no_ref": {
+      "status": 200,
+      "no_ref": true
+    },
+    "alias_default_list": [
+      "none",
+      "zunda",
+      "デフォルト"
+    ],
+    "allow_no_ref_false": {
+      "none": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "\"Unknown voice='none'. Put a reference audio file in C:\\\\Users\\\\mugonkun\\\\source\\\\repos\\\\irodori-native-research\\\\lab\\\\tmp37\\\\voices, add an alias file, or use voice='none'.\"",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "デフォルト": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "\"Unknown voice='デフォルト'. Put a reference audio file in C:\\\\Users\\\\mugonkun\\\\source\\\\repos\\\\irodori-native-research\\\\lab\\\\tmp37\\\\voices, add an alias file, or use voice='none'.\"",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      }
+    },
+    "allow_no_ref_false_nest": {
+      "status": 200,
+      "no_ref": true
+    },
+    "allow_no_ref_false_list": [
+      "zunda"
+    ],
+    "no_ref_without_caption": {
+      "status": 200,
+      "caption": null
+    },
+    "caption_whitespace_only": {
+      "status": 400,
+      "body": {
+        "error": {
+          "message": "caption must be non-empty when specified.",
+          "type": "invalid_request_error",
+          "param": null,
+          "code": null
+        }
+      }
+    },
+    "caption_empty": {
+      "status": 400,
+      "body": {
+        "error": {
+          "message": "caption must be non-empty when specified.",
+          "type": "invalid_request_error",
+          "param": null,
+          "code": null
+        }
+      }
+    },
+    "voice_plus_no_ref": {
+      "status": 200,
+      "no_ref": true,
+      "ref_wav": null
+    }
+  },
+  "d": {
+    "chunked_with_ref": {
+      "status": 200,
+      "chunks": 4,
+      "texts": [
+        "こんにちは。",
+        "今日はいい天気ですね。",
+        "散歩に行きましょう。",
+        "とても楽しみです。"
+      ],
+      "ref_wav_each": [
+        "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda.wav",
+        "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda.wav",
+        "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda.wav",
+        "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp37\\voices\\zunda.wav"
+      ],
+      "caption_each": [
+        "元気な声",
+        "元気な声",
+        "元気な声",
+        "元気な声"
+      ],
+      "seed_each": [
+        1234,
+        1234,
+        1234,
+        1234
+      ],
+      "seed_header": "1234"
+    },
+    "chunked_no_seed": {
+      "chunks": 4,
+      "seed_each": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "seed_header": "8725727506779062217"
+    },
+    "errors": {
+      "unknown_voice_400": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "\"Unknown voice='居ない人'. Put a reference audio file in C:\\\\Users\\\\mugonkun\\\\source\\\\repos\\\\irodori-native-research\\\\lab\\\\tmp37\\\\voices, add an alias file, or use voice='none'.\"",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "no_voice_400": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "'No voice was provided and IRODORI_DEFAULT_VOICE is not set.'",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "wrong_model_400": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "Unsupported model 'gpt-4o-mini-tts'. Use 'irodori-tts'.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "empty_input_422": {
+        "status": 422,
+        "body": {
+          "error": {
+            "message": "1 validation error:\n  {'type': 'string_too_short', 'loc': ('body', 'input'), 'msg': 'String should have at least 1 character', 'input': '', 'ctx': {'min_length': 1}}\n\n  File \"C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\upstream\\Irodori-TTS-Server\\src\\irodori_openai_tts\\app.py\", line 314, in create_speech\n    POST /v1/audio/speech",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "long_input_422": {
+        "status": 422,
+        "body": {
+          "error": {
+            "message": "1 validation error:\n  {'type': 'string_too_long', 'loc': ('body', 'input'), 'msg': 'String should have at most 4096 characters', 'input': 'ああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ', 'ctx': {'max_length': 4096}}\n\n  File \"C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\upstream\\Irodori-TTS-Server\\src\\irodori_openai_tts\\app.py\", line 314, in create_speech\n    POST /v1/audio/speech",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      "bad_format_400": {
+        "status": 400,
+        "body": {
+          "error": {
+            "message": "Unsupported response_format='xyz'. Expected one of: aac, flac, mp3, opus, pcm, wav.",
+            "type": "invalid_request_error",
+            "param": null,
+            "code": null
+          }
+        }
+      }
+    },
+    "models": {
+      "object": "list",
+      "data": [
+        {
+          "id": "irodori-tts",
+          "object": "model",
+          "created": 0,
+          "owned_by": "irodori-tts"
+        }
+      ]
+    }
+  }
+}

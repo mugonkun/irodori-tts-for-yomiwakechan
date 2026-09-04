@@ -1,0 +1,110 @@
+{
+ "cases": [
+  {
+   "case": "1 list",
+   "status": 200,
+   "ids": [
+    "alice",
+    "none",
+    "with space と記号!",
+    "ずんだもん",
+    "デフォルト",
+    "四国めたん"
+   ],
+   "leaks_abs_path": true
+  },
+  {
+   "case": "2 alias-ja speech",
+   "status": 200,
+   "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\naming38\\voices\\alice.wav",
+   "no_ref": false
+  },
+  {
+   "case": "3 scan-ja speech",
+   "status": 200,
+   "ref_wav": "C:\\Users\\mugonkun\\source\\repos\\irodori-native-research\\lab\\tmp\\naming38\\voices\\四国めたん.wav"
+  },
+  {
+   "case": "4 default-ja speech",
+   "status": 200,
+   "no_ref": true,
+   "ref_wav": null
+  },
+  {
+   "case": "5 space-symbol speech",
+   "status": 200
+  },
+  {
+   "case": "6 upload voice_id=ja",
+   "status": 400,
+   "body": "{\"error\":{\"message\":\"voice_id must contain only ASCII letters, numbers, underscores, or hyphens.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}",
+   "pattern": "^[A-Za-z0-9_-]+$"
+  },
+  {
+   "case": "7 upload filename=ja",
+   "status": 400,
+   "body": "{\"error\":{\"message\":\"voice_id must contain only ASCII letters, numbers, underscores, or hyphens.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}"
+  },
+  {
+   "case": "8 upload ascii",
+   "status": 201,
+   "body": "{\"id\":\"bob\",\"object\":\"voice_file\",\"filename\":\"bob.wav\",\"bytes\":12,\"created_at\":1788518105}"
+  },
+  {
+   "case": "9 get file ja-scan",
+   "status": 400,
+   "body": "{\"error\":{\"message\":\"voice_id must contain only ASCII letters, numbers, underscores, or hyphens.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}"
+  },
+  {
+   "case": "10 get file ja-alias",
+   "status": 400,
+   "body": "{\"error\":{\"message\":\"voice_id must contain only ASCII letters, numbers, underscores, or hyphens.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}"
+  },
+  {
+   "case": "11 delete ja-scan",
+   "status": 400,
+   "body": "{\"error\":{\"message\":\"voice_id must contain only ASCII letters, numbers, underscores, or hyphens.\",\"type\":\"invalid_request_error\",\"param\":null,\"code\":null}}"
+  },
+  {
+   "case": "12 default_voice=ja no voice field",
+   "status": 200,
+   "no_ref": true
+  },
+  {
+   "case": "13 alias no_ref with allow_no_ref_voice=false",
+   "status": 200,
+   "no_ref": true
+  },
+  {
+   "case": "13b voice=none with allow_no_ref_voice=false",
+   "status": 400,
+   "body": "{\"error\":{\"message\":\"\\\"Unknown voice='none'. Put a reference audio file in C:\\\\\\\\Users\\\\\\\\mugonkun\\\\\\\\source\\\\\\\\repos\\\\\\\\irodori-native-research\\\\\\\\lab\\\\\\\\tmp\\\\"
+  },
+  {
+   "case": "14 openapi.json without auth",
+   "status": 200,
+   "n_irodori_fields": 44,
+   "has_defaults": false,
+   "fields": [
+    "caption",
+    "ref_wav",
+    "ref_wavs",
+    "ref_latent",
+    "ref_latents",
+    "ref_embed"
+   ]
+  },
+  {
+   "case": "14b /docs without auth",
+   "status": 200
+  },
+  {
+   "case": "14c /v1/audio/voices without auth (api_key set)",
+   "status": 401
+  },
+  {
+   "case": "14d /health without auth (api_key set)",
+   "status": 200
+  }
+ ]
+}

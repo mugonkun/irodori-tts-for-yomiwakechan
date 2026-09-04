@@ -1,0 +1,70 @@
+{
+ "argv": [
+  "C:\\kit-ssd\\gpu_props.py",
+  "C:\\kit-ssd\\results\\gpu_props.json"
+ ],
+ "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+ "env": {
+  "CUDA_VISIBLE_DEVICES": null,
+  "CUDA_DEVICE_ORDER": null,
+  "HIP_VISIBLE_DEVICES": null,
+  "ROCR_VISIBLE_DEVICES": null
+ },
+ "import_torch_s": 1.218,
+ "torch": "2.10.0+cu130",
+ "torch_cuda": "13.0",
+ "torch_hip": null,
+ "cuda_available": true,
+ "device_count_s": 0.0002,
+ "device_count": 1,
+ "devices": [
+  {
+   "index": 0,
+   "name": "NVIDIA GeForce RTX 3090",
+   "total_memory_mb": 24575.5,
+   "major": 8,
+   "minor": 6,
+   "multi_processor_count": 82,
+   "uuid": "19adfe89-c9e0-df55-4a8a-e31798717a36",
+   "pci_bus_id": "1",
+   "pci_device_id": "0",
+   "pci_domain_id": "0",
+   "L2_cache_size": "6291456",
+   "is_integrated": "0",
+   "is_multi_gpu_board": "0",
+   "attributes": [
+    "L2_cache_size",
+    "clock_rate",
+    "gcnArchName",
+    "is_integrated",
+    "is_multi_gpu_board",
+    "major",
+    "max_threads_per_block",
+    "max_threads_per_multi_processor",
+    "memory_bus_width",
+    "memory_clock_rate",
+    "minor",
+    "multi_processor_count",
+    "name",
+    "pci_bus_id",
+    "pci_device_id",
+    "pci_domain_id",
+    "regs_per_multiprocessor",
+    "shared_memory_per_block",
+    "shared_memory_per_block_optin",
+    "shared_memory_per_multiprocessor",
+    "total_memory",
+    "uuid",
+    "warp_size"
+   ]
+  }
+ ],
+ "nvidia_smi": {
+  "which": "C:\\WINDOWS\\system32\\nvidia-smi.EXE",
+  "found": "C:\\WINDOWS\\system32\\nvidia-smi.EXE",
+  "list": "GPU 0: NVIDIA GeForce RTX 3090 (UUID: GPU-19adfe89-c9e0-df55-4a8a-e31798717a36)",
+  "query": "index, name, uuid, pci.bus_id, driver_version\n0, NVIDIA GeForce RTX 3090, GPU-19adfe89-c9e0-df55-4a8a-e31798717a36, 00000000:01:00.0, 591.86",
+  "error": null,
+  "list_s": 0.04
+ }
+}

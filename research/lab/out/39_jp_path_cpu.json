@@ -1,0 +1,70 @@
+{
+  "tag": "jp_path_cpu",
+  "device": "cpu",
+  "codec_device": "cpu",
+  "precision": "fp32",
+  "steps": 4,
+  "reps": 1,
+  "seed": 1234,
+  "text_len": "short",
+  "ref_seconds": [
+    10.0
+  ],
+  "ref_src": "tmp\\39\\ずんだもん 10秒.wav",
+  "threads": 8,
+  "torch": "2.10.0+cpu",
+  "torchaudio_shim": {
+    "load": "ImportError: TorchCodec is required for load_with_torchcodec. Please install torchcodec to use this function.",
+    "save": true
+  },
+  "hf_resolve_s": 0.297,
+  "model_load_s": 11.337,
+  "model_dtype": "torch.float32",
+  "codec_sample_rate": 48000,
+  "speaker_patch_size": 4,
+  "latent_patch_size": 1,
+  "ref_max_seconds_default": 120.0,
+  "runs": [
+    {
+      "ref_s": 10.0,
+      "rep": 1,
+      "phase": "cold",
+      "wall_s": 6.564,
+      "total_to_decode_s": 6.564,
+      "stage_ms": {
+        "tokenize_text": 1.5,
+        "prepare_reference": 1607.7,
+        "predict_duration": 1251.4,
+        "sample_rf": 2680.9,
+        "unpatchify_latent": 0.0,
+        "decode_latent": 782.2,
+        "silentcipher_watermark": 239.7
+      },
+      "audio_s": 3.24,
+      "rtf": 2.026,
+      "used_seed": 1234,
+      "messages": [
+        "info: reference loudness normalize enabled per clip (target_db=-16.00, includes peak safety scaling).",
+        "info: predicted duration frames=81.3, scale=1.000, using_frames=81 (3.240s)."
+      ]
+    }
+  ],
+  "ref_encode_micro": [],
+  "summary_min": {
+    "10.0": {
+      "n": 1,
+      "audio_s": 3.24,
+      "min_total_s": 6.564,
+      "min_rtf": 2.026,
+      "min_stage_ms": {
+        "decode_latent": 782.2,
+        "predict_duration": 1251.4,
+        "prepare_reference": 1607.7,
+        "sample_rf": 2680.9,
+        "silentcipher_watermark": 239.7,
+        "tokenize_text": 1.5,
+        "unpatchify_latent": 0.0
+      }
+    }
+  }
+}
