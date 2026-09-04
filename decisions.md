@@ -117,3 +117,8 @@
 65. **参照潜在キャッシュ（ref_latent の事前計算 .pt）は Radeon 版だけ持つ**（司令官裁定・2026-09-05）。裁定 11 の「持たない」は CUDA 版に限る。Radeon 版では話者登録時（プリセットの初回展開時と利用者の追加時）に wrapper が `.pt` を 1 回焼き、`voices.json` の alias を `ref_latent` に向ける（上流の VoiceSpec は `ref_latent` を受ける・同 stem の `.wav` が `.pt` に勝つ穴があるので `.pt` は別名で置く＝research 40 §6-2・handoff §1-7）。実装は便 D（ランチャの話者台帳）と wrapper の `POST /ywk/voices/{id}/precompute` 相当で行い、`empty_cache_interval` の扱いは別途裁定待ち。
 
 66. **便 B のドライバ入れ替えで再起動が要る場合＝席が `claude -c` で復帰するよう仕込んでから、そのまま再起動してよい**（司令官裁定・2026-09-05）。仕込み＝遠隔席が自分を起こした元のコマンド行（`Get-CimInstance Win32_Process` で自プロセスの CommandLine を読む）に `-c`（continue）を付けたものを `HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce` か「ログオン時」のタスクに登録し、作業ディレクトリ・-NoProfile を保ったまま `shutdown /r /t 15` を撃つ。復帰後は同じ会話の続き（関門⑴の確認返信と関門⑵の承諾が済んだ後の手順）から再開する。自動ログオンでなければログオンは司令官が行う。裁定 56 の「席は自分で shutdown を撃たない」はこれで上書き。
+
+### 司令官の追加要件（便 D・Radeon 版）— 2026-09-05 就寝前
+
+67. **Radeon 版のランチャ UI**＝⑴ 参照潜在キャッシュの ON／OFF の切り替え（既定 ON・裁定 65）⑵ 参照ボイスごとの消費メモリの概算表示（wav 参照＝+0.7 GB 級・潜在参照＝増えない・出力尺 1 フレーム ≈3.5 MB＝research 40 §1・§6 と便 C（2）の実測で係数を確定）⑶ GPU メモリの使用量と占有量（torch の allocated と reserved・OS 側の GPU Process Memory）の目視表示。実装＝wrapper の `/ywk/status` に `memory`（allocated／reserved／max・話者ごとの潜在サイズ）を足し、ランチャが常時表示する。CUDA 版でも同じ欄を出す（値の意味は同じ）。
+68. 二次 wav（プリセット）の司令官の試聴は**後回し**（`docs/preset-voices-listening.md` は据え置き）。
