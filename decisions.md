@@ -46,3 +46,8 @@
 23. GitHub private リポ `mugonkun/irodori-tts-for-yomiwakechan` を作成し origin にした。第一コミット＝`research/`（調査便のテキスト分 160 檔・2.3 MB）。
 24. Radeon 稼働機の ROCm 構成（読むだけ）＝Python 3.12.14・`torch==2.13.0+rocm10.0.0`・`torchaudio==2.11.0.2+rocm10.0.0`・index `https://stable.repo.amd.com/rocm/whl-next/`・`torch[device-gfx1151]`・HIP 7.15。Radeon 変種の取得台帳の種。
 25. この機体の道具＝.NET SDK 10.0.400・Inno Setup 6（`%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`）・pwsh 7.6.5・Python 3.13.7・uv 0.12.7。
+
+### プリセット話者の一次 wav（2026-09-04・司令官）
+
+26. **一次 wav は存在しない＝席が生成する**。手段＝yomiwakechan2 を使うか、各エンジンを個別起動して生成（VOICEVOX／COEIROINK＝HTTP API・CeVIO AI＝COM・VOICEROID2＝本体アダプタの方式に倣う）。二次ボイスは既存 Irodori-TTS-Server（8088・Radeon 機）を参照ボイス経路で叩いて生成。この作業は Radeon 機が使える 2026-09-07 までに済ませる（便 C と同じ枠）。
+27. **弦巻マキ（英語・CeVIO AI）の一次 wav**＝日本語読みができないため、席が詰まったら飛ばして進めてよい。後で司令官が生成して提供する（2026-09-04）。
