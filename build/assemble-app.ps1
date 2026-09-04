@@ -12,13 +12,14 @@
         server/                       <- server/*.py + python312._pth.template (the wrapper)
         server/upstream/Irodori-TTS/          <- copy of the 8224daf tree, patched
         server/upstream/Irodori-TTS-Server/   <- copy of the 841fb7c tree, patched
-        ledger/  licenses/            <- copied whole, minus first-run-notices.md
+        ledger/  licenses/            <- copied whole (first-run-notices.md included)
         voices/voices.json            <- {"<default>": {"no_ref": true}} (decisions.md 16)
         voices/voices.ywk.json        <- empty distributor-side speaker table (convoy D fills it)
 
-    licenses/first-run-notices.md is deliberately NOT copied: it says of itself that it is
-    not part of the distributable (design doc section 1). It is what the first-run UI shows
-    before any third-party byte is fetched, and convoy D carries that text.
+    licenses/first-run-notices.md IS copied (decisions.md 46). What stays out of the
+    distributable is the third-party bytes (decisions.md 8), not the notice about them: the
+    first-run UI has to show that text BEFORE it fetches the first byte, so the file has to be
+    on disk by then. The postflight below fails the build if it is missing.
 
     A non-zero exit leaves nothing behind: the trap at the top removes a half-built app/.
 
@@ -74,11 +75,10 @@ $git = Get-YwkGitPath
 # Directory names that never ship. tests/docs/examples are dead weight in the distributable
 # and "docs" in particular is the source we quote in ywk_params.py at design time only.
 $ExcludeDirs = @('.git', '.github', 'tests', 'test', 'docs', 'examples', '__pycache__', '.ruff_cache', '.pytest_cache')
-# first-run-notices.md says of itself, in its third line, that it is not part of
-# the distributable (design doc section 1, licenses/README.md row 9): it is the
-# notice the first-run UI shows *before* anything is fetched, and convoy D owns
-# that text. Shipping the file made the licenses/ tree contradict itself.
-$ExcludeFiles = @('.env', 'first-run-notices.md')
+# Only .env: a stray dotenv inside a copied tree would silently re-point the server.
+# first-run-notices.md is NOT excluded (decisions.md 46) -- the first-run UI shows it
+# before it fetches a single third-party byte, so it has to ship with the app.
+$ExcludeFiles = @('.env')
 
 $Submodules = @(
     @{ name = 'Irodori-TTS';        commit = '8224dafb46d0aba89209a8f905f1cb7e3299d9c1' },
@@ -337,9 +337,15 @@ if (-not $post.Ok) {
     throw 'upstream/ became dirty during assemble-app. This is a bug: patches must only touch the copy.'
 }
 
-$strayNotice = Join-Path $AppDir 'licenses\first-run-notices.md'
-if (Test-Path -LiteralPath $strayNotice) {
-    throw ('first-run-notices.md reached the app tree; it declares itself not part of the distributable: ' + $strayNotice)
+# decisions.md 46: the notice ships. The first-run UI must be able to show what is about to be
+# downloaded before it downloads it, and it can only do that from a file already on disk. An app
+# tree without it is a build that would ask for a consent it cannot show.
+$notice = Join-Path $AppDir 'licenses\first-run-notices.md'
+if (-not (Test-Path -LiteralPath $notice)) {
+    throw ('first-run-notices.md did not reach the app tree; the first-run UI shows it before anything is fetched (decisions.md 46): ' + $notice)
+}
+if ((Get-Item -LiteralPath $notice).Length -eq 0) {
+    throw ('first-run-notices.md reached the app tree empty: ' + $notice)
 }
 
 # Everything landed and the submodules are still clean: the tree is finished, so

@@ -69,6 +69,10 @@ def _data_dir() -> Path:
 
 
 def apply_env_defaults() -> None:
+    # ``ywk_params`` is pure stdlib (no upstream import), so reading the one
+    # constant here cannot freeze ``get_settings`` early.
+    from ywk_params import DEFAULT_VOICE_ID as _DEFAULT_VOICE_ID  # noqa: PLC0415
+
     data = _data_dir()
     voices = data / "voices"
     models = data / "models"
@@ -80,6 +84,15 @@ def apply_env_defaults() -> None:
         "IRODORI_PRELOAD": "true",
         "IRODORI_EMPTY_CACHE_INTERVAL": "0",
         "IRODORI_ALLOW_NO_REF_VOICE": "false",
+        # decisions.md 45.  ``/params`` reports ``request.voice`` with
+        # ``default: "デフォルト"`` (design §4-2 ⑵ forbids a null default on an
+        # exposed field), so a request that omits ``voice`` must not become the
+        # upstream's 400 ("No voice was provided and IRODORI_DEFAULT_VOICE is
+        # not set." -- voices.py:75-79).  Baking the same id here makes the
+        # advertised default true; ``resolve_default_voice`` then folds it into
+        # the reference-free request the alias stands for when ``voices.json``
+        # cannot resolve it.  ``setdefault``: the launcher can still override.
+        "IRODORI_DEFAULT_VOICE": _DEFAULT_VOICE_ID,
         "IRODORI_DEFAULT_NUM_STEPS": "40",
         "IRODORI_DEFAULT_RESPONSE_FORMAT": "wav",
         "IRODORI_VOICES_DIR": str(voices),
@@ -871,6 +884,21 @@ def ywk_voices() -> dict[str, Any]:
     }
 
 
+def _carries_a_reference(body: dict[str, Any]) -> bool:
+    """True when the body already names a reference (or ``no_ref``).
+
+    ``_resolve_voice`` (app.py:437-454) short-circuits on any of the six, so a
+    body that carries one must be left exactly as it is.
+    """
+    options = body.get("irodori")
+    if not isinstance(options, dict):
+        options = {}
+    for key in (*REFERENCE_KEYS, "no_ref"):
+        if options.get(key) is not None or body.get(key) is not None:
+            return True
+    return False
+
+
 def resolve_default_voice(body: dict[str, Any]) -> dict[str, Any]:
     """Make 「デフォルト」 work even when ``voices.json`` does not.
 
@@ -880,8 +908,27 @@ def resolve_default_voice(body: dict[str, Any]) -> dict[str, Any]:
     speaker would 400.  When the registry cannot resolve it, the field is
     rewritten into the reference-free request the alias stands for.  Runs after
     the exclusivity check, so ``voice`` + ``no_ref`` is still a 400.
+
+    An **omitted** ``voice`` takes the same road (decisions.md 45).  Upstream
+    falls back to ``settings.default_voice`` (voices.py:75-79) and the wrapper
+    bakes that to 「デフォルト」, so the omission has to end in the same 200 the
+    explicit spelling gets -- otherwise ``/params.request.voice.default`` would
+    be advertising a value that 400s.  A body that already carries a reference
+    is handed on untouched: upstream ignores ``voice`` entirely in that case.
     """
-    if body.get("voice") != DEFAULT_VOICE_ID or _registry_knows(DEFAULT_VOICE_ID):
+    voice = body.get("voice")
+    if voice is None or (isinstance(voice, str) and voice.strip() == ""):
+        if _carries_a_reference(body):
+            return body
+        baked = str(getattr(upstream.settings, "default_voice", None) or "").strip()
+        if baked != DEFAULT_VOICE_ID:
+            # No baked default (the launcher emptied it), or one that names a
+            # real voice file: let the upstream resolve it and report its own
+            # 400 as ``ywk_missing_voice`` / ``ywk_unknown_voice``.
+            return body
+        voice = DEFAULT_VOICE_ID
+        body["voice"] = DEFAULT_VOICE_ID
+    if voice != DEFAULT_VOICE_ID or _registry_knows(DEFAULT_VOICE_ID):
         return body
     body.pop("voice", None)
     options = body.get("irodori")

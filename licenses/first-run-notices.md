@@ -1,9 +1,10 @@
 # first-run-notices.md — 初回取得で利用者の機体に入る第三者物の一覧と、各ライセンスの所在
 
-> **この檔は配布物には入れない。**初回取得の UI（便 D／便 E）が、取得を始める前にこの内容を表示して
-> 同意を取る。理由＝配布物には第三者バイナリを 1 つも入れない（`decisions.md` 8）ので、
-> **`licenses/` に置くべきなのは「配布物に入っている物」の許諾文だけ**であり、
-> 初回取得で入る物の通知は**取得の時点で出す**のが筋だからである。
+> **この檔は配布物に入れる**（`decisions.md` 46）。初回取得の UI（便 D／便 E）が、
+> **取得を始める前に**この内容を表示して同意を取る＝**表示する檔が取得の前に手元に無ければならない**。
+> 配布物に入れないのは**第三者物そのもの**（バイナリ・wheel・モデルの重み＝`decisions.md` 8）であって、
+> **その通知文ではない**。したがって `licenses/` には⑴配布物へ同梱する物の許諾文と、
+> ⑵初回取得で入る物の通知（本檔）の 2 種類が入り、`build/assemble-app.ps1` は両方を写す。
 >
 > **出典**＝`research/lab/notes/22-runtime-license.md`（実行系のライセンス・A1〜A15 の一覧と逐語）・
 > `research/lab/notes/09-license-chain.md` §3（周辺ライブラリのライセンス名）。
@@ -17,7 +18,7 @@
 
 ---
 
-## A. 初回取得で入る物（cu130／cu126 の CUDA 版）
+## A. 初回取得で入る物（cu130／cu126 の CUDA 版・cpu 版）
 
 | # | 何が入るか | ライセンス | 許諾文の所在 | 種別 | 備考 |
 |---|---|---|---|---|---|
@@ -40,6 +41,7 @@
 
 | A17 | **soxr / libsoxr**（`soxr` wheel・`soxr-1.1.0-cp312-abi3-win_amd64.whl` 174,357 B。ネイティブ実体は**独立 DLL ではなく** `site-packages/soxr/soxr_ext.pyd` 354,304 B に組み込まれている） | **LGPL-2.1-or-later**（wheel 自身の宣言＝`soxr-1.1.0.dist-info/METADATA`:6 `License-Expression: LGPL-2.1-or-later`） | **wheel の中**＝`soxr-1.1.0.dist-info/licenses/` の `COPYING.LGPL`・`LICENSE-libsoxr.txt`・`LICENSE-PFFFT.txt`・`LICENSE.txt`。**ソースの所在**＝`https://github.com/dofuuz/python-soxr`（libsoxr 本体＝`https://sourceforge.net/projects/soxr/`） | wheel 内 | **copyleft の 2 件目**。`librosa` が引く再標本化ライブラリで、台帳（`ledger/runtime-*.json`）の 3 変種すべてに載る。§C 2 の裁定は **libsndfile と soxr の両方**に掛かる。※ 実体が別 DLL でなく `.pyd` に入っている点だけが libsndfile と形が違う（**これは観測事実であり、義務の読みではない**） |
 | A18 | **MPL-2.0 の純 Python 2 件**＝`certifi`（`METADATA` `License: MPL-2.0`・`dist-info/licenses/LICENSE`）・`tqdm`（`License: MPL-2.0 AND MIT`・`dist-info/licenses/LICENCE`） | **MPL-2.0**（tqdm は MPL-2.0 AND MIT） | **wheel の中**（`dist-info/licenses/`）。ソースの所在＝`https://github.com/certifi/python-certifi`・`https://github.com/tqdm/tqdm` | wheel 内 | 改変せずそのまま入れる（MPL §3.2 の「改変した檔」に当たる物が無い）。**どう読むかは書かない**＝観測した宣言と所在だけを記す |
+| A19 | **cpu 変種の torch／torchaudio wheel が同梱するネイティブ物**（`torch-2.10.0+cpu-cp312-cp312-win_amd64.whl` 113,671,330 B・`torchaudio-2.10.0+cpu-cp312-cp312-win_amd64.whl` 473,210 B） | **torch＝BSD-3-Clause 宣言**（`METADATA` の `License:` 欄）／**同梱物の一部は未特定**（下記） | **wheel の中**＝`torch-2.10.0+cpu.dist-info/LICENSE`（544,779 B）と `.../NOTICE`（24,088 B）。`METADATA` の `License-File:` は **`LICENSE` と `NOTICE` の 2 件だけ**（cu 版の 94 件のような一覧は無い）。torchaudio は `torchaudio-2.10.0+cpu.dist-info/licenses/LICENSE`（1,363 B・`License-File: LICENSE` 1 件） | wheel 内 | **観測日 2026-09-05・wheel を開いて読んだ事実のみ**。⑴ `dist-info/LICENSE` は `third_party/` 33 件を連結しており、その中に **`ideep/mkl-dnn`＝oneDNN（Apache-2.0・`Copyright 2016-2023 Intel Corporation`）**がある。**Intel MKL の許諾文は入っていない**。⑵ `torch/lib/libiomp5md.dll`（1,614,192 B）と `torch/lib/libiompstubs5md.dll`（43,888 B）が wheel に入っているが、**同梱の LICENSE は OpenMP 系の項目を 1 つも名乗っていない＝この 2 つの DLL のライセンスは未特定**（A3 が cu 版について記す `llvm-openmp/LICENSE.txt` に当たる檔が cpu 版には無い）。⑶ cpu 変種に **NVIDIA 系の DLL は無い**。⑷ torchaudio は `torchaudio/lib/_torchaudio.pyd`・`libtorchaudio.pyd` だけで**独立した DLL を持たない**（cu130 の torchaudio も同じ＝`.pyd` 4 件のみで CUDA DLL は torch 側にある・2026-09-05 実測）。**未特定は未特定のまま書く**（`decisions.md` 22） |
 
 **この表に無いもの**＝`onnx` の NOTICE（A13 相当）は **ONNX を配らないので非該当**。
 DirectML は **⒝案（ONNX Runtime＋DirectML EP）を採らないので非該当**。
@@ -90,7 +92,10 @@ Radeon 版はそもそも**未保障・別リリース**（`docs/radeon.md`）�
 
 **「ライセンスを表示」が開くもの**＝**本檔の内容**と `licenses/README.md`。
 
-**本檔そのものは配布物に入らない**（冒頭の宣言・設計書 §1・`licenses/README.md` §1 の 9 行目）＝
-`build/assemble-app.ps1` が `licenses/` を写すときに**この 1 檔だけ除外し**、写った場合は止まる。
-したがって **§A〜§D の本文は便 D（ランチャ）が UI に持つ**（配布物に入る `licenses/README.md` は
-そのまま開ける）。取得前に見せる檔を取得物と一緒に配るのは順序が逆になる、というのが除外の理由である。
+**本檔そのものは配布物に入る**（冒頭の宣言・設計書 §1・`licenses/README.md` §1 の該当行・
+`decisions.md` 46）＝`build/assemble-app.ps1` は `licenses/` を丸ごと写し、
+**本檔が app の木に無ければ止まる**（§5 の postflight）。
+初回取得 UI は**取得を始める前に**本檔を開く＝取得前に見せる檔は、取得の前から手元に無ければならない。
+第三者物（バイナリ・wheel・重み）を配布物に入れないことと、その通知文を配布物に入れることは矛盾しない。
+便 D（ランチャ）は §D の要約を画面に出し、「ライセンスを表示」で**同梱された本檔と
+`licenses/README.md`** を開く。

@@ -81,8 +81,12 @@
 ```
 
 - `model` は `"irodori-tts"` 固定（他は 400）。
-- **`voice` は常に明示送信**（省略すると上流が 400＝`No voice was provided and
-  IRODORI_DEFAULT_VOICE is not set.`）。参照なしは **`"デフォルト"`**（⑷）。
+- **`voice` は明示送信を推奨**するが、**省略しても 400 にならない**（`decisions.md` 45）。
+  配布版は `IRODORI_DEFAULT_VOICE` に **`"デフォルト"`** を焼く（wrapper の `setdefault`）ので、
+  欄を出さなければ**参照なし合成**になる＝`/params` の `request.voice.default` が名乗る値と一致する。
+  上流の素の挙動（`IRODORI_DEFAULT_VOICE` 未設定で 400＝`No voice was provided and
+  IRODORI_DEFAULT_VOICE is not set.`）が出るのは、**ランチャがこの env を空にしたときだけ**
+  （そのときの `code` は `ywk_missing_voice`＝3-3）。参照なしは **`"デフォルト"`**（⑷）。
   上流の別名（`none`・`no_ref`・`no-ref`・`null`・`text-only`・大小無視）を送っても
   **配布版は「デフォルト」に正規化して 200 を返す**（現行アダプタの `voice:"none"` 互換＝⑼ D-4）。
 - **上流の 44 欄は `irodori` ネストに入れて送る**。優先順は **`irodori.X`（非 null）→ トップレベル
@@ -141,7 +145,7 @@
   | 態 | `code` |
   |---|---|
   | 未知の話者（`Unknown voice=`） | `ywk_unknown_voice` ← **D-5 はこれで文言依存を捨てられる** |
-  | `voice` 省略（`No voice was provided`） | `ywk_missing_voice` |
+  | `voice` 省略（`No voice was provided`）＝**ランチャが `IRODORI_DEFAULT_VOICE` を空にした場合のみ**（3-1） | `ywk_missing_voice` |
   | `model` 違い | `ywk_unknown_model` |
   | `input` が空白のみ | `ywk_empty_input` |
   | 読込中・読込失敗（503） | `ywk_runtime_unavailable` |
@@ -169,9 +173,46 @@
   `irodori.chunking_enabled:false` か `irodori.seed` の明示が前提。
 - **参照を当てると予測尺が変わる**（94.3→82.4 フレームの実測）＝同じ本文でも出力長が変わる。
 
+### 3-5 SSE（`stream_format:"sse"`）＝**受けるが本体は使わない**
+
+**上流の機能は殺さない**（`decisions.md` 47）＝配布版は枠をそのまま通す。**本体は使わない**
+（1 発で wav を受け取る 3-1 の経路が正）。以下は上流 `app.py` の実装から写した**枠の形**であり、
+欄名は推測ではなく実名である。
+
+- **入り口**＝`stream_format` は `"sse"` だけ。他の値は **400**（`stream_format must be 'sse' when
+  specified.`＝`app.py:396-405`）。欄を出さない／`null` は非ストリーム（1 本の wav）。
+- **応答**＝**200**・`Content-Type: text/event-stream`・`Cache-Control: no-cache`・
+  `X-Accel-Buffering: no`（`app.py:770-774`）。非ストリームで載る `X-Irodori-Seed`・
+  `X-Irodori-Total-To-Decode`・`X-Irodori-Messages` は**載らない**（seed はチャンクの枠に入る）。
+- **1 枠の形**＝`event: <名>\n` `data: <JSON 1 行>\n` の 2 行のあとに空行（\n\n で終わる）（`_sse_event`＝`app.py:787-789`・
+  `json.dumps(ensure_ascii=False, separators=(",", ":"))`）。枠は 3 種：
+
+  | `event:` | `data:` の欄（**上流の実名**） |
+  |---|---|
+  | `audio_chunk` | `index`（0 起点）・`text`（そのチャンクの本文）・`format`（`wav`）・`media_type`（`audio/wav`）・`audio_base64`・`seed`・`total_to_decode`（`app.py:734-744`） |
+  | `done` | `chunks`（送り終えたチャンク数・`app.py:769`） |
+  | `error` | `error.message`・`error.type`・`error.param`・`error.code`（`_sse_error_event`＝`app.py:792-810`＝非ストリームの 3-3 と同じ 4 欄） |
+
+- **`audio_chunk` はチャンクごとに完結した wav**（`encode_audio` をチャンク単位で呼ぶ＝
+  `app.py:719-724`）＝`audio_base64` を復号して**そのまま鳴らせる**が、**連結しても 1 本の wav には
+  ならない**（RIFF ヘッダが各チャンクに付く）。
+- **`error` 枠は 200 の中に乗る**＝HTTP の状態番号では失敗を判別できない。判別は `data.error.code`
+  で行う。上流が出す値＝`runtime_unavailable`（読込待ちの時間切れ）・`invalid_request`
+  （`FileNotFoundError`／`ValueError`）・`stream_error`（`RuntimeError`）・`synthesis_queue_timeout`
+  （503 相当）＝`app.py:745-762`・`812-815`。**この枠の `code` だけは `ywk_` 接頭辞にならない**
+  （3-3 の middleware は 4xx/5xx の body を書き換えるもので、200 の中身には触らない）。
+- **`error` 枠が出たらそこで終わり**＝上流は `return` する（`done` は来ない）。
+- **`error` 枠にも絶対パスを出さない**＝配布版は SSE の本体を 1 枠ずつ見て、`event: error` の枠だけ
+  絶対パスを `<path>` に置換する（`audio_base64` を含む枠には触らない＝base64 を壊さない）。
+  上流の枠は非ストリームと同じ `str(exc)` を載せるので、これが無いと 3-3 の「絶対パス 0 件」が
+  ストリーム経路だけ破れる。
+- **取消は効かない**＝`_run_stream_blocking` が `asyncio.shield` で包む（`app.py:776-784`）。
+  接続を切っても**走っているチャンクの合成は最後まで走る**。止まる粒度は「次のチャンクを投げない」
+  ところまで（3-4 と同じ）。
+
 題目＝`未知欄は400で拒む`／`Literal3欄はトップレベルにあれば400`／`範囲外は400`／
 `voiceとno_refの同時指定は400`／`voiceと参照5欄の同時指定は400`／`エラーbodyに絶対パスが0件`／
-`上流由来の400にもcodeが載る`／`response_formatはwavのみ`／`3欄の明示nullは未指定として畳まれる`。
+`上流由来の400にもcodeが載る`／`response_formatはwavのみ`／`3欄の明示nullは未指定として畳まれる`／`SSEのerror枠に絶対パスが0件`／`stream_formatはsse以外400`。
 
 ---
 
@@ -268,7 +309,7 @@
 {"schema": 1, "engine": "irodori-ywk", "model_loaded": false,
  "checkpoint": {"hf": "Aratako/Irodori-TTS-v4.1-Small", "max_text_len": null, "max_caption_len": null, "ref_max_seconds": null},
  "request": {"input": {"type":"string","max_length":4096}, "speed": {"type":"number","default":1.0,"min":0.25,"max":4.0,"step":0.05},
-             "voice": {"type":"string","description":"話者名（/ywk/voices の id）。「デフォルト」= 参照なし"},
+             "voice": {"type":"string","default":"デフォルト","default_source":"ywk","required":false,"nullable":false,"description":"話者名（/ywk/voices の id）。「デフォルト」= 参照なし","note":"voice を省くと IRODORI_DEFAULT_VOICE が使われる…（decisions.md 45）"},
              "response_format": {"type":"enum","default":"wav","enum":["wav"]}},
  "irodori": [
    {"key":"caption","type":"string","default":"","nullable":true,"exposed_to_ywk":true,"group":"emotion","label":"演技指示（キャプション）","description":"…","max_length":2048,"note":"空文字・空白のみ＝未指定（wrapper が欄ごと畳む）"},

@@ -779,6 +779,7 @@ REQUEST_PARAMS: tuple[dict[str, Any], ...] = (
         "description": (
             "話者名（GET /v1/audio/voices の id）。「デフォルト」＝参照なし。"
             "irodori.no_ref と同時に指定すると 400。"
+            "省略すると IRODORI_DEFAULT_VOICE（配布版の焼き込みは「デフォルト」）が使われる。"
         ),
         "max_length": 256,
         "range_source": _SRC_YWK,
@@ -923,11 +924,27 @@ def build_request_params(settings: Any, runtime: Any = None) -> dict[str, Any]:
         item["nullable"] = _nullable(spec)
         item["exposed_to_ywk"] = spec["key"] in EXPOSED_REQUEST_KEYS
         if spec["key"] == "voice":
-            item["required"] = True
-            if item["default"] is None:
-                # design §4-2 ⑵: an ``exposed_to_ywk`` field must not report
-                # ``null``.  ``IRODORI_DEFAULT_VOICE`` is normally unset, and the
-                # value that always works is the reserved no-reference speaker.
+            # design §4-2 ⑵: an ``exposed_to_ywk`` field must not report
+            # ``null``, and whatever it does report must be a value the caller
+            # can actually send back (decisions.md 45).
+            if item["default"] == DEFAULT_VOICE_ID:
+                # The distribution's own baked ``IRODORI_DEFAULT_VOICE``
+                # (ywk_server.apply_env_defaults).  Omitting ``voice`` lands on
+                # it and synthesises reference-free -- so it is not required.
+                item["required"] = False
+                item["default_source"] = "ywk"
+                item["nullable"] = False
+                item["note"] = (
+                    "voice を省くと IRODORI_DEFAULT_VOICE が使われる。"
+                    "配布版はそこに「デフォルト」を焼く（decisions.md 45）＝省略しても 400 にならず"
+                    "参照なし合成になる（contract ⑶ 3-1・⑷ 4-2）。"
+                    "ランチャが IRODORI_DEFAULT_VOICE を上書きすれば、その話者が既定になる"
+                )
+            elif item["default"] is None:
+                # ``IRODORI_DEFAULT_VOICE`` was emptied by the launcher: the
+                # upstream then 400s an omitted ``voice`` (voices.py:75-79), so
+                # say so and still name the value that always works.
+                item["required"] = True
                 item["default"] = DEFAULT_VOICE_ID
                 item["default_source"] = "ywk"
                 item["nullable"] = False
@@ -935,6 +952,15 @@ def build_request_params(settings: Any, runtime: Any = None) -> dict[str, Any]:
                     "voice は必須（省略・null は上流が 400 にする）。"
                     "IRODORI_DEFAULT_VOICE が空なので配布版は「デフォルト」を既定として名乗る"
                     "＝参照なし合成（contract ⑷ 4-2）"
+                )
+            else:
+                # The launcher named a real speaker: it is the effective
+                # default and ``voice`` may be omitted.
+                item["required"] = False
+                item["nullable"] = False
+                item["note"] = (
+                    "voice を省くと IRODORI_DEFAULT_VOICE の話者が使われる"
+                    "（現在の値＝この default 欄）。参照なしは「デフォルト」（contract ⑷ 4-2）"
                 )
         out[spec["key"]] = item
     return out

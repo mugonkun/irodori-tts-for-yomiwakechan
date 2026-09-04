@@ -72,7 +72,7 @@ irodori-tts-for-yomiwakechan/
     silentcipher/LICENSE    sony/silentcipher MIT（原文・GitHub）
     dacvae/LICENSE          facebookresearch/dacvae Apache-2.0（原文・GitHub）＝裁定 29「Apache-2.0 と読む（3 対 1）」。HF 本文 46 行目の SAM 記述は原文の檔と行つきで README に併記し「当方の読み」と明記
     irodori-tts-for-yomiwakechan/LICENSE  自作分 MIT
-    first-run-notices.md    初回取得で利用者の機体に入る第三者物（torch・CUDA/cuDNN DLL・libsndfile・vc_redist・uv 不使用）の通知文の索引＝**配布物には入れない**が、初回取得 UI が表示する
+    first-run-notices.md    初回取得で利用者の機体に入る第三者物（torch・CUDA/cuDNN DLL・libsndfile・vc_redist・uv 不使用）の通知文の索引＝**配布物に入れる**（`decisions.md` 46）。初回取得 UI が**取得を始める前に**表示する檔なので、取得の前から手元に無ければならない。配布物に入れないのは第三者物そのもの（バイナリ・wheel・重み＝`decisions.md` 8）であって、その通知文ではない
   installer/                便 E（便 A は README のみ）
   launcher/                 便 D（便 A は README のみ）
   probe/                    実機検分の台本置き場（便 A は README のみ）
@@ -95,7 +95,7 @@ irodori-tts-for-yomiwakechan/
   ```
   （調査の実射正本＝`research/lab/notes/30-embed-and-gpu-control-facts.md` §0-3。パスは `._pth` 専管・設定は env。`PYTHONPATH` は無視される。）
 - 既定 env（wrapper が `os.environ.setdefault` で焼く＝ランチャが上書きできる）：
-  `IRODORI_HOST=127.0.0.1`・`IRODORI_PORT=18088`・`IRODORI_HF_CHECKPOINT=Aratako/Irodori-TTS-v4.1-Small`・`IRODORI_PRELOAD=true`・`IRODORI_EMPTY_CACHE_INTERVAL=0`・`IRODORI_ALLOW_NO_REF_VOICE=false`・`IRODORI_DEFAULT_NUM_STEPS=40`・`IRODORI_DEFAULT_RESPONSE_FORMAT=wav`・`IRODORI_VOICES_DIR=<絶対パス>`・`IRODORI_VOICE_ALIASES_FILE=<絶対パス>/voices.json`・`IRODORI_MODEL_DEVICE`／`IRODORI_CODEC_DEVICE`（ランチャが載せる・既定 `auto`）・精度＝device 連動（wrapper が起動時に決める＝§4-6）・`PYTHONUTF8=1`・`PYTHONDONTWRITEBYTECODE=1`・`PYTHONUNBUFFERED=1`・`HF_HOME=<models>`・`HF_HUB_OFFLINE=1`（初回取得後）。
+  `IRODORI_HOST=127.0.0.1`・`IRODORI_PORT=18088`・`IRODORI_HF_CHECKPOINT=Aratako/Irodori-TTS-v4.1-Small`・`IRODORI_PRELOAD=true`・`IRODORI_EMPTY_CACHE_INTERVAL=0`・`IRODORI_ALLOW_NO_REF_VOICE=false`・**`IRODORI_DEFAULT_VOICE=デフォルト`**（`decisions.md` 45＝`/params` の `request.voice.default` と揃える。省いた `voice` は参照なし合成になる）・`IRODORI_DEFAULT_NUM_STEPS=40`・`IRODORI_DEFAULT_RESPONSE_FORMAT=wav`・`IRODORI_VOICES_DIR=<絶対パス>`・`IRODORI_VOICE_ALIASES_FILE=<絶対パス>/voices.json`・`IRODORI_MODEL_DEVICE`／`IRODORI_CODEC_DEVICE`（ランチャが載せる・既定 `auto`）・精度＝device 連動（wrapper が起動時に決める＝§4-6）・`PYTHONUTF8=1`・`PYTHONDONTWRITEBYTECODE=1`・`PYTHONUNBUFFERED=1`・`HF_HOME=<models>`・`HF_HUB_OFFLINE=1`（初回取得後）。
 - api_key は持たない（裁定 2）。bind は 127.0.0.1 固定。
 
 ## 3. 取得台帳（ledger）の書式
@@ -142,7 +142,7 @@ irodori-tts-for-yomiwakechan/
 {"schema": 1, "engine": "irodori-ywk", "model_loaded": false,
  "checkpoint": {"hf": "Aratako/Irodori-TTS-v4.1-Small", "max_text_len": null, "max_caption_len": null, "ref_max_seconds": null},
  "request": {"input": {"type":"string","max_length":4096}, "speed": {"type":"number","default":1.0,"min":0.25,"max":4.0,"step":0.05},
-             "voice": {"type":"string","description":"話者名（/ywk/voices の id）。「デフォルト」= 参照なし"},
+             "voice": {"type":"string","default":"デフォルト","default_source":"ywk","required":false,"description":"話者名（/ywk/voices の id）。「デフォルト」= 参照なし"},
              "response_format": {"type":"enum","default":"wav","enum":["wav"]}},
  "irodori": [
    {"key":"caption","type":"string","default":"","nullable":true,"group":"emotion","label":"演技指示（キャプション）","description":"…","max_length":null,"exposed_to_ywk":true,"note":"空文字＝未指定（wrapper が欄ごと省略して上流へ渡す・上流は空文字を 400 にするので wrapper が畳む）"},
@@ -178,6 +178,12 @@ irodori-tts-for-yomiwakechan/
 - wrapper は `voice` が上流の NO_REF_IDS（none/no_ref/no-ref/null/text-only・大小無視）のときも「デフォルト」に正規化して受ける（本体の現行アダプタが `voice:"none"` を送る互換の保険。`allow_no_ref_voice=false` でもこの経路は 400 にしない）。
 - 上流の一覧は `ref_wav` に絶対パスを返す→ wrapper が同パスの route を差し替え（`app.router.routes` から上流の GET を外して自前を登録）。返す形は上流互換（`{"object":"list","data":[{"id":"デフォルト","object":"voice", ...}]}`）で **パス欄を落とし** `display_name`・`preset:true|false`・`no_ref:true|false` を足す。「デフォルト」を先頭に並べ替える。`none` は `allow_no_ref_voice=false` で出ない（テストで釘）。
 - `voices.json` は配布版（ランチャ）が所有＝書式は上流 README §voices.json（`research/` upstream-server 読解）＋`{"デフォルト":{"no_ref":true}}`。wrapper は読むだけ。話者メタ（表示名・caption 既定・既定パラメータ）は `voices/voices.ywk.json`（配布版の台帳・便 D で確定）。便 A は「デフォルト」1 行の `voices.json` と台帳の空雛形を `build/out/app/voices/` に置く。
+
+- **`voice` を省いた要求も 200**（`decisions.md` 45）＝wrapper が `IRODORI_DEFAULT_VOICE=デフォルト` を
+  `setdefault` で焼き、`resolve_default_voice` が「デフォルト」を参照なし合成に畳む。`/params` の
+  `request.voice` は `default:"デフォルト"`・`required:false` を名乗る＝名乗った既定を送り返しても
+  省いても同じ 200 になる。ランチャがこの env を上書きすれば、その話者が既定になる。
+  参照 6 欄のどれかが本文にあるときは畳まない（上流は参照を優先するので触ってはいけない）。
 
 ### 4-5 `POST /v1/audio/speech` の前段検査（白名簿・範囲・排他）
 - 上流 route を差し替え、body を先に検査してから上流の関数を呼ぶ（上流のコードは呼ぶだけ・改変しない）。

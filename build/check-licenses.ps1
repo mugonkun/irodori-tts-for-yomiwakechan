@@ -234,10 +234,19 @@ if (Test-Path -LiteralPath $notesFile) {
             $warnings.Add('licenses/first-run-notices.md does not mention ' + $needle)
         }
     }
+    # decisions.md 46 reversed this check. The file used to declare itself "not part of the
+    # distributable"; that sentence was about the third-party BYTES (decisions.md 8), not about
+    # the notice, and build/assemble-app.ps1 excluded the file on the strength of it. The notice
+    # now ships, because the first-run UI has to show it before it fetches anything.
+    # U+914D U+5E03 U+7269 U+306B U+5165 U+308C U+308B = "put into the distributable"
+    $shipped   = [string]([char]0x914D + [char]0x5E03 + [char]0x7269 + [char]0x306B + [char]0x5165 + [char]0x308C + [char]0x308B)
     # U+914D U+5E03 U+7269 U+306B U+306F U+5165 U+308C U+306A U+3044 = "not put into the distributable"
-    $shippedPhrase = 'first-run-notices|not part of the distributable|' + [string]([char]0x914D + [char]0x5E03 + [char]0x7269 + [char]0x306B + [char]0x306F + [char]0x5165 + [char]0x308C + [char]0x306A + [char]0x3044)
-    if ($notesText -notmatch $shippedPhrase) {
-        $warnings.Add('licenses/first-run-notices.md does not say that it is shown at first run rather than shipped')
+    $notShipped = [string]([char]0x914D + [char]0x5E03 + [char]0x7269 + [char]0x306B + [char]0x306F + [char]0x5165 + [char]0x308C + [char]0x306A + [char]0x3044)
+    if ($notesText -match [regex]::Escape($notShipped)) {
+        $problems.Add('licenses/first-run-notices.md still calls itself "not part of the distributable"; decisions.md 46 says it ships and build/assemble-app.ps1 now copies it')
+    }
+    if ($notesText -notmatch ('part of the distributable|' + [regex]::Escape($shipped))) {
+        $problems.Add('licenses/first-run-notices.md does not declare that it is shipped with the app and shown by the first-run UI before anything is fetched (decisions.md 46)')
     }
 }
 

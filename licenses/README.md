@@ -7,8 +7,10 @@
 > ⑴ **`licenses/` に置くもの**＝配布物（Release 資産＝ランチャ・`server/`・`ledger/`・`licenses/`）に
 > 実際に入る物、および**初回取得で入るが上流に許諾文が存在しない物**（＝配布側が用意しないと
 > 誰も持たない物）。
-> ⑵ **`first-run-notices.md`**＝初回取得で利用者の機体に入る第三者物の通知。**配布物には入れず、
-> 初回取得の UI が表示する**（`decisions.md` 8＝第三者バイナリを配布物に入れない）。
+> ⑵ **`first-run-notices.md`**＝初回取得で利用者の機体に入る第三者物の通知。**配布物に入れる**
+> （`decisions.md` 46）＝初回取得の UI が**取得を始める前に**表示する檔だから、取得の前から手元に
+> 無ければならない。`decisions.md` 8 が配布物から締め出すのは**第三者物そのもの**（バイナリ・
+> wheel・重み）であって、その通知文ではない。
 >
 > **停止域**＝**ライセンスの結論を推測で断定しない**（`decisions.md` 22）。
 > 解釈が割れる箇所（§4・`first-run-notices.md` §C）は**原文の檔と行だけ**を記す。
@@ -27,7 +29,7 @@
 | `silentcipher/LICENSE` | 透かしの**コード** `sony/silentcipher`（上流の pin は fork `SesameAILabs/silentcipher@d46d7d0893a583d8968ab3a6626e2289faec9152`） | **MIT**（`Copyright (c) 2024 Sony Research Inc.`） | **原文** | `https://raw.githubusercontent.com/sony/silentcipher/master/LICENSE` | **2026-09-04**（UTC 13:57） | `157b6af8c1bc4eac646abdf17473934a85e8815ade3a346cd83a58a171586a73` / 1,075 B。**pin commit の LICENSE と sha256 一致**（`research/lab/notes/16-verify-license.md` (f) の実測値と一致） |
 | `dacvae/LICENSE` | コーデックの由来 `facebookresearch/dacvae` | **Apache-2.0** | **原文** | `https://raw.githubusercontent.com/facebookresearch/dacvae/main/LICENSE` | **2026-09-04**（UTC 13:57） | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` / 11,358 B。**5 リビジョン全部で sha256 一致**（`research/lab/notes/16` (a)）。**§4 も読むこと** |
 | `irodori-tts-for-yomiwakechan/LICENSE` | **本リポジトリの自作分** | **MIT**（`Copyright (c) 2026 mugonkun`） | **自作** | — | 2026-09-04 | — |
-| `first-run-notices.md` | 初回取得で利用者の機体に入る第三者物の通知 | — | 自作（逐語は `research/lab/notes/22` から） | — | 2026-09-04 | **配布物には入れない**（初回取得 UI が表示） |
+| `first-run-notices.md` | 初回取得で利用者の機体に入る第三者物の通知 | — | 自作（逐語は `research/lab/notes/22` から） | — | 2026-09-04 | **配布物に入れる**（初回取得 UI が取得前に表示＝`decisions.md` 46） |
 
 **檔は 9 件**（この `README.md` を含む）。`build/check-licenses.ps1` はこの表の行と実檔を突合する。
 

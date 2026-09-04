@@ -103,7 +103,9 @@
   GitHub 側の LICENSE 実体（Apache-2.0 全文・**全リビジョンで sha256 一致**）を採る＝
   **これは当方の読みである**（`decisions.md` 29 の裁定・観測した檔と行の全件は `licenses/README.md` §4）。
 - **初回取得で入る第三者物**（torch・NVIDIA CUDA/cuDNN の DLL・libsndfile・vc_redist・Python 本体など）
-  の通知＝`licenses/first-run-notices.md`。これは**配布物には入れず、初回取得の UI が表示します**。
+  の通知＝`licenses/first-run-notices.md`。この通知文は**配布物に入っており、初回取得の UI が
+  取得を始める前に表示します**（`decisions.md` 46）。配布物に入れないのは**第三者物そのもの**
+  （バイナリ・wheel・モデルの重み）です。
 
 **このソフトウェアは libsndfile（LGPL-2.1）と libsoxr（LGPL-2.1-or-later）を使用します**
 （`soundfile` パッケージが同梱する `libsndfile_x64.dll`、および `soxr` パッケージが同梱する

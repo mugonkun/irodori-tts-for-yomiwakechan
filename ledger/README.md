@@ -60,7 +60,11 @@
 
 `name`・`version`・`url`・`sha256`（小文字 hex）・`size`（バイト・整数）・`filename`・
 `license`・`license_url`・`sha256_source`（**どこから取った sha256 か**の逐語）。
-`notices` は「その物を入れると利用者の機体に入る第三者の許諾文」（例＝torch cu13x の NVIDIA CUDA EULA・cuDNN SLA）。
+`notices` は「その物を入れると利用者の機体に入る第三者の許諾文と、その wheel が何を同梱しているかの観測事実」。
+**torch／torchaudio の item は変種に依らず必ず持つ**（cpu・cu130／cu126・rocm*）＝cu 版は NVIDIA CUDA EULA と
+cuDNN SLA、cpu 版は同梱の `dist-info/LICENSE`（third_party 33 件・oneDNN を含む）と
+`torch/lib/libiomp5md.dll` の許諾が**未特定**である事実、rocm 版は AMD wheel が許諾を名乗らない事実
+（便 C が埋める）。cu* 限定だった頃は cpu 台帳の torch が何も名乗らず、突合の対象が 0 件だった。
 `licenses/first-run-notices.md` と `build/check-licenses.ps1` がこの欄を突合する。
 `fallback_url` は「同じ檔を出す別ホスト」（torch・torchaudio・`vc_redist`）＝§3。
 

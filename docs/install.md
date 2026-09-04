@@ -29,7 +29,7 @@
 | # | 操作 | 何が起きるか | 目安 |
 |---|---|---|---|
 | 1 | インストーラを実行する | `%LOCALAPPDATA%\Programs\irodori-tts-ywk\` に本体（ランチャ exe・`server/`・`ledger/`・`licenses/`・`voices/`・docs）が入る。数十 MB。 | 数秒 |
-| 2 | ランチャを起動する | 初回セットアップ画面が出る。**ライセンス通知**（初回取得で入る第三者物の一覧＝`licenses/first-run-notices.md`）を表示して同意を取る。 | — |
+| 2 | ランチャを起動する | 初回セットアップ画面が出る。**ライセンス通知**（初回取得で入る第三者物の一覧＝`licenses/first-run-notices.md`。**手順 1 で一緒に入る**＝`decisions.md` 46）を表示して同意を取る。 | — |
 | 3 | GPU と CUDA 版を選ぶ | 検出した GPU を UUID つきで一覧表示。既定 cu130、検出ドライバが 580 未満なら cu126 を**勧める**（自動では切り替えない＝`decisions.md` 4）。 | 列挙 ≤ 5 s |
 | 4 | 「取得して導入」を押す | 実行系 ≈2.1 GiB ＋ モデル ≈3.3 GiB ＝ **≈5.4 GiB** を取得して `%LOCALAPPDATA%\irodori-tts-ywk\` に展開する。`vc_redist.x64.exe`（≈25 MB）もここで通す。 | 100 Mbps 級で **≤ 10 分** |
 | 5 | 「起動」を押す | `127.0.0.1:18088` で常駐する。準備完了（`runtime.loaded=true`）まで待つ。 | **≤ 120 s**（3090・SSD なら ≤ 60 s） |
@@ -83,6 +83,7 @@
   主なもの＝`IRODORI_HOST=127.0.0.1`・`IRODORI_PORT=18088`・
   `IRODORI_HF_CHECKPOINT=Aratako/Irodori-TTS-v4.1-Small`・`IRODORI_PRELOAD=true`・
   `IRODORI_EMPTY_CACHE_INTERVAL=0`・`IRODORI_ALLOW_NO_REF_VOICE=false`・
+  `IRODORI_DEFAULT_VOICE=デフォルト`（`decisions.md` 45＝`voice` を省いた要求が参照なし合成になる）・
   `IRODORI_VOICES_DIR=<絶対パス>`・`IRODORI_MODEL_DEVICE`／`IRODORI_CODEC_DEVICE`・
   `PYTHONUTF8=1`・`PYTHONDONTWRITEBYTECODE=1`・`PYTHONUNBUFFERED=1`・`HF_HOME=<models>`・
   `HF_HUB_OFFLINE=1`（初回取得後）。
@@ -128,7 +129,8 @@
 ## 6. 便 E への申し送り
 
 - 画面・文言・同意の取り方（ライセンス通知の出し方）は**未確定**。`licenses/first-run-notices.md` を
-  そのまま出すのか要約するのかも含めて便 E で決める。
+  そのまま出すのか要約するのかも含めて便 E で決める。**檔は配布物に入っている**（`decisions.md` 46・
+  `build/assemble-app.ps1` が写し、無ければビルドを止める）＝取得の前に開ける。
 - **ドライバ検査の実装**（cu130 ≥ 580／cu126 ≥ 560.76）＝告知の文言と、検査に失敗したときに
   合成を撃たせない止め方。
 - **取得の再開・中断**（5.4 GiB の途中で切れたとき）。

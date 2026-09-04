@@ -135,7 +135,12 @@ BASELINE = {
     "model_name": MODEL,
     "voices_dir": VOICES,
     "voice_aliases_file": VOICES / "voices.json",
-    "default_voice": None,
+    # decisions.md 45: the wrapper bakes IRODORI_DEFAULT_VOICE to the reserved
+    # no-reference speaker, so an omitted ``voice`` is a 200, not the upstream's
+    # "No voice was provided" 400.  ``get_settings`` is lru_cache'd at upstream
+    # import time -- which happens *above* ``import ywk_server`` in this file --
+    # so the baked value is asserted onto the live Settings here instead.
+    "default_voice": DEFAULT_VOICE,
     "allow_no_ref_voice": False,
     "preload": False,
     "hf_checkpoint": "Aratako/Irodori-TTS-v4.1-Small",

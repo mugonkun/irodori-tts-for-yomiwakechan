@@ -708,11 +708,38 @@ if (-not $SkipRuntime) {
                 } catch {
                     Write-YwkLog -Level 'WARN' -Message ('no PyPI metadata for ' + $r.name + ' ' + $base + ': ' + $_.Exception.Message)
                 }
-                if ($tag -like 'cu*') {
-                    $notices = @(
-                        'NVIDIA CUDA EULA applies to the CUDA runtime DLLs bundled inside this wheel (research/lab/notes/22 section 2).',
-                        'NVIDIA cuDNN SLA applies to the cuDNN DLLs bundled inside this wheel (research/lab/notes/22 section 3).'
-                    )
+                # Notices are attached per PACKAGE, not per CUDA variant. Until this was
+                # widened only "cu*" got them, so the cpu ledger carried a torch wheel that
+                # ships third-party native binaries and said nothing about them at all, and
+                # build/check-licenses.ps1 had nothing to reconcile on that ledger. Every
+                # torch / torchaudio item now carries a notice whatever the variant is; what
+                # differs is WHAT is bundled, and that is stated as observed, never assumed.
+                if ($r.name -eq 'torch' -or $r.name -eq 'torchaudio') {
+                    $noticeLines = New-Object System.Collections.Generic.List[string]
+                    $noticeLines.Add('This wheel ships third-party native binaries. The licence texts that cover them travel inside the wheel: keep the *.dist-info directory in the install tree (licenses/first-run-notices.md A2, A3, A19).')
+                    if ($tag -like 'cu*') {
+                        if ($r.name -eq 'torch') {
+                            $noticeLines.Add('NVIDIA CUDA EULA applies to the CUDA runtime DLLs bundled inside this wheel, under torch/lib/ (research/lab/notes/22 section 2). They are covered by neither the wheel License-Expression nor any of its License-File entries.')
+                            $noticeLines.Add('NVIDIA cuDNN SLA applies to the cuDNN DLLs bundled inside this wheel, under torch/lib/ (research/lab/notes/22 section 3).')
+                        } else {
+                            $noticeLines.Add('Observed in torchaudio 2.10.0+cu130 on 2026-09-05: this wheel bundles no CUDA DLL of its own -- torchaudio/lib/*.pyd only. The CUDA and cuDNN DLLs arrive with the torch item of this same ledger, whose notices name the NVIDIA terms.')
+                        }
+                    } elseif ($tag -eq 'cpu') {
+                        if ($r.name -eq 'torch') {
+                            $noticeLines.Add('Read from torch-2.10.0+cpu-cp312-cp312-win_amd64.whl on 2026-09-05: METADATA declares License: BSD-3-Clause and exactly two License-File entries, LICENSE and NOTICE. dist-info/LICENSE (544,779 B) concatenates 33 third_party projects, among them ideep/mkl-dnn = oneDNN (Apache-2.0, Copyright 2016-2023 Intel Corporation). No Intel MKL licence text is present in it.')
+                            $noticeLines.Add('Read from the same wheel: torch/lib/libiomp5md.dll (1,614,192 B) and torch/lib/libiompstubs5md.dll (43,888 B) ship inside it, yet its bundled LICENSE names no OpenMP project. The licence of those two DLLs is unidentified -- recorded as observed, not resolved (licenses/first-run-notices.md A19).')
+                        } else {
+                            $noticeLines.Add('Read from torchaudio-2.10.0+cpu-cp312-cp312-win_amd64.whl on 2026-09-05: native code is torchaudio/lib/_torchaudio.pyd and libtorchaudio.pyd, no separate DLL. METADATA declares one License-File (LICENSE), shipped as dist-info/licenses/LICENSE (1,363 B).')
+                        }
+                    } elseif ($tag -like 'rocm*') {
+                        # Convoy C fills ledger/runtime-rocm-gfx1151.json. The branch exists so
+                        # that the generator cannot produce a ROCm ledger with a silent torch.
+                        $noticeLines.Add('ROCm variant: the AMD wheels declare no licence of their own (rocm_sdk_core METADATA is three lines with neither a License nor a License-File field -- licenses/first-run-notices.md B1), so what the bundled binaries are under is unidentified. Convoy C must record what it observed in the wheel, not what it assumes.')
+                        $noticeLines.Add('ROCm is unsupported and shipped as a separate release (docs/radeon.md). The first-run notice has to say the licence position is unidentified before anything is fetched.')
+                    } else {
+                        $noticeLines.Add('Unknown local version tag "' + $tag + '": no variant-specific fact has been observed for it. Read the wheel before trusting this ledger.')
+                    }
+                    $notices = $noticeLines.ToArray()
                 }
             } else {
                 $rel = $null
