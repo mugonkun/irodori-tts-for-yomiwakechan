@@ -23,3 +23,11 @@
 - `upstream/`（上流 clone）＝新リポでは submodule で pin する（Irodori-TTS `8224daf`・Irodori-TTS-Server `841fb7c`）
 
 第三者バイナリ（wheel・exe・モデル）をリポにコミットしない裁定（依頼文 §5）に従う。
+
+## 追記（2026-09-04・設営席）＝便 A の試験と台帳の固定表として要る軽い檔を追加で写した
+| 置き場 | 原本 | 内容 |
+|---|---|---|
+| `lab/out/*.json` | `lab/out/` | `18-field-diff.json`（/params 欄一覧の一次ソース）・`38-naming.json`・`36-voice-naming.json`（話者名の逐語）・`server_contract.json`（契約 T-1〜T-12 の逐語 102 件）・`37_contract.json`（openapi 生 JSON・default_table）・`39_jp_path_cpu.json`（日本語パス実射）・`3090-results-ssd-ref/gpu_props.json`（uuid/pci_bus_id の実出力） |
+| `lab/out/verify17/idx-*-torch.html` | `lab/out/verify17/` | download.pytorch.org の torch index の保存（cpu・cu126・cu130）＝sha256 台帳の原本 |
+| `lab/tmp/embed-test/python312._pth` | `lab/tmp/embed-test/py312/` | 実射で通った `._pth` の正本（267 B・5 行） |
+| `lab/tmp/rt-license/` | `lab/tmp/rt-license/` | 実行系ライセンスの一次原本テキスト（CUDA EULA・cuDNN SLA・MSVC・DirectML・libsndfile COPYING・soundfile notes・Apache-2.0・onnx NOTICE・python-embed LICENSE・`zipget.py`・PyPI/AMD の JSON 3 檔）。wav・zip・html・大きな PyPI JSON は写していない |
