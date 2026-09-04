@@ -82,3 +82,7 @@
 47. **SSE（`stream_format:"sse"`）は受ける**（上流の機能を殺さない）。本体は使わない。契約文書に枠の形（`event: audio_chunk`／`done`／`error`・取消不可）を書く。
 48. **caption と seed の空文字は wrapper が「未指定」に畳む**（上流は空 caption を 400 にする）。本体の新アダプタ（便 F）は「空は欄ごと省略」の現行規則のままで通るが、契約の文言が変わったことを便 F の票に書く。
 49. 台帳の運用注意＝torch の pin URL は `download-r2.pytorch.org`（index の href の実体）で `download.pytorch.org` を fallback_url に持つ／`models.json` は pin した revision の全檔を持つので既存キャッシュに対する `--check-only` は README 等を file_missing と報告する（異常ではない）／初回取得後に `refs/main` を書かないと `HF_HUB_OFFLINE=1` で上流の読み込みが落ちる（是正済み・テストで釘）。
+
+### 便 B の停止域の解除 — 2026-09-05
+
+50. **U-14（RTX 3090 機のドライバを 2023 年秋の版に入れ替えて cu126 を実射）を司令官が承諾**（「入れ替え承諾」・2026-09-05）。便 B の台本に B-7 として組み込む。対象は RTX 機の C: だけ（D:/E:/F: は触らない）。終わったら現行 591.86 に戻すかは任意（壊してよい機体）。
