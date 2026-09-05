@@ -105,9 +105,55 @@ GPU メモリの標本 `gpu-<日時>-*.csv`）、読み方は `docs/radeon.md` �
 - **UI Automation は自プロセスの持ち窓と共通檔窓を列挙しないことがある**＝`RootElement.FindAll(Children, ProcessId)` は自プロセスの modal 窓（`FirstRunWizard`）も `OpenFileDialog`（`#32770`）も 1 度も返さないのに、Win32 の `EnumWindows` は同じ瞬間に返す（実測）。**`EnumWindows`＋`AutomationElement.FromHandle` を併用する**（`probe/common.ps1` の `Get-ProcessWindowHandles`）。閉じられない窓で走行が止まるので、窓を開かせない路（貼り付け）も併せて用意すること。
 - **PS 5.1 の `Get-Content` は `-Encoding UTF8` が必須**＝BOM 無しの `voices.json`／`settings.json` を機体の ANSI 頁で読むため、日本語の突合が **5.1 でだけ**落ちる（7 では通る）。檔頭の「PS 5.1／7 両対応」を守るなら読みは全部 `-Encoding UTF8`。
 
-### 便 E（導入）
+### 便 E（導入・この機体で実射済み）
 
-`installer/README.md` §4 の E-1〜E-4。
+`installer/README.md` §4 の E-1〜E-4。台本は **`probe/e-install-probe.ps1`**（＋共通 `probe/common.ps1`）＝
+設計書 `docs/design/ben-e-installer.md` §7 の段 1・2・3・5・6・7・8（＋任意の段 4）を撃つ。
+**段 9（日本語＋空白のユーザ名）は入っていない**＝ローカルユーザの作成に管理者昇格が要る（裁定 90）。
+実射の逐語は設計書 §13。
+
+```
+pwsh -NoProfile -ExecutionPolicy Bypass -File probe/e-install-probe.ps1
+pwsh ... -File probe/e-install-probe.ps1 -Flavor cuda -Steps 1,7
+pwsh ... -File probe/e-install-probe.ps1 -IncludeAcl            # 段 4（読取専用の {app}）を足す
+pwsh ... -File probe/e-install-probe.ps1 -AllowSourceDrift      # setup が build/out より古いとき
+```
+
+終了コード＝失敗した段の数（`d-launch-probe.ps1` と同形）。既定の走は **69 段・所要 60.7 s**。
+
+**この台本が本物の場所を触ること**（他の便の台本と違う点）＝
+
+- **`%LOCALAPPDATA%\Programs\` に本当に導入する**（`/DIR=` を渡さない＝`.iss` の既定 `{autopf}` を試すため）。
+  終わったら必ずアンインストールし、**Uninstall 鍵・`{app}`・`.lnk` が 0 件**であることを teardown で数える。
+- **利用者データ樹 `%LOCALAPPDATA%\irodori-tts-ywk` は 1 バイトも触らない**＝走の頭で
+  `irodori-tts-ywk.e2-backup` へ `Rename-Item` で退避し、代わりに**形だけの身代わり樹**
+  （`runtime\ models\ cache\ logs\ miopen\ voices\ settings.json` の目印檔 10 個）を置く。
+  `finally` で身代わりを消して退避を名前ごと戻し、**檔数とバイトが走の前後で一致すること**を段として数える。
+  退避が済んでいない状態でデータ樹に届く段（3・4・5・6・7・8。段 2 も完了頁の `[Run]` があるので含む）は
+  `Assert-WorkTree` が**例外で止める**。`-DataDirBackup:$false` はその全段を拒む。
+- 起こすランチャは **`settings.json` の `port` を 18097 に・`autoStartServer` を false に**してから起こす＝
+  サーバは 1 度も起きない。8088／7861／18088 は走の前後で `Assert-QuietPorts` が見る。
+
+**便 E で判った 4 つ（便 D の 2 つに続けて、後続の検分席への申し送り）**
+
+- **Inno の窓は `probe/common.ps1` の既存ヘルパでは押せない**（設計書 M-3）。`Find-ById` は
+  `AutomationIdProperty` で引くが Inno の `AutomationId` は毎回変わる HWND、`Invoke-ButtonById` は
+  `InvokePattern` を撃つが `TNewButton` は 1 つも pattern を持たない。押す道は
+  **`SendMessage(hwnd, BM_CLICK=0x00F5)`** 一本で、`e-install-probe.ps1` の
+  `Get-SetupChildProcess`／`Get-InnoWizard`／`Get-InnoTexts`／`Invoke-InnoButton` の 4 関数がそれを持つ
+  （`common.ps1` には 1 行も足していない）。窓の同定は `ClassName='TWizardForm'`、頁の同定は
+  `TNewStaticText` の文字列で、**AutomationId は 1 度も使わない**。
+- **起動した setup の pid には窓が無い**（設計書 M-1）。窓は `…setup.tmp`（アンインストールは `_iu*.tmp`）の
+  子が持つ。`Win32_Process` の `ParentProcessId` を辿って家族の pid を集め、その全部に
+  `Get-ProcessWindows`（裁定 86 の UIA→`EnumWindows` 2 段）を掛ける。
+- **`-Steps` のような複数値の引数を `[int[]]` で受けてはいけない。**実測（2026-09-05）＝
+  Windows PowerShell 5.1 に `-File` 経由で `-Steps 1,3,7` を渡すと、`"1,3,7"` が**桁区切り付きの整数
+  `137` として 1 個**に化け、**何も撃たずに exit 0 で終わる**（7 では配列になる）。
+  複数値は**カンマ区切りの `[string]` で受けて自分で split する**。
+- **`icacls … /deny <user>:(OI)(CI)W` は「読取専用」ではない。**実測＝`W` は `FILE_GENERIC_WRITE` で
+  **`SYNCHRONIZE` を含む**ため、exe が起動できなくなる（`Start-Process` が
+  「アクセスが拒否されました」で落ちる）。読取専用を作るなら
+  **`(OI)(CI)(WD,AD,WEA,WA,DC,DE)`**（書込・追記・EA・属性・子の削除・削除）を名指しで拒む。
 
 ## 3. 停止域（全便共通）
 

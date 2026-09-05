@@ -159,8 +159,13 @@ Type: filesandordirs; Name: "{app}\voices\presets"
 [Files]
 Source: "{#SrcExe}\IrodoriTtsYwk.Launcher.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SrcApp}\server\*";   DestDir: "{app}\server";   Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "__pycache__,*.pyc"
-Source: "{#SrcApp}\licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SrcApp}\voices\*";   DestDir: "{app}\voices";   Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SrcApp}\licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "__pycache__,*.pyc"
+Source: "{#SrcApp}\voices\*";   DestDir: "{app}\voices";   Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "__pycache__,*.pyc"
+; ↑ Excludes は 3 行とも同じ形にする。server\ だけに付けていたのは誤りだった＝
+;   `build/out/app/voices/__pycache__/sneaky.cpython-312.pyc` を置いて実射したら（2026-09-05 11:31）
+;   ISCC は警告も出さずに **setup へ入れた**（`111 Compressing:` 行・良品は 110）。
+;   配布樹は人がサーバを走らせる樹でもあるので、bytecode はどの枝にも落ちうる。
+;   網の 2 枚目＝build/installer-build.ps1 の門 B-1（compile ログの `Compressing:` 行を読む）。
 ; ↑ voices.json（80 B）と voices.ywk.json（596 B）も入る。**除かない**＝voices.ywk.json は
 ;   launcher/IrodoriTtsYwk.Launcher/Services/Voices/PresetVoices.cs:54 の逐語
 ;   「?? FromTable(Path.Combine(appVoices, "voices.ywk.json"), appVoices)」で **配布樹側が読まれる**
@@ -268,6 +273,21 @@ end;
 function StartsWithDir(const Path, Prefix: String): Boolean;
 begin
   Result := (Prefix <> '') and (Pos(Lowercase(AddBackslash(Prefix)), Lowercase(AddBackslash(Path))) = 1);
+end;
+
+{ データ樹が junction（mklink /J＝reparse point）かどうかを見る 1 本。Inno に尋ねる関数が無いので
+  Win32 を直に引く。Inno 6 の [Code] は Unicode なので W 版を名指しする。
+  用途は 1 つだけ＝アンインストールの最後の RemoveDir(Data) を、junction には撃たないため（下）。}
+function GetFileAttributesW(lpFileName: String): DWORD;
+  external 'GetFileAttributesW@kernel32.dll stdcall';
+
+function IsReparsePoint(const Path: String): Boolean;
+var
+  Attr: DWORD;
+begin
+  Attr := GetFileAttributesW(Path);
+  { $FFFFFFFF = INVALID_FILE_ATTRIBUTES（引けなかった）／$400 = FILE_ATTRIBUTE_REPARSE_POINT。}
+  Result := (Attr <> $FFFFFFFF) and ((Attr and $400) <> 0);
 end;
 
 procedure NotifyFreeSpace();
@@ -383,9 +403,11 @@ begin
         reparse points, but it will **not** recursively delete files/directories inside them.」＝
         この免除が当たるのは reparse point 自身（＝Data）であって Data\runtime 等ではない。
         ここは Data の **下** を名指しで消すので、junction を通り抜けて実体が消える。
-        docs/install.md §5-3 の但し書き（「junction だけが消えて実体は残る」）は **実装と食い違う**＝
-        卓へ回した（本席は install.md を書けない。推奨＝利用者が明示で「削除する」を選んだのだから
-        消えるほうが素直＝檔のほうを直す）。※ junction を張っての実射はしていない（D: は停止域）＝**推測**。}
+        これは意図した挙動である（利用者が明示で「削除する」を選んだのだから消えるのが素直）＝
+        docs/install.md §5-3 は 2026-09-05 にこの実装に合わせて直っており、いまは食い違っていない
+        （旧注釈は「檔と食い違う・卓へ回した」と書いていたが、その票は既に閉じている）。
+        ※ junction を張っての実射はしていない（D: は停止域）＝**推測**。
+        junction 自身（＝Data）を畳まないことだけは実射で確かめた＝この手続きの最後の RemoveDir。}
       DelTree(Data + '\runtime', True, True, True);
       DelTree(Data + '\models',  True, True, True);
       DelTree(Data + '\cache',   True, True, True);
@@ -416,6 +438,21 @@ begin
     DeleteFile(Data + '\settings.json');
   end;
 
-  { 空になっていれば根も畳む（中身が残っていれば RemoveDir は失敗して何もしない）。}
+  { 空になっていれば根も畳む。ただし **junction には撃たない**。
+    旧注釈は「中身が残っていれば RemoveDir は失敗して何もしない」と書いていたが、それは **本物の
+    ディレクトリの話**であって junction には当たらない。実射（2026-09-05・非昇格・使い捨ての .iss を
+    ISCC で通し、InitializeSetup で撃って Result := False で中止＝1 檔も導入せず）の逐語＝
+      before RemoveDir: DirExists(link)=1
+      RemoveDir returned: 1
+      after  RemoveDir: DirExists(link)=0 / DirExists(real)=1 / FileExists(real\settings.json)=1
+    ＝**中身 3 檔を抱えた junction に対して RemoveDir は成功し、路だけを消して実体を残した。**
+    docs/install.md §5-3 が勧める mklink /J を張った機体では、これは「残す」を選んでも起き、
+    次に入れ直すと空のデータ樹が C: に出来て旧樹が孤児になる。だから畳む前に reparse point を見る。
+    ※ 非昇格で /J が張れることも同じ日に実測した（New-Item -ItemType Junction・elevated=False）。}
+  if IsReparsePoint(Data) then
+  begin
+    Log('the data root is a reparse point (junction); leaving it in place: ' + Data);
+    Exit;
+  end;
   RemoveDir(Data);
 end;

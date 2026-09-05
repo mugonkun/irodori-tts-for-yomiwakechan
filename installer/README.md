@@ -59,7 +59,13 @@
    無人では黙って残る（実射で確認）。**もう一方の種がまだ入っていれば 1 段目を出さない**（取得物は共有）。
 4. **環境変数を 1 本も立てない**（`YWK_LAUNCHER_*` を `setx` しない）＝1 本でも立つとランチャが「開発起動」を名乗る。
 5. **生産ラインは `build/installer-build.ps1`**（新設・ASCII・CRLF・PS 5.1／7）。
-   `assemble-app.ps1` → `release-build.ps1 -SkipZip` → 門 A（6 本）→ ISCC → 門 B（3 本）→ sha256。
+   `assemble-app.ps1` → `release-build.ps1 -SkipZip` → 門 A（**7 本**）→ ISCC → 門 B（3 本）→ sha256。
+   **A-7 は是正席が足した 1 本**＝「名指しの檔（`server\ywk_server.py`・`ywk_params.py`・`ywk_fetch_models.py`・
+   `python312._pth.template`・`voices\presets.json`・`licenses\first-run-notices.md`）が配布樹に在って空でない」。
+   A-1 の檔数不一致も **WARN から失敗に**した（総バイトの drift は WARN のまま）。
+   理由＝これが無いと **9 本すべて通って exit 0・sha256 まで記帳された、動かない中身の setup** が出せた
+   （2026-09-05 の実射＝wrapper 2 檔を退けても `DONE: 1 installer(s), 9 gate(s), 0 failed.`）。
+   **終了コードは「落ちた門の本数」**で、道具や入力が無くて走が死んだときだけ **64**（門の数と衝突しない番号）。
    **版は `launcher/Directory.Build.props` の `<AppDisplayVersion>` 1 箇所から読み `/D` で渡す**（`.iss` に書き写さない）。
    混入検分は**拡張子の白名簿＋1 檔 4 MiB の上限**で撃つ（`release-build.ps1` の `$forbidden` は `*.wav` と
    `voices.json` を禁じるので**流用できない**＝配布樹には自作 wav 11 檔が正当に入る＝`decisions.md` 37）。

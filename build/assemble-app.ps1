@@ -312,24 +312,64 @@ $null = New-YwkDirectory -Path $AppVoices
 # U+30C7 U+30D5 U+30A9 U+30EB U+30C8 = the reserved no-reference speaker (decisions.md 16).
 # Built from code points so this ASCII-only script cannot be corrupted by a cp932 console.
 $defaultName = [string]([char]0x30C7 + [char]0x30D5 + [char]0x30A9 + [char]0x30EB + [char]0x30C8)
-$voices = [ordered]@{}
-$voices[$defaultName] = [ordered]@{ no_ref = $true }
-$null = Write-YwkJsonFile -Path (Join-Path $AppVoices 'voices.json') -Value $voices -Depth 6
 
-$ywkTable = [ordered]@{
-    schema  = 1
-    note    = 'distributor-side speaker table (display name, default caption, default parameters). Convoy D fills this in; the wrapper only reads it.'
-    voices  = [ordered]@{}
+# These two files are written as LITERAL text, not through ConvertTo-Json, and the reason is a
+# measurement: the two hosts pretty-print the same object differently, so the SAME sources gave two
+# different distributable trees.
+#   Windows PowerShell 5.1  voices.json 80 B / voices.ywk.json 596 B  (4-space, ':  ' after the key)
+#   PowerShell 7.6.5        voices.json 50 B / voices.ywk.json 345 B  (2-space, ': ')
+# Measured 2026-09-05 by writing the same [ordered] under each host back to back:
+#   pwsh.exe  voices.json 50 B sha256-16 54D5FB65A572A56E / powershell.exe 80 B 1FE5488B44C33D26.
+# Consequence while it stood: build/installer-build.ps1 had to carry TWO expected byte figures for
+# the tree, and the setup.exe did not reproduce byte for byte across hosts (design 14-3 / 14-4).
+# The shape of both files is fully known here, so there is nothing ConvertTo-Json is needed for.
+# The bytes below are the PowerShell 7 shape, so the recorded tree figures do not move.
+$jsonLf = "`n"
+$voicesText = (@(
+    '{',
+    ('  "' + $defaultName + '": {'),
+    '    "no_ref": true',
+    '  }',
+    '}'
+) -join $jsonLf) + $jsonLf
+$null = Write-YwkTextFile -Path (Join-Path $AppVoices 'voices.json') -Newline 'LF' -Text $voicesText
+
+$ywkNote = 'distributor-side speaker table (display name, default caption, default parameters). Convoy D fills this in; the wrapper only reads it.'
+$ywkText = (@(
+    '{',
+    '  "schema": 1,',
+    ('  "note": "' + $ywkNote + '",'),
+    '  "voices": {',
+    ('    "' + $defaultName + '": {'),
+    ('      "display_name": "' + $defaultName + '",'),
+    '      "preset": true,',
+    '      "no_ref": true,',
+    '      "caption": null,',
+    '      "defaults": {}',
+    '    }',
+    '  }',
+    '}'
+) -join $jsonLf) + $jsonLf
+$null = Write-YwkTextFile -Path (Join-Path $AppVoices 'voices.ywk.json') -Newline 'LF' -Text $ywkText
+
+# A literal is only safe if it is still JSON and still carries the reserved speaker. Both files are
+# read back and parsed here, so a typo in the text above stops the build instead of shipping.
+$voicesBytes = [int64](Get-Item -LiteralPath (Join-Path $AppVoices 'voices.json')).Length
+$ywkBytes = [int64](Get-Item -LiteralPath (Join-Path $AppVoices 'voices.ywk.json')).Length
+$voicesBack = ((Get-Content -LiteralPath (Join-Path $AppVoices 'voices.json') -Raw -Encoding UTF8) | ConvertFrom-Json)
+$ywkBack = ((Get-Content -LiteralPath (Join-Path $AppVoices 'voices.ywk.json') -Raw -Encoding UTF8) | ConvertFrom-Json)
+if ($voicesBack.PSObject.Properties.Name -notcontains $defaultName) {
+    throw 'voices/voices.json was written without the reserved no-reference speaker (decisions.md 16).'
 }
-$ywkTable.voices[$defaultName] = [ordered]@{
-    display_name = $defaultName
-    preset       = $true
-    no_ref       = $true
-    caption      = $null
-    defaults     = [ordered]@{}
+if ($ywkBack.voices.PSObject.Properties.Name -notcontains $defaultName) {
+    throw 'voices/voices.ywk.json was written without the reserved no-reference speaker (decisions.md 16).'
 }
-$null = Write-YwkJsonFile -Path (Join-Path $AppVoices 'voices.ywk.json') -Value $ywkTable -Depth 8
-Write-YwkLog -Message ('wrote voices/voices.json and voices/voices.ywk.json (default speaker U+30C7 U+30D5 U+30A9 U+30EB U+30C8)')
+if ([int]$ywkBack.schema -ne 1) {
+    throw ('voices/voices.ywk.json has schema ' + $ywkBack.schema + ' (expected 1).')
+}
+Write-YwkLog -Message ('wrote voices/voices.json (' + $voicesBytes + ' B) and voices/voices.ywk.json (' +
+    $ywkBytes + ' B) as literal text, host independent; parsed back OK ' +
+    '(default speaker U+30C7 U+30D5 U+30A9 U+30EB U+30C8)')
 
 # --------------------------------------------------------------------------- 4b. presets
 
@@ -413,6 +453,33 @@ if ($presetMissing.Count -gt 0) {
     throw ('voices/presets.json has status=done rows whose wav did not reach the app tree: ' +
            ($presetMissing -join ', '))
 }
+
+# --------------------------------------------------------------------------- 4c. bytecode sweep
+
+# The copy filter above drops __pycache__ on the way IN ($ExcludeDirs). This sweeps the OUTPUT,
+# which is a different question: build/out/app is a tree people RUN the server out of, and a run
+# without PYTHONDONTWRITEBYTECODE leaves __pycache__ behind (the installer seat measured 3
+# directories / 21 .pyc / 541,008 B in this tree on 2026-09-05). Those bytes are not part of the
+# distributable -- the .iss excludes them again in [Files] -- but a tree that carries them makes
+# the file count and the byte total of build/installer-build.ps1 gate A-1 lie, and leaves empty
+# directories for [UninstallDelete]'s "dirifempty {app}" to trip over. The ruling is that the
+# output side is swept here, so the gate can simply leave them out of its scan.
+$pycacheDirs = @(Get-ChildItem -LiteralPath $AppDir -Recurse -Directory -Force -Filter '__pycache__' -ErrorAction SilentlyContinue)
+$pycFiles = @(Get-ChildItem -LiteralPath $AppDir -Recurse -File -Force -Filter '*.pyc' -ErrorAction SilentlyContinue)
+$pycBytes = [int64]0
+foreach ($f in $pycFiles) { $pycBytes = $pycBytes + [int64]$f.Length }
+foreach ($d in $pycacheDirs) {
+    if (Test-Path -LiteralPath $d.FullName) {
+        Remove-Item -LiteralPath $d.FullName -Recurse -Force
+    }
+}
+foreach ($f in $pycFiles) {
+    if (Test-Path -LiteralPath $f.FullName) {
+        Remove-Item -LiteralPath $f.FullName -Force
+    }
+}
+Write-YwkLog -Message ('swept the output tree: ' + $pycacheDirs.Count + ' __pycache__ dir(s), ' +
+    $pycFiles.Count + ' .pyc file(s), ' + $pycBytes + ' bytes')
 
 # --------------------------------------------------------------------------- 5. postflight
 

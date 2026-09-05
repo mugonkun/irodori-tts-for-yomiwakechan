@@ -196,9 +196,20 @@ move "%LOCALAPPDATA%\irodori-tts-ywk" D:\ywk-data
 mklink /J "%LOCALAPPDATA%\irodori-tts-ywk" D:\ywk-data
 ```
 
-※ 非昇格で `/J` が張れるかは未実射。
-※ この形でアンインストールから「取得物も削除する」を選ぶと、**junction だけが消えて実体（`D:\ywk-data`）は残る**
-（Inno の `DelTree` は reparse point の中までは消さない）。実体は手で消すこと。
+※ 非昇格（管理者でない普通の窓）で `/J` が張れることは**実射で確かめた**（2026-09-05・`C:` の中で測った。
+`D:` 側は本席の停止域なので、別ドライブ相手の実射はまだ無い）。
+※ この形でアンインストールから「取得物も削除する」を選ぶと、**junction を通り抜けて実体（`D:\ywk-data`）の中身が消える**。
+アンインストーラが名指しで消すのは `%LOCALAPPDATA%\irodori-tts-ywk` の**下**（`runtime\`・`models\`・`cache\`・`logs\`・`miopen\`）で、
+Inno の `DelTree` の「reparse point の中までは消さない」免除が当たるのは junction **自身**だけだからである
+（`installer/irodori-tts-ywk.iss` の `CurUninstallStepChanged`）。話者と設定を消す 2 問目（`voices\`・`settings.json`）も同じ。
+**実体を残したいときは既定の「残す」を選ぶこと。**手で消す必要は無い。
+※ **junction 自身（`%LOCALAPPDATA%\irodori-tts-ywk` という路）は、どちらを選んでも残る。**
+アンインストーラは最後にデータ樹の根を畳もうとするが、**そこが junction なら畳まない**
+（`installer/irodori-tts-ywk.iss` の `IsReparsePoint`）。だから入れ直すときに `mklink /J` を張り直す必要は無い。
+2026-09-05 より前の版はここで junction を消していた（実体は残るが**路が消える**ので、入れ直すと空のデータ樹が
+`C:` に出来て旧樹が孤児になった）＝**是正済み**。
+※ 中身の削除（1 問目・2 問目）を junction 越しに実射した例はまだ無い（CHM の `DelTree` の逐語と `.iss` の行からの断定）。
+畳まないことだけは実射で確かめた（`RemoveDir` を junction に撃つと路が消えること・撃たなければ残ることの両方）。
 
 ### 5-4 アンインストール
 
