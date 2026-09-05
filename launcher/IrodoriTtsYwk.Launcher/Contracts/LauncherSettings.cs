@@ -99,6 +99,25 @@ public sealed class LauncherSettings
     [JsonPropertyName("acceptedNoticesSha256")]
     public string? AcceptedNoticesSha256 { get; set; }
 
+    /// <summary>
+    /// <b>展開に使った取得台帳</b>（<c>ledger/runtime-&lt;変種&gt;.json</c>）の sha256（裁定 91）。
+    /// <para>
+    /// <see cref="AppPaths.ResolvePythonExe"/> は <c>python.exe</c> の在否しか見ないので、
+    /// 配布物を新しい版に入れ替えても<b>古い実行系がそのまま使われる</b>。起動時にこの値と
+    /// 配布樹の台帳を突き合わせ、食い違ったら状態帯に「実行系を組み直す」1 手を出す。
+    /// null＝まだ 1 度も展開していない（または古い <c>settings.json</c>）＝<b>黙る</b>。
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("runtimeLedgerSha256")]
+    public string? RuntimeLedgerSha256 { get; set; }
+
+    /// <summary>
+    /// 実行系を展開したときのランチャの版（<see cref="AppVersion.Display"/>・裁定 91）。
+    /// 版だけが動いた（台帳は同じ）ときは<b>組み直しを勧めるが急かさない</b>ための欄である。
+    /// </summary>
+    [JsonPropertyName("installedAppVersion")]
+    public string? InstalledAppVersion { get; set; }
+
     /// <summary>ランチャの起動と同時にサーバを起こすか。</summary>
     [JsonPropertyName("autoStartServer")]
     public bool AutoStartServer { get; set; } = true;
@@ -163,6 +182,8 @@ public sealed class LauncherSettings
         ReadyTimeoutSeconds = ReadyTimeoutSeconds,
         FirstRunCompleted = FirstRunCompleted,
         AcceptedNoticesSha256 = AcceptedNoticesSha256,
+        RuntimeLedgerSha256 = RuntimeLedgerSha256,
+        InstalledAppVersion = InstalledAppVersion,
         AutoStartServer = AutoStartServer,
         ShowMemoryPanel = ShowMemoryPanel,
         LastTestVoice = LastTestVoice,

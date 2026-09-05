@@ -24,6 +24,20 @@
 #   f  the remove button's blocked reason is readable through UI Automation   (low 14)
 #   g  the 11 preset voices arrive from the app tree      (decisions 88 (5), 17)
 #
+# Round three (convoy D (3), decisions 92 "low left for D (3)" / 94 (1)) adds five more:
+#   h  the first run wizard is counted in PRESSES (decisions 94 (1): 9 today, 5 once every
+#      step that succeeded walks on by itself) and a FAILED step is proved to stop it
+#   i  the download cache is still there when the first shot is fired and GONE once that shot
+#      came back 200 -- read in BYTES               (decisions 90 Q-E2 (3), 94 (3))
+#   j  settings.json carries runtimeLedgerSha256 / installedAppVersion, and a ledger that no
+#      longer matches makes the window offer to rebuild the runtime   (decisions 91)
+#   k  a runtime whose python.exe cannot be started is told in <= 10 s with a one line reason
+#      (design 20-5 (1): the window used to sit there for 60 s saying nothing at all)
+#   l  the "delete the download cache" button really empties it      (decisions 90 Q-E2 (3))
+#
+# h / j / k / l each need their own window (settings are read when the launcher composes them),
+# load no model, open no port and fetch NOTHING: -RoundThreeOnly runs just those four.
+#
 # It never touches 8088 / 7861 / 18088, never writes to %LOCALAPPDATA%\irodori-tts-ywk, and always
 # tree-kills what it started (even on failure -- the teardown is in a finally block).
 #
@@ -32,6 +46,8 @@
 #   pwsh ... -File probe/d-launch-probe.ps1 -Port 18096 -Variant cpu -ReadyTimeoutSeconds 300
 #   pwsh ... -File probe/d-launch-probe.ps1 -BadDeviceOnly     (D-1 only: cuda:9 must fail in <= 15 s)
 #   pwsh ... -File probe/d-launch-probe.ps1 -GateOnly          (the variant gate only, no model load)
+#   pwsh ... -File probe/d-launch-probe.ps1 -RoundThreeOnly    (h/j/k/l only: no model, no server)
+#   pwsh ... -File probe/d-launch-probe.ps1 -DryRun            (print the plan, touch nothing)
 #
 # Exit code 0 = every step passed. Non-zero = the number of failed steps.
 
@@ -56,7 +72,24 @@ param(
     [switch]$SkipLiveness,
     [switch]$BadDeviceOnly,
     [switch]$GateOnly,
-    [switch]$KeepDataDir
+    [switch]$KeepDataDir,
+    # ---- round three (decisions 92 / 94) ----
+    # Each of these three runs alone and none of them ever listens, so 18097 is shared; the bad
+    # python run is the only one that presses "start the server", so it gets a port of its own.
+    [int]$WizardPort = 18097,
+    [int]$LedgerPort = 18097,
+    [int]$CachePort = 18097,
+    [int]$BadPythonPort = 18098,
+    # design 20-5 (1): the window was silent for 60 s. The budget the seat asked for is 10 s.
+    [double]$BadPythonBudgetSeconds = 10,
+    [switch]$SkipRoundThree,
+    [switch]$RoundThreeOnly,
+    # E2E SEAT ONLY: -WizardFullRun really fetches (4.7 GB over the wire). Without it step h
+    # runs offline against a ledger that cannot be planned from, and counts the presses up to
+    # the failure instead of up to the end.
+    [switch]$WizardFullRun,
+    [int]$WizardFullRunTimeoutSeconds = 1800,
+    [switch]$DryRun
 )
 
 Set-StrictMode -Version Latest
@@ -108,6 +141,17 @@ $T = [ordered]@{
     Dash       = New-JpText 0x2014                                   # the em dash used for "unknown"
     # A line long enough that a 40 step shot is still running when the kill lands (e-2).
     LongLine   = (New-JpText 0x3053, 0x3093, 0x306B, 0x3061, 0x306F, 0x3002) * 20
+
+    # ---- round three (decisions 92 / 94) ----
+    Estimate   = New-JpText 0x6982, 0x7B97                           # "estimate" (the word itself)
+    Ledger     = New-JpText 0x53F0, 0x5E33                           # "ledger"
+    Fetch      = New-JpText 0x53D6, 0x5F97                           # "fetch"  (wizard step 3 title)
+    Finished   = New-JpText 0x5B8C, 0x4E86                           # "done"   (wizard step 7 title)
+    ToTry      = New-JpText 0x8A66, 0x3057, 0x6483, 0x3061, 0x3078   # "to the try screen" (last press)
+    # "rebuild the runtime" -- the one move decisions 91 asks for when the ledger stops matching.
+    Rebuild    = New-JpText 0x5B9F, 0x884C, 0x7CFB, 0x3092, 0x7D44, 0x307F, 0x76F4, 0x3059
+    # "delete the download cache" -- the button of decisions 90 Q-E2 (3).
+    ClearCache = New-JpText 0x53D6, 0x5F97, 0x30AD, 0x30E3, 0x30C3, 0x30B7, 0x30E5, 0x3092, 0x6D88, 0x3059
 }
 
 $script:Failures = @()
@@ -439,6 +483,890 @@ function Invoke-GateProbe {
     }
 }
 
+# ================================================================= round three helpers (92 / 94)
+
+function Get-DirBytes {
+    <#
+      .SYNOPSIS
+        Total bytes under a directory (0 when it is not there).
+      .DESCRIPTION
+        The cache steps (i / l) are read in BYTES on purpose: "the cache is gone" has to stay true
+        when the sweep leaves the empty directory behind, and has to stay false when it deletes the
+        names it knows and leaves a 2 GiB .part.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return [long]0 }
+    $total = [long]0
+    foreach ($f in @(Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction SilentlyContinue)) {
+        $total += [long]$f.Length
+    }
+    return $total
+}
+
+function New-CacheFixture {
+    <#
+      .SYNOPSIS
+        Put a few harmless files into <data>\cache and return their total size in bytes.
+      .DESCRIPTION
+        This probe never downloads anything (only the E2E seat is allowed to fetch), so the cache the
+        launcher is asked to delete has to be made by hand. The three names are the shapes the fetcher
+        really leaves behind -- a verified original, a half written .part, and one nested directory --
+        so a sweep that only knows one of the three is caught.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$CacheDir,
+        [int]$KiB = 64
+    )
+    $null = New-Item -ItemType Directory -Path $CacheDir -Force
+    $blob = New-Object byte[] ($KiB * 1024)
+    $sub = Join-Path $CacheDir 'ywk-probe-sub'
+    $null = New-Item -ItemType Directory -Path $sub -Force
+    [System.IO.File]::WriteAllBytes((Join-Path $CacheDir 'ywk-probe-cache-1.whl'), $blob)
+    [System.IO.File]::WriteAllBytes((Join-Path $CacheDir 'ywk-probe-cache-2.whl.part'), $blob)
+    [System.IO.File]::WriteAllBytes((Join-Path $sub 'ywk-probe-cache-3.bin'), $blob)
+    $bytes = Get-DirBytes -Path $CacheDir
+    Write-Host ('[cache] seeded ' + $CacheDir + ' with ' + $bytes + ' B in 3 files')
+    return $bytes
+}
+
+function Wait-ForDirEmpty {
+    <#
+      .SYNOPSIS
+        Wait until a directory holds 0 bytes; return the last reading and how long it took.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [double]$TimeoutSeconds = 30
+    )
+    $start = Get-Date
+    while ($true) {
+        $bytes = Get-DirBytes -Path $Path
+        if ($bytes -eq 0) {
+            return [pscustomobject]@{ ok = $true; bytes = $bytes; elapsed = ((Get-Date) - $start).TotalSeconds }
+        }
+        if (((Get-Date) - $start).TotalSeconds -ge $TimeoutSeconds) {
+            return [pscustomobject]@{ ok = $false; bytes = $bytes; elapsed = ((Get-Date) - $start).TotalSeconds }
+        }
+        Start-Sleep -Milliseconds 500
+    }
+}
+
+function Get-Sha256Hex {
+    <#
+      .SYNOPSIS
+        Lower case sha256 hex of a file, without Get-FileHash.
+      .DESCRIPTION
+        MEASURED 2026-09-05 on this machine: Windows PowerShell 5.1 started from a pwsh session
+        inherits PowerShell 7's PSModulePath, Microsoft.PowerShell.Utility does not auto load, and
+        Get-FileHash dies with "the term Get-FileHash is not recognized". build/Common.ps1 already
+        carries the same fallback for the same reason; probe/ cannot dot-source that file, so the
+        shape is repeated here.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if ($null -ne (Get-Command 'Get-FileHash' -ErrorAction SilentlyContinue)) {
+        return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $fs = [System.IO.File]::Open($Path, [System.IO.FileMode]::Open,
+            [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+        try {
+            $bytes = $sha.ComputeHash($fs)
+        } finally {
+            $fs.Dispose()
+        }
+    } finally {
+        $sha.Dispose()
+    }
+    return (($bytes | ForEach-Object { $_.ToString('x2') }) -join '')
+}
+
+function Get-ElementLabel {
+    <#
+      .SYNOPSIS
+        One printable line for an element (type / AutomationId / Name).
+      .DESCRIPTION
+        The round three screen is being written by another seat while this file is being written, so
+        the steps that cannot know an AutomationId yet find their element by name and PRINT what they
+        found. The id in that line is what the integration seat pins afterwards.
+    #>
+    [CmdletBinding()]
+    param($Element)
+    if ($null -eq $Element) { return '<not found>' }
+    $type = '?'
+    $id = ''
+    $name = ''
+    try { $type = $Element.Current.ControlType.ProgrammaticName.Replace('ControlType.', '') } catch { }
+    try { $id = [string]$Element.Current.AutomationId } catch { }
+    try { $name = ([string]$Element.Current.Name) -replace "`r?`n", ' / ' } catch { }
+    return ('[' + $type + "] id='" + $id + "' name='" + $name + "'")
+}
+
+function Find-ByNameLike {
+    <#
+      .SYNOPSIS
+        The first element under Root whose Name CONTAINS the text (id unknown).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]$Root,
+        [Parameter(Mandatory = $true)][string]$Text,
+        [double]$TimeoutSeconds = 5
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $true_ = [System.Windows.Automation.Condition]::TrueCondition
+    while ($true) {
+        foreach ($el in @($Root.FindAll($script:TS::Descendants, $true_))) {
+            $name = ''
+            try { $name = [string]$el.Current.Name } catch { continue }
+            if ($name -like ('*' + $Text + '*')) { return $el }
+        }
+        if ((Get-Date) -ge $deadline) { return $null }
+        Start-Sleep -Milliseconds 400
+    }
+}
+
+function Find-ByIdAny {
+    <#
+      .SYNOPSIS
+        The first element that matches any of the candidate AutomationIds.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]$Root,
+        [Parameter(Mandatory = $true)][string[]]$Id,
+        [int]$TimeoutSeconds = 1
+    )
+    foreach ($candidate in $Id) {
+        $el = Find-ById -Root $Root -Id $candidate -TimeoutSeconds $TimeoutSeconds
+        if ($null -ne $el) { return $el }
+    }
+    return $null
+}
+
+function Invoke-Element {
+    <#
+      .SYNOPSIS
+        Press an element found by scan (InvokePattern, then Toggle, then SelectionItem).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$Element)
+    try {
+        ($Element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)).Invoke()
+        Start-Sleep -Milliseconds 400
+        return $true
+    } catch { }
+    try {
+        ($Element.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)).Toggle()
+        Start-Sleep -Milliseconds 400
+        return $true
+    } catch { }
+    return $false
+}
+
+function Close-StrayDialog {
+    <#
+      .SYNOPSIS
+        Close any window of the process that is not the main window, and say what it was.
+      .DESCRIPTION
+        Step k suspects the shell's own "this app can't run on your PC" box (design 20-5 (1)), and an
+        unattended run must never be parked on a modal nobody will press. Whatever is closed here is
+        printed, because IF something is closed that is itself the finding.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$Proc)
+    $closed = @()
+    foreach ($w in @(Get-ProcessWindows -Proc $Proc)) {
+        $id = ''
+        $name = ''
+        try { $id = [string]$w.Current.AutomationId } catch { }
+        try { $name = [string]$w.Current.Name } catch { }
+        if ($id -eq 'MainWindow') { continue }
+        Write-Host ('[dialog] ' + $name + ' (id=' + $id + ')')
+        $closed += $name
+        try {
+            ($w.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)).Close()
+        } catch {
+            Write-Host ('[dialog] close failed: ' + $_.Exception.Message)
+        }
+    }
+    return @($closed)
+}
+
+function Read-SettingsDoc {
+    <#
+      .SYNOPSIS
+        settings.json as an object (null when it is not there).
+      .DESCRIPTION
+        -Encoding UTF8 is not optional: Windows PowerShell 5.1 reads a BOM-less file with the
+        machine's ANSI code page (probe/README section 2, convoy D).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $null }
+    return (Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json)
+}
+
+function Get-JsonMember {
+    <#
+      .SYNOPSIS
+        One member of a parsed JSON object, or null when the member is not there.
+    #>
+    [CmdletBinding()]
+    param($Doc, [Parameter(Mandatory = $true)][string]$Name)
+    if ($null -eq $Doc) { return $null }
+    if ($Doc.PSObject.Properties.Name -notcontains $Name) { return $null }
+    return $Doc.$Name
+}
+
+function Remove-PrivateTree {
+    <#
+      .SYNOPSIS
+        Remove a scratch tree that may contain junctions, WITHOUT following them.
+      .DESCRIPTION
+        Remove-Item -Recurse walks into a junction on Windows PowerShell 5.1, and what these junctions
+        point at is build/out/app. So every reparse point is deleted as a link first (DirectoryInfo
+        .Delete() removes the junction, never the target), exactly the way the gate teardown does.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Root)
+    if (-not (Test-Path -LiteralPath $Root)) { return }
+    foreach ($child in @(Get-ChildItem -LiteralPath $Root -Force -ErrorAction SilentlyContinue)) {
+        $isLink = $false
+        try { $isLink = (($child.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) } catch { }
+        if ($isLink) {
+            try { $child.Delete() } catch { Write-Host ('[tree] junction not removed: ' + $child.FullName) }
+            continue
+        }
+        Remove-Item -LiteralPath $child.FullName -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    Remove-Item -LiteralPath $Root -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+function New-PrivateAppTree {
+    <#
+      .SYNOPSIS
+        A private app tree whose ledger directory this probe is allowed to break.
+      .DESCRIPTION
+        Steps h and j both need a distribution tree they can change; build/out/app is read only here.
+        server/ licenses/ voices/ are JUNCTIONS onto the real tree (no elevation, nothing written
+        through them) and only ledger/ is a real directory of copies.
+        -BreakRuntimeLedger renames the first item's "sha256" key, which is the cheapest honest
+        failure the first run can have WITHOUT A SOCKET: LedgerReader marks the item unverifiable,
+        FetchPlanner throws LedgerException ("an item with no sha256" -- Services/Ledger/
+        FetchPlanner.cs:192), FirstRunViewModel.TryPlan catches it and the download step returns false
+        with a one line reason (ViewModels/FirstRunViewModel.cs:637-643).
+        -SkipVcRedistLedger leaves vc_redist.json out, and with no vc_redist ledger the launcher skips
+        that step altogether (MainViewModel.cs:161-166 returns null, FirstRunViewModel.cs:700-703
+        treats null as "this step does not exist"). That is what keeps a machine whose msvcp140.dll is
+        below the ledger minimum from pulling 24 MiB during a probe run.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$SourceAppDir,
+        [Parameter(Mandatory = $true)][string]$Variant,
+        [switch]$BreakRuntimeLedger,
+        [switch]$SkipVcRedistLedger
+    )
+    Remove-PrivateTree -Root $Root
+    $null = New-Item -ItemType Directory -Path $Root -Force
+    foreach ($name in @('server', 'licenses', 'voices')) {
+        $target = Join-Path $SourceAppDir $name
+        if (Test-Path -LiteralPath $target) {
+            $null = New-Item -ItemType Junction -Path (Join-Path $Root $name) -Value $target
+        }
+    }
+    $ledgerDir = Join-Path $Root 'ledger'
+    $null = New-Item -ItemType Directory -Path $ledgerDir -Force
+    $copied = 0
+    foreach ($file in @(Get-ChildItem -LiteralPath (Join-Path $SourceAppDir 'ledger') -Filter '*.json' -File -ErrorAction SilentlyContinue)) {
+        if ($SkipVcRedistLedger -and ($file.Name -eq 'vc_redist.json')) { continue }
+        Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $ledgerDir $file.Name) -Force
+        $copied++
+    }
+    Write-Host ('[tree] private app tree = ' + $Root + ' (ledger json = ' + $copied + ')')
+
+    if ($BreakRuntimeLedger) {
+        $path = Join-Path $ledgerDir ('runtime-' + $Variant + '.json')
+        if (-not (Test-Path -LiteralPath $path)) {
+            Write-Host ('[tree] nothing to break: ' + $path)
+        } else {
+            $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+            $marker = '"sha256"'
+            $at = $text.IndexOf($marker, [System.StringComparison]::Ordinal)
+            if ($at -lt 0) {
+                Write-Host ('[tree] no sha256 key in ' + $path)
+            } else {
+                $text = $text.Substring(0, $at) + '"sha256_removed_by_the_probe"' + $text.Substring($at + $marker.Length)
+                [System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding($false)))
+                Write-Host ('[tree] broke ' + $path + ' (the first item has no sha256 any more)')
+            }
+        }
+    }
+    return $Root
+}
+
+function Edit-LedgerBytes {
+    <#
+      .SYNOPSIS
+        Change a ledger without making it invalid (step j: the sha256 of the FILE must move).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $false }
+    $text = Get-Content -LiteralPath $Path -Raw -Encoding UTF8
+    $marker = '"generated"'
+    $at = $text.IndexOf($marker, [System.StringComparison]::Ordinal)
+    if ($at -lt 0) { return $false }
+    $text = $text.Substring(0, $at) + '"probe_touched": true, ' + $text.Substring($at)
+    [System.IO.File]::WriteAllText($Path, $text, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host ('[tree] the ledger bytes moved: ' + $Path)
+    return $true
+}
+
+function Get-VariantComboToken {
+    <#
+      .SYNOPSIS
+        An ASCII fragment of the display name of a variant (RuntimeVariants.DisplayName).
+      .DESCRIPTION
+        The wizard's combo shows display names ("Radeon gfx1151 ..." / "CUDA 13.0 ..."), so the probe
+        picks the row by a fragment it can write in ASCII instead of by the id.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Variant)
+    if ($Variant -like '*gfx*') { return 'gfx1151' }
+    if ($Variant -eq 'cu130') { return '13.0' }
+    if ($Variant -eq 'cu126') { return '12.6' }
+    if ($Variant -eq 'cpu') { return 'CPU' }
+    return $Variant
+}
+
+# ================================================================= h. the wizard, counted in presses
+
+$script:WizardPresses = 0
+
+function Invoke-WizardPress {
+    <#
+      .SYNOPSIS
+        Press one thing in the wizard AND count it (decisions 94 (1) counts presses, not steps).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]$Root,
+        [Parameter(Mandatory = $true)][string]$Id,
+        [Parameter(Mandatory = $true)][string]$What
+    )
+    $script:WizardPresses++
+    Write-Host ('[wizard] press ' + $script:WizardPresses + ' = ' + $What)
+    return (Invoke-ButtonById -Root $Root -Id $Id -TimeoutSeconds 15)
+}
+
+function Invoke-WizardPressProbe {
+    <#
+      .SYNOPSIS
+        decisions 94 (1) -- COUNT THE PRESSES of the first run wizard and prove a failed step stops it.
+      .DESCRIPTION
+        The acceptance line is "operator presses <= 6" and convoy E (2) measured NINE:
+        consent box, "agree and continue", the variant, "start fetching with this build", then FOUR
+        times "next" (fetch / unpack / models / start), then "to the try screen". The ruling is that
+        every step which SUCCEEDS walks on by itself and only a step that FAILED stops, which takes
+        the count to FIVE.
+        This probe pulls nothing. The wizard is driven against a private app tree whose runtime ledger
+        cannot be planned from, so the fetch step fails on the spot with a one line reason, and what
+        is measured is (a) the presses up to the failure and (b) that the failed step really does stop
+        the wizard where it is. The other half of the ruling -- that four presses have disappeared
+        from a run where every step succeeds -- can only be measured in a run that really fetches, so
+        it lives behind -WizardFullRun and belongs to the E2E seat.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Variant,
+        [Parameter(Mandatory = $true)][int]$Port,
+        [Parameter(Mandatory = $true)][string]$DataDir,
+        [Parameter(Mandatory = $true)][string]$AppTreeRoot,
+        [switch]$FullRun
+    )
+
+    $script:WizardPresses = 0
+    $proc = $null
+    try {
+        $null = New-LauncherFixture -DataDir $DataDir -Variant $Variant -Port $Port -FirstRunCompleted $false
+        $cacheDir = Join-Path $DataDir 'cache'
+        if ($FullRun) {
+            $null = New-PrivateAppTree -Root $AppTreeRoot -SourceAppDir $AppDir -Variant $Variant
+        } else {
+            $null = New-PrivateAppTree -Root $AppTreeRoot -SourceAppDir $AppDir -Variant $Variant `
+                -BreakRuntimeLedger -SkipVcRedistLedger
+        }
+
+        $proc = Start-Launcher -Exe $Exe -AppDir $AppTreeRoot -RuntimeRoot $RuntimeRoot -DataDir $DataDir
+        $null = Get-MainWindow -Proc $proc -TimeoutSeconds 60
+        $wizard = Get-DialogWindow -Proc $proc -TimeoutSeconds 30
+        $wizardId = ''
+        if ($null -ne $wizard) { $wizardId = [string]$wizard.Current.AutomationId }
+        Add-Step 'the wizard opens by itself when the first run was never done' (
+            $wizardId -eq 'FirstRunWizard') ('window id = ' + $wizardId)
+        if ($wizardId -ne 'FirstRunWizard') { return }
+
+        Write-Host ('[wizard] step = ' + (Get-TextById -Root $wizard -Id 'FirstRunStepTitle') +
+            '  (' + (Get-TextById -Root $wizard -Id 'FirstRunStepNumber') + ')')
+        Write-Host ('[wizard] size = ' + (Get-TextById -Root $wizard -Id 'FirstRunSizeText'))
+
+        # press 1 -- the consent box (decisions 46: it is only usable when the notices really loaded)
+        $script:WizardPresses++
+        Write-Host ('[wizard] press ' + $script:WizardPresses + ' = the consent box')
+        $null = Set-ToggleById -Root $wizard -Id 'FirstRunAcceptCheck' -On $true
+
+        # press 2 -- "agree and continue"
+        $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'agree and continue'
+        Start-Sleep -Milliseconds 800
+
+        # press 3 -- the variant
+        $choices = @(Get-ComboItemNames -Root $wizard -Id 'FirstRunVariantCombo')
+        Write-Host ('[wizard] variants = ' + ($choices -join ' | '))
+        $script:WizardPresses++
+        Write-Host ('[wizard] press ' + $script:WizardPresses + ' = the variant')
+        $token = Get-VariantComboToken -Variant $Variant
+        $picked = ''
+        try {
+            $picked = Select-ComboItemById -Root $wizard -Id 'FirstRunVariantCombo' -ItemText $token -Contains
+        } catch {
+            if ($choices.Count -ge 1) {
+                $picked = Select-ComboItemById -Root $wizard -Id 'FirstRunVariantCombo' -ItemText $choices[0]
+            }
+        }
+        Write-Host ('[wizard] picked = ' + $picked)
+
+        # press 4 -- "start fetching with this build"
+        $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'start fetching with this build'
+
+        if ($FullRun) {
+            # E2E seat only. Nothing below presses anything: reaching the last step without a press is
+            # the whole proof that the four "next" presses are gone.
+            $done = Wait-ForPattern -Root $wizard -Id 'FirstRunStepTitle' -Pattern ([regex]::Escape($T.Finished)) `
+                -TimeoutSeconds $WizardFullRunTimeoutSeconds -IntervalMilliseconds 1000
+            Write-Host ('[wizard] last step = ' + $done.text + ' after ' + [math]::Round($done.elapsed, 1) + ' s')
+            Add-Step 'every step that succeeded walked on without a press' $done.ok (
+                'reached ' + $done.text + ' in ' + [math]::Round($done.elapsed, 1) + ' s with ' +
+                $script:WizardPresses + ' presses')
+            if ($done.ok) {
+                $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'to the try screen'
+                Start-Sleep -Seconds 2
+            }
+            Add-Step 'the whole first run costs five presses' ($script:WizardPresses -eq 5) (
+                'presses = ' + $script:WizardPresses + ' (was 9 in convoy E (2), the acceptance line is 6)')
+            $settings = Read-SettingsDoc -Path (Join-Path $DataDir 'settings.json')
+            Add-Step 'the finished first run is written down' (
+                [bool](Get-JsonMember -Doc $settings -Name 'firstRunCompleted')) (
+                'firstRunCompleted = ' + (Get-JsonMember -Doc $settings -Name 'firstRunCompleted'))
+            return
+        }
+
+        # ---- offline shape: the fetch step must fail here, at once, with a reason ----
+        $failed = Wait-ForPattern -Root $wizard -Id 'FirstRunMessageText' -Pattern ([regex]::Escape($T.Ledger)) `
+            -TimeoutSeconds 30 -IntervalMilliseconds 300
+        $title = Get-TextById -Root $wizard -Id 'FirstRunStepTitle'
+        $number = Get-TextById -Root $wizard -Id 'FirstRunStepNumber'
+        $message = Get-TextById -Root $wizard -Id 'FirstRunMessageText'
+        if ($null -eq $title) { $title = '' }
+        if ($null -eq $number) { $number = '' }
+        if ($null -eq $message) { $message = '' }
+        Write-Host ('[wizard] step    = ' + $title + '  (' + $number + ')')
+        Write-Host ('[wizard] message = ' + $message)
+
+        Add-Step 'a ledger that cannot be planned from fails the fetch step with a reason' (
+            $failed.ok -and ($message -like ('*' + $T.Ledger + '*'))) (
+            $message + ' [' + [math]::Round($failed.elapsed, 2) + ' s]')
+        Add-Step 'the failed step keeps the wizard where it failed' (
+            $title -like ('*' + $T.Fetch + '*')) ('step = ' + $title + ' (' + $number + ')')
+        Add-Step 'the presses up to the failed step are four' ($script:WizardPresses -eq 4) (
+            'presses = ' + $script:WizardPresses +
+            ' (consent, agree, variant, start; the fifth is "to the try screen")')
+        Add-Step 'the wizard fetched nothing at all' ((Get-DirBytes -Path $cacheDir) -eq 0) (
+            'cache = ' + [string](Get-DirBytes -Path $cacheDir) + ' B')
+
+        # press 5 -- "next" on a failed step retries THAT step; it must not walk on to the next one.
+        $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'next, on the failed step'
+        Start-Sleep -Seconds 2
+        $title2 = Get-TextById -Root $wizard -Id 'FirstRunStepTitle'
+        if ($null -eq $title2) { $title2 = '' }
+        Write-Host ('[wizard] step after the retry = ' + $title2)
+        Add-Step 'pressing next on a failed step retries it instead of walking on' (
+            $title2 -like ('*' + $T.Fetch + '*')) ('step = ' + $title2)
+
+        try {
+            ($wizard.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)).Close()
+        } catch {
+            Write-Host ('[wizard] close failed: ' + $_.Exception.Message)
+        }
+        Start-Sleep -Milliseconds 800
+        $settings = Read-SettingsDoc -Path (Join-Path $DataDir 'settings.json')
+        $completed = Get-JsonMember -Doc $settings -Name 'firstRunCompleted'
+        Add-Step 'a first run that failed is not written down as done' (-not [bool]$completed) (
+            'firstRunCompleted = ' + $completed)
+    } catch {
+        Add-Step 'the wizard press count runs to the end' $false $_.Exception.Message
+    } finally {
+        if ($null -ne $proc) {
+            $strays = @(Stop-Launcher -Proc $proc -StrayCommandLinePattern @('*ywk_server*'))
+            Add-Step 'the wizard run leaves nothing behind' ($strays.Count -eq 0) ('strays=' + $strays.Count)
+        }
+        if (-not $KeepDataDir) {
+            Remove-PrivateTree -Root $AppTreeRoot
+            if (Test-Path -LiteralPath $DataDir) {
+                Remove-Item -LiteralPath $DataDir -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
+# ================================================================= j. the runtime ledger stamp
+
+function Test-RebuildOffer {
+    <#
+      .SYNOPSIS
+        Is the window offering to rebuild the runtime (decisions 91)? Returns the element or null.
+      .DESCRIPTION
+        The AutomationId is not published yet (the launcher seat is writing the screen while this file
+        is written), so the offer is looked up by the candidate ids first and by its words second, and
+        whatever is found is printed with its real id.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]$Window,
+        [double]$TimeoutSeconds = 15
+    )
+    $ids = @(
+        'StatusRebuildRuntimeButton', 'StatusRebuildButton', 'StatusLedgerMismatchText',
+        'StatusRuntimeMismatchText', 'MainRebuildRuntimeButton', 'SettingsRebuildRuntimeButton')
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ($true) {
+        $el = Find-ByIdAny -Root $Window -Id $ids -TimeoutSeconds 1
+        if ($null -ne $el) { return $el }
+        $el = Find-ByNameLike -Root $Window -Text $T.Rebuild -TimeoutSeconds 1
+        if ($null -ne $el) { return $el }
+        if ((Get-Date) -ge $deadline) { break }
+        Start-Sleep -Milliseconds 500
+    }
+    # WPF builds the content of a TabItem only when it is selected, so "not on the status page" is
+    # not "not there": sweep the settings page once before saying no. This also makes the NEGATIVE
+    # step (a matching ledger offers nothing) mean what it says.
+    try {
+        $null = Select-Tab -Window $Window -TabId 'TabSettings'
+        $el = Find-ByIdAny -Root $Window -Id $ids -TimeoutSeconds 1
+        if ($null -eq $el) { $el = Find-ByNameLike -Root $Window -Text $T.Rebuild -TimeoutSeconds 1 }
+        $null = Select-Tab -Window $Window -TabId 'TabStatus'
+        return $el
+    } catch {
+        Write-Host ('[ledger] the settings page could not be swept: ' + $_.Exception.Message)
+        return $null
+    }
+}
+
+function Invoke-LedgerStampProbe {
+    <#
+      .SYNOPSIS
+        decisions 91 -- settings.json carries runtimeLedgerSha256 / installedAppVersion, and a ledger
+        that no longer matches makes the window offer to rebuild the runtime.
+      .DESCRIPTION
+        Three windows on a private app tree (AppPaths only ever reads it, so the copy costs three
+        junctions and a handful of json):
+          1  a data directory with no stamps at all: the launcher must write them.
+          2  the stamps in place and the ledger untouched: the offer must NOT be on screen.
+          3  the ledger bytes moved: the offer must appear.
+        No server is started and no port is opened in any of the three.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Variant,
+        [Parameter(Mandatory = $true)][int]$Port,
+        [Parameter(Mandatory = $true)][string]$DataDir,
+        [Parameter(Mandatory = $true)][string]$AppTreeRoot
+    )
+
+    $proc = $null
+    $settingsPath = Join-Path $DataDir 'settings.json'
+    $ledgerPath = Join-Path $AppTreeRoot ('ledger\runtime-' + $Variant + '.json')
+    try {
+        $null = New-LauncherFixture -DataDir $DataDir -Variant $Variant -Port $Port
+        $null = New-PrivateAppTree -Root $AppTreeRoot -SourceAppDir $AppDir -Variant $Variant
+
+        # ---- 1. the stamps are written -------------------------------------------------
+        $proc = Start-Launcher -Exe $Exe -AppDir $AppTreeRoot -RuntimeRoot $RuntimeRoot -DataDir $DataDir
+        $win = Get-MainWindow -Proc $proc -TimeoutSeconds 60
+        $version = Get-TextById -Root $win -Id 'MainVersionText'
+        $sha = $null
+        $stampedVersion = $null
+        $waited = 0
+        while ($waited -lt 20) {
+            $doc = Read-SettingsDoc -Path $settingsPath
+            $sha = Get-JsonMember -Doc $doc -Name 'runtimeLedgerSha256'
+            $stampedVersion = Get-JsonMember -Doc $doc -Name 'installedAppVersion'
+            if ((-not [string]::IsNullOrWhiteSpace([string]$sha)) -and
+                (-not [string]::IsNullOrWhiteSpace([string]$stampedVersion))) { break }
+            Start-Sleep -Seconds 1
+            $waited++
+        }
+        Write-Host ('[ledger] window version   = ' + $version)
+        Write-Host ('[ledger] runtimeLedgerSha256 = ' + $sha)
+        Write-Host ('[ledger] installedAppVersion = ' + $stampedVersion)
+        Add-Step 'settings.json is stamped with the runtime ledger sha256' (
+            ([string]$sha) -match '^[0-9a-fA-F]{64}$') ('runtimeLedgerSha256 = ' + $sha + ' after ' + $waited + ' s')
+        Add-Step 'settings.json is stamped with the version that was installed' (
+            -not [string]::IsNullOrWhiteSpace([string]$stampedVersion)) (
+            'installedAppVersion = ' + $stampedVersion + ' :: window says ' + $version)
+
+        $offerBefore = Test-RebuildOffer -Window $win -TimeoutSeconds 3
+        Add-Step 'a ledger that still matches offers nothing' ($null -eq $offerBefore) (
+            Get-ElementLabel $offerBefore)
+
+        $null = Stop-Launcher -Proc $proc -StrayCommandLinePattern @('*ywk_server*')
+        $proc = $null
+
+        # If the launcher did not stamp anything, put a stamp there by hand so the COMPARISON can
+        # still be measured, and say so in the detail (the two are different findings).
+        $guessed = $false
+        if (([string]$sha) -notmatch '^[0-9a-fA-F]{64}$') {
+            if (Test-Path -LiteralPath $ledgerPath) {
+                $sha = Get-Sha256Hex -Path $ledgerPath
+                $null = Set-SettingsValue -Path $settingsPath -Name 'runtimeLedgerSha256' -Value $sha
+                $guessed = $true
+                Write-Host ('[ledger] the probe stamped runtimeLedgerSha256 = ' + $sha + ' by hand')
+            }
+        }
+
+        # ---- 2. the stamp matches: no offer --------------------------------------------
+        $proc = Start-Launcher -Exe $Exe -AppDir $AppTreeRoot -RuntimeRoot $RuntimeRoot -DataDir $DataDir
+        $win = Get-MainWindow -Proc $proc -TimeoutSeconds 60
+        Start-Sleep -Seconds 2
+        $quiet = Test-RebuildOffer -Window $win -TimeoutSeconds 5
+        Add-Step 'the same ledger, the same stamp, and still no offer' ($null -eq $quiet) (
+            'guessed stamp = ' + $guessed + ' :: ' + (Get-ElementLabel $quiet))
+        $null = Stop-Launcher -Proc $proc -StrayCommandLinePattern @('*ywk_server*')
+        $proc = $null
+
+        # ---- 3. the ledger moved: the offer appears ------------------------------------
+        $moved = Edit-LedgerBytes -Path $ledgerPath
+        Add-Step 'the probe could break the ledger it copied' $moved $ledgerPath
+        $proc = Start-Launcher -Exe $Exe -AppDir $AppTreeRoot -RuntimeRoot $RuntimeRoot -DataDir $DataDir
+        $win = Get-MainWindow -Proc $proc -TimeoutSeconds 60
+        $offer = Test-RebuildOffer -Window $win -TimeoutSeconds 20
+        Write-Host ('[ledger] offer   = ' + (Get-ElementLabel $offer))
+        Write-Host ('[ledger] notices = ' + (Get-TextById -Root $win -Id 'StatusNoticesText' -TimeoutSeconds 3))
+        Write-Host ('[ledger] reason  = ' + (Get-TextById -Root $win -Id 'StatusReasonText' -TimeoutSeconds 3))
+        Add-Step 'a ledger that no longer matches offers to rebuild the runtime' ($null -ne $offer) (
+            Get-ElementLabel $offer)
+    } catch {
+        Add-Step 'the ledger stamp probe runs to the end' $false $_.Exception.Message
+    } finally {
+        if ($null -ne $proc) {
+            $strays = @(Stop-Launcher -Proc $proc -StrayCommandLinePattern @('*ywk_server*'))
+            Add-Step 'the ledger stamp run leaves nothing behind' ($strays.Count -eq 0) ('strays=' + $strays.Count)
+        }
+        if (-not $KeepDataDir) {
+            Remove-PrivateTree -Root $AppTreeRoot
+            if (Test-Path -LiteralPath $DataDir) {
+                Remove-Item -LiteralPath $DataDir -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
+# ================================================================= k. a python.exe that cannot start
+
+function Invoke-BadPythonProbe {
+    <#
+      .SYNOPSIS
+        design 20-5 (1) -- a runtime whose python.exe is not an executable must be told at once.
+      .DESCRIPTION
+        The finding convoy D (2) left open: pressing "start the server" against such a runtime left
+        the window silent for SIXTY SECONDS (state "stopped", not one line in the log band, no child,
+        no port), while the same materials fed straight to ServerLaunchPlan/ServerProcess came back in
+        8 ms with the reason. The GPU enumeration that runs first (MainViewModel.StartServerAsync's
+        first await) never returned, and AsyncRelayCommand swallows what it does not catch.
+        So: a runtime root whose <variant>\python.exe is a TEXT FILE, one press, and a stopwatch. The
+        budget is 10 s. Any window that is not the main window is closed and reported -- the seat
+        suspected the shell's own "this app can't run on your PC" box.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Variant,
+        [Parameter(Mandatory = $true)][int]$Port,
+        [Parameter(Mandatory = $true)][string]$DataDir,
+        [Parameter(Mandatory = $true)][string]$RuntimeRootPath,
+        [double]$BudgetSeconds = 10
+    )
+
+    $proc = $null
+    try {
+        Remove-PrivateTree -Root $RuntimeRootPath
+        $dir = Join-Path $RuntimeRootPath ('runtime-' + $Variant)
+        $null = New-Item -ItemType Directory -Path $dir -Force
+        $fake = Join-Path $dir 'python.exe'
+        [System.IO.File]::WriteAllText($fake,
+            "this is not an executable" + [System.Environment]::NewLine,
+            (New-Object System.Text.UTF8Encoding($false)))
+        Write-Host ('[badpython] ' + $fake + ' = ' + (Get-Item -LiteralPath $fake).Length + ' B of text')
+
+        $null = New-LauncherFixture -DataDir $DataDir -Variant $Variant -Port $Port
+        $proc = Start-Launcher -Exe $Exe -AppDir $AppDir -RuntimeRoot $RuntimeRootPath -DataDir $DataDir
+        $win = Get-MainWindow -Proc $proc -TimeoutSeconds 60
+        Write-Host ('[badpython] variant = ' + (Get-TextById -Root $win -Id 'StatusVariantText'))
+
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $null = Invoke-ButtonById -Root $win -Id 'MainStartButton'
+        $told = $false
+        $state = ''
+        $reason = ''
+        $log = ''
+        $dialogs = @()
+        while ($sw.Elapsed.TotalSeconds -lt 60) {
+            $state = [string](Get-TextById -Root $win -Id 'MainStateText' -TimeoutSeconds 2)
+            $reason = [string](Get-TextById -Root $win -Id 'StatusReasonText' -TimeoutSeconds 2)
+            $log = [string](Get-TextById -Root $win -Id 'StatusLogBox' -TimeoutSeconds 2)
+            if (($state -match $T.Failed) -or (-not [string]::IsNullOrWhiteSpace($reason))) {
+                $told = $true
+                break
+            }
+            $dialogs += @(Close-StrayDialog -Proc $proc)
+            Start-Sleep -Milliseconds 200
+        }
+        $sw.Stop()
+        $seconds = [math]::Round($sw.Elapsed.TotalSeconds, 2)
+        Write-Host ('[badpython] state  = ' + $state + ' after ' + $seconds + ' s')
+        Write-Host ('[badpython] reason = ' + $reason)
+        foreach ($line in @($log -split "`r?`n")) {
+            if (-not [string]::IsNullOrWhiteSpace($line)) { Write-Host ('[badpython] log    = ' + $line) }
+        }
+        if ($dialogs.Count -gt 0) {
+            Write-Host ('[badpython] windows closed = ' + (($dialogs | Select-Object -Unique) -join ' | '))
+        }
+
+        Add-Step 'a runtime that cannot be started is told inside the budget' (
+            $told -and ($sw.Elapsed.TotalSeconds -le $BudgetSeconds)) (
+            'told = ' + $told + ' in ' + $seconds + ' s (budget ' + $BudgetSeconds +
+            ' s, design 20-5 (1) measured 60 s of silence)')
+        Add-Step 'the refusal carries a one line reason' (
+            -not [string]::IsNullOrWhiteSpace($reason)) $reason
+        Add-Step 'no modal of the shell was left on the screen' ($dialogs.Count -eq 0) (
+            'windows closed = ' + $dialogs.Count)
+        $children = @(Get-WrapperPids -Port $Port)
+        Add-Step 'the failed start left no child behind' ($children.Count -eq 0) ('children=' + $children.Count)
+        Add-Step 'the failed start never opened the port' (-not (Test-PortListening -Port $Port)) ('port ' + $Port)
+    } catch {
+        Add-Step 'the bad python probe runs to the end' $false $_.Exception.Message
+    } finally {
+        if ($null -ne $proc) {
+            $strays = @(Stop-Launcher -Proc $proc -StrayCommandLinePattern @('*ywk_server*'))
+            Add-Step 'the bad python run leaves nothing behind' ($strays.Count -eq 0) ('strays=' + $strays.Count)
+        }
+        if (-not $KeepDataDir) {
+            Remove-PrivateTree -Root $RuntimeRootPath
+            if (Test-Path -LiteralPath $DataDir) {
+                Remove-Item -LiteralPath $DataDir -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
+# ================================================================= l. the delete-the-cache button
+
+function Invoke-CacheButtonProbe {
+    <#
+      .SYNOPSIS
+        decisions 90 Q-E2 (3) -- the "delete the download cache" button really empties it.
+      .DESCRIPTION
+        The cache is what the acceptance line "<= 9.0 GB after unpacking" is measured WITHOUT
+        (cu126 2.77 GB / rocm 1.37 GB), so there has to be a way to take it away by hand as well as
+        the automatic sweep after the first shot (step i). No server is started here: the button only
+        has to walk the data directory.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Variant,
+        [Parameter(Mandatory = $true)][int]$Port,
+        [Parameter(Mandatory = $true)][string]$DataDir
+    )
+
+    $proc = $null
+    try {
+        $null = New-LauncherFixture -DataDir $DataDir -Variant $Variant -Port $Port
+        $cacheDir = Join-Path $DataDir 'cache'
+        $seeded = New-CacheFixture -CacheDir $cacheDir
+
+        $proc = Start-Launcher -Exe $Exe -AppDir $AppDir -RuntimeRoot $RuntimeRoot -DataDir $DataDir
+        $win = Get-MainWindow -Proc $proc -TimeoutSeconds 60
+
+        $ids = @(
+            'SettingsClearCacheButton', 'SettingsClearDownloadCacheButton', 'SettingsCacheClearButton',
+            'SettingsDeleteCacheButton', 'StatusClearCacheButton', 'MainClearCacheButton')
+        $button = $null
+        foreach ($tab in @('TabSettings', 'TabStatus')) {
+            $null = Select-Tab -Window $win -TabId $tab
+            $button = Find-ByIdAny -Root $win -Id $ids -TimeoutSeconds 1
+            if ($null -eq $button) { $button = Find-ByNameLike -Root $win -Text $T.ClearCache -TimeoutSeconds 2 }
+            if ($null -ne $button) {
+                Write-Host ('[cache] found on ' + $tab + ' :: ' + (Get-ElementLabel $button))
+                break
+            }
+        }
+        Add-Step 'the delete-the-download-cache button is on screen' ($null -ne $button) (
+            Get-ElementLabel $button)
+        if ($null -eq $button) { return }
+
+        Add-Step 'the button can be pressed while the cache holds bytes' (
+            [bool]$button.Current.IsEnabled) ('enabled = ' + $button.Current.IsEnabled +
+            ', cache = ' + [string]$seeded + ' B')
+
+        $pressed = Invoke-Element -Element $button
+        Add-Step 'the button answers a press' $pressed (Get-ElementLabel $button)
+        # A confirmation is allowed (this deletes files) -- answer it and say that it was there.
+        $confirmed = Complete-MessageBox -Proc $proc -ButtonId '1' -TimeoutSeconds 2
+        if ($confirmed) { Write-Host '[cache] a confirmation box was answered with the first button' }
+
+        $gone = Wait-ForDirEmpty -Path $cacheDir -TimeoutSeconds 20
+        $sweep = [string]$seeded + ' B -> ' + [string]$gone.bytes + ' B in ' +
+            [string][math]::Round($gone.elapsed, 2) + ' s'
+        Write-Host ('[cache] ' + $sweep)
+        Add-Step 'pressing it empties the download cache' $gone.ok $sweep
+        Add-Step 'the data directory itself survives the sweep' (Test-Path -LiteralPath $DataDir) $DataDir
+    } catch {
+        Add-Step 'the cache button probe runs to the end' $false $_.Exception.Message
+    } finally {
+        if ($null -ne $proc) {
+            $strays = @(Stop-Launcher -Proc $proc -StrayCommandLinePattern @('*ywk_server*'))
+            Add-Step 'the cache button run leaves nothing behind' ($strays.Count -eq 0) ('strays=' + $strays.Count)
+        }
+        if ((-not $KeepDataDir) -and (Test-Path -LiteralPath $DataDir)) {
+            Remove-Item -LiteralPath $DataDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Set-SettingsValue {
+    <#
+      .SYNOPSIS
+        Write one member into settings.json (UTF-8, no BOM -- the launcher writes it that way).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)]$Value
+    )
+    $doc = Read-SettingsDoc -Path $Path
+    if ($null -eq $doc) { throw ('settings.json is not there: ' + $Path) }
+    $doc | Add-Member -NotePropertyName $Name -NotePropertyValue $Value -Force
+    $json = $doc | ConvertTo-Json -Depth 8
+    [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding($false)))
+    return $Path
+}
+
 # ================================================================= preflight
 
 Write-Host '=== preflight ==='
@@ -448,6 +1376,28 @@ Write-Host ('app dir     = ' + $AppDir)
 Write-Host ('runtime     = ' + $RuntimeRoot)
 Write-Host ('data dir    = ' + $DataDir)
 Write-Host ('variant     = ' + $Variant + '   port = ' + $Port)
+
+if ($DryRun) {
+    # -DryRun is the empty run: it opens no window, starts nothing, writes nothing, and only
+    # prints what the round three steps WOULD make. Use it to check the script on a machine
+    # whose launcher is being rebuilt by another seat.
+    Write-Host ''
+    Write-Host '=== dry run: the plan ==='
+    Write-Host ('h  wizard presses   port=' + $WizardPort + '  data=' + $DataDir + '-wizard')
+    Write-Host ('                    app tree=' + (Join-Path $env:TEMP 'ywk-d-launch-probe-app') +
+        '  (junctions to server/ licenses/ voices/, a broken copy of ledger/runtime-' + $Variant + '.json)')
+    Write-Host ('                    full run=' + [bool]$WizardFullRun + '  (a full run FETCHES: E2E seat only)')
+    Write-Host ('j  ledger stamp     port=' + $LedgerPort + '  data=' + $DataDir + '-ledger')
+    Write-Host ('                    app tree=' + (Join-Path $env:TEMP 'ywk-d-launch-probe-app-ledger'))
+    Write-Host ('k  bad python.exe   port=' + $BadPythonPort + '  data=' + $DataDir + '-badpython')
+    Write-Host ('                    runtime root=' + (Join-Path $env:TEMP 'ywk-d-launch-probe-badruntime') +
+        '  budget=' + $BadPythonBudgetSeconds + ' s')
+    Write-Host ('l  cache button     port=' + $CachePort + '  data=' + $DataDir + '-cache')
+    Write-Host ('i  cache after 200  cache=' + (Join-Path $DataDir 'cache') + '  (seeded, then read in bytes)')
+    Write-Host ''
+    Write-Host 'nothing was touched.'
+    exit 0
+}
 
 $busy = @(Assert-QuietPorts)
 Add-Step 'reserved ports are quiet' ($busy.Count -eq 0) ('busy = ' + ($busy -join ', '))
@@ -471,7 +1421,8 @@ Write-Host ('hf home     = ' + $HfHome)
 #
 # Run before the long one: it costs about 5 seconds, loads no model, opens no port, and if the gate
 # is broken there is no point measuring anything else.
-if (-not $SkipGate) {
+# -RoundThreeOnly is the quick run of the four windows convoy D (3) added, so it skips the gate too.
+if ((-not $SkipGate) -and (-not $RoundThreeOnly)) {
     Write-Host ''
     Write-Host '=== d. the variant gate (decisions 88 (1)(2)) ==='
     Add-Step 'the gate port is free' (-not (Test-PortListening -Port $GatePort)) ('port ' + $GatePort)
@@ -499,7 +1450,52 @@ if ($GateOnly) {
     exit $script:Failures.Count
 }
 
+# ================================================================= round three (92 / 94)
+#
+# Four windows, one after the other. None of them loads a model, none of them opens a port, and
+# none of them fetches anything (-WizardFullRun is the one exception and it belongs to the E2E
+# seat). Each stage is wrapped in its own try/catch, so a screen that has not been written yet
+# goes red on its own line instead of taking the run down.
+if (-not $SkipRoundThree) {
+    Write-Host ''
+    Write-Host '=== h. the first run wizard, counted in presses (decisions 94 (1)) ==='
+    Invoke-WizardPressProbe -Variant $Variant -Port $WizardPort -DataDir ($DataDir + '-wizard') `
+        -AppTreeRoot (Join-Path $env:TEMP 'ywk-d-launch-probe-app') -FullRun:$WizardFullRun
+
+    Write-Host ''
+    Write-Host '=== j. the runtime ledger stamp (decisions 91) ==='
+    Invoke-LedgerStampProbe -Variant $Variant -Port $LedgerPort -DataDir ($DataDir + '-ledger') `
+        -AppTreeRoot (Join-Path $env:TEMP 'ywk-d-launch-probe-app-ledger')
+
+    Write-Host ''
+    Write-Host '=== k. a python.exe that cannot be started (design 20-5 (1)) ==='
+    Invoke-BadPythonProbe -Variant $Variant -Port $BadPythonPort -DataDir ($DataDir + '-badpython') `
+        -RuntimeRootPath (Join-Path $env:TEMP 'ywk-d-launch-probe-badruntime') `
+        -BudgetSeconds $BadPythonBudgetSeconds
+
+    Write-Host ''
+    Write-Host '=== l. the delete-the-download-cache button (decisions 90 Q-E2 (3)) ==='
+    Invoke-CacheButtonProbe -Variant $Variant -Port $CachePort -DataDir ($DataDir + '-cache')
+}
+
+if ($RoundThreeOnly) {
+    Write-Host ''
+    Write-Host ('=== ' + $script:Failures.Count + ' failure(s) of ' + $script:Steps.Count + ' ===')
+    foreach ($f in $script:Failures) { Write-Host ('  ' + $f) }
+    exit $script:Failures.Count
+}
+
 $null = New-LauncherFixture -DataDir $DataDir -Variant $Variant -Port $Port -HfHome $HfHome
+
+# i (decisions 90 Q-E2 (3) / 94 (3)): the download cache is what the acceptance line "<= 9.0 GB
+# after unpacking" is measured WITHOUT, and the ruling is that the launcher takes it away after
+# the first synthesis that came back 200. This run downloads nothing, so the cache it must
+# sweep is seeded by hand and read in BYTES -- before the shot and after it.
+$script:CacheDir = Join-Path $DataDir 'cache'
+$script:CacheSeedBytes = [long]0
+if (-not $SkipSynthesis) {
+    $script:CacheSeedBytes = New-CacheFixture -CacheDir $script:CacheDir
+}
 
 $proc = $null
 try {
@@ -526,20 +1522,40 @@ try {
     # third one the presets are visible and unusable: no /v1/audio/voices row, no synthesis.
     Write-Host ''
     Write-Host '=== g. the preset voices arrive from the app tree (decisions 88 (5)) ==='
+    # decisions 92: THE LITERAL 11 IS GONE. What the tree must carry is every status=done row of its
+    # own presets.json -- the number moves the day convoy P finishes another speaker, and a probe with
+    # 11 written into it would go red on a correct tree (and, worse, stay green on a tree that lost a
+    # row while gaining one). So the expected count is read out of the same file, and the two ways a
+    # row can be unusable are counted apart: no secondary wav in the table, and a wav the table names
+    # that is not in the tree.
     $presetsJson = Join-Path $AppDir 'voices\presets.json'
     $presetNames = @()
+    $presetDone = 0
+    $presetNoWav = @()
+    $presetMissing = @()
     if (Test-Path -LiteralPath $presetsJson) {
         $presetDoc = Get-Content -LiteralPath $presetsJson -Raw -Encoding UTF8 | ConvertFrom-Json
         foreach ($row in @($presetDoc.presets)) {
             if ($row.status -ne 'done') { continue }
-            if ($null -eq $row.secondary) { continue }
-            if ([string]::IsNullOrWhiteSpace([string]$row.secondary.file)) { continue }
+            $presetDone++
+            if ($null -eq $row.secondary) { $presetNoWav += [string]$row.id; continue }
+            if ([string]::IsNullOrWhiteSpace([string]$row.secondary.file)) {
+                $presetNoWav += [string]$row.id
+                continue
+            }
             $presetNames += [string]$row.display_name
+            $wav = Join-Path $AppDir ('voices\presets\' + [string]$row.secondary.file)
+            if (-not (Test-Path -LiteralPath $wav)) { $presetMissing += [string]$row.secondary.file }
         }
     }
-    Write-Host ('[presets] app tree rows with a secondary wav = ' + $presetNames.Count)
-    Add-Step 'the app tree carries the preset table' ($presetNames.Count -eq 11) (
-        'status=done rows = ' + $presetNames.Count)
+    Write-Host ('[presets] status=done rows = ' + $presetDone +
+        ', with a secondary wav = ' + $presetNames.Count)
+    Add-Step 'the app tree carries every status=done preset of its own presets.json' (
+        ($presetDone -ge 1) -and ($presetNames.Count -eq $presetDone)) (
+        'status=done = ' + $presetDone + ', with a secondary wav = ' + $presetNames.Count +
+        ', without one = ' + ($presetNoWav -join ', '))
+    Add-Step 'every preset wav the table names is in the app tree' ($presetMissing.Count -eq 0) (
+        'missing = ' + ($presetMissing -join ', '))
 
     $ywkTable = Join-Path $DataDir 'voices\voices.ywk.json'
     $marked = $false
@@ -832,11 +1848,29 @@ try {
         Add-Step 'the default voice is always offered' ($voices0 -contains $T.DefVoice) ($voices0 -join ' | ')
         $null = Select-ComboItemById -Root $win -Id 'TryVoiceCombo' -ItemText $T.DefVoice
 
+        # i (decisions 90 Q-E2 (3) / 94 (3)) -- the cache must survive UNTIL the first 200.
+        # Sweeping it at start up would be wrong: the .part files are what lets an interrupted first
+        # run carry on from where it stopped, and a run that never synthesised has proved nothing.
+        $cacheBeforeShot = Get-DirBytes -Path $script:CacheDir
+        Add-Step 'the download cache is still there when the first shot is fired' (
+            $cacheBeforeShot -eq $script:CacheSeedBytes) (
+            'cache = ' + [string]$cacheBeforeShot + ' B of the ' + [string]$script:CacheSeedBytes +
+            ' B that were seeded')
+
         $shot1 = Invoke-Shot -Window $win -TimeoutSeconds 120
         Write-Host ('[try] result  = ' + $shot1.result)
         Write-Host ('[try] message = ' + $shot1.message)
         Add-Step 'one shot with the default voice returns audio' $shot1.ok (
             [string]$shot1.result + ' / ' + [string]$shot1.message)
+
+        if ($shot1.ok) {
+            $swept = Wait-ForDirEmpty -Path $script:CacheDir -TimeoutSeconds 30
+            Write-Host ('[cache] after the first 200 = ' + [string]$swept.bytes + ' B after ' +
+                [string][math]::Round($swept.elapsed, 2) + ' s')
+            Add-Step 'the first shot that came back 200 takes the download cache away' $swept.ok (
+                [string]$script:CacheSeedBytes + ' B -> ' + [string]$swept.bytes + ' B in ' +
+                [string][math]::Round($swept.elapsed, 2) + ' s')
+        }
 
         # ========================================================= 6. add a voice, shoot with it (D-3)
         Write-Host ''
@@ -903,17 +1937,33 @@ try {
             $bakeSeconds = ((Get-Date) - $bakeStart).TotalSeconds
             Write-Host ('[memory] per voice after  = ' + $memAfter + '   (' + [math]::Round($bakeSeconds, 1) + ' s)')
 
-            # Before the bake the line must SAY it is a coefficient ("estimate, before measurement").
-            # If the bake already landed while the list was being read, the measured line is fine too
-            # -- what must never appear is a bare number with no word for which of the two it is.
-            Add-Step 'the per voice line names itself an estimate until the .pt exists' (
-                ($memBefore -like ('*' + $T.PerVoice + '*')) -and
-                (($memBefore -like ('*' + $T.Provision + '*')) -or
-                 ($memBefore -like ('*' + $T.Measured + '*')))) $memBefore
+            # decisions 92 -- TIGHTEN THIS. Until convoy D (3) the step passed on any line that
+            # carried either word, so a screen that said "measured" with nothing baked passed, and any
+            # number at all passed for the coefficient. What the line has to carry now is the WORD
+            # (estimate) and the COEFFICIENT itself: MemoryEstimate.WavReferenceBytes = 751,619,276 B
+            # and UiText.Bytes renders it as "716.8 MB" (751619276 / 1024 / 1024 = 716.80). The unit is
+            # matched loosely on purpose -- the GB/GiB spelling of UiText is one of the low items
+            # convoy D (3) may still change, and the FIGURE is what this step is about.
+            $coefficient = '716\.8\s*M(i)?B'
+            $beforeIsEstimate = ($memBefore -like ('*' + $T.PerVoice + '*')) -and
+                ($memBefore -like ('*' + $T.Estimate + '*')) -and
+                ($memBefore -like ('*' + $T.Provision + '*')) -and
+                ($memBefore -match $coefficient)
+            # If the bake landed while the list was being read, the measured line is fine here too --
+            # what must never appear is a bare number with no word for which of the two it is.
+            $beforeIsMeasured = ($memBefore -like ('*' + $T.PerVoice + '*')) -and
+                ($memBefore -like ('*' + $T.LatentRef + '*')) -and
+                ($memBefore -like ('*' + $T.Measured + '*')) -and
+                ($memBefore -notlike ('*' + $T.Provision + '*'))
+            Add-Step 'the per voice line says "estimate" and carries the wav coefficient until the .pt exists' (
+                $beforeIsEstimate -or $beforeIsMeasured) (
+                $memBefore + '  [wanted ' + $coefficient + ' or a measured line]')
             Add-Step 'the baked voice switches to the measured .pt size' (
                 ($memAfter -like ('*' + $T.LatentRef + '*')) -and
                 ($memAfter -like ('*' + $T.Measured + '*')) -and
-                ($memAfter -notlike ('*' + $T.Provision + '*'))) (
+                ($memAfter -notlike ('*' + $T.Provision + '*')) -and
+                ($memAfter -notmatch $coefficient) -and
+                ($memAfter -match '\d')) (
                 $memAfter + ' in ' + [math]::Round($bakeSeconds, 1) + ' s')
 
             $null = Select-Tab -Window $win -TabId 'TabStatus'

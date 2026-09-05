@@ -7,6 +7,7 @@
     UIA 検分（受け入れ条件 D-7）のために、読む値と押す物すべてに AutomationId を付ける。
   -->
   <UserControl.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
     <Style x:Key="LabelText" TargetType="TextBlock">
       <Setter Property="Foreground" Value="#555555" />
       <Setter Property="Margin" Value="0,0,8,0" />
@@ -62,6 +63,19 @@
         <TextBlock AutomationProperties.AutomationId="StatusNoticesText"
                    Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#A05000"
                    Text="{Binding NoticesText, Mode=OneWay}" />
+        <!--
+          裁定 91＝配布樹の取得台帳と、いまの実行系を展開したときの台帳が食い違っている。
+          押すと cache から再展開し、cache に原檔が無ければ取得から。
+        -->
+        <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                    Visibility="{Binding CanRebuildRuntime, Converter={StaticResource BoolToVis}}">
+          <TextBlock AutomationProperties.AutomationId="StatusRebuildRuntimeText"
+                     VerticalAlignment="Center" TextWrapping="Wrap" Foreground="#A03030"
+                     Text="{Binding RebuildRuntimeText, Mode=OneWay}" />
+          <Button Content="実行系を組み直す" Padding="12,4" Margin="12,0,0,0"
+                  AutomationProperties.AutomationId="StatusRebuildRuntimeButton"
+                  Command="{Binding RebuildRuntimeCommand}" />
+        </StackPanel>
       </StackPanel>
     </Border>
 
@@ -95,7 +109,8 @@
     -->
     <Border x:Name="MemoryPanel" Grid.Row="3" Margin="0,10,0,0" Padding="10,8"
             Background="#F6F6F6" CornerRadius="4"
-            AutomationProperties.AutomationId="StatusMemoryPanel">
+            AutomationProperties.AutomationId="StatusMemoryPanel"
+            Visibility="{Binding MemoryPanelVisible, Converter={StaticResource BoolToVis}}">
       <StackPanel>
         <StackPanel Orientation="Horizontal">
           <TextBlock Text="GPU メモリ" Style="{StaticResource LabelText}" />

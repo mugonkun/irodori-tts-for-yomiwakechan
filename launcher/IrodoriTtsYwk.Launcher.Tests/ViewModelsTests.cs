@@ -21,9 +21,9 @@ public sealed class UiTextTests
     [Theory]
     [InlineData(0, "0 B")]
     [InlineData(1023, "1023 B")]
-    [InlineData(1024, "1.0 KB")]
-    [InlineData(1048576, "1.0 MB")]
-    [InlineData(1073741824, "1.00 GB")]
+    [InlineData(1024, "1.0 KiB")]
+    [InlineData(1048576, "1.0 MiB")]
+    [InlineData(1073741824, "1.00 GiB")]
     public void バイト数は1024進で出る(long bytes, string expected) =>
         Assert.Equal(expected, UiText.Bytes(bytes));
 
@@ -766,9 +766,9 @@ public sealed class StatusViewModelTests
         });
 
         Assert.True(vm.MemorySupported);
-        Assert.Contains("1.00 GB", vm.MemoryText, StringComparison.Ordinal);
-        Assert.Contains("2.00 GB", vm.MemoryText, StringComparison.Ordinal);
-        Assert.Contains("3.00 GB", vm.MemoryText, StringComparison.Ordinal);
+        Assert.Contains("1.00 GiB", vm.MemoryText, StringComparison.Ordinal);
+        Assert.Contains("2.00 GiB", vm.MemoryText, StringComparison.Ordinal);
+        Assert.Contains("3.00 GiB", vm.MemoryText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1381,7 +1381,7 @@ public sealed class FirstRunViewModelTests : IDisposable
 
         Assert.Contains("取得", line, StringComparison.Ordinal);
         Assert.Contains("torch", line, StringComparison.Ordinal);
-        Assert.Contains("1.0 MB / 2.0 MB", line, StringComparison.Ordinal);
+        Assert.Contains("1.0 MiB / 2.0 MiB", line, StringComparison.Ordinal);
         Assert.Contains("残り 1 秒", line, StringComparison.Ordinal);
         Assert.Contains("2 回目", line, StringComparison.Ordinal);
     }

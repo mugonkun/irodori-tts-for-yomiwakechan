@@ -121,9 +121,9 @@ public sealed class RoundTwoStatusBandTests
             GpuUsedBytes = 3221225472,
         });
 
-        Assert.Contains("使用量 1.00 GB", text, StringComparison.Ordinal);
-        Assert.Contains("占有量 2.00 GB", text, StringComparison.Ordinal);
-        Assert.Contains("GPU 全体 3.00 GB / 4.00 GB", text, StringComparison.Ordinal);
+        Assert.Contains("使用量 1.00 GiB", text, StringComparison.Ordinal);
+        Assert.Contains("占有量 2.00 GiB", text, StringComparison.Ordinal);
+        Assert.Contains("GPU 全体 3.00 GiB / 4.00 GiB", text, StringComparison.Ordinal);
         Assert.True(text.IndexOf("使用量", StringComparison.Ordinal)
             < text.IndexOf("占有量", StringComparison.Ordinal));
     }
@@ -179,7 +179,7 @@ public sealed class RoundTwoStatusBandTests
         };
 
         var on = StatusViewModel.DescribeLatentCache(true, memory, null);
-        Assert.StartsWith("ON（焼いた話者 2 名・合計 2.0 MB", on, StringComparison.Ordinal);
+        Assert.StartsWith("ON（焼いた話者 2 名・合計 2.0 MiB", on, StringComparison.Ordinal);
 
         var off = StatusViewModel.DescribeLatentCache(false, memory, null);
         Assert.StartsWith("OFF（", off, StringComparison.Ordinal);
@@ -247,7 +247,7 @@ public sealed class RoundTwoStatusBandTests
             IsInTable: true, LatentBytes: 102400);
 
         Assert.Equal(102400L, row.MemoryBytes);
-        Assert.Contains("潜在参照（実測 100.0 KB）", row.MemoryText, StringComparison.Ordinal);
+        Assert.Contains("潜在参照（実測 100.0 KiB）", row.MemoryText, StringComparison.Ordinal);
         Assert.DoesNotContain("概算", row.MemoryText, StringComparison.Ordinal);
     }
 
@@ -347,7 +347,10 @@ public sealed class RoundTwoStatusBandTests
 
         Assert.Null(vm.NoticesText);
         Assert.False(vm.MemorySupported);
-        Assert.Equal(UiText.NotSupported, vm.MemoryText);
+
+        // 便 D（3）＝止まっている（誰も答えていない）と、答えたが欄が無いを別の 1 語で出す
+        // （low 6 の ⑵）。ここは停止なので「サーバが動いていません」。
+        Assert.Equal(UiText.NotRunning, vm.MemoryText);
     }
 }
 

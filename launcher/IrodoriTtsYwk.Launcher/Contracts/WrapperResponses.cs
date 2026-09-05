@@ -228,8 +228,23 @@ public sealed record MemoryStatus
     /// <summary><c>total − free</c>＝カード全体の占有（<b>他プロセス込み</b>）。</summary>
     [JsonPropertyName("gpu_used")] public long? GpuUsedBytes { get; init; }
 
-    /// <summary>話者 id → 焼いた <c>.pt</c> の実サイズ（焼いていない話者は載らない）。</summary>
-    [JsonPropertyName("latents")] public IReadOnlyDictionary<string, long> Latents { get; init; } =
+    /// <summary>
+    /// 話者 id → 焼いた <c>.pt</c> の実サイズ（焼いていない話者は載らない）。
+    /// <para>
+    /// <b><c>"latents": null</c> でも空表になる</b>（是正・便 D（3）・low 6 の ⑶）＝
+    /// <see cref="System.Text.Json"/> は<b>明示の null を初期化子より優先する</b>ので、
+    /// 欄が来ない応答（既定値が残る）と <c>null</c> が来た応答（<c>null</c> が入る）で
+    /// 挙動が割れ、後者は <see cref="LatentCount"/> の 1 語で <c>NullReferenceException</c> に
+    /// なった（状態帯の描き直しは見張りの標本ごとに走るので、窓が 2 秒で落ちる）。
+    /// 受けは <c>null</c> を許し、読みは必ず空表に落とす。
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("latents")] public IReadOnlyDictionary<string, long>? Latents { get; init; }
+
+    /// <summary>焼いた潜在の表（<c>null</c> は空表として読む＝上の註）。</summary>
+    public IReadOnlyDictionary<string, long> EffectiveLatents => Latents ?? EmptyLatents;
+
+    private static readonly IReadOnlyDictionary<string, long> EmptyLatents =
         new Dictionary<string, long>(StringComparer.Ordinal);
 
     /// <summary><see cref="Latents"/> の合計。</summary>
@@ -256,8 +271,8 @@ public sealed record MemoryStatus
     public long? EffectiveGpuUsed => GpuUsedBytes
         ?? (GpuTotalBytes is long total && GpuFreeBytes is long free ? total - free : null);
 
-    /// <summary>焼いてある話者の数（<see cref="Latents"/> の件数）。</summary>
-    public int LatentCount => Latents.Count;
+    /// <summary>焼いてある話者の数（<see cref="EffectiveLatents"/> の件数）。</summary>
+    public int LatentCount => EffectiveLatents.Count;
 
     /// <summary>焼いた潜在の合計（<c>latents_total</c>。無ければ表から足す）。</summary>
     public long? EffectiveLatentsTotal
@@ -269,13 +284,14 @@ public sealed record MemoryStatus
                 return total;
             }
 
-            if (Latents.Count == 0)
+            var table = EffectiveLatents;
+            if (table.Count == 0)
             {
                 return null;
             }
 
             var sum = 0L;
-            foreach (var value in Latents.Values)
+            foreach (var value in table.Values)
             {
                 sum += value;
             }
@@ -286,7 +302,7 @@ public sealed record MemoryStatus
 
     /// <summary>この話者の焼いた潜在の実サイズ（焼いていなければ null）。</summary>
     public long? LatentBytesFor(string? voiceId) =>
-        voiceId is not null && Latents.TryGetValue(voiceId, out var bytes) ? bytes : null;
+        voiceId is not null && EffectiveLatents.TryGetValue(voiceId, out var bytes) ? bytes : null;
 }
 
 /// <summary>

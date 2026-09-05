@@ -115,6 +115,13 @@ public sealed class FirstRunViewModel : ObservableObject
         BackCommand = new RelayCommand(Back, () => Step > FirstRunStep.Notices && !IsBusy);
         CancelCommand = new RelayCommand(CancelRunning, () => IsBusy);
 
+        // 捕れなかった例外を握り潰さない（§20-5 ⑴）＝黙って止まったウィザードを作らない。
+        NextCommand.Faulted += (_, line) =>
+        {
+            SetStepOk(false);
+            Message = "この段で予期しない失敗が起きました：" + line;
+        };
+
         LoadNotices();
         UpdateVariantNotes();
     }
@@ -172,8 +179,15 @@ public sealed class FirstRunViewModel : ObservableObject
         (((int)Step) + 1).ToString(CultureInfo.InvariantCulture) + " / "
         + (((int)FirstRunStep.Done) + 1).ToString(CultureInfo.InvariantCulture);
 
+    /// <summary>
+    /// 「次へ」の文言。
+    /// <para>
+    /// <b>働く段には「次へ」が無い</b>（裁定 94 ⑴）＝取得→展開→モデル→起動は自動で繋がるので、
+    /// この文言が出るのは⑴ 通知 ⑵ 変種 ⑶ 完了 ⑷ <b>失敗した段（「もう一度」）</b>の 4 つだけである。
+    /// </para>
+    /// </summary>
     public string NextButtonText => !_lastStepOk
-        ? "やり直す"
+        ? "もう一度"
         : Step switch
         {
             FirstRunStep.Notices => "同意して次へ",
@@ -294,21 +308,26 @@ public sealed class FirstRunViewModel : ObservableObject
     }
 
     /// <summary>
-    /// 段を 1 つ進める。
+    /// 「次へ」の 1 手。
     /// <para>
-    /// <b>失敗した段からは進まない</b>（是正・2026-09-05）。以前は段の遷移を先に行い、
+    /// <b>成功した段は自動で次へ進む</b>（裁定 94 ⑴）。押下は<b>5</b> だけになる＝
+    /// 同意チェック・同意して次へ・変種・取得を始める・試し撃ちへ。取得→展開→モデル→起動は
+    /// <see cref="AdvanceAsync"/> が繋ぎ、<b>失敗した段でだけ止まる</b>（そこで「もう一度」と理由 1 行）。
+    /// 便 E（2）の E2E は 9 押下で、受け入れ条件の「利用者操作 ≤ 6」を落としていた
+    /// （<c>docs/acceptance.md</c> 導入行・裁定 94 ⑴）。
+    /// </para>
+    /// <para>
+    /// <b>失敗した段からは進まない</b>（是正・便 D（2））。以前は段の遷移を先に行い、
     /// <c>RunXxxAsync</c> の結果を 1 度も見なかったので、1 檔も落とせていない機体でも
-    /// 「次へ」を押し続ければ最後まで通り、<c>FirstRunCompleted=true</c> が無条件に焼かれた
-    /// （＝次の起動からウィザードが出なくなる）。いまは直前の段が成功したときだけ進み、
-    /// 失敗した段では同じ段を「やり直す」。
+    /// 「次へ」を押し続ければ最後まで通り、<c>FirstRunCompleted=true</c> が無条件に焼かれた。
     /// </para>
     /// </summary>
     public async Task NextAsync()
     {
-        // 失敗した段は、進まずに同じ段をもう 1 度走らせる。
+        // 失敗した段は、同じ段からもう 1 度走らせる（通れば続きも自動で進む）。
         if (!_lastStepOk)
         {
-            await RunStepAsync(Step).ConfigureAwait(true);
+            await AdvanceAsync(Step).ConfigureAwait(true);
             return;
         }
 
@@ -330,41 +349,66 @@ public sealed class FirstRunViewModel : ObservableObject
                 _settings.Variant = _variant;
                 _store.Save(_settings);
                 Record("変種＝" + RuntimeVariants.DisplayName(_variant) + " を選びました。");
-                Step = FirstRunStep.Download;
-                await RunStepAsync(FirstRunStep.Download).ConfigureAwait(true);
-                break;
-
-            case FirstRunStep.Download:
-                Step = FirstRunStep.Install;
-                await RunStepAsync(FirstRunStep.Install).ConfigureAwait(true);
-                break;
-
-            case FirstRunStep.Install:
-                Step = FirstRunStep.Models;
-                await RunStepAsync(FirstRunStep.Models).ConfigureAwait(true);
-                break;
-
-            case FirstRunStep.Models:
-                Step = FirstRunStep.Start;
-                await RunStepAsync(FirstRunStep.Start).ConfigureAwait(true);
-                break;
-
-            case FirstRunStep.Start:
-                _settings.FirstRunCompleted = true;
-                _store.Save(_settings);
-                Record("初回取得が終わりました。");
-                Step = FirstRunStep.Done;
+                await AdvanceAsync(FirstRunStep.Download).ConfigureAwait(true);
                 break;
 
             case FirstRunStep.Done:
-            default:
                 Completed?.Invoke(this, EventArgs.Empty);
+                break;
+
+            default:
+                // 働く段に「次へ」は無い（自動で進む）。押せてしまったら続きを繋ぐだけ。
+                await AdvanceAsync(Step).ConfigureAwait(true);
                 break;
         }
     }
 
-    /// <summary>その段の仕事を 1 回走らせ、成否を <see cref="LastStepOk"/> に立てる。</summary>
-    private async Task RunStepAsync(FirstRunStep step)
+    /// <summary>
+    /// <paramref name="from"/> の段から<b>成功する限り自動で</b>進める（裁定 94 ⑴）。
+    /// <para>
+    /// 失敗（中断を含む）した段でそのまま止まる＝<see cref="LastStepOk"/> が偽になり、
+    /// 「次へ」は「もう一度」に変わる。段の出入りは <see cref="Trail"/> に残すので、
+    /// どこまで進んだかは自動でも画面から読める。
+    /// </para>
+    /// </summary>
+    private async Task AdvanceAsync(FirstRunStep from)
+    {
+        var step = from;
+        while (true)
+        {
+            Step = step;
+
+            if (IsWorkStep)
+            {
+                Trail.Add("― " + Title(step));
+            }
+
+            if (!await RunStepAsync(step).ConfigureAwait(true))
+            {
+                return;
+            }
+
+            if (step is FirstRunStep.Start)
+            {
+                // 起動の確認まで通った＝初回取得は終わり（ここで初めて焼く）。
+                _settings.FirstRunCompleted = true;
+                _store.Save(_settings);
+                Record("初回取得が終わりました。");
+                Step = FirstRunStep.Done;
+                return;
+            }
+
+            if (step >= FirstRunStep.Done)
+            {
+                return;
+            }
+
+            step = (FirstRunStep)((int)step + 1);
+        }
+    }
+
+    /// <summary>その段の仕事を 1 回走らせ、成否を <see cref="LastStepOk"/> に立てて返す。</summary>
+    private async Task<bool> RunStepAsync(FirstRunStep step)
     {
         var ok = step switch
         {
@@ -376,6 +420,7 @@ public sealed class FirstRunViewModel : ObservableObject
         };
 
         SetStepOk(ok);
+        return ok;
     }
 
     private void SetStepOk(bool ok)
@@ -397,6 +442,8 @@ public sealed class FirstRunViewModel : ObservableObject
     {
         if (Step > FirstRunStep.Notices && !IsBusy)
         {
+            // 戻った＝失敗の札は下ろす（「もう一度」ではなく普通の「次へ」に戻す）。
+            SetStepOk(true);
             Step = (FirstRunStep)((int)Step - 1);
         }
     }
@@ -419,6 +466,22 @@ public sealed class FirstRunViewModel : ObservableObject
     {
         Trail.Add(line);
         Message = line;
+    }
+
+    /// <summary>
+    /// ウィザードの外で起きた事実を <see cref="Trail"/> に足す口（裁定 90 Q-E2 ⑶）。
+    /// <para>
+    /// 使うのは<b>取得キャッシュの削除</b>＝「起動の確認」が通り「試し撃ち」で 1 射 200 が
+    /// 返ったところで消すので、消したのはウィザードの完了の段より<b>後</b>である。
+    /// 消したバイトはログと、まだ開いていればこの Trail の両方に残す。
+    /// </para>
+    /// </summary>
+    public void Note(string line)
+    {
+        if (!string.IsNullOrWhiteSpace(line))
+        {
+            Record(line.Trim());
+        }
     }
 
     private void LoadNotices()
@@ -818,6 +881,11 @@ public sealed class FirstRunViewModel : ObservableObject
                 Message = "展開に失敗しました：" + (result.FailureReason ?? "理由が分かりません。");
                 return false;
             }
+
+            // **展開に使った台帳を焼く**（裁定 91）＝次の起動で配布樹と突き合わせ、
+            // 食い違えば状態帯に「実行系を組み直す」1 手を出す。
+            RuntimeStamp.Burn(_settings, _paths, _variant);
+            _store.Save(_settings);
 
             Record("展開しました（" + result.Files.ToString(CultureInfo.InvariantCulture) + " 檔・"
                 + UiText.Bytes(result.Bytes) + "）。");

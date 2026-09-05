@@ -1382,3 +1382,628 @@ git の commit／push はしていない。第三者バイナリは 1 檔も足�
    入っていないので直していない（統合席の 57 段の時点で既に古い）＝檔を持つ席が 1 語直すこと。
 6. **門の「ドライバが読める枝」は相変わらず未実射**（§19-6 ⑴ のまま）。今回足した `cu130` の
    「検分が読めない」枝も RTX 機で 1 度撃つ価値がある（`-GateVariant cu130`）。
+
+
+---
+
+## 22. 検分席（便 D（3））の記帳（2026-09-05・opus サブ席）
+
+裁定 92 が便 D（3）へ残した「`d-launch-probe` の段 c／g の締め」を締め、裁定 94 ⑴・裁定 91・裁定 90 Q-E2 ⑶ と
+本檔 §20-5 ⑴ を撃つ**新しい段 5 つ**を足した。**ランチャ席が同時に画面を書いているので、この席は窓を 1 枚も
+開けていない**（同じ Debug exe を掴むと相手の `dotnet build` を壊す）。撃ったのは**構文検分・空走・下拵えの実走**の
+3 つで、**実走は統合席に委ねる**。他席の節（§1〜§21）は 1 行も触っていない。
+
+### 22-1 触った檔（3 檔）
+
+| 檔 | 何をしたか |
+|---|---|
+| `probe/d-launch-probe.ps1` | 段 c／g を締め、段 **h・i・j・k・l** を足した（檔内の function は **10 → 32**＝段の本体 4 本＋道具 18 本。ASCII・CRLF・PS 5.1／7）。既存の段は 1 つも消していない |
+| `probe/README.md` | 便 D の「31 段」を実物に直し（§20-5 ⑸ の宿題）、便 D（3）の段と switch を書き、後続への申し送りを 2 つ足した |
+| `docs/design/ben-d-launcher.md` | 本節（§22）の追記のみ |
+
+`probe/e-install-probe.ps1` は**裁定どおり 1 行も触っていない**（読み合わせの結果は §22-6）。
+`probe/common.ps1`・`launcher/`・`build/`・`server/`・`ledger/`・`voices/` は読むだけ。
+
+### 22-2 裁定 92 の締め＝段 c と段 g
+
+**段 c（1 名あたりの欄）＝「概算」の語と係数 716.8 MB の一致まで締めた。**
+
+- 締める前の条件は `名あたり` を含み、かつ `実測前の概算` **または** `実測` を含む、だけだった。
+  ⇒ **何も焼いていないのに「実測」と書く画面が通る**し、**係数がいくつでも通る**。
+- 締めた後は 2 枝のどちらかを要求する＝⒜ **概算の枝**＝`名あたり`＋**`概算`**＋`実測前の概算`＋
+  **`716\.8\s*M(i)?B`** ⒝ **既に焼けていた枝**＝`名あたり`＋`潜在参照`＋`実測`＋`実測前の概算` を含まない。
+- **716.8 の出所**＝`ViewModels/MemoryEstimate.cs` の `WavReferenceBytes = 751619276`（0.7 GiB）を
+  `UiText.Bytes` に通すと **1 GiB 未満なので MB の枝**に落ちて `751619276 / 1024 / 1024 = 716.80` ＝
+  **`716.8 MB`**。単位の綴りだけ緩く見る（`MB`／`MiB` の両方を許す）＝**裁定 92 が便 D（3）に残した low に
+  「`UiText` の GB/GiB」が入っており、綴りは動きうるが数字は動かない**からである。
+- 焼けた後の欄も締めた＝`潜在参照`＋`実測`＋`実測前の概算` 無し＋**係数と一致しない**＋数字を含む。
+  （以前は「係数のままでも `潜在参照（実測 …）` と書けば通る」形だった。）
+
+**段 g（プリセット）＝直値 11 を捨てた。**
+
+- 期待値は `build/out/app/voices/presets.json` の **`status=done` の実数**から作る
+  （実測＝12 行のうち done 11・skipped 1＝`cevio_maki_en` は `secondary` を持たない）。
+  ⇒ 便 P が 1 名足した日に**正しい樹で赤くなる**ことも、**1 行落ちた樹で緑のまま**になることも無くなる。
+- 段を 1 本足した＝**表が名指しした wav が配布樹に在る**（`voices/presets/<secondary.file>`）。
+  「表には在るが檔が無い」＝一覧に出て合成できない、を数える段が今まで無かった。
+- `status=done` なのに `secondary.file` を持たない行は id を並べて詳細に出す（数と名前の両方を残す）。
+
+### 22-3 足した段（h・i・j・k・l）
+
+**外への取得は 1 バイトもしない。**そのために私設の配布樹（`server/`・`licenses/`・`voices/` は
+`build/out/app` への **junction**、`ledger/` だけ本物の複製）を作る道具を入れた＝`New-PrivateAppTree`。
+
+| 段 | 何を撃つか | どう「取得しない」を担保したか |
+|---|---|---|
+| **h** | **初回取得ウィザードの押下数**（裁定 94 ⑴）。押下＝⑴ 同意チェック ⑵「同意して次へ」⑶ 変種 ⑷「この構成で取得を始める」⑸「試し撃ちへ」 | 私設樹の `ledger/runtime-<変種>.json` の**最初の item の `sha256` の鍵名だけ**を書き換える。`LedgerReader` が「sha256 が無い」と数え、`FetchPlanner.cs:192` が `LedgerException` を投げ、`FirstRunViewModel.TryPlan` がそれを捕って**socket を 1 本も開かずに**取得の段が false になる。さらに **`vc_redist.json` を写さない**＝`MainViewModel.cs:161-166` が null を返し `FirstRunViewModel.cs:700-703` が「その段は無い」と読むので、**msvcp140.dll が台帳の下限に届かない機体でも 24 MiB を落としに行かない** |
+| **i** | **試し撃ち 200 の後に取得キャッシュが消える**（裁定 90 Q-E2 ⑶・94 ⑶）。**バイトで読む** | 落とさないので**種を播く**（`New-CacheFixture`＝原檔・`.part`・入れ子の 3 檔 196,608 B）。段は 2 本＝**1 射を撃つ前は残っていること**（起動時に掃くのは誤り＝`.part` は続きから取るための物）と、**200 の後に 0 バイトになること**（30 s まで待つ） |
+| **j** | `settings.json` の **`runtimeLedgerSha256`／`installedAppVersion`** が焼かれ、**台帳を壊すと「実行系を組み直す」が出る**（裁定 91） | 窓を 3 枚順に起こす＝⑴ 印の無いデータ樹→**ランチャが焼くか**（20 s 待つ）⑵ 印が合っている→**出さないこと** ⑶ 私設台帳の**バイトを動かす**（`"probe_touched": true` を 1 つ足す＝檔は正しい JSON のまま sha256 だけ動く）→**出ること**（20 s 待つ）。⑴ でランチャが焼かなかったときは台本が自分で正しい sha256 を書いて⑵⑶ を続け、詳細に `guessed stamp = True` と残す＝**「焼く」と「見比べる」を別々の所見にする** |
+| **k** | **起こせない `python.exe`** を指した実行系で「サーバ起動」→ **10 s 以内**に理由 1 行（§20-5 ⑴ の再現） | 私設の実行系の根に `runtime-<変種>\python.exe` を**テキスト檔**で置くだけ（26 B）。押下から状態帯の `失敗` か `StatusReasonText` の非空までを stopwatch で測り、**10 s を予算**にする（旧＝60 s 黙る）。走の間、主窓でない窓は**閉じて名前を記録する**＝§20-5 ⑴ が疑った「このアプリは PC で実行できません」の窓が出ていたら、それ自体が所見になる。子 0・ポート閉のままも数える |
+| **l** | **「取得キャッシュを消す」ボタン**（裁定 90 Q-E2 ⑶） | 種を播いてから押し、20 s 以内に 0 バイトになることと、**データ樹そのものは残る**ことを数える。確認の窓が出たら 1 つ目のボタンで答え、出たことを印字する |
+
+**押下 5 の残り半分**＝「成功した段が自動で次へ進む」ことは、**本当に取得する走でしか測れない**。
+`-WizardFullRun` に隔離した（**E2E 席専用**・既定 off・完了の頁まで**何も押さずに**着くこと自体が証拠で、
+その後の 1 押し＝「試し撃ちへ」で合計 5 になる）。既定の（取得しない）走で数えるのは
+**失敗段までの 4 押し**と、**失敗段で「次へ」を押しても先へ進まない**ことの 2 つである。
+
+**switch**＝`-DryRun`（空走＝窓を開かず段の下拵えを印字して exit 0）・`-RoundThreeOnly`（h／j／k／l だけ＝
+門も模型も鯖も無し）・`-SkipRoundThree`・`-WizardFullRun`。私設ポートは **18097**（h／j／l＝1 度も listen しない）と
+**18098**（k＝押すが開かない）。**8088・7861・18088 には触れていない**。
+
+### 22-4 この席が実際に撃った物（窓は 1 枚も開けていない）
+
+```
+[構文] PowerShell 7  Parser::ParseFile                     PS7 parse OK
+[構文] Windows PowerShell 5.1.26100.9168 同上              PS51 parse OK
+[名寄せ] AST の CommandAst 全部を Get-Command で解決        every command resolves（檔内の function 32 本）
+[空走] pwsh   -File probe/d-launch-probe.ps1 -DryRun       EXIT=0（'nothing was touched.'）
+[空走] powershell.exe 同上                                 EXIT=0
+[実走] 段の下拵え 12 本を AST で抜いて直に撃つ（窓なし・7 と 5.1 の両方で同じ出力）
+```
+
+下拵えの実走の逐語（`New-CacheFixture`／`New-PrivateAppTree`／`Edit-LedgerBytes`／`Remove-PrivateTree` ほか）＝
+
+```
+[cache] seeded ...\ywk-d3-helper-test\cache with 196608 B in 3 files
+not empty yet -> ok=False bytes=196608      gone -> ok=True bytes=0
+[tree] private app tree = ...\app (ledger json = 6)          <- vc_redist.json は写していない
+[tree] broke ...\ledger\runtime-rocm-gfx1151.json (the first item has no sha256 any more)
+junctions = 3   notices = True   presets = True
+items = 107  count field = 107                                <- count と items は食い違わせない
+item 1 has sha256 = False   has the renamed key = True        <- 壊れているのは 1 件だけ
+items still holding a sha256 = 106
+sha moved = True  still valid json = True  probe_touched = True
+BOM free = True                                               <- settings.json は BOM 無しのまま
+tree gone = True   build/out/app still has 4 entries (was 4)   licenses = 10 entries
+```
+
+**最後の 2 行が停止域の証明**である＝junction を含む私設樹を消した後も配布樹は無傷。
+
+**段の数**＝`Add-Step` の呼び場所は檔全体で **102**（うち h 12・j 8・k 7・l 7＝例外の受け口と
+`-WizardFullRun` 専用を含む）。既定の走で実際に数えられるのは **88 前後**を見込む
+（便 D（2）の 58＋h 8＋j 7＋k 6＋l 6＋本流 3）。**確定値は統合席の実走の `=== N failure(s) of M ===` で置き換えること。**
+
+**実測で判った 5.1 の落とし穴**＝**`pwsh` から `powershell.exe` を起こすと `PSModulePath` が 7 の物のまま入り、
+`Microsoft.PowerShell.Utility` が自動読込されず `Get-FileHash` が「認識されません」で落ちる**
+（この機体で再現）。`build/Common.ps1:100-119` が既に同じ理由で .NET の `SHA256` へ落ちる形を持っていたので、
+`probe/` にも同じ形を入れた（`Get-Sha256Hex`）。**`probe/e-install-probe.ps1:461,483` は素のままである**
+＝7 で撃つ限り無害だが、5.1 で撃つなら同じ手当てが要る（担当外なので触っていない）。
+
+### 22-5 ランチャ席・統合席への申し送り（**新しい画面の名前を合わせてほしい**）
+
+§21 がまだ無い時点で書いたので、**新しい部品は候補の `AutomationId` を順に引き、駄目なら文言で拾い、
+拾った要素の実 id を必ず印字する**形にした（`Get-ElementLabel`）。実走の印字を見て、以下を**確定させて**ほしい。
+
+| 何 | 台本が引く `AutomationId` の候補（この順） | 文言での拾い（保険） |
+|---|---|---|
+| 「取得キャッシュを消す」ボタン | `SettingsClearCacheButton`／`SettingsClearDownloadCacheButton`／`SettingsCacheClearButton`／`SettingsDeleteCacheButton`／`StatusClearCacheButton`／`MainClearCacheButton` | 名前に **`取得キャッシュを消す`** を含む要素（設定頁 → 状態頁の順に探す） |
+| 「実行系を組み直す」の申し出 | `StatusRebuildRuntimeButton`／`StatusRebuildButton`／`StatusLedgerMismatchText`／`StatusRuntimeMismatchText`／`MainRebuildRuntimeButton`／`SettingsRebuildRuntimeButton` | 名前に **`実行系を組み直す`** を含む要素（状態頁で見つからなければ**設定頁を 1 度捲ってから**「無い」と言う＝WPF は選ばれていない `TabItem` の中身を作らないので、捲らずに「無い」と数えると**申し出が設定頁に在るときに嘘の緑**になる） |
+
+**台本が当てにしている文言**（変えるなら台本の `$T` も一緒に動かすこと）＝
+`概算`・`実測前の概算`・`実測`・`潜在参照`・`名あたり`（段 c）／`台帳`（段 h の失敗の理由）／
+ウィザードの頁の題の `取得`・`完了`（段 h）／`失敗`（段 k）。
+**`FirstRunStepTitle`・`FirstRunStepNumber`・`FirstRunMessageText`・`FirstRunNextButton`・
+`FirstRunAcceptCheck`・`FirstRunVariantCombo` は今の綴りのまま使っている。**
+
+**押下の数え方**（裁定 94 ⑴ を台本がどう数えるか）＝**同意チェック・「同意して次へ」・変種の選択・
+「この構成で取得を始める」・「試し撃ちへ」の 5 つを押下 1 ずつ**とし、一覧を開いて中身を読む操作は数えない。
+自動進行の実装で**変種の頁が消える**（既定を焼いて頁ごと飛ばす）なら押下は 4 になる＝**それは緩和ではなく
+仕様変更**なので、台本の期待値ではなく卓の裁定を先に動かすこと。
+
+### 22-6 `probe/e-install-probe.ps1` 段 3 の読み合わせ（**変更なしでよい**）
+
+段 3（`Invoke-Stage3`・`e-install-probe.ps1:1140-1187`）が新 UI でも通るかを檔で確かめた。読むのは
+**`FirstRunWizard`（窓）・`FirstRunStepTitle`・`FirstRunStepNumber`・`FirstRunNoticesBox`・`FirstRunAcceptCheck`**
+の 5 つで、すべて**通知の頁**の物である。裁定 94 ⑴ の自動進行が触るのは**取得・展開・モデル・起動の 4 段**
+＝通知の頁の部品ではない。よって**そのまま通る**、が結論。ただし**1 行だけ危ない**＝
+
+- **`e-install-probe.ps1:1158-1159` の「頁の数えが `1 / 7`」**。`FirstRunStepNumber` は
+  `((int)Step + 1) / ((int)FirstRunStep.Done + 1)` なので、**自動進行を「頁を畳む」形で実装すると分母が動き、
+  この 1 段だけが赤くなる**（通知の読みそのものは無事）。**頁は畳まず、成功した段で自動的に次へ進める**なら
+  分母は 7 のままで、`e-install-probe.ps1` は 1 行も直さなくてよい。畳むなら**この 1 行の期待値**を
+  併せて直すこと（檔を持つ席の仕事＝この席は触っていない）。
+- キャッシュの掃除を**起動時**に移すと、段 8c の `Test-DataBranch -Kept @(… 'cache' …)`（`:1597`）が
+  「lost: cache」で赤くなりうる。**いまの段 8c はランチャを 1 度も起こさないので無事**だが、
+  **掃除は「最初の 200 の後」に結び付けたまま**にしておくのが安全である（裁定 90 Q-E2 ⑶ の文言どおり）。
+
+### 22-7 触っていない物
+
+`upstream/`・`research/`・`voices/*.wav`・`tools/`・`probe/rocm-*`・`probe/cuda-*`・`probe/rtx-*`・
+`probe/common.ps1`・`probe/e-install-probe.ps1`・`build/`・`server/`・`ledger/`・`licenses/`・
+`launcher/`（読むだけ）・`decisions.md`・`docs/acceptance.md`・`docs/contract.md`・**本檔の §1〜§21**。
+**利用者データ樹 `%LOCALAPPDATA%\irodori-tts-ywk`（17 GB）は退避すらしていない＝1 バイトも触っていない**
+（窓を 1 枚も起こしていないので触れる走が無い）。ポートは 1 つも開けていない（`Assert-QuietPorts` に届く前に
+`-DryRun` が抜ける）。管理者昇格なし・再起動なし。git の commit／push なし。第三者バイナリは 1 檔も足していない。
+外へ 1 バイトも出していない。
+
+### 22-8 卓へ／後続へ
+
+1. **h・i・j・k・l は「まだ無い画面」を撃つ段である。**ランチャ席の実装が入る前に走らせれば
+   **h の押下 4 と失敗の停止は通り**、**i・j・l は赤**、**k は §20-5 ⑴ の 60 s をそのまま再現して赤**になる。
+   赤の中身が「要素が無い」なのか「振る舞いが違う」なのかは詳細に出る（`<not found>` か、拾った実 id か）。
+   **統合席は実装の後に撃ち、赤が残ったら 22-5 の表で名前を合わせてから直すこと。**
+2. **`-WizardFullRun` は外部取得（4.7 GB）を起こす。**この席の停止域では撃てないので、
+   **押下 5 の確定は E2E 席（便 E の実走）に委ねる**。走らせるなら `-WizardFullRunTimeoutSeconds`
+   （既定 1800）が完了までの上限で、`-Variant` に合わせて回線の実測から見積もること。
+3. **段 i の「起動時に掃かない」は仕様の確認でもある。**`.part` を残すのは中断した初回取得を
+   続きから取り直すためで（§20-1 ⑹）、**掃除を起動時に寄せるとその設計が崩れる**。
+   台本は「1 射の前は残っている」を**段として**数えるので、実装がそこを変えたら赤で気付く。
+4. **段 j の⑴ が赤で⑵⑶ が緑なら、「焼く手」だけが無い**＝`settings.json` に印を書く場所
+   （初回取得の完了時か、起動時か）を決めれば済む。詳細の `guessed stamp = True` がその印である。
+5. **段 k の予算 10 s は `-BadPythonBudgetSeconds` で動く。**§20-5 ⑴ の勧め（⒜ `AsyncRelayCommand` の
+   全例外の受け口 ⒝ `ProcessRunner` の「起こす」段そのものの期限）が入れば **8 ms 級**で返るはずで、
+   10 s は**十分に緩い**値として置いた（GPU 列挙の実測 2.22 s を含んでも余る）。
+6. **`probe/README.md` の「31 段」は直した**（§20-5 ⑸ の宿題）。以後は**段数を檔に書かず**、
+   `=== N failure(s) of M ===` を読む規約にした。
+
+---
+
+## 21. ランチャ席（便 D（3））の記帳（2026-09-05・opus サブ席）
+
+裁定 **90 Q-E2 ⑶・91・92 の low 6 件・94 ⑴⑶** と、設計書 **§20-5 ⑴**（未解決で置いた 1 つ）を
+実装した。**この節も実装の逐語**であって §1〜§8 の設計を覆さない。**他席の節（§9〜§20・§22）は
+1 行も触っていない**。触った path＝`launcher/**` と本檔の本節だけ。
+
+### 21-1 直した表（裁定ごと）
+
+| # | 裁定 | 何が変わったか | 檔 |
+|---|---|---|---|
+| ⑴ | **94 ⑴** | **初回取得の自動進行**＝取得→展開→モデル→起動は成功したら自動で次へ進み、**失敗した段でだけ止まる**（文言は「もう一度」＋理由 1 行）。押下は **9 → 5**（同意チェック・同意して次へ・変種・取得を始める・試し撃ちへ）。段の出入りは `Trail` に `― <段の名>` として残す（自動でもどこまで進んだかが読める）。「中断」は各段で効く（取消は失敗として扱い、そこで止まる）。`Back` は失敗の札を下ろす | `FirstRunViewModel.AdvanceAsync`／`NextAsync`／`NextButtonText` |
+| ⑵ | **90 Q-E2 ⑶** | **取得キャッシュの削除**＝⒜ `firstRunCompleted` が真の機体で「試し撃ち」が **200** を返したら `<data>\cache` を空にする（1 起動につき 1 度・消したバイトを**ログと Trail** に）⒝ 設定の手動ボタン「**取得キャッシュを消す（n GiB）**」（空なら押せない）⒞ **関門**＝`runtime\<変種>\python.exe` が在り、かつ `settings.runtimeLedgerSha256` が配布樹の台帳と一致するときだけ消す。どちらか欠ければ **1 バイトも消さず**理由 1 行 | `Services/Ledger/CacheCleaner.cs`（新設）・`MainViewModel.ClearCacheAfterFirstShot`・`SettingsViewModel.ClearCache`・`TryViewModel.Succeeded` |
+| ⑶ | **91** | **`settings.json` に `runtimeLedgerSha256` と `installedAppVersion`**＝展開が通った直後に焼く。起動時に配布樹の台帳と突き合わせ、**台帳が違えば**状態帯に 1 行と「**実行系を組み直す**」1 手（cache から再展開・足りない原檔だけ取得から）。**版だけ違うときは急かさない**（「そのまま使えます」）。**焼き印の無い樹（便 D（2）以前・台本で組んだ樹）は起動時にいまの台帳で焼き直して黙る**＝正しく組んである機体に 4 GB の展開をやり直させない | `Services/Ledger/RuntimeStamp.cs`（新設）・`MainViewModel.CheckRuntimeStamp`／`RebuildRuntimeAsync`・`StatusViewModel.RebuildRuntimeCommand` |
+| ⑷ | **94 ⑶** | **展開係数を変種ごとの実測に**（`ExpansionFactor` の一律 3.3 を廃止）＝`cu126` **1.69**・`rocm-*` **2.98**・`cpu` **3.60**（実測）・`cu130` **3.3**（未実測）。見積りの 1 行が「（展開は**実測** 2.98 倍）」「（展開は**推定** 3.3 倍）」と出し分ける | `FetchPlanner.ExpansionFactorFor`／`ExpansionFactor` レコード・`FetchPlan.Summary` |
+| ⑸ | **92 の low 6** | 下の 21-2 の表 | 6 檔 |
+| ⑹ | **§20-5 ⑴** | **窓が 60 秒黙る**の手当て＝⒜ `AsyncRelayCommand` の受け口を**全例外**に（型の数え上げをやめた）＋**`Faulted` を画面に繋いだ**（1 巡目・2 巡目は `Faulted` を**誰も購読していなかった**＝捕っても消えていた）⒝ `ProcessRunner`／`ServerProcess` に**「起こす」段そのものの期限 3 s**（`Process.Start` を別スレッドへ逃がして待ち、見限った個体は後から起きたら殺してから捨てる）⒞ `MainViewModel` は GPU 列挙が落ちても理由 1 行を残して先へ進む（門は「読めなかった検分」として扱える） | `Mvvm/RelayCommand.cs`・`Services/Gpu/GpuEnumerator.cs`・`Services/Server/ServerProcess.cs`・`MainViewModel.StartServerAsync` |
+
+**low 6 件（裁定 92 が便 D（3）へ残した画面席の檔）**
+
+| # | 何が壊れていたか | 直し方 |
+|---|---|---|
+| ⑴ | **`UiText.Bytes` が 1024 で割りながら `GB`／`MB`／`KB` と綴っていた**＝同じ配布物の中で `FetchPlanner.FormatBytes`（`GiB`）と状態帯（`GB`）が**同じ進法を別の名**で出していた | 綴りを **`GiB`／`MiB`／`KiB`** に（**数字は 1 つも動かしていない**） |
+| ⑵ | **「（最大 …）」が行末**＝`GPU 全体 3.46 GB / 99.74 GB（最大 3.64 GB）` と並び、直前の分数に掛かる数に見えた（`max` は `max_memory_allocated`＝**使用量の山**）。`memory.error` は `「：」＋逐語` だけで、**出ている数字そのものの説明**に見えた | `使用量 1.73 GiB（最大 3.01 GiB）／占有量 …／GPU 全体 …` に。error は `（一部の欄が読めませんでした：<逐語>）` |
+| ⑵' | **「未対応」1 語で 2 つの事情を出していた** | **`未対応`**＝答えた個体にその口が無い／**`—（サーバが動いていません）`**＝誰も答えていない、に分けた（`DescribeMemory` の第 2 引数＝`/ywk/status` が返ってきているか） |
+| ⑶ | **`"latents": null` で NRE**＝`System.Text.Json` は**明示の null を初期化子より優先**するので、欄が来ない応答と `null` が来た応答で挙動が割れ、後者は `LatentCount` の 1 語で落ちた（描き直しは標本ごと＝**2 秒で窓が落ちる**） | 受けを `null` 許容にし、読みは `EffectiveLatents`（空表）に落とす |
+| ⑷ | **`MainViewModel` が状態機械を通さず `Failed` を書く 2 箇所**（`python.exe` が無い／保存した GPU が居ない）＝`IServerProcess.State` は `Stopped` のままで、窓を開き直すと理由が消え、「サーバ起動」もまた押せた | `IServerProcess.ReportPreflightFailure(string)` を足し、**機械へ通してから**その現在値を配る（`MainViewModel.FailBeforeStart`） |
+| ⑸ | **「GPU メモリの欄」の適用が次回起動まで効かない**＝窓が `StatusView.SetMemoryPanelVisible` を**構築時とウィザードを閉じたときだけ**叩いていた | `StatusViewModel.MemoryPanelVisible` に束縛（`ApplySettings` が正本）。窓から `SetMemoryPanelVisible` を落とした |
+| ⑹ | **409 の待ち行列の取りこぼし**＝出し直す**前に** `_pendingPrecompute.Clear()` していたので、出し直しが 409 以外（サーバが落ちた・期限切れ・停止直後）で落ちると**覚えていた話者が消えた**＝直したはずの筋（§19）がそのまま残っていた | **受け取られるまで落とさない**（`PrecomputeOutcome` を返す）・**出し直しは二重に飛ばさない**（in-flight の札）・**409 以外で 3 回落ちたら諦めて理由を残す**（標本ごとに叩き続けない） |
+
+### 21-2 実測（この機体・rocm-gfx1151・**ポートは 1 つも開けていない**）
+
+**⑴ 見積り（裁定 94 ⑶ の効き）**＝配布樹の台帳の実値から算術で出した（外へ 1 バイトも出していない）。
+
+| 変種 | 落とすバイト | 旧（一律 3.3） | 新（変種ごと） | 係数 | 差 |
+|---|---|---|---|---|---|
+| `cu130` | 5.26 GiB | 11.56 GiB | **11.56 GiB** | 推定 3.3 | ±0 |
+| `cu126` | 5.93 GiB | 14.45 GiB | **10.29 GiB** | 実測 1.69 | **−4.16 GiB** |
+| `cpu` | 3.62 GiB | 4.53 GiB | **4.61 GiB** | 実測 3.60 | +0.08 GiB |
+| `rocm-gfx1151` | 4.79 GiB | 9.55 GiB | **9.09 GiB** | 実測 2.98 | −0.46 GiB |
+
+**cu126 の 14.45 GiB は実測の 1.7 倍を要求していた**（便 E（2）の実測＝展開後 8.38 GB）。
+`cpu` だけ増えるのは実測 3.60 が丸めの 3.3 より大きいからで、**低めに出さない側へ倒す**方針は変わらない。
+
+**⑵ 起こせない `python.exe`**（無人検分の段 k の材料＝テキスト檔に `python.exe` の名を付けた物）＝
+**コンソールから** `Process.Start` を撃つと **16.2 ms** で `Win32Exception`
+（`The specified executable is not a valid application for this OS platform.`）＝
+§20-5 ⑴ の「18 ms」と同じ。**窓の側だけで 60 秒黙る**という形は変わっていないので、
+**期限は「窓でも止まらない」ことの保険**として置いた（3 s × 3 回＝9 s < 段 k の budget 10 s）。
+**なぜ 3 回か**＝1 度の「サーバ起動」で同じ `python.exe` を**⑴ 窓の GPU 列挙 ⑵ 変種の門の検分
+⑶ サーバの子**と 3 回起こすからである（`MainViewModel` → `GpuEnumerator` → `TorchProbeRunner`／
+`ServerProcess.DecideGateAsync` → `ServerProcess` の spawn）。
+
+**⑶ 検分**
+
+```
+dotnet build launcher\IrodoriTtsYwk.sln --nologo --no-incremental   0 個の警告 / 0 エラー
+dotnet test  launcher\IrodoriTtsYwk.sln --nologo                    554 passed（499 → +55）
+  うち RoundThreeTests.cs                                            55 passed（144 ms）
+build\check-tree.ps1                                                 A-7 PASSED（4 KB 超・第三者バイナリ 0・submodule clean）
+```
+
+### 21-3 釘（`IrodoriTtsYwk.Launcher.Tests/RoundThreeTests.cs`・新規 1 檔・55 本）
+
+| 群 | 本数 | 何を押さえるか |
+|---|---|---|
+| `RoundThreeWizardTests` | 6 | 押下 **5** で完了まで通る／失敗した段で止まり「もう一度」＋理由／もう一度で直れば**そこから先も自動**／段の進みが `Trail` に残る／取消は先へ進めない／展開が通ると焼き印が檔にも落ちる |
+| `RoundThreeStampAndCacheTests` | 10 | 台帳が違えば組み直す 1 行／合っていれば黙る（sha256 の大小は問わない）／版だけなら急かさない／実行系が無い・焼き印が無い・台帳が読めないときは黙る／台帳 1 字で sha256 が動く／**置き場の中身を残さず消す**（入れ子も `.part` も・置き場自身は残す）／`python.exe` が無ければ 1 檔も消さない／sha256 が食い違えば 1 檔も消さない／量は入れ子まで数える／設定の手動ボタンは量を出して消し、空なら押せなくなる |
+| `RoundThreeExpansionTests` | 4（＋5 例） | 変種ごとの実測係数／大小と綴りの揺れ／「実測 2.98 倍」「推定 3.3 倍」の出し分け／必要な空きが変種ごとに変わる |
+| `RoundThreeLowSixTests` | 12（＋4 例） | GiB の綴り／最大は使用量の隣／未対応と「動いていません」の出し分け／error の文言／帯は答えの有無で文言を変える／`latents: null` で落ちない／GPU メモリの欄は適用の瞬間に効く／**手は全例外を受ける**（`Win32Exception`）／取消は失敗にしない／文言の無い例外は型名／起こせない実行檔は期限より早く理由 1 行／期限は 3 s（3 回で 9 s < 10 s） |
+| `RoundThreePrecomputeQueueTests` | 3 | **出し直しが落ちても覚えたまま**／3 回落ちたら諦めて理由／走行中の標本では出し直さない |
+| `RoundThreeMainViewModelTests` | 10 | 事前検査の断り 2 種が**状態機械を通る**／列挙が落ちても理由がログに残る／手が落ちても理由 1 行／台帳が違えば 1 手が出て、直せば消える／**焼き印の無い樹は起動時に焼き直して黙る**／実行系が無い樹には押さない／試し撃ちの 200 で cache が消える／初回取得未了なら消さない |
+| `RoundThreeRebuildTests` | 3 | cache が揃っていれば**取得へ出ない**／足りない檔だけ取り直す／展開系が無ければ焼き印を動かさず理由を残す |
+
+**既存檔で直した釘は 5 本＋偽物 1 つだけ**（綴りと文言が動いた物＝`ViewModelsTests`（UiText の 3 例と 2 本）・
+`RoundTwoUiTests`（帯 3 本）・`CorrectionSeatVoicesTests`（「やり直す」→「もう一度」）・
+`LedgerServiceTests`（係数）・`WrapperClientTests`（`Latents` が null 許容になった）と、
+`IServerProcess` に口が増えた `RoundTwoIntegrationTests.CapturingServer`）。
+`RoundTwoIntegrationTests` には `[Collection]` を 1 行足した（`AppServices` を触る檔を並走させない）。
+
+### 21-4 触っていない物
+
+`upstream/`・`research/`・`voices/`・`tools/`・`ledger/`・`licenses/`・`server/`・`build/`・`probe/`・
+`installer/`・`decisions.md`・`docs/contract.md`・`docs/acceptance.md`・**本檔の §1〜§20 と §22**。
+`build/check-tree.ps1` は**実走しただけ**。git の commit／push はしていない。第三者バイナリは 1 檔も
+足していない。**外へ 1 バイトも出していない**（偽の取得系は檔を 1 つも落とさない）。
+起こした子プロセスは **`Process.Start` が例外で返る 1 回**（テキスト檔・16.2 ms）だけで、
+**8088・7861・18088 は一度も起こしていない**。
+
+### 21-5 卓へ／後続へ
+
+1. **`docs/contract.md` ⑻ に 2 行足すこと**（本席の担当パス外）＝`runtimeLedgerSha256`（小文字 hex 64 字・
+   **展開に使った**台帳の sha256・null 可）と `installedAppVersion`（`v0.1.0` の形・null 可）。
+   `schema` は上げていない（欄を足すだけ＝契約 ⑻ の規律）。
+2. **裁定 90 の「台帳の item の檔」を「置き場ごと」に読み替えた**（本席の判断・卓の追認が要る）。
+   理由＝`<data>\cache` に書くのは取得系だけだが、**そこに残るのは今の台帳が名指す檔だけではない**
+   （⒜ 前の台帳の原檔 ⒝ 打ち切った `.part` ⒞ 名前が変わった檔）。名前で選ぶとこの 3 つが残り、
+   受け入れ条件の「展開後（**cache 削除後**）≤ 9.0 GB」の実測が合わない。**関門**（`python.exe` の在否と
+   台帳の sha256 の一致）を通った後に置き場ごと空にする形にしてある＝「取り直しが要る機体からは
+   1 バイトも取らない」という 裁定 90 ⑶ ⒞ の主旨は保っている。`CacheCleaner.FileNames` は
+   **削除には使っていない**（今の台帳の物が何件かを言うためだけに残した）。
+3. **「起こす」段の期限を 3 s にした理由**（§20-5 ⑴ の勧めは「例 10 s」）＝1 度の押下で同じ
+   `python.exe` を 3 回起こすので、10 s では無人検分の段 k（budget 10 s）に収まらない。
+   `CreateProcess` は健全な機体で ms の仕事なので 3 s でも 100 倍以上の余裕があるが、
+   **AV が重い機体で健全な `python.exe` の spawn が 3 秒を超えたら**「起こす段が返らない」と
+   誤って告げる。値を動かすときは `ProcessRunner.DefaultStartTimeout` の 1 箇所
+   （`ServerProcess.SpawnTimeout` はこれを見ている）と、段 k の `-BadPythonBudgetSeconds` を
+   一緒に見ること。
+4. **`UiText.Bytes` の綴りが変わったので、状態帯の見た目が `2.21 GB` → `2.21 GiB` になる**
+   （数字は 1 つも動いていない）。§17-2・§20-2・§19 に載っている実射の逐語は**当時の綴りのまま**で
+   正しい（本席は他席の節を書き換えない）。無人検分の台本は単位を見ていないので影響しない。
+5. **`memory.error` の添え方を変えた**＝`（一部の欄が読めませんでした：<逐語>）`。wrapper の 1 行は
+   畳んでいないので、契約 ⑹ の `error` の意味は変えていない。
+6. **未実射で残る**（実窓・実 GPU は統合席と E2E 席の担当）＝⒜ 自動進行の**本物の 1 周**（取得 4.79 GiB を
+   本当に落とす走＝E2E 席）⒝ 段 k（起こせない `python.exe`）を**窓で**撃ったときの実測（期限が本当に
+   効くか・シェルの窓が出ないか）⒞ 段 j（焼き印）の 3 窓 ⒟ 段 l（手動ボタン）⒠ cu130 の展開後サイズ
+   （RTX 機・実測が出たら `FetchPlanner.ExpansionFactorFor` の `cu130` を実測へ移すこと＝1 行）。
+7. **`FirstRunViewModel.Note` は「ウィザードがまだ開いていれば」Trail に足す口**である
+   （`MainViewModel` が最後に作った 1 個体を持つ）。試し撃ちが**ウィザードを閉じた後**なら
+   ログにだけ残る＝裁定 90 の「Trail と log に」は**開いていれば両方**という形で満たしている。
+
+## 23. 統合席（便 D（3））の記帳（2026-09-05・opus サブ席）
+
+> 本節は**この席が実際に撃った物だけ**を書く。読んだだけ・推したものは「推測」と明記する。
+> 触った path＝`launcher/**`（下の 23-2 の 4 檔）と**本節**とスクラッチパッドだけ。
+> `probe/`・`build/`・`installer/`・`server/`・`ledger/`・`licenses/`・`voices/`・`decisions.md`・
+> `docs/contract.md`・`docs/acceptance.md`・**本檔の §1〜§22** は**読むだけ／実走しただけ**。
+> `git commit`／`push` はしていない。第三者バイナリは 1 檔も足していない。**管理者昇格 0 回・再起動 0 回**。
+> **8088・7861・18088 は一度も起こしていない**（使った私設ポートは 18094・18097・18098・18099）。
+> **外部への取得を撃ったのはこの席である**（裁定どおり＝E2E の 1 走だけ・実測は 23-6）。
+> 利用者データ樹（**16,990,584,628 B・53,769 檔**）は E2E の前に `Rename-Item` で
+> `irodori-tts-ywk.d3-backup` へ退避し、走り終えてから戻した＝**名と長さの差 0**（23-8）。
+
+### 23-1 撃った物と結末（一覧）
+
+| # | 撃った物 | 結末 | 所要 |
+|---|---|---|---|
+| ⑴ | `dotnet build launcher\IrodoriTtsYwk.sln --nologo --no-incremental` | **0 個の警告・0 エラー** | 3.4 s |
+| ⑵ | `dotnet test launcher\IrodoriTtsYwk.sln --nologo` | **失敗 0・合格 559**（便 D（3）ランチャ席の 554 ＋ 本席の 5） | 3 s |
+| ⑶ | `build\run-tests.ps1` | **339 passed**・`upstream/` 2 本とも clean・**EXIT=0** | 12 s |
+| ⑷ | `build\check-tree.ps1` | **A-7 PASSED**・EXIT=0（本席の編集の後にもう 1 度撃って同じ） | 1 s |
+| ⑸ | `build\check-licenses.ps1` | **A-6 PASSED**（13 檔）・EXIT=0（同上） | 1 s |
+| ⑹ | `build\assemble-app.ps1` | **108 檔**・プリセット 11 wav 32,571,364 B・upstream clean | 7 s |
+| ⑺ | `probe\d-launch-probe.ps1 -RoundThreeOnly`（**実装の直後・1 回目**） | **1 failure of 29**＝段 k の「シェルの窓」（23-2） | ≈1.2 分 |
+| ⑻ | 同上（**直した後・2 回目**） | **0 failure of 29**（段 k は 1.25 s → **0.44 s**・窓 0 枚） | ≈1.3 分 |
+| ⑼ | `probe\d-launch-probe.ps1`（**全段・実 ROCm・私設 18094／18097〜18099**） | **0 failure of 88** | ≈3.7 分 |
+| ⑽ | `build\installer-build.ps1 -All` | **DONE: 2 installer(s), 20 gate(s), 0 failed.** | **42 s**（13:13:43→13:14:25） |
+| ⑾ | `probe\e-install-probe.ps1`（既定の段 1・2・3・5・6・7・8） | **0 failure of 72**・データ樹はバイトで戻った | ≈1.3 分 |
+| ⑿ | **E2E＝まっさらな機体の初回取得（CUDA 版 setup・cpu 変種・本物の取得）** | **0 failure**・**押下 5**・cache 294,382,715 B → **0 B** | **199.57 s** |
+| ⒀ | 製品の路の「試す」（10 steps／40 steps・別々の走） | **RTF 1.53／3.33**（どちらも 200） | 各 1 分 |
+
+**⑺ の 1 件が本席の見つけた割れである**（他は全部 1 発で緑）。
+
+### 23-2 直した割れ＝**ハードエラーの窓が `Process.Start` を止めていた**（設計書 §20-5 ⑴ の正体）
+
+**⑴ 見つかり方**＝検分席が置いた段 k（起こせない `python.exe` を実窓で撃つ）を実装の直後に走らせたら、
+段は緑だが**「シェルの窓を残していない」だけが赤**だった。台本が閉じた窓の逐語＝
+
+```
+[dialog] サポートされていない 16 ビット アプリケーション (id=)
+[dialog] サポートされていない 16 ビット アプリケーション (id=)
+[dialog] サポートされていない 16 ビット アプリケーション (id=)
+[badpython] state  = 失敗 after 1.25 s
+[FAIL] no modal of the shell was left on the screen  windows closed = 3
+```
+
+**3 枚**なのは 1 度の「サーバ起動」で同じ `python.exe` を 3 回起こすから（§21-5 の 3）。
+検分席が「§20-5 ⑴ が疑った窓が出ていたらそれ自体が所見」と書いた、その所見である。
+
+**⑵ 実測でつかまえた機序**（コンソールから 3 通り・スクラッチパッドの `hardtest.ps1`／`hardtest2.ps1`）＝
+
+| 撃ち方 | プロセスのエラーモード | `Process.Start` | 出た窓 |
+|---|---|---|---|
+| そのまま（PowerShell から） | **0x8003**（`SEM_FAILCRITICALERRORS`＋`SEM_NOGPFAULTERRORBOX`＋`SEM_NOOPENFILEERRORBOX`） | **18.9 ms** で `Win32Exception` | **0 枚** |
+| `SetErrorMode(0)` してから | **0x0000** | **返ってこない**（40 秒で打ち切っても返らず・窓を閉じるまで待つ） | **1 枚**（「サポートされていない 16 ビット アプリケーション」） |
+| `SetErrorMode(0)`＋`SetThreadErrorMode(0x8001)` | 0x0000（スレッドだけ 0x8001） | **12.7 ms** で `Win32Exception` | **0 枚** |
+
+**これが §20-5 ⑴ の「窓は 60 秒黙る／コンソールは 18 ms で返る」の差の正体である**＝
+WPF のメッセージポンプの問題ではなく、**撃った個体のエラーモードの差**であった
+（PowerShell は 0x8003 を持っているので窓が出ず、素の WPF アプリは 0 なので出る）。
+そして**窓が出ている間 `Process.Start` は返らない**＝待つ側にいくら期限を掛けても、
+窓を誰かが押すまでその子は生きたまま残る。1 巡目・2 巡目の「60 秒」は、
+**無人検分の台本が 200 ms ごとに窓を閉じていたから 60 秒で済んでいた**とも読める。
+
+**⑶ 直し方**（`launcher/**` の 4 檔）
+
+| 檔 | 何をしたか |
+|---|---|
+| `Services/Gpu/GpuEnumerator.cs` | `ProcessRunner.StartAsync(Process)` と `ProcessRunner.StartWithoutHardErrorBox(Process)` を足した＝`SetThreadErrorMode(SEM_FAILCRITICALERRORS｜SEM_NOOPENFILEERRORBOX)` を掛けてから `Start` を撃ち、**必ず元へ戻す**。`RunAsync` の「起こす」段をこの口に差し替えた |
+| `Services/Server/ServerProcess.cs` | 子の spawn を `Task.Run(process.Start)` から `ProcessRunner.StartAsync(process)` へ |
+| `Services/Models/ModelFetcher.cs` | モデル取得の子も同じ口へ（`StartWithoutHardErrorBox`＝ここは子を待つ呼び手なので同じスレッドで撃つ） |
+| `IrodoriTtsYwk.Launcher.Tests/RoundThreeIntegrationTests.cs`（新設） | 釘 5 本（下） |
+
+**なぜスレッド単位か**（`SetErrorMode` ではなく `SetThreadErrorMode`）＝プロセスのエラーモードは
+**起こした子が引き継ぐ**。窓を出さない約束を wrapper の python にまで広げたくない。
+`Task.Run` のスレッドはプールの使い回しなので、戻すのは `finally` で行う。
+
+**`VcRedistInstaller` は触っていない**＝あれは `UseShellExecute=true`＋`Verb=runas` で、
+出る窓は UAC であり、この機序ではない（触ると UAC の路を動かすことになる）。
+
+**⑷ 直した後の実測**（同じ段 k・同じ材料）
+
+```
+[badpython] state  = 失敗 after 0.44 s      （1.25 s から）
+[PASS] no modal of the shell was left on the screen  windows closed = 0
+[PASS] the failed start left no child behind  children=0
+[PASS] the failed start never opened the port  port 18098
+```
+
+**「起こす」段の期限 3 s（§21-5 の 3）は残す**＝窓を止めたので普通は 8〜20 ms で返るが、
+`SetThreadErrorMode` が効かない OS／効かない種類のハードエラーが在ったときに、
+**返らない `Start` を待ち続けない**保険はやはり要る。値は動かしていない。
+
+**⑸ 釘 5 本**（`RoundThreeIntegrationTests.cs`）＝⒜ 起こせない実行檔は窓を待たずに `Win32Exception`
+（3 s 未満）⒝ **掛けるのはスレッドのエラーモードで、プロセスの物は動かさない**（`GetErrorMode` が前後で不変）
+⒞ 起こせた個体でもスレッドのエラーモードは元へ戻る ⒟ 別スレッドで撃つ口（`StartAsync`）も同じ始末をする
+⒠ 列挙の口（`RunAsync`）は**例外を投げず**理由 1 行で返る。
+※ 宿主（`dotnet test`）のエラーモードは 0x8003 なので、**この釘は「窓が出るか」ではなく「掛け方が正しいか」**
+を押さえる（窓そのものは無人検分の段 k が実窓で撃つ＝上の ⑷）。
+
+### 23-3 無人検分（`probe/d-launch-probe.ps1`）＝**88 段が全部緑**
+
+検分席の見込み（88 前後）は当たった＝**`=== 0 failure(s) of 88 ===`**（EXIT=0）。
+新しい段（h・i・j・k・l）の逐語で、この便の裁定が実窓で立っていることが読める。
+
+```
+h  [wizard] press 1..4 → [PASS] the presses up to the failed step are four
+   [wizard] message = 取得台帳が読めないので取得を始められません（… sha256 の無い item がある …：absl-py）。
+   [PASS] a first run that failed is not written down as done  firstRunCompleted = False
+i  [cache] seeded … 196608 B in 3 files → [PASS] the cache is still there when the shot is fired
+   [PASS] the download cache is empty once the shot came back 200
+j  [ledger] runtimeLedgerSha256 = ceec8560c678f456120ef720b73615a98da00b3830e5a6c276a736b37a04a80f
+   [ledger] installedAppVersion = v0.1.0
+   [PASS] a launcher that finds no stamp writes one   guessed stamp = False
+   [PASS] the same ledger, the same stamp, and still no offer
+   [ledger] offer = [Button] id='StatusRebuildRuntimeButton' name='実行系を組み直す'
+k  [badpython] state = 失敗 after 0.44 s ・ windows closed = 0        （23-2）
+l  [cache] found on TabSettings :: [Button] id='SettingsClearCacheButton' name='取得キャッシュを消す（192.0 KiB）'
+   [cache] 196608 B -> 0 B in 0 s ・ 押した後の名は '取得キャッシュを消す（空です）'
+```
+
+**名前は 1 つも食い違わなかった**（検分席の §22-5 の候補表の第 1 候補がそのまま当たった）＝
+`StatusRebuildRuntimeButton`・`SettingsClearCacheButton`。表を直す必要はない。
+
+本流（実 ROCm・私設 18094）の実測＝
+
+```
+[gpu] 0: AMD Radeon(TM) 8060S Graphics（99.7 GB）           列挙は 1 回
+[wizard] size line = 取得 4.79 GiB・必要な空き 9.09 GiB（展開は実測 2.98 倍）
+                     （実行系 1.44 GiB・モデル 3.33 GiB・vc_redist 24.4 MiB）      ← 裁定 94 ⑶
+[start] state=待機 after 31 s                                                     ← D-6（≤ 120 s）
+[status] memory = 使用量 1.78 GiB（最大 3.64 GiB）／占有量 2.06 GiB／GPU 全体 2.36 GiB / 99.74 GiB
+                                                                                  ← 裁定 92 low ⑴⑵（GiB・最大の置き場）
+[latent] ON（焼いた話者 0 名・合計 0 B）
+[try] result = 所要 7.31 秒／出力 1.36 秒／RTF 5.37（1 射目）／所要 4.75 秒／出力 3.64 秒／RTF 1.30（日本語名の話者）
+[gate] cu130 → 失敗 after 3.39 s・「cu130 はこの機体で GPU を見られません（is_available=False・device_count=0）。
+       rocm-gfx1151 か cpu の変種に切り替えてください。」                          ← 裁定 88 ⑴
+```
+
+**この走で `8088`・`7861`・`18088` は一度も起こしていない**（台本の preflight と teardown が両端で数える）。
+
+### 23-4 生産ライン（`build/installer-build.ps1 -All`）＝**2 版・門 20 本・0 failed**
+
+```
+DONE: 2 installer(s), 20 gate(s), 0 failed.
+artefact cuda   = irodori-tts-ywk-setup-v0.1.0-cuda.exe    85,000,444 B
+                  sha256 0718df38d2b67a7cb41274e3bfb23d0aff55d1ab6d31967c45c649da1333097a
+artefact radeon = irodori-tts-ywk-setup-v0.1.0-radeon.exe  85,014,911 B
+                  sha256 5794f634d447617352a23ad8f4f4ed13eaa4dc6a3bd901315fd58c843f178afe
+発行 exe        = build\out\launcher\win-x64\IrodoriTtsYwk.Launcher.exe  69,621,034 B
+```
+
+便 E（2）の最終の 2 本（84,986,833 B／85,001,303 B・§14-1）との差は **+13,611 B／+13,608 B**＝
+本席の直し（23-2）と便 D（3）の他席の実装が焼き込まれた分である。
+**サイズ帯の門（B-2＝77.0〜85.0 MiB）は 81.06／81.08 MiB で通っている**。
+
+### 23-5 検分台本（`probe/e-install-probe.ps1`）＝**72 段が全部緑**
+
+`=== 0 failure(s) of 72 ===`（EXIT=0・なま値は `build/out/probe-log/e-install-20260905-131443`）。
+**段 3（通知の頁）は 1 行も直さずに通った**＝検分席の読み合わせ（§22-6）どおり、
+裁定 94 ⑴ の自動進行は**頁を畳まない**ので `FirstRunStepNumber` の分母は 7 のままである。
+**段 8c（`Test-DataBranch -Kept … 'cache' …`）も緑**＝キャッシュの掃除を「最初の 200 の後」に
+結び付けたまま（起動時に掃かない）ので、§22-6 の危惧は現実になっていない。
+利用者データ樹（**16.99 GB**）は台本自身が退避して戻し、
+`[PASS] the operator data tree came back byte for byte (count, bytes and every name)`。
+
+### 23-6 E2E＝**まっさらな機体の初回取得（CUDA 版 setup・cpu 変種・本物の取得）**
+
+台本＝スクラッチパッドの `ben-d3/e2e/e2e-d3-cpu.ps1`（便 E（2）の E2E 台本を写して 3 点だけ直した＝
+⒜「もう一度」の綴り ⒝ **働く段では「次へ」を押さない**（押されたらそれ自体が所見）
+⒞ キャッシュを射の前後でバイトで読む）。**利用者データ樹は空**（models も無い）から始めた。
+
+**⑴ 導入**（`/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG=`・`/DIR` は付けない）
+
+```
+[install] irodori-tts-ywk-setup-v0.1.0-cuda.exe exit=0 sec=2.9 log=616 lines
+[install] User privileges: None ／ Administrative install mode: No ／ Install mode root key: HKEY_CURRENT_USER
+[install] {app} = C:\Users\mugonkun\AppData\Local\Programs\irodori-tts-ywk
+[install] {app} files=112 bytes=111,149,939
+```
+
+**UAC は 0 回**（便 E（2）§15-1 と同じ・`{app}` は exe の分だけ +11,500 B）。
+
+**⑵ 設定は「ウィザードの前に」データ樹へ置いた**（`AppPaths` の読む場所の確認）＝
+
+```
+[settings] C:\Users\mugonkun\AppData\Local\irodori-tts-ywk\settings.json  port=18097 variant= firstRunCompleted=False
+[serve] port 18097 listening = True   （＝置いた 18097 で立った。既定の 18088 は一度も開いていない）
+```
+
+**⑶ ウィザード**（窓は起動 1.4 s で自分から開いた）
+
+```
+[wizard] step = 1 / 7  初回取得の前に（第三者物の通知）
+[wizard] notices shown = 16509 chars, file = 16509 chars      ← 裁定 46（1 文字も違わない）
+[wizard] step = 2 / 7  実行系の種類を選ぶ
+[wizard] variant choices = cu130 | cu126 | cpu                ← CUDA 版の 3 択
+[wizard] picked   = cpu
+[wizard] name     = CPU（遅い・配信用途では非推奨）
+[wizard] note     = CPU は GPU の数百分の一の速さです。配信用途では勧めません（試すためだけの選択肢です）。
+[wizard] driver   = ドライバの下限はありません。
+[wizard] size     = 取得 3.62 GiB・必要な空き 4.61 GiB（展開は実測 3.6 倍）
+                    （実行系 280.7 MiB・モデル 3.33 GiB・vc_redist 24.4 MiB）
+```
+
+**⑷ 段ごとの時計**（`FirstRunStepNumber` の変わり目・**押下は 1 度も挟んでいない**）
+
+| 段 | 逐語（Trail） | 所要 |
+|---|---|---|
+| 3/7 取得（実行系） | `msvcp140.dll は既に在る（14.51.36247.0）ので飛ばす。`／`実行系を取得しました（102 件）。` | **2.96 s** |
+| 4/7 展開 | `展開しました（25012 檔・903.3 MiB）。` | **25.58 s** |
+| 5/7 取得（モデル） | `モデルを取得しました。` | **73.19 s**（**本物の 3.33 GiB**） |
+| 6/7 起動の確認 | `サーバが起動しました。` | **20.93 s**（CPU で ready まで） |
+| 7/7 完了 | `初回取得が終わりました。` | — |
+
+**働く段の 4 つは自動で繋がった**＝Trail に `― 取得（実行系）`／`― 展開`／`― 取得（モデル）`／
+`― 起動の確認` の 4 行が残り（裁定 94 ⑴ の「どこまで進んだかは自動でも読める」）、
+**働く段で「次へ」が押せる状態になったことは 1 度も無い**（`presses OFFERED inside the work steps = 0`）。
+
+**⑸ 押下＝5**（**裁定 94 ⑴ の目標を実窓で満たした**）
+
+```
+[wizard] operator PRESSES counted = 5  (accept / agree / variant / start the fetch / to the try screen)
+```
+
+便 E（2）の実測は **9**（§15-7）＝**4 押下減った**。数え方は緩めていない（押下のまま）。
+
+**⑹ 取得キャッシュ**（裁定 90 Q-E2 ⑶）
+
+```
+[cache] before the shot: files=102 bytes=294,382,715      ← 1 射の前は残っている（.part の続きの為）
+[http]  POST /v1/audio/speech -> 200  bytes=142,124  RIFF/WAVE=True
+[cache] after the shot:  files=0   bytes=0  (waited 0 s)  ← 200 の後に空
+```
+
+**置き場そのものは残った**（`<data>\cache` は在る）。データ樹の終端＝
+`models 3,571,273,952 B ／ runtime 966,099,983 B ／ voices 32,576,389 B ／ cache 0 ／ logs 0 檔`
+＝**4,569,951,086 B（4.26 GiB）**。
+
+**⑺ 展開の係数の実測**（裁定 94 ⑶ の材料）＝**ランチャが展開した cpu の樹は 3.23 倍**である。
+
+| 何 | 檔 | バイト | 対 台帳 |
+|---|---|---|---|
+| 台帳（`ledger/runtime-cpu.json`） | 101 item | 283,249,109 B（270.1 MiB） | 1.00 |
+| ランチャが cache へ落とした原檔 | 102 | 294,382,715 B（280.7 MiB） | 1.04 |
+| **ランチャが展開した `<data>\runtime\cpu`** | **25,262** | **950,608,342 B（906.6 MiB）** | **3.23**（原檔比） |
+| `build\out\runtime-cpu`（`assemble-runtime.ps1` が組む樹） | 28,373 | 1,020,237,457 B（973.0 MiB） | **3.60** |
+
+`FetchPlanner` の cpu の係数 **3.60 は「台本が組む樹」の実測**であり、
+**ランチャ自身が展開する樹はそれより小さい**（`WheelInstaller` が `MinimalDistInfo` で書くぶん
+3,111 檔・69.6 MiB 少ない）。よって見積りは **0.10 GiB ほど多め**に出る＝
+**低めに出さない側**なので実害は無い（23-9 の 3 に票として残す）。
+（差は **3,111 檔・69,629,115 B＝66.4 MiB**。）
+
+**⑻ 停止とアンインストール**
+
+```
+[stop] stray python = 0 ／ [stop] port 18097 still listening = False
+[uninstall] exit=0 sec=1.02 log=171 lines
+[uninstall] key gone = True  {app} gone = True  lnk gone = True
+[uninstall] Removed all? Yes
+[uninstall] Defaulting to No for suppressed message box (Yes/No):   ×2   ← M-8（2 つの問いが「残す」に落ちた）
+```
+
+**⑼ 時計の総和**＝`preflight` から `uninstalled` まで **199.57 s**。
+うち**ウィザードの働く段が 123.64 s**（取得 2.96＋展開 25.58＋モデル 73.19＋起動 20.93）。
+**モデル 3,571,273,952 B を 73.19 s** ＝ **48.8 MB/s**（この機体の回線・実測）。
+受け入れ条件「オンライン導入 ≤ 10 分（100 Mbps 級）」への引き直しは
+**12.5 MB/s なら cpu 変種で ≈6.0 分**（3.62 GiB＝3,886,946,406 B ÷ 12.5 MB/s＝311 s ＋
+展開 25.6 s ＋ 起動 20.9 s ＋ 導入 2.9 s ＝ 360 s）＝**推測**（帯域を絞った走は撃っていない）。
+
+### 23-7 「試す」の 1 射（製品の路・CPU）
+
+E2E の中の 1 射は 200 で返り cache も消えたが、台本が結果の行を**プレースホルダの `—` のまま**読んで
+しまい RTF が採れなかった（便 E（2）§15-5 と同じ罠＝台本の瑕疵であって製品の瑕疵ではない）。
+そこで**同じデータ樹に対して導入→1 射→アンインストールを 2 回**撃ち直した（`try-shot.ps1`）。
+
+| 走 | steps | 状態 | 逐語 |
+|---|---|---|---|
+| A | **10** | 待機 after **15.34 s** | `所要 4.84 秒／出力 3.16 秒／RTF 1.53／seed 204573932289323369` |
+| B | **40**（設定の既定） | 待機 after **15.37 s** | `所要 10.51 秒／出力 3.16 秒／RTF 3.33／seed 1377071445224504460` |
+
+- **受け入れ条件「CPU（fp32・OMP=8）＝RTF ≤ 4.0」は 40 steps の本物の路で満たした**（3.33）。
+  便 E（2）の W-1（`IRODORI_MODEL_DEVICE=cpu` で wrapper を直に起こした 10 steps・RTF 1.44）と
+  **10 steps 同士で 1.53 対 1.44** ＝同じ帯である。
+- 状態帯の逐語＝`device = cpu／fp32`・`variant = CPU（遅い・配信用途では非推奨）`・
+  **`memory band = CPU（GPU メモリなし）`**（裁定 92 low ⑵' の出し分け＝「未対応」でも
+  「—（サーバが動いていません）」でもない第 3 の枝が CPU で出ることを実窓で確認した）・
+  `latent = OFF（焼いた話者 0 名・合計 0 B）`。
+- `settings.json` は **`runtimeLedgerSha256: "0ac4f002ce31a677be05326301b813790962aff2f4ab5399e7edf1208a022c26"`**
+  と **`installedAppVersion: "v0.1.0"`** を持っていた（裁定 91＝展開の直後に焼かれ、
+  2 度目・3 度目の起動でも「実行系を組み直す」は出なかった）。
+
+### 23-8 後片付けの証拠（走の前と後で突合）
+
+| 何 | 前 | 後 |
+|---|---|---|
+| 利用者データ樹 | **53,769 檔・16,990,584,628 B** | **53,769 檔・16,990,584,628 B**（**名と長さの差 0**） |
+| `%LOCALAPPDATA%` の `irodori*` | `irodori-tts-ywk` の 1 つ | `irodori-tts-ywk` の 1 つ（退避物は残っていない） |
+| アンインストール鍵（HKCU） | 0 | **0** |
+| `%LOCALAPPDATA%\Programs\irodori-tts-ywk` | 無し | **無し** |
+| スタートメニューの `*irodori*.lnk` | 0 | **0** |
+| listen（8088／7861／18088／18094／18097／18098／18099） | 0 | **0** |
+| `IrodoriTtsYwk.Launcher` / `ywk_server` の python | 0 / 0 | **0 / 0** |
+
+突合の生データ＝スクラッチパッドの `ben-d3/data-tree-before.txt`／`data-tree-after.txt`
+（53,769 行・`<相対パス>|<長さ>` を並べ替えて `Compare-Object`＝**差 0 件**）。
+
+### 23-9 卓へ／後続へ
+
+1. **`docs/contract.md` ⑻ の 2 行はまだ書かれていない**（§21-5 の 1 と同じ票）＝
+   `runtimeLedgerSha256`（小文字 hex 64 字・null 可）と `installedAppVersion`（`v0.1.0` の形・null 可）。
+   本席の担当パス外なので触っていない。**E2E で実物が出た**（23-7 の逐語）ので、書ける。
+2. **`docs/acceptance.md` の導入行は「押下 5」で埋められる**（本席の担当パス外）＝
+   実測＝**まっさらな機体・CUDA 版 setup・cpu 変種で 5 押下**（23-6 ⑸）。
+   便 E（2）が「未達（9 押下）」と書いた行を、**この走の逐語で置き換えてよい**。
+   併せて**サイズ行**＝cpu 変種の展開後（cache 削除後）は **4.26 GiB**＝「≤ 9.0 GB」を満たす。
+   **CPU の速度行**（RTF ≤ 4.0）も**製品の路で 3.33**（23-7）＝満たす。
+3. **展開係数の分母がずれている**（`FetchPlanner.ExpansionFactorFor`）＝表の値は
+   **`assemble-runtime.ps1` が組む樹**の実測で、**ランチャが展開する樹はそれより小さい**
+   （cpu で 3.60 対 **3.23**・檔数で 28,373 対 25,262）。**低めに出さない側**なので急ぎではないが、
+   実測を入れ替えるなら**ランチャが展開した樹**を分子にすること。rocm・cu126 も同じずれを持つはず
+   （**推測**＝本席が測ったのは cpu だけである）。
+4. **`SetThreadErrorMode` が効かない機体は未確認**（**限界**）＝この機体では 3 通りの撃ち方で
+   確かめたが、AV や group policy がハードエラーの窓を別経路で出す機体は撃っていない。
+   段 k は「窓 0 枚」を数え続けるので、そこが赤くなったらこの仮定が崩れたということである。
+5. **cu130 の展開後サイズは未実測のまま**（RTX 機・§21-5 の 6 ⒠ をそのまま引き継ぐ）。
+6. **E2E の台本が結果の行を `—` のまま読む罠**は便 E（2）から 2 度目である。
+   `probe/d-launch-probe.ps1` の段 5・7 は `Wait-ForResultText` 相当を持っていて掛からないが、
+   スクラッチパッドの E2E 台本は毎回この手当てが要る（`try-shot.ps1` の待ち方が正しい形）。

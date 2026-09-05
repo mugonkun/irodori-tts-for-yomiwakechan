@@ -53,10 +53,15 @@ public sealed record FetchPlan(string Variant, IReadOnlyList<FetchStep> Steps, l
     /// <summary><c>cache/</c> に落ちるバイト（vc_redist＋python-embed＋runtime）。モデルは経由しない。</summary>
     public long CacheBytes => Steps.Where(s => s.Stage != FetchStage.Models).Sum(s => s.Bytes);
 
-    /// <summary>変種ディレクトリに展開されるバイトの見積り（<see cref="FetchPlanner.ExpansionFactor"/>）。</summary>
+    /// <summary>
+    /// この計画の展開係数（<b>変種ごとの実測</b>＝裁定 94 ⑶・<see cref="FetchPlanner.ExpansionFactorFor"/>）。
+    /// </summary>
+    public ExpansionFactor Expansion => FetchPlanner.ExpansionFactorFor(Variant);
+
+    /// <summary>変種ディレクトリに展開されるバイトの見積り（変種ごとの実測係数）。</summary>
     public long EstimatedRuntimeBytes => (long)(
         Steps.Where(s => s.Stage is FetchStage.PythonEmbed or FetchStage.Runtime).Sum(s => s.Bytes)
-        * FetchPlanner.ExpansionFactor);
+        * Expansion.Factor);
 
     /// <summary>
     /// 取得中にいちばん要る空き容量の見積り＝cache の原檔＋展開した変種＋モデル。
@@ -68,9 +73,29 @@ public sealed record FetchPlan(string Variant, IReadOnlyList<FetchStep> Steps, l
     public TimeSpan? EstimateDuration(double bytesPerSecond) =>
         bytesPerSecond <= 0 ? null : TimeSpan.FromSeconds(TotalBytes / bytesPerSecond);
 
-    /// <summary>UI に出す 1 行（「取得 5.4 GiB・展開後 9.1 GiB」）。</summary>
+    /// <summary>
+    /// UI に出す 1 行（「取得 4.79 GiB・必要な空き 8.19 GiB（展開は実測 2.98 倍）」）。
+    /// <para>
+    /// <b>実測と推定を出し分ける</b>（裁定 94 ⑶）＝1 巡目・2 巡目は全変種に 3.3 を掛けており、
+    /// cu126 では実測 1.69 の<b>倍近い空き</b>を要求していた（実射＝14.45 GiB と告げて
+    /// 実際は 8.38 GB）。数字の根拠が実測か推定かを利用者に見せる。
+    /// </para>
+    /// </summary>
     public string Summary() => string.Create(CultureInfo.InvariantCulture,
-        $"取得 {FetchPlanner.FormatBytes(TotalBytes)}・必要な空き {FetchPlanner.FormatBytes(EstimatedPeakDiskBytes)}");
+        $"取得 {FetchPlanner.FormatBytes(TotalBytes)}・必要な空き {FetchPlanner.FormatBytes(EstimatedPeakDiskBytes)}（展開は{Expansion.Describe()}）");
+}
+
+/// <summary>
+/// 落とした原檔が展開されて何倍になるか（<b>変種ごとの実測</b>＝裁定 94 ⑶）。
+/// </summary>
+/// <param name="Variant">台帳の綴り。</param>
+/// <param name="Factor">倍率。</param>
+/// <param name="Measured">実測か（偽＝まだ 1 度も測っていない＝推定）。</param>
+public sealed record ExpansionFactor(string Variant, double Factor, bool Measured)
+{
+    /// <summary>「実測 2.98 倍」／「推定 3.3 倍」（<b>純関数</b>）。</summary>
+    public string Describe() => string.Create(
+        CultureInfo.InvariantCulture, $"{(Measured ? "実測" : "推定")} {Factor:0.##} 倍");
 }
 
 /// <summary>取得計画を作るときの取捨。</summary>
@@ -92,15 +117,46 @@ public sealed record FetchPlanOptions(
 public static class FetchPlanner
 {
     /// <summary>
-    /// 落とした原檔が展開されて何倍になるかの実測係数。
-    /// <list type="bullet">
-    /// <item>cpu＝270.1 MiB → 903 MB（便 A の実走・<c>decisions.md</c> 41）＝約 3.3 倍</item>
-    /// <item>rocm-gfx1151＝1,465.5 MiB → 4,347.7 MiB（<c>ledger/README.md</c> §9）＝約 2.97 倍</item>
-    /// </list>
-    /// 見積りなので低めに出さない側（3.3）を採る。<b>これは表示のためだけの数</b>で、
-    /// 取得も展開もこの値には依らない。
+    /// まだ 1 度も測っていない変種に掛ける係数（<b>推定</b>＝裁定 94 ⑶）。
+    /// <para>
+    /// 便 A の <c>cpu</c> の実走（270.1 MiB → 903 MB）から採った丸めで、cu130 だけがこの値に残る
+    /// （RTX 機で展開後を 1 度測ったら実測へ移すこと＝裁定 94 ⑶ の宿題）。
+    /// </para>
     /// </summary>
-    public const double ExpansionFactor = 3.3;
+    public const double EstimatedExpansionFactor = 3.3;
+
+    /// <summary>
+    /// 便 E（2）の E2E で測った展開後／落としたバイトの比（裁定 94 ⑶ の逐語）。
+    /// <list type="bullet">
+    /// <item><c>cu126</c>＝<b>1.69</b>（実測）</item>
+    /// <item><c>rocm-gfx1151</c>＝<b>2.98</b>（実測・26,523 檔 4.25 GB）</item>
+    /// <item><c>cpu</c>＝<b>3.60</b>（実測）</item>
+    /// <item><c>cu130</c>＝<b>未実測</b>＝<see cref="EstimatedExpansionFactor"/></item>
+    /// </list>
+    /// <b>これは表示のためだけの数</b>で、取得も展開もこの値には依らない。
+    /// </summary>
+    public static ExpansionFactor ExpansionFactorFor(string? variant)
+    {
+        var name = variant?.Trim() ?? string.Empty;
+
+        if (string.Equals(name, RuntimeVariants.Cu126, StringComparison.OrdinalIgnoreCase))
+        {
+            return new ExpansionFactor(name, 1.69, Measured: true);
+        }
+
+        if (RuntimeVariants.IsRocm(name))
+        {
+            return new ExpansionFactor(name, 2.98, Measured: true);
+        }
+
+        if (RuntimeVariants.IsCpu(name))
+        {
+            return new ExpansionFactor(name, 3.60, Measured: true);
+        }
+
+        // cu130・畳んだ名 cuda・知らない綴り＝未実測（低めに出さない側に倒す）
+        return new ExpansionFactor(name, EstimatedExpansionFactor, Measured: false);
+    }
 
     /// <summary>
     /// 計画を組む。<paramref name="models"/>／<paramref name="vcRedist"/> は null 可

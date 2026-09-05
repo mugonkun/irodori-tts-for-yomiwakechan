@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Contracts;
+using IrodoriTtsYwk.Launcher.Services.Gpu;
 using IrodoriTtsYwk.Launcher.Services.Ledger;
 
 namespace IrodoriTtsYwk.Launcher.Services.Models;
@@ -431,7 +432,10 @@ public sealed class ModelFetcher
             stderrTail.AppendLine(e.Data);
         };
 
-        if (!process.Start())
+        // **ハードエラーの窓を出させない**（是正・便 D（3）の統合席）＝壊れた `python.exe` を
+        // 素の `Process.Start` で撃つと Windows の窓が出て、押されるまで返らない
+        // （逐語は `ProcessRunner.StartAsync`）。ここは子を待つ呼び手なので同じスレッドで撃つ。
+        if (!ProcessRunner.StartWithoutHardErrorBox(process))
         {
             return new ModelFetchResult(
                 false, ModelFetchExitCodes.DownloadFailed, 0, 0, [], "モデル取得の子プロセスを起こせなかった。");

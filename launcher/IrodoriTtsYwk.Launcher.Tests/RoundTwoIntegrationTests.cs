@@ -23,7 +23,12 @@ namespace IrodoriTtsYwk.Launcher.Tests;
 ///  ⑵ 写したプリセットが上流の別名表に 1 行も入らない＝裁定 78 ⑴）。
 /// </para>
 /// <para>実機・実 GPU・実ポート・子プロセスには 1 つも触れない。</para>
+/// <para>
+/// <b><see cref="AppServices"/> を触るので同じ collection に入れる</b>（便 D（3））＝
+/// 静的な差し替え口を 2 つの檔が同時に書くと、どちらの釘も理由なく落ちる。
+/// </para>
 /// </summary>
+[Collection(AppServicesCollection.Name)]
 public sealed class RoundTwoIntegrationTests : IDisposable
 {
     private readonly string _root = Path.Combine(
@@ -44,13 +49,16 @@ public sealed class RoundTwoIntegrationTests : IDisposable
     {
         public ServerStartRequest? Captured { get; private set; }
 
-        public ServerState State => ServerState.Stopped;
+        /// <summary>事前検査で断られた理由（便 D（3）＝low 6 の ⑷ の口）。</summary>
+        public string? Preflight { get; private set; }
+
+        public ServerState State { get; private set; } = ServerState.Stopped;
 
         public int? ProcessId => null;
 
         public int? ExitCode => null;
 
-        public string? FailureReason => null;
+        public string? FailureReason { get; private set; }
 
         public ServerLogEvent? Banner => null;
 
@@ -72,6 +80,13 @@ public sealed class RoundTwoIntegrationTests : IDisposable
             Captured = request;
             return Task.FromResult(new ServerStartResult(
                 false, ServerState.Failed, null, null, TimeSpan.Zero, "偽物なので起こしません。"));
+        }
+
+        public void ReportPreflightFailure(string reason)
+        {
+            Preflight = reason;
+            State = ServerState.Failed;
+            FailureReason = reason;
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

@@ -58,6 +58,15 @@ public sealed class NullServerProcess : IServerProcess
             false, ServerState.Failed, null, null, TimeSpan.Zero, Reason));
     }
 
+    public void ReportPreflightFailure(string reason)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        var previous = State;
+        State = ServerState.Failed;
+        FailureReason = reason.Trim();
+        StateChanged?.Invoke(this, new ServerStateChangedEventArgs(previous, State, FailureReason));
+    }
+
     public Task StopAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

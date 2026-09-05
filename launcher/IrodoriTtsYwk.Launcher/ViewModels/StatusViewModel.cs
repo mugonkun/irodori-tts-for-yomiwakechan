@@ -34,8 +34,11 @@ public sealed class StatusViewModel : ObservableObject
     private string _deviceText = UiText.Missing;
     private string _warmupText = "—";
     private string _precomputeText = "—";
-    private string _memoryText = UiText.NotSupported;
+    private string _memoryText = UiText.NotRunning;
     private bool _memorySupported;
+    private bool _serverAnswered;
+    private bool _memoryPanelVisible = true;
+    private string? _rebuildRuntime;
     private string _voiceMemoryText = UiText.Missing;
     private string _latentCacheText = UiText.Missing;
     private string? _noticesText;
@@ -51,12 +54,26 @@ public sealed class StatusViewModel : ObservableObject
     private VoiceRow? _selectedVoice;
 
     public StatusViewModel(Func<Task> start, Func<Task> stop)
+        : this(start, stop, null)
+    {
+    }
+
+    /// <param name="start">「サーバ起動」。</param>
+    /// <param name="stop">「サーバ停止」。</param>
+    /// <param name="rebuildRuntime">
+    /// 「実行系を組み直す」（裁定 91）＝cache から再展開し、cache が無ければ取得から。
+    /// null＝この配布ではその手を出さない（<see cref="CanRebuildRuntime"/> が偽）。
+    /// </param>
+    public StatusViewModel(Func<Task> start, Func<Task> stop, Func<Task>? rebuildRuntime)
     {
         ArgumentNullException.ThrowIfNull(start);
         ArgumentNullException.ThrowIfNull(stop);
 
         StartCommand = new AsyncRelayCommand(start, () => !IsRunning);
         StopCommand = new AsyncRelayCommand(stop, () => CanStop);
+        RebuildRuntimeCommand = new AsyncRelayCommand(
+            rebuildRuntime ?? (static () => Task.CompletedTask),
+            () => rebuildRuntime is not null && RebuildRuntimeText is not null && !IsRunning);
     }
 
     /// <summary>
@@ -78,6 +95,55 @@ public sealed class StatusViewModel : ObservableObject
 
     /// <summary>「サーバ停止」（ツリー kill）。</summary>
     public AsyncRelayCommand StopCommand { get; }
+
+    /// <summary>
+    /// 「実行系を組み直す」（裁定 91）＝配布樹の取得台帳と、展開に使った台帳が食い違ったときの 1 手。
+    /// </summary>
+    public AsyncRelayCommand RebuildRuntimeCommand { get; }
+
+    /// <summary>
+    /// 実行系が配布樹と食い違っている 1 行（合っていれば null＝手も出さない）。
+    /// <para>
+    /// 裁定 91 の票＝<see cref="Contracts.AppPaths.ResolvePythonExe"/> は
+    /// <c>python.exe</c> の在否しか見ないので、配布物を新しい版に入れ替えても
+    /// <b>古い実行系がそのまま使われる</b>（台帳が変わったのに site-packages は前の版のまま）。
+    /// <c>settings.json</c> に焼いた <c>runtimeLedgerSha256</c>／<c>installedAppVersion</c> と
+    /// 突き合わせ、食い違ったらここに 1 行出して 1 手を押せるようにする。
+    /// </para>
+    /// </summary>
+    public string? RebuildRuntimeText
+    {
+        get => _rebuildRuntime;
+        private set
+        {
+            if (SetProperty(ref _rebuildRuntime, value))
+            {
+                RaisePropertyChanged(nameof(CanRebuildRuntime));
+                RebuildRuntimeCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>「実行系を組み直す」を出すか。</summary>
+    public bool CanRebuildRuntime => RebuildRuntimeText is not null;
+
+    /// <summary>食い違いの 1 行を入れ替える（null＝消す）。</summary>
+    public void ApplyRuntimeStamp(string? mismatchLine) => RebuildRuntimeText = mismatchLine;
+
+    /// <summary>
+    /// GPU メモリ欄を出すか（設定 <c>showMemoryPanel</c>・裁定 67 ⑶）。
+    /// <para>
+    /// <b>ここが正本</b>（是正・便 D（3）・low 6 の ⑸）＝1 巡目・2 巡目は窓が
+    /// <c>StatusView.SetMemoryPanelVisible</c> を<b>構築時とウィザードを閉じたときだけ</b>叩いて
+    /// いたので、設定画面で外して「適用」を押しても<b>次に起動し直すまで欄が消えなかった</b>
+    /// （設定は保存されているのに画面が変わらない＝押し忘れたと読める）。
+    /// </para>
+    /// </summary>
+    public bool MemoryPanelVisible
+    {
+        get => _memoryPanelVisible;
+        private set => SetProperty(ref _memoryPanelVisible, value);
+    }
 
     public ServerState State
     {
@@ -318,6 +384,9 @@ public sealed class StatusViewModel : ObservableObject
         var gpuName = _running is null ? settings.GpuName : _running.GpuName;
         var gpuUuid = _running is null ? settings.GpuUuid : _running.GpuUuid;
 
+        // 「GPU メモリの欄」は設定を「適用」した瞬間から効く（low 6 の ⑸）。
+        MemoryPanelVisible = settings.ShowMemoryPanel;
+
         VariantText = RuntimeVariants.DisplayName(variant);
         EndpointText = "http://127.0.0.1:" + port.ToString(CultureInfo.InvariantCulture);
         GpuText = string.IsNullOrWhiteSpace(gpuName) && string.IsNullOrWhiteSpace(gpuUuid)
@@ -334,7 +403,7 @@ public sealed class StatusViewModel : ObservableObject
     private void RepaintMemory()
     {
         MemorySupported = _memory is not null;
-        MemoryText = DescribeMemory(_memory);
+        MemoryText = DescribeMemory(_memory, _serverAnswered);
 
         var on = _running?.PrecomputeOnStart
             ?? _desired?.EffectivePrecomputeOnStart()
@@ -393,8 +462,11 @@ public sealed class StatusViewModel : ObservableObject
             PrecomputeText = "—";
             NoticesText = null;
             _memory = null;
+            _serverAnswered = false;
             RepaintMemory();
         }
+
+        RebuildRuntimeCommand.RaiseCanExecuteChanged();
     }
 
     /// <summary>
@@ -475,11 +547,13 @@ public sealed class StatusViewModel : ObservableObject
         if (status is null)
         {
             _memory = null;
+            _serverAnswered = false;
             RepaintMemory();
             GpuMismatch = null;
             return;
         }
 
+        _serverAnswered = true;
         DeviceText = Compose(status.Device);
         WarmupText = Compose(status.Warmup);
         PrecomputeText = Compose(status.Precompute);
@@ -551,14 +625,27 @@ public sealed class StatusViewModel : ObservableObject
 
     /// <summary>
     /// GPU メモリの 1 行（<b>純関数</b>・裁定 67 ⑶・87 ⑴）＝
-    /// <b>使用量＝allocated・占有量＝reserved・GPU 全体＝gpu_used／gpu_total</b>。
-    /// null は「—」・<c>cpu</c> は「CPU（GPU メモリなし）」・欄ごと無ければ「未対応」。
+    /// <b>使用量＝allocated（最大 …）・占有量＝reserved・GPU 全体＝gpu_used／gpu_total</b>。
+    /// null は「—」・<c>cpu</c> は「CPU（GPU メモリなし）」。
+    /// <para>
+    /// <b>「（最大 …）」は使用量の隣に置く</b>（是正・便 D（3）・low 6 の ⑵）＝
+    /// <c>max</c> は <c>max_memory_allocated</c>＝<b>使用量の山</b>であって「GPU 全体」の山ではない。
+    /// 行の末尾に置いていたころは <c>GPU 全体 3.46 GB / 99.74 GB（最大 3.64 GB）</c> と並び、
+    /// 直前の分数に掛かる数に見えた（実射の帯＝§20-2）。
+    /// </para>
+    /// <para>
+    /// <b>数字が無い理由を 2 つに分ける</b>（同上）＝<paramref name="serverAnswered"/> が偽＝
+    /// そもそも誰も起きていない（<see cref="UiText.NotRunning"/>）・真で <c>memory</c> が
+    /// 無い＝起きている個体にこの口が無い（<see cref="UiText.NotSupported"/>）。
+    /// </para>
     /// </summary>
-    public static string DescribeMemory(MemoryStatus? memory)
+    /// <param name="memory"><c>/ywk/status.memory</c>（欄ごと無ければ null）。</param>
+    /// <param name="serverAnswered"><c>/ywk/status</c> そのものが返ってきているか。</param>
+    public static string DescribeMemory(MemoryStatus? memory, bool serverAnswered = true)
     {
         if (memory is null)
         {
-            return UiText.NotSupported;
+            return serverAnswered ? UiText.NotSupported : UiText.NotRunning;
         }
 
         if (memory.IsCpu)
@@ -572,15 +659,16 @@ public sealed class StatusViewModel : ObservableObject
             return UiText.Missing + "（モデル未読込）" + ErrorSuffix(memory.Error);
         }
 
-        var text = "使用量 " + UiText.Bytes(memory.AllocatedBytes)
+        var used = "使用量 " + UiText.Bytes(memory.AllocatedBytes);
+        if (memory.MaxAllocatedBytes is not null)
+        {
+            used += "（最大 " + UiText.Bytes(memory.MaxAllocatedBytes) + "）";
+        }
+
+        var text = used
             + "／占有量 " + UiText.Bytes(memory.ReservedBytes)
             + "／GPU 全体 " + UiText.Bytes(memory.EffectiveGpuUsed)
             + " / " + UiText.Bytes(memory.GpuTotalBytes);
-
-        if (memory.MaxAllocatedBytes is not null)
-        {
-            text += "（最大 " + UiText.Bytes(memory.MaxAllocatedBytes) + "）";
-        }
 
         return text + ErrorSuffix(memory.Error);
     }
@@ -655,8 +743,19 @@ public sealed class StatusViewModel : ObservableObject
         return "1 名あたり「" + selected.DisplayName + "」＝" + selected.MemoryText + tail;
     }
 
-    private static string ErrorSuffix(string? error) =>
-        string.IsNullOrWhiteSpace(error) ? string.Empty : "：" + error.Trim();
+    /// <summary>
+    /// <c>memory.error</c> の添え方（<b>純関数</b>）。
+    /// <para>
+    /// <b>何が読めなかったのかを名乗る</b>（是正・便 D（3）・low 6 の ⑵）＝1 巡目は
+    /// <c>「：」＋逐語</c> だけだったので、<c>使用量 1.73 GB…：mem_get_info が失敗しました。</c> と
+    /// 並んで<b>出ている数字そのものの説明</b>に見えた。出た数字は正しく、読めなかったのは
+    /// 別の欄である、と読める形にする（逐語は畳まない＝wrapper の 1 行をそのまま出す）。
+    /// </para>
+    /// </summary>
+    public static string ErrorSuffix(string? error) =>
+        string.IsNullOrWhiteSpace(error)
+            ? string.Empty
+            : "（一部の欄が読めませんでした：" + error.Trim() + "）";
 
     private static string Compose(StatusDevice? device)
     {

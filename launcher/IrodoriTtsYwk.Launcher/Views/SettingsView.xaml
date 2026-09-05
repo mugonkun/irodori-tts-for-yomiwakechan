@@ -168,6 +168,22 @@
         <TextBlock Style="{StaticResource Note}"
                    Text="置き場の移動はまだ対応していません（配布樹は読むだけ・書き込みはすべてデータの下に入ります）。" />
 
+        <!--
+          取得キャッシュ（裁定 90 Q-E2 ⑶）。展開が済めば cache の原檔は要らない
+          （受け入れ条件のサイズ行は「展開後（cache 削除後）」で読む＝裁定 94 ⑶）。
+          初回の合成が 200 で返った時点でランチャが自動で消すので、ここは手で消したいとき用。
+        -->
+        <TextBlock Text="取得キャッシュ" Style="{StaticResource Head}" />
+        <Button HorizontalAlignment="Left" Padding="14,5"
+                AutomationProperties.AutomationId="SettingsClearCacheButton"
+                Content="{Binding ClearCacheText, Mode=OneWay}"
+                Command="{Binding ClearCacheCommand}" />
+        <TextBlock Style="{StaticResource Note}"
+                   AutomationProperties.AutomationId="SettingsCacheMessageText"
+                   Text="{Binding CacheMessage, Mode=OneWay}" />
+        <TextBlock Style="{StaticResource Note}"
+                   Text="消すのはこの変種の取得台帳に載っている原檔だけです。実行系が組み上がっていて、展開に使った台帳と配布物の台帳が一致するときにだけ消します（取り直しが要る機体からは消しません）。" />
+
       </StackPanel>
     </ScrollViewer>
   </DockPanel>

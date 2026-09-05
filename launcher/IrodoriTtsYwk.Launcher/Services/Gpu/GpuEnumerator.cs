@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,9 +37,123 @@ public sealed record ProcessRunResult(
     bool TimedOut,
     string? FailureReason);
 
-/// <summary>実機用の <see cref="IProcessRunner"/>（窓を出さず、期限で殺す）。</summary>
+/// <summary>
+/// 実機用の <see cref="IProcessRunner"/>（窓を出さず、期限で殺す）。
+/// <para>
+/// <b>期限は 2 本ある</b>（是正・便 D（3）＝設計書 §20-5 ⑴）＝⑴ <see cref="StartTimeout"/>＝
+/// <b>「起こす」段そのもの</b>の期限 ⑵ 引数の <c>timeout</c>＝起きた子が終わるまでの期限。
+/// 1 巡目・2 巡目は ⑵ しか無く、<c>Process.Start</c> が返ってこない機体
+/// （壊れた <c>python.exe</c> を指すと Windows が「このアプリは PC で実行できません」の窓を出す＝
+/// WPF のメッセージポンプの上でだけ起きる）で <b>60 秒だれも何も出さなかった</b>。
+/// コンソールから同じ材料を撃つと 18 ms で <c>Win32Exception</c> が返るので、
+/// 待つ側に期限が要る。<see cref="CancellationToken"/> は同期呼び出しの <c>Start</c> を
+/// 中断できない＝<b>別のスレッドに逃がしてから待つ</b>。
+/// </para>
+/// </summary>
 public sealed class ProcessRunner : IProcessRunner
 {
+    /// <summary>
+    /// 「起こす」段の既定の期限（設計書 §20-5 ⑴ は「例 10 s」）。
+    /// <para>
+    /// <b>3 s に詰めてある</b>＝1 度の「サーバ起動」で<b>同じ python.exe を 3 回起こす</b>
+    /// （⑴ 窓の GPU 列挙 ⑵ 変種の門の検分 ⑶ サーバの子）ので、無人検分の
+    /// 「押してから理由が出るまで 10 s」の budget に 3 つとも収まる値が要る（3 × 3 s = 9 s）。
+    /// <c>CreateProcess</c> そのものは健全な機体で ms の仕事なので、3 s でも 100 倍以上の余裕がある。
+    /// </para>
+    /// </summary>
+    public static readonly TimeSpan DefaultStartTimeout = TimeSpan.FromSeconds(3);
+
+    /// <summary>「起こす」段そのものの期限（テストは短くする）。</summary>
+    public TimeSpan StartTimeout { get; init; } = DefaultStartTimeout;
+
+    /// <summary>
+    /// <c>SEM_FAILCRITICALERRORS</c>（0x0001）｜<c>SEM_NOOPENFILEERRORBOX</c>（0x8000）。
+    /// <see cref="StartAsync"/> の逐語の説明を読むこと。
+    /// </summary>
+    private const uint SuppressHardErrorBox = 0x8001;
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetThreadErrorMode(uint dwNewMode, out uint lpOldMode);
+
+    /// <summary>
+    /// <c>Process.Start</c> を別スレッドで撃つ＝<b>Windows のハードエラーの窓を出させない</b>
+    /// （是正・便 D（3）の統合席＝無人検分の段 k が実窓で捕まえた）。
+    /// <para>
+    /// <b>実測（この機体・2026-09-05）</b>＝<c>python.exe</c> の名を付けたテキスト檔に
+    /// <c>UseShellExecute=false</c> で <c>Process.Start</c> を撃つと、**プロセスのエラーモードが
+    /// 0 の個体では Windows が「サポートされていない 16 ビット アプリケーション」の
+    /// ハードエラー窓を出し、`Start` はその窓が押されるまで返らない**
+    /// （＝待っても <c>CancellationToken</c> でも切れない・40 秒で打ち切っても返らなかった）。
+    /// 同じ材料をエラーモード <c>0x8003</c> の個体（PowerShell など）から撃つと
+    /// **12〜19 ms で <c>Win32Exception</c>** が返る。設計書 §20-5 ⑴ の
+    /// 「窓が 60 秒黙る／コンソールは 18 ms で返る」の差はこれである
+    /// （<see cref="StartTimeout"/> は返らない <c>Start</c> の保険として残す＝両方要る）。
+    /// </para>
+    /// <para>
+    /// <b>スレッド単位で掛ける</b>（<c>SetErrorMode</c> ではなく <c>SetThreadErrorMode</c>）＝
+    /// プロセス全体のエラーモードは<b>起こした子が引き継ぐ</b>ので、窓を出さない約束を
+    /// wrapper の python にまで広げない。撃ち終えたら必ず元へ戻す
+    /// （<c>Task.Run</c> のスレッドはプールの使い回しである）。
+    /// </para>
+    /// </summary>
+    public static Task<bool> StartAsync(Process process)
+    {
+        ArgumentNullException.ThrowIfNull(process);
+        return Task.Run(() => StartWithoutHardErrorBox(process), CancellationToken.None);
+    }
+
+    /// <summary>
+    /// <see cref="StartAsync"/> の中身（同じスレッドで撃つ形＝子を待たない呼び手のため）。
+    /// <b>例外はそのまま通す</b>（<c>Win32Exception</c> を握り潰さない）。
+    /// </summary>
+    public static bool StartWithoutHardErrorBox(Process process)
+    {
+        ArgumentNullException.ThrowIfNull(process);
+
+        var restore = false;
+        uint previous = 0;
+        try
+        {
+            restore = SetThreadErrorMode(SuppressHardErrorBox, out previous);
+        }
+        catch (EntryPointNotFoundException)
+        {
+            // 呼べない OS＝窓が出る形に戻るだけで、結末は変わらない（期限が受ける）。
+        }
+        catch (DllNotFoundException)
+        {
+            // 同上
+        }
+
+        try
+        {
+            return process.Start();
+        }
+        finally
+        {
+            if (restore)
+            {
+                try
+                {
+                    _ = SetThreadErrorMode(previous, out _);
+                }
+                catch (EntryPointNotFoundException)
+                {
+                }
+                catch (DllNotFoundException)
+                {
+                }
+            }
+        }
+    }
+
+    /// <summary>起こす段が期限で返らなかったときの 1 行（<b>純関数</b>）。</summary>
+    public static string StartStalledMessage(string fileName, TimeSpan startTimeout) =>
+        "実行系を起こす段が " + startTimeout.TotalSeconds.ToString("0.#", CultureInfo.InvariantCulture)
+        + " 秒で返りませんでした（" + System.IO.Path.GetFileName(fileName)
+        + "＝この機体では起こせない実行檔かもしれません）。";
+
     public async Task<ProcessRunResult> RunAsync(
         string fileName,
         IReadOnlyList<string> arguments,
@@ -72,19 +188,35 @@ public sealed class ProcessRunner : IProcessRunner
             }
         }
 
-        using var process = new Process { StartInfo = info };
+        var process = new Process { StartInfo = info };
+
+        // ---- ⑴「起こす」段（別スレッドへ逃がして期限つきで待つ） ----------------
+        var start = StartAsync(process);
+        var startDeadline = Task.Delay(StartTimeout, CancellationToken.None);
+        if (await Task.WhenAny(start, startDeadline).ConfigureAwait(false) != start)
+        {
+            // **返ってこない Start を待ち続けない**。個体は手放し、後から起きたら殺す係を付ける。
+            Abandon(process, start);
+            return new ProcessRunResult(
+                false, null, string.Empty, string.Empty, true, StartStalledMessage(fileName, StartTimeout));
+        }
+
+        using var owned = process;
         try
         {
-            if (!process.Start())
+            if (!await start.ConfigureAwait(false))
             {
                 return new ProcessRunResult(false, null, string.Empty, string.Empty, false, "起こせませんでした。");
             }
         }
-        catch (System.ComponentModel.Win32Exception ex)
+        catch (Exception ex)
         {
+            // Win32Exception（実行檔が無い・この OS で動かない）・InvalidOperationException など。
+            // **契約は「例外を投げない」**なので、型で数え上げずに結末へ落とす。
             return new ProcessRunResult(false, null, string.Empty, string.Empty, false, ex.Message);
         }
 
+        // ---- ⑵ 起きた子が終わるまでの期限 ---------------------------------------
         var stdout = process.StandardOutput.ReadToEndAsync(cancellationToken);
         var stderr = process.StandardError.ReadToEndAsync(cancellationToken);
 
@@ -138,6 +270,38 @@ public sealed class ProcessRunner : IProcessRunner
         var errText = await stderr.ConfigureAwait(false);
         return new ProcessRunResult(true, process.ExitCode, outText, errText, false, null);
     }
+
+    /// <summary>
+    /// 期限で見限った <see cref="Process"/> を手放す＝<b>後から起きたら殺してから捨てる</b>
+    /// （見限ったまま放っておくと、返ってきた <c>Start</c> が起こした子が居残る）。
+    /// <c>ServerProcess</c> の子の spawn も同じ始末をするので <c>public</c>。
+    /// </summary>
+    public static void Abandon(Process process, Task<bool> start) =>
+        _ = start.ContinueWith(
+            static (task, state) =>
+            {
+                var abandoned = (Process)state!;
+                try
+                {
+                    _ = task.Exception; // 観測しないと未観測の例外として残る
+                    if (task.Status == TaskStatus.RanToCompletion && task.Result)
+                    {
+                        abandoned.Kill(entireProcessTree: true);
+                    }
+                }
+                catch (Exception)
+                {
+                    // 既に死んでいる・落とせない＝どちらでも見限った結末は変わらない
+                }
+                finally
+                {
+                    abandoned.Dispose();
+                }
+            },
+            process,
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
 }
 
 /// <summary>

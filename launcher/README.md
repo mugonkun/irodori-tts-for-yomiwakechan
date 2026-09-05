@@ -315,3 +315,51 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 `使用量 1.74 GB／占有量 2.06 GB／GPU 全体 2.36 GB / 99.74 GB（最大 3.64 GB）`・
 `ON（焼いた話者 12 名・合計 1.2 MB）`・`1 名あたり＝潜在参照（実測 113.4 KB）`。
 **8088・7861・18088 は一度も起こしていない**（私設ポートは 18094／18095／18099 だけ）。
+
+## 11. ランチャの 3 巡目（2026-09-05・便 D（3）・ランチャ席）
+
+> **この節も実装の逐語**であって §1〜§7 の設計を覆さない。触ったのは `launcher/**` だけ
+> （`server/`・`build/`・`probe/`・`ledger/`・`docs/`（設計書 §21 を除く）には 1 行も触っていない）。
+
+### 11-1 入った物（裁定番号つき）
+
+| # | 裁定 | 何が変わったか |
+|---|---|---|
+| ⑴ | 94 ⑴ | **初回取得ウィザードの自動進行**＝取得→展開→モデル→起動は成功したら自動で次へ。押下は **5**（同意チェック・同意して次へ・変種・取得を始める・試し撃ちへ）。失敗した段だけで止まり、文言は「もう一度」＋理由 1 行。段の出入りは `Trail` に `― <段の名>` として残る。「中断」は各段で効く（`FirstRunViewModel.AdvanceAsync`） |
+| ⑵ | 90 Q-E2 ⑶ | **取得キャッシュの削除**＝⒜ 初回取得を通した後、「試し撃ち」で 1 射 200 が返ったら `<data>\cache` の中身を残らず消す（置き場自身は残す・消したバイトをログと Trail に）⒝ 設定に手動の「取得キャッシュを消す（n GiB）」⒞ **消す前の関門**＝`python.exe` の在否と `settings.runtimeLedgerSha256` と配布樹の台帳の一致（どちらか欠ければ 1 バイトも消さない）。**名前で選ばない**のは、前の台帳の原檔・打ち切った `.part`・名前が変わった檔が残って「展開後（cache 削除後）」の実測が合わなくなるからである（`Services/Ledger/CacheCleaner.cs`） |
+| ⑶ | 91 | **`settings.json` に `runtimeLedgerSha256` と `installedAppVersion`**（展開が通った直後に焼く）。起動時に配布樹の台帳と突き合わせ、食い違えば状態帯に 1 行と「実行系を組み直す」1 手（cache から再展開・cache が無ければ足りない檔だけ取得から）（`Services/Ledger/RuntimeStamp.cs`・`MainViewModel.RebuildRuntimeAsync`） |
+| ⑷ | 94 ⑶ | **展開係数を変種ごとの実測に**＝cu126 **1.69**・rocm-* **2.98**・cpu **3.60**・cu130 は未実測で **3.3**。見積りの 1 行は「（展開は実測 2.98 倍）」「（展開は推定 3.3 倍）」と出し分ける（`FetchPlanner.ExpansionFactorFor`） |
+| ⑸ | 92 の low 6 | ⒜ `UiText.Bytes` の綴りを **GiB／MiB／KiB** に（1024 進なのに GB と綴っていた）⒝ 「（最大 …）」を**使用量の隣**へ・`memory.error` は「（一部の欄が読めませんでした：…）」⒞ 「未対応」と **「—（サーバが動いていません）」** の出し分け ⒟ `MemoryStatus.Latents` が JSON の `null` でも落ちない（`EffectiveLatents`）⒠ `MainViewModel` の Failed 2 箇所を `IServerProcess.ReportPreflightFailure` 経由に ⒡ 「GPU メモリの欄」は「適用」した瞬間に効く（`StatusViewModel.MemoryPanelVisible` へ束縛）⒢ 409 の待ち行列は**受け取られるまで落とさない**（3 回落ちたら諦めて理由を残す） |
+| ⑹ | §20-5 ⑴ | **窓が 60 秒黙る**の手当て＝`AsyncRelayCommand` の受け口を**全例外**に（型の数え上げをやめた）・`ProcessRunner` と `ServerProcess` に**「起こす」段そのものの期限 3 s**（`Process.Start` を別スレッドへ逃がして待ち、見限った個体は後から起きたら殺す。1 度の「サーバ起動」で同じ `python.exe` を 3 回起こす＝窓の列挙・門の検分・子なので、3 つとも止まって 9 s＝無人検分の budget 10 s の内側）・`MainViewModel` は列挙が落ちても理由 1 行を残して先へ進む・`Status`／`Voices`／`Try`／`Settings`／`FirstRun` の各手の `Faulted` を画面へ繋いだ |
+
+### 11-2 UIA の名前（§7-3 への追加）
+
+| 画面 | 足した id |
+|---|---|
+| 状態 | `StatusRebuildRuntimeText`・`StatusRebuildRuntimeButton`（裁定 91 の 1 行と 1 手＝食い違っていないときは**木に出ない**。焼き印の無い樹は起動時にいまの台帳で焼き直して黙る） |
+| 設定 | `SettingsClearCacheButton`（文言は `取得キャッシュを消す（n GiB）`／空なら `（空です）`）・`SettingsCacheMessageText` |
+
+`StatusMemoryPanel` は `Visibility` を `StatusViewModel.MemoryPanelVisible` に束縛したので、
+設定で外して「適用」を押すと**その場で木から消える**（以前は次の起動まで残った）。
+
+### 11-3 `settings.json` に足した 2 欄（契約 ⑻）
+
+```json
+{ "runtimeLedgerSha256": "<ledger/runtime-<変種>.json の sha256（小文字 hex 64 字）>",
+  "installedAppVersion": "v0.1.0" }
+```
+
+どちらも **null を許す**（古い `settings.json`・台本で組んだ樹は「いつ組んだか判らない」＝黙る）。
+`docs/contract.md` ⑻ の欄の表は本席の担当パス外なので**卓が 2 行足すこと**。
+
+### 11-4 検分（この機体・2026-09-05）
+
+```powershell
+dotnet build launcher\IrodoriTtsYwk.sln --nologo --no-incremental   # 0 個の警告・0 エラー
+dotnet test  launcher\IrodoriTtsYwk.sln --nologo                    # 554 本（499 → +55）
+```
+
+新規の釘は `IrodoriTtsYwk.Launcher.Tests/RoundThreeTests.cs` の 1 檔にまとめてある。
+既存檔で直したのは**綴りと文言が動いた 5 本**と、`IServerProcess` に口が増えた偽物 1 つだけ。
+**実 GPU・実ポート・子プロセス・外への取得には 1 つも触れていない**
+（起こすのは「起こせない実行檔」1 本で、それも起きない）。

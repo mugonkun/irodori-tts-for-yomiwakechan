@@ -431,6 +431,20 @@ public interface IServerProcess : IAsyncDisposable
     /// <summary>起こして ready まで待つ。例外は投げず結末で返す。</summary>
     Task<ServerStartResult> StartAsync(ServerStartRequest request, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// <b>起こす前に断った</b>ことを状態機械へ通す（理由 1 行つき＝<c>Failed</c> になる）。
+    /// <para>
+    /// <b>なぜ口が要るか</b>（是正・便 D（3）・low 6 の ⑷）＝<c>MainViewModel</c> は
+    /// <c>python.exe</c> が無い／保存した GPU が居ない、の 2 箇所で <c>StartAsync</c> を
+    /// <b>呼ばずに</b>「失敗」を画面へ直に書いていた。状態機械はそれを知らないので
+    /// <c>State</c> は <c>Stopped</c> のまま＝⑴ 次に「サーバ起動」を押せてしまう
+    /// ⑵ 窓を開き直すと（<c>ApplyServerState(Server.State, …)</c> を読む）理由が消える
+    /// ⑶ トレイの状態表示と帯が食い違う。<b>状態を書く者は状態機械 1 本</b>（low 3）の
+    /// 例外を作らないための口である。
+    /// </para>
+    /// </summary>
+    void ReportPreflightFailure(string reason);
+
     /// <summary>ツリー kill。起こしていない・既に落ちているなら何もしない。</summary>
     Task StopAsync(CancellationToken cancellationToken);
 }

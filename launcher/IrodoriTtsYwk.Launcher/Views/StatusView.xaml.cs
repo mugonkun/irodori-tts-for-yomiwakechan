@@ -1,4 +1,3 @@
-using System.Windows;
 using System.Windows.Controls;
 using IrodoriTtsYwk.Launcher.ViewModels;
 
@@ -7,8 +6,11 @@ namespace IrodoriTtsYwk.Launcher.Views;
 /// <summary>
 /// 状態帯（<see cref="StatusViewModel"/> に束縛）。
 /// <para>
-/// 檔の後ろに書くのは<b>見た目の都合だけ</b>＝ログの自動スクロールと、GPU メモリ欄の
-/// 表示切替（裁定 67 ⑶＝設定で伏せられる）。状態の判断も文言も ViewModel に在る。
+/// 檔の後ろに書くのは<b>見た目の都合だけ</b>＝ログの自動スクロール 1 本である。
+/// GPU メモリ欄の表示切替（裁定 67 ⑶）は<b>窓から出た</b>（是正・便 D（3）・low 6 の ⑸）＝
+/// 窓が <c>SetMemoryPanelVisible</c> を持っていたころは、呼ぶのが構築時とウィザードを
+/// 閉じたときの 2 箇所だけだったので、設定で外して「適用」を押しても<b>次の起動まで
+/// 欄が消えなかった</b>。いまは <see cref="StatusViewModel.MemoryPanelVisible"/> に束縛する。
 /// </para>
 /// </summary>
 public partial class StatusView : UserControl
@@ -17,10 +19,6 @@ public partial class StatusView : UserControl
     {
         InitializeComponent();
     }
-
-    /// <summary>GPU メモリ欄を出すか（設定の <c>showMemoryPanel</c>）。</summary>
-    public void SetMemoryPanelVisible(bool visible) =>
-        MemoryPanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
 
     private void OnLogChanged(object sender, TextChangedEventArgs e) => LogBox.ScrollToEnd();
 }

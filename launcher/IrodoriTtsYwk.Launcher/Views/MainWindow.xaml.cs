@@ -50,8 +50,6 @@ public partial class MainWindow : Window
         HeaderText.Text = "変種 " + RuntimeVariants.DisplayName(AppServices.Settings.Variant)
             + (paths.DeveloperMode ? "／開発モード（" + paths.AppDir + "）" : string.Empty);
 
-        StatusPage.SetMemoryPanelVisible(AppServices.Settings.ShowMemoryPanel);
-
         if (AppServices.SettingsStore.LastLoadError is string loadError)
         {
             _model.AppendLog(loadError);
@@ -112,9 +110,9 @@ public partial class MainWindow : Window
         var wizard = new FirstRunWizard(_model.CreateFirstRun()) { Owner = this };
         wizard.ShowDialog();
 
-        // ウィザードで変種・場所が変わりうる＝状態帯と話者を引き直す。
+        // ウィザードで変種・場所が変わりうる＝状態帯と話者を引き直す
+        // （GPU メモリ欄の可否は状態帯の束縛が拾う＝low 6 の ⑸）。
         _model.ReapplySettings();
-        StatusPage.SetMemoryPanelVisible(AppServices.Settings.ShowMemoryPanel);
         _model.Voices.Reload();
     }
 

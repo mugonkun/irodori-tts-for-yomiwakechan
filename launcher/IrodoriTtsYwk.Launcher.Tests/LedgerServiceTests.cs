@@ -236,8 +236,10 @@ public sealed class FetchPlannerTests
         Assert.Equal(20 + 100 + 1000 + 10 + 5000, plan.TotalBytes);
         Assert.Equal(20 + 100 + 1000 + 10, plan.CacheBytes); // モデルは cache を経由しない
         Assert.Equal(5000, plan.ModelBytes);
-        // 展開後＝(python-embed + runtime) × 3.3
-        Assert.Equal((long)((100 + 1000 + 10) * FetchPlanner.ExpansionFactor), plan.EstimatedRuntimeBytes);
+        // 展開後＝(python-embed + runtime) × 変種ごとの実測係数（cpu＝3.60・裁定 94 ⑶）
+        Assert.Equal(
+            (long)((100 + 1000 + 10) * FetchPlanner.ExpansionFactorFor(RuntimeVariants.Cpu).Factor),
+            plan.EstimatedRuntimeBytes);
         Assert.Equal(plan.CacheBytes + plan.EstimatedRuntimeBytes + plan.ModelBytes, plan.EstimatedPeakDiskBytes);
     }
 

@@ -64,7 +64,20 @@ public sealed class TryViewModel : ObservableObject
         SynthesizeCommand = new AsyncRelayCommand(SynthesizeAsync, () => !string.IsNullOrWhiteSpace(Input));
         StopCommand = new RelayCommand(() => _player.Stop());
         ReplayCommand = new RelayCommand(Replay, () => _lastAudio is not null);
+
+        // 捕れなかった例外を握り潰さない（§20-5 ⑴）。
+        SynthesizeCommand.Faulted += (_, line) => Message = "合成の手が落ちました：" + line;
     }
+
+    /// <summary>
+    /// <b>1 射が 200 で返った</b>（裁定 90 Q-E2 ⑶）。
+    /// <para>
+    /// 束ねる側（<see cref="MainViewModel"/>）が拾って、初回取得の直後の 1 射なら
+    /// 取得キャッシュを消す＝「起動の確認が通り、試し撃ちで本当に音が出た」ことを
+    /// 原檔を捨ててよい合図として使う（展開に失敗している機体から原檔を奪わない）。
+    /// </para>
+    /// </summary>
+    public event EventHandler? Succeeded;
 
     /// <summary>話者の候補（<see cref="VoicesViewModel"/> の一覧から流し込む）。</summary>
     public ObservableCollection<string> Voices { get; } = [VoiceIds.Default];
@@ -390,6 +403,10 @@ public sealed class TryViewModel : ObservableObject
         Message = played.Ok
             ? "再生中（音量を −16 dBFS 相当に揃えています）。"
             : played.FailureReason ?? "再生できませんでした。";
+
+        // 200 が返って音になった＝原檔を捨ててよい合図（再生の可否には掛けない＝
+        // 音が出ないのは機体の音源の話で、実行系が組み上がった事実は変わらない）。
+        Succeeded?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>

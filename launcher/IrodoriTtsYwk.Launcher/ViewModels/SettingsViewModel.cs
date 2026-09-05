@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Mvvm;
+using IrodoriTtsYwk.Launcher.Services.Ledger;
 
 namespace IrodoriTtsYwk.Launcher.ViewModels;
 
@@ -39,6 +40,9 @@ public sealed class SettingsViewModel : ObservableObject
     private string _gpuMessage = string.Empty;
     private GpuInfo? _selectedGpu;
     private bool _dirty;
+    private int _cacheFiles;
+    private long _cacheBytes;
+    private string _cacheMessage = string.Empty;
 
     public SettingsViewModel(
         LauncherSettings settings,
@@ -69,7 +73,13 @@ public sealed class SettingsViewModel : ObservableObject
         RefreshGpusCommand = new AsyncRelayCommand(RefreshGpusAsync);
         ApplyCommand = new RelayCommand(Apply, () => IsDirty);
         RevertCommand = new RelayCommand(Revert, () => IsDirty);
+        ClearCacheCommand = new RelayCommand(ClearCache, () => CacheBytes > 0);
+
+        // 捕れなかった例外を握り潰さない（§20-5 ⑴）。
+        RefreshGpusCommand.Faulted += (_, line) => GpuMessage = "GPU を数えられませんでした：" + line;
+
         UpdateDriverText();
+        RefreshCache();
     }
 
     /// <summary>このリリースが持つ変種（裁定 5＝Radeon 版に CUDA の選択肢は出さない）。</summary>
@@ -368,6 +378,64 @@ public sealed class SettingsViewModel : ObservableObject
         + _draft.EffectiveReadyTimeout().TotalSeconds.ToString("0", CultureInfo.InvariantCulture) + " 秒"
         + (_draft.ReadyTimeoutSeconds <= 0 ? "（変種の既定）" : string.Empty) + "。";
 
+    // ---- 取得キャッシュ（裁定 90 Q-E2 ⑶ の ⒝＝手で消す口） ---------------------
+
+    /// <summary>取得キャッシュを手で消す。</summary>
+    public RelayCommand ClearCacheCommand { get; }
+
+    /// <summary>いま cache に居る原檔のバイト（<see cref="CacheCleaner.Measure"/>）。</summary>
+    public long CacheBytes => _cacheBytes;
+
+    /// <summary>同・檔数。</summary>
+    public int CacheFiles => _cacheFiles;
+
+    /// <summary>
+    /// ボタンの文言（裁定 90 Q-E2 ⑶ の逐語＝「取得キャッシュを消す（n GB）」）。
+    /// <b>空なら押せない</b>ことが文言からも判るようにする。
+    /// </summary>
+    public string ClearCacheText => _cacheBytes > 0
+        ? "取得キャッシュを消す（" + FetchPlanner.FormatBytes(_cacheBytes) + "）"
+        : "取得キャッシュを消す（空です）";
+
+    /// <summary>消した結果・消せない理由の 1 行。</summary>
+    public string CacheMessage
+    {
+        get => _cacheMessage;
+        private set => SetProperty(ref _cacheMessage, value);
+    }
+
+    /// <summary>
+    /// cache の量を数え直す（画面を開いたときと、消した後）。
+    /// <b>数えるのは台帳の item の檔だけ</b>＝<c>cache/</c> の他の住人は勘定にも削除にも入らない。
+    /// </summary>
+    public void RefreshCache()
+    {
+        var measured = CacheCleaner.Measure(_paths.DownloadCacheDir);
+
+        _cacheFiles = measured.Files;
+        _cacheBytes = measured.Bytes;
+        RaisePropertyChanged(nameof(CacheBytes));
+        RaisePropertyChanged(nameof(CacheFiles));
+        RaisePropertyChanged(nameof(ClearCacheText));
+        ClearCacheCommand.RaiseCanExecuteChanged();
+    }
+
+    /// <summary>
+    /// 消す（<b>関門は <see cref="CacheCleaner.Blocked"/></b>＝実行系が組み上がっていて、
+    /// 展開に使った台帳と配布樹の台帳が一致するときだけ）。
+    /// </summary>
+    public void ClearCache()
+    {
+        var result = CacheCleaner.Clean(
+            _paths.DownloadCacheDir,
+            _paths.ResolvePythonExe(_live.Variant) is not null,
+            _live.RuntimeLedgerSha256,
+            RuntimeStamp.LedgerSha256(_paths, _live.Variant));
+
+        CacheMessage = result.Message;
+        RefreshCache();
+    }
+
     /// <summary>データの置き場（読むだけ・移動は未対応）。</summary>
     public string DataDirText => _paths.DataDir;
 
@@ -480,6 +548,9 @@ public sealed class SettingsViewModel : ObservableObject
         IsDirty = false;
         Message = "設定を保存しました。変種・GPU・ポートを変えたときは、サーバを起動し直すと効きます。";
 
+        // 変種が変われば cache の勘定も変わる（消す対象はその変種の台帳の item）。
+        RefreshCache();
+
         // 状態帯は設定から出す欄（GPU・変種・接続先）を持っている。ここで告げないと、
         // 「適用」した直後の状態帯が古い値（GPU＝未選択）を出したままになる（実測）。
         Applied?.Invoke(this, EventArgs.Empty);
@@ -569,6 +640,8 @@ public sealed class SettingsViewModel : ObservableObject
         to.ReadyTimeoutSeconds = from.ReadyTimeoutSeconds;
         to.FirstRunCompleted = from.FirstRunCompleted;
         to.AcceptedNoticesSha256 = from.AcceptedNoticesSha256;
+        to.RuntimeLedgerSha256 = from.RuntimeLedgerSha256;
+        to.InstalledAppVersion = from.InstalledAppVersion;
         to.AutoStartServer = from.AutoStartServer;
         to.ShowMemoryPanel = from.ShowMemoryPanel;
         to.LastTestVoice = from.LastTestVoice;

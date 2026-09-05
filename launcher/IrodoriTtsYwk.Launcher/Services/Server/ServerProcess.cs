@@ -71,6 +71,18 @@ public sealed class ServerProcess : IServerProcess
     /// </summary>
     public static readonly TimeSpan StderrDrainGrace = TimeSpan.FromMilliseconds(500);
 
+    /// <summary>
+    /// <b>子を「起こす」段そのものの期限</b>（是正・便 D（3）＝設計書 §20-5 ⑴）。
+    /// <para>
+    /// <see cref="Process.Start"/> は同期呼び出しで、返ってこない機体では
+    /// <see cref="CancellationToken"/> でも切れない。1 度の「サーバ起動」で同じ
+    /// <c>python.exe</c> を 3 回起こす（窓の列挙・門の検分・この子）ので、
+    /// <see cref="ProcessRunner.DefaultStartTimeout"/> と同じ 3 s に揃えてある
+    /// （3 つ止まっても 9 s＝無人検分の budget 10 s の内側）。
+    /// </para>
+    /// </summary>
+    public static readonly TimeSpan SpawnTimeout = ProcessRunner.DefaultStartTimeout;
+
     private readonly ServerStateMachine _machine = new();
     private readonly IPortProbe _portProbe;
     private readonly IReadinessProbe _readinessProbe;
@@ -222,7 +234,23 @@ public sealed class ServerProcess : IServerProcess
             // **死活は Exited で見る**（裁定 88 ⑶）＝見張りの 2 秒待ちに依らない。
             process.Exited += (_, _) => OnChildExited(process, generation);
 
-            if (!process.Start())
+            // **「起こす」段そのものに期限を掛ける**（是正・便 D（3）＝設計書 §20-5 ⑴）。
+            // `Process.Start` は同期呼び出しで、返ってこない機体（壊れた python.exe）では
+            // `CancellationToken` でも切れない＝窓（WPF のメッセージポンプ）の上でだけ
+            // 60 秒黙る形になった。別スレッドへ逃がして待ち、見限った個体は手放す。
+            // **`StartAsync` は Windows のハードエラー窓も止める**（是正・便 D（3）の統合席＝
+            // 無人検分の段 k が実窓で「サポートされていない 16 ビット アプリケーション」を捕まえた。
+            // その窓が出ている間 `Process.Start` は返らない＝逐語は `ProcessRunner.StartAsync`）。
+            var spawn = ProcessRunner.StartAsync(process);
+            if (await Task.WhenAny(spawn, Task.Delay(SpawnTimeout, CancellationToken.None))
+                    .ConfigureAwait(false) != spawn)
+            {
+                ProcessRunner.Abandon(process, spawn);
+                return Fail(started, ProcessRunner.StartStalledMessage(request.PythonExe, SpawnTimeout))
+                    with { Notices = gate.Notices };
+            }
+
+            if (!await spawn.ConfigureAwait(false))
             {
                 process.Dispose();
                 // 門の告知は「起こしたが伝える」1 行だが、**起こし損ねた経路でも落とさない**
@@ -306,6 +334,16 @@ public sealed class ServerProcess : IServerProcess
         ProcessId = null;
         BaseAddress = null;
         _machine.ApplyStopped();
+    }
+
+    /// <summary>
+    /// 起こす前に断った（呼び手＝<c>MainViewModel</c> の事前検査）。<b>状態機械へ通す</b>だけで、
+    /// 子は 1 つも起こしていない（<see cref="ProcessId"/> は動かさない）。
+    /// </summary>
+    public void ReportPreflightFailure(string reason)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        _machine.ApplyFailure(reason.Trim());
     }
 
     /// <summary>

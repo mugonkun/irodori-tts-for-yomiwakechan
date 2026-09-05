@@ -99,11 +99,42 @@ GPU メモリの標本 `gpu-<日時>-*.csv`）、読み方は `docs/radeon.md` �
 
 ### 便 D（ランチャ・この機体で実射済み）
 
-台本は `probe/d-launch-probe.ps1`（＋共通 `probe/common.ps1`）＝31 段・`-Variant`／`-Port` を引数で取る。
+台本は `probe/d-launch-probe.ps1`（＋共通 `probe/common.ps1`）。`-Variant`／`-Port` を引数で取る。
+**段数は引数で増減するので、判定は末尾の `=== N failure(s) of M ===` の行だけを読む**（終了コード＝落ちた段の数）。
+実測の M＝便 D の 31 → 便 D（2）で **58**（設計書 §20-3・窓と発行 exe の 2 回）→ 便 D（3）で新しい段を足した
+（既定の走で **88 前後**を見込む＝実走は統合席）。
+
+```
+pwsh -NoProfile -ExecutionPolicy Bypass -File probe/d-launch-probe.ps1
+pwsh ... -File probe/d-launch-probe.ps1 -DryRun            # 空走＝窓を開かず段の下拵えだけ印字して exit 0
+pwsh ... -File probe/d-launch-probe.ps1 -RoundThreeOnly    # 便 D（3）の h／j／k／l だけ（模型も鯖も起こさない）
+pwsh ... -File probe/d-launch-probe.ps1 -BadDeviceOnly     # D-1 だけ
+pwsh ... -File probe/d-launch-probe.ps1 -GateOnly          # 変種の門だけ
+```
+
+**便 D（3）で足した段**（設計書 §22）＝**h** 初回取得ウィザードの**押下数**（裁定 94 ⑴・既定は台帳を壊した
+私設の配布樹で**外へ 1 バイトも出さずに**失敗段まで＝押下 4・`-WizardFullRun` は**本当に取得する**ので E2E 席専用）／
+**i** 試し撃ち 200 の後に取得キャッシュが消える（**バイトで読む**・種は台本が播く）／**j** `settings.json` の
+`runtimeLedgerSha256`・`installedAppVersion` と、台帳を壊したときの「実行系を組み直す」／**k** 起こせない
+`python.exe`（テキスト檔）を指した実行系で「サーバ起動」→ **10 s 以内**に理由 1 行（設計書 §20-5 ⑴ の再現・旧は 60 s 黙る）／
+**l**「取得キャッシュを消す」ボタン。**h／j／k／l は 1 走ごとに窓を 1 枚ずつ起こし、模型を載せず・ポートを開かず・
+取得もしない**（私設ポート 18097／18098）。
+
 **便 E（インストーラの UIA 検分）の前提として、便 D の実機で判った 2 つをここに残す**（設計書 §13-3・§14-3）＝
 
 - **UI Automation は自プロセスの持ち窓と共通檔窓を列挙しないことがある**＝`RootElement.FindAll(Children, ProcessId)` は自プロセスの modal 窓（`FirstRunWizard`）も `OpenFileDialog`（`#32770`）も 1 度も返さないのに、Win32 の `EnumWindows` は同じ瞬間に返す（実測）。**`EnumWindows`＋`AutomationElement.FromHandle` を併用する**（`probe/common.ps1` の `Get-ProcessWindowHandles`）。閉じられない窓で走行が止まるので、窓を開かせない路（貼り付け）も併せて用意すること。
 - **PS 5.1 の `Get-Content` は `-Encoding UTF8` が必須**＝BOM 無しの `voices.json`／`settings.json` を機体の ANSI 頁で読むため、日本語の突合が **5.1 でだけ**落ちる（7 では通る）。檔頭の「PS 5.1／7 両対応」を守るなら読みは全部 `-Encoding UTF8`。
+- **`Get-FileHash` は 5.1 で無いことがある**（便 D（3）の実測・2026-09-05）＝`pwsh` の中から
+  `powershell.exe` を起こすと `PSModulePath` が PowerShell 7 の物のまま入るので
+  `Microsoft.PowerShell.Utility` が自動読込されず、`Get-FileHash` が
+  **「用語 'Get-FileHash' は…認識されません」**で落ちる（7 では通る）。`build/Common.ps1` が既に
+  同じ理由で .NET の `SHA256` に落とす形を持っている＝`probe/` でも同じ形にする
+  （`d-launch-probe.ps1` の `Get-Sha256Hex`）。**`e-install-probe.ps1:461,483` は素の `Get-FileHash` のまま**
+  ＝7 で撃つ限り無害だが、5.1 で撃つなら同じ手当てが要る（便 D（3）の席は檔を触っていない）。
+- **junction を含む scratch 樹は `Remove-Item -Recurse` で消さない**（便 D（3））＝5.1 は junction の
+  **中へ入って**消すので、`build/out/app` を指した junction を持つ樹をそのまま消すと配布樹が消える。
+  reparse point は `DirectoryInfo.Delete()` で**リンクだけ**外してから消す（`Remove-PrivateTree`）。
+  実証＝私設樹を作って消した後も `build/out/app` は 4 件・`licenses/` は 10 件のまま。
 
 ### 便 E（導入・この機体で実射済み）
 

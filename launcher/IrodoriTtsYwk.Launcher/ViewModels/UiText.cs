@@ -19,7 +19,27 @@ public static class UiText
     /// <summary>その口が wrapper に無いとき（<c>WrapperResult&lt;T&gt;.Available=false</c>）。</summary>
     public const string NotSupported = "未対応";
 
-    /// <summary>バイト数（1024 進・GB／MB／KB）。</summary>
+    /// <summary>
+    /// 起きている個体がいないので数字が無いとき（<see cref="NotSupported"/> と<b>混ぜない</b>）。
+    /// <para>
+    /// 「未対応」は<b>起きている個体にその口が無い</b>（古い wrapper・上流の素の Server）ことで、
+    /// 「サーバが動いていません」は<b>そもそも誰も起きていない</b>ことである。同じ 1 語で出すと、
+    /// 止めているだけの利用者に「この配布物は GPU メモリを出せない」と読ませてしまう
+    /// （是正・便 D（3）・low 6 の ⑵）。
+    /// </para>
+    /// </summary>
+    public const string NotRunning = "—（サーバが動いていません）";
+
+    /// <summary>
+    /// バイト数（<b>1024 進</b>＝<c>KiB</c>／<c>MiB</c>／<c>GiB</c>）。
+    /// <para>
+    /// <b>綴りは 1024 進の物に揃える</b>（是正・便 D（3）・low 6 の ⑴）＝1 巡目・2 巡目は
+    /// 1024 で割りながら <c>GB</c>／<c>MB</c>／<c>KB</c> と綴っていたので、
+    /// 同じ配布物の中で <see cref="Services.Ledger.FetchPlanner.FormatBytes"/>（<c>GiB</c>）と
+    /// 状態帯（<c>GB</c>）が<b>同じ値を別の単位名で</b>出していた（実射＝台帳 4.79 GiB と
+    /// 帯の 2.21 GB が同じ 1024 進）。数字を動かさず、名前だけを事実に合わせる。
+    /// </para>
+    /// </summary>
     public static string Bytes(long? bytes)
     {
         if (bytes is null || bytes < 0)
@@ -30,17 +50,17 @@ public static class UiText
         var value = (double)bytes.Value;
         if (value >= 1024.0 * 1024.0 * 1024.0)
         {
-            return Fixed(value / (1024.0 * 1024.0 * 1024.0), 2) + " GB";
+            return Fixed(value / (1024.0 * 1024.0 * 1024.0), 2) + " GiB";
         }
 
         if (value >= 1024.0 * 1024.0)
         {
-            return Fixed(value / (1024.0 * 1024.0), 1) + " MB";
+            return Fixed(value / (1024.0 * 1024.0), 1) + " MiB";
         }
 
         if (value >= 1024.0)
         {
-            return Fixed(value / 1024.0, 1) + " KB";
+            return Fixed(value / 1024.0, 1) + " KiB";
         }
 
         return bytes.Value.ToString(CultureInfo.InvariantCulture) + " B";

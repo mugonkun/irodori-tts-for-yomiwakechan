@@ -82,7 +82,7 @@ public sealed class WrapperClientTests
 
         Assert.Equal(1234, status.Memory!.AllocatedBytes);
         Assert.Equal(9012, status.Memory.MaxAllocatedBytes);
-        Assert.Equal(4096, status.Memory.Latents["琴葉茜"]);
+        Assert.Equal(4096, status.Memory.EffectiveLatents["琴葉茜"]);
     }
 
     [Fact]

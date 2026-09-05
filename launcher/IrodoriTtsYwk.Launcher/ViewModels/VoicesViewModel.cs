@@ -58,6 +58,12 @@ public sealed class VoicesViewModel : ObservableObject
     /// </summary>
     private readonly List<string> _pendingPrecompute = [];
 
+    /// <summary>出し直しが飛んでいる間は次の標本で二重に出さない。</summary>
+    private bool _precomputeRetrying;
+
+    /// <summary>自動の出し直しが 409 以外で落ちた回数（<see cref="MaxAutoRetries"/> で諦める）。</summary>
+    private int _precomputeRetryFailures;
+
     public VoicesViewModel(
         IVoiceStore? store,
         IVoicesJsonWriter? writer,
@@ -82,6 +88,11 @@ public sealed class VoicesViewModel : ObservableObject
         PreviewCommand = new RelayCommand(Preview, () => Selected?.CanPreview == true);
         RemoveCommand = new AsyncRelayCommand(RemoveSelectedAsync, () => Selected?.CanRemove == true);
         PrecomputeCommand = new AsyncRelayCommand(PrecomputeAsync, () => PrecomputeSupported);
+
+        // 捕れなかった例外を握り潰さない（§20-5 ⑴）。
+        RefreshCommand.Faulted += (_, line) => Message = "一覧を読み直せませんでした：" + line;
+        RemoveCommand.Faulted += (_, line) => Message = "削除できませんでした：" + line;
+        PrecomputeCommand.Faulted += (_, line) => Message = "事前計算を始められませんでした：" + line;
     }
 
     /// <summary>
@@ -215,9 +226,10 @@ public sealed class VoicesViewModel : ObservableObject
     /// </para>
     /// <b>窓は標本を配るだけ</b>＝ここから出る HTTP は「口が空いた 1 回」だけである。
     /// </summary>
+    /// <param name="precompute"><c>/ywk/status.precompute</c>（口が無ければ null）。</param>
     public void ApplyPrecompute(PrecomputeStatus? precompute)
     {
-        if (_pendingPrecompute.Count == 0)
+        if (_pendingPrecompute.Count == 0 || _precomputeRetrying)
         {
             return;
         }
@@ -229,16 +241,77 @@ public sealed class VoicesViewModel : ObservableObject
             return;
         }
 
-        var ids = _pendingPrecompute.ToArray();
-        _pendingPrecompute.Clear();
-        _ = PrecomputeAsync(ids);
+        _precomputeRetrying = true;
+        _ = RetryPendingPrecomputeAsync();
+    }
+
+    /// <summary>自動で出し直す上限（これを超えたら手で押してもらう＝標本ごとに叩き続けない）。</summary>
+    public const int MaxAutoRetries = 3;
+
+    /// <summary>
+    /// 覚えている焼きを出し直す（<see cref="ApplyPrecompute"/> の実体）。
+    /// <para>
+    /// <b>受け取られるまで待ち行列から落とさない</b>（是正・便 D（3）・low 6 の ⑹）＝
+    /// 1 巡目・2 巡目は出し直す<b>前に</b> <c>_pendingPrecompute.Clear()</c> していたので、
+    /// 出し直しが 409 以外（サーバが落ちた・口が期限内に返らない・停止直後で
+    /// <c>IWrapperClient</c> が null）で落ちると<b>覚えていた話者が消えた</b>＝
+    /// 足した話者が「未」のまま置き去りになる、という直したはずの筋がそのまま残っていた。
+    /// いまは⑴ 受け取られた（または口が無い）ときだけ落とし ⑵ 走っている間は二重に出さず
+    /// ⑶ 409 以外で <see cref="MaxAutoRetries"/> 回落ちたら諦めて理由を残す。
+    /// </para>
+    /// </summary>
+    private async Task RetryPendingPrecomputeAsync()
+    {
+        try
+        {
+            var ids = _pendingPrecompute.ToArray();
+            var outcome = await PrecomputeAsync(ids).ConfigureAwait(true);
+
+            switch (outcome)
+            {
+                case PrecomputeOutcome.Started:
+                case PrecomputeOutcome.Unsupported:
+                    Forget(ids);
+                    _precomputeRetryFailures = 0;
+                    break;
+
+                case PrecomputeOutcome.Deferred:
+                    // また走っていた＝覚えたまま（PrecomputeAsync が入れ直している）
+                    break;
+
+                default:
+                    _precomputeRetryFailures++;
+                    if (_precomputeRetryFailures >= MaxAutoRetries)
+                    {
+                        Forget(ids);
+                        Message = "覚えていた " + ids.Length.ToString(CultureInfo.InvariantCulture)
+                            + " 名の事前計算を "
+                            + MaxAutoRetries.ToString(CultureInfo.InvariantCulture)
+                            + " 回試しても始められませんでした（「参照潜在を焼く」を押してください）。";
+                    }
+
+                    break;
+            }
+        }
+        finally
+        {
+            _precomputeRetrying = false;
+        }
+    }
+
+    private void Forget(IReadOnlyList<string> ids)
+    {
+        foreach (var id in ids)
+        {
+            _pendingPrecompute.Remove(id);
+        }
     }
 
     /// <summary>潜在の表が同じか（<b>純関数</b>＝標本ごとの作り直しを止める判定）。</summary>
     private static bool SameLatents(MemoryStatus? left, MemoryStatus? right)
     {
-        var a = left?.Latents;
-        var b = right?.Latents;
+        var a = left?.EffectiveLatents;
+        var b = right?.EffectiveLatents;
         if (a is null || a.Count == 0)
         {
             return b is null || b.Count == 0;
@@ -551,24 +624,44 @@ public sealed class VoicesViewModel : ObservableObject
 
     public void StopPreview() => _player.Stop();
 
+    /// <summary>焼きの注文 1 回の結末（待ち行列の落とし方を決める）。</summary>
+    public enum PrecomputeOutcome
+    {
+        /// <summary>焼く物が無かった。</summary>
+        Nothing,
+
+        /// <summary>受け取られた（走り始めた）。</summary>
+        Started,
+
+        /// <summary>走行中で断られた（409）＝覚えておく。</summary>
+        Deferred,
+
+        /// <summary>この個体にその口が無い＝覚えても意味が無い。</summary>
+        Unsupported,
+
+        /// <summary>落ちた（サーバが居ない・期限切れ・他の理由）＝覚えたまま。</summary>
+        Failed,
+    }
+
     /// <summary>焼いていない／古い話者をまとめて焼く。</summary>
-    public Task PrecomputeAsync() => PrecomputeAsync(VoiceRowBuilder.NeedsPrecompute(Rows));
+    public Task<PrecomputeOutcome> PrecomputeAsync() =>
+        PrecomputeAsync(VoiceRowBuilder.NeedsPrecompute(Rows));
 
     /// <summary>指定の話者を焼く。口が無ければ黙って伏せる（便 C（2）が追加中）。</summary>
-    public async Task PrecomputeAsync(IReadOnlyList<string> ids)
+    public async Task<PrecomputeOutcome> PrecomputeAsync(IReadOnlyList<string> ids)
     {
         ArgumentNullException.ThrowIfNull(ids);
         if (ids.Count == 0)
         {
             Message = "焼き直しが要る話者はありません。";
-            return;
+            return PrecomputeOutcome.Nothing;
         }
 
         var client = _wrapper();
         if (client is null)
         {
             Message = "サーバが動いていないので、参照潜在の事前計算はできません。";
-            return;
+            return PrecomputeOutcome.Failed;
         }
 
         try
@@ -582,7 +675,7 @@ public sealed class VoicesViewModel : ObservableObject
             {
                 PrecomputeSupported = false;
                 Message = "このサーバは参照潜在の事前計算に対応していません。";
-                return;
+                return PrecomputeOutcome.Unsupported;
             }
 
             PrecomputeSupported = true;
@@ -590,7 +683,7 @@ public sealed class VoicesViewModel : ObservableObject
             {
                 Message = "参照潜在の事前計算を始めました（"
                     + UiText.Progress(0, result.Value?.Total ?? ids.Count) + " 件）。";
-                return;
+                return PrecomputeOutcome.Started;
             }
 
             // 走行中で断られた（409）＝**忘れない**。口が空いたら ApplyPrecompute が出し直す。
@@ -607,14 +700,16 @@ public sealed class VoicesViewModel : ObservableObject
 
                 Message = "いま別の事前計算が走っているので、終わり次第この "
                     + ids.Count.ToString(CultureInfo.InvariantCulture) + " 名を焼きます。";
-                return;
+                return PrecomputeOutcome.Deferred;
             }
 
             Message = "事前計算を始められませんでした" + Suffix(result.Error?.Message);
+            return PrecomputeOutcome.Failed;
         }
         catch (OperationCanceledException)
         {
             Message = "事前計算の要求が期限内に返りませんでした。";
+            return PrecomputeOutcome.Failed;
         }
     }
 

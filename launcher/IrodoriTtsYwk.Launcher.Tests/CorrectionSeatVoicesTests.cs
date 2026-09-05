@@ -180,7 +180,9 @@ public sealed class CorrectionSeatVoicesTests : IDisposable
         await vm.NextAsync();                       // 変種 → 取得（ここで失敗する）
         Assert.Equal(FirstRunStep.Download, vm.Step);
         Assert.False(vm.LastStepOk);
-        Assert.Equal("やり直す", vm.NextButtonText);
+
+        // 便 D（3）＝自動進行になったので、止まる段の文言は「もう一度」（裁定 94 ⑴）
+        Assert.Equal("もう一度", vm.NextButtonText);
 
         // もう 1 度押しても**先へ進まない**（同じ段をやり直す）
         await vm.NextAsync();
