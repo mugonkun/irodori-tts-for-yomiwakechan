@@ -130,7 +130,11 @@ public static class FetchPlanner
     /// <list type="bullet">
     /// <item><c>cu126</c>＝<b>1.69</b>（実測）</item>
     /// <item><c>rocm-gfx1151</c>＝<b>2.98</b>（実測・26,523 檔 4.25 GB）</item>
-    /// <item><c>cpu</c>＝<b>3.60</b>（実測）</item>
+    /// <item><c>cpu</c>＝<b>3.60</b>（実測。ただし<b>分母がランチャの展開した樹ではない</b>＝
+    /// <c>build/out/runtime-cpu</c>（<c>build/assemble-runtime.ps1</c> の樹）の比である。
+    /// ランチャが展開した樹で測ると <b>3.23</b>＝この 3.60 は<b>多めに出す側</b>なので
+    /// 「必要な空き」を低く見せる害は無いが、測り直しは便 D（4）の宿題として残す
+    /// ＝是正・便 D（3）の 3 巡目）</item>
     /// <item><c>cu130</c>＝<b>未実測</b>＝<see cref="EstimatedExpansionFactor"/></item>
     /// </list>
     /// <b>これは表示のためだけの数</b>で、取得も展開もこの値には依らない。

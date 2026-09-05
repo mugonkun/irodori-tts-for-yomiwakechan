@@ -518,7 +518,7 @@ public sealed class RoundTwoCorrectionTests : IDisposable
             paths, settings, new JsonSettingsStore(paths.SettingsPath), new DriverRequirement(),
             () => new FakeDownloader(Path.Combine(_root, "unused.bin")),
             static () => null,
-            static () => Task.FromResult(false));
+            static _ => Task.FromResult(false));
 
         var calls = new List<bool>();
         vm.VcRedistRunner = (assumeInstall, _, _) =>

@@ -100,23 +100,147 @@ public sealed class LauncherSettings
     public string? AcceptedNoticesSha256 { get; set; }
 
     /// <summary>
-    /// <b>展開に使った取得台帳</b>（<c>ledger/runtime-&lt;変種&gt;.json</c>）の sha256（裁定 91）。
+    /// <b>展開に使った取得台帳</b>（<c>ledger/runtime-&lt;変種&gt;.json</c>）の sha256（裁定 91）を
+    /// <b>変種ごとに</b>持つ表。鍵＝台帳の変種名（<see cref="RuntimeVariants"/> の綴り）・
+    /// 値＝小文字 hex 64 字。
     /// <para>
     /// <see cref="AppPaths.ResolvePythonExe"/> は <c>python.exe</c> の在否しか見ないので、
     /// 配布物を新しい版に入れ替えても<b>古い実行系がそのまま使われる</b>。起動時にこの値と
     /// 配布樹の台帳を突き合わせ、食い違ったら状態帯に「実行系を組み直す」1 手を出す。
-    /// null＝まだ 1 度も展開していない（または古い <c>settings.json</c>）＝<b>黙る</b>。
+    /// その変種の欄が無い＝まだ 1 度も展開していない（または古い <c>settings.json</c>）＝<b>黙る</b>。
+    /// </para>
+    /// <para>
+    /// <b>1 組ではなく表である理由</b>（是正・便 D（3）の 3 巡目）＝<b>実行系は変種ごとに在る</b>のに
+    /// 焼き印が 1 組しか無いと、<b>両方組んである機体で変種を切り替えただけ</b>で
+    /// 「実行系を組み直してください」の偽警告が出て 1 手が押せるようになり、押せば健全な実行系を
+    /// 消して数 GiB を取り直す（裁定 88 ⑴ が勧める「cu126 → cpu へ切り替える」導線がそのまま
+    /// この穴に落ちる）。取得キャッシュの関門（<c>CacheCleaner.Blocked</c>）も同じ値を見るので、
+    /// 切り替えた瞬間に掃除まで止まった。
     /// </para>
     /// </summary>
-    [JsonPropertyName("runtimeLedgerSha256")]
-    public string? RuntimeLedgerSha256 { get; set; }
+    [JsonPropertyName("runtimeLedgers")]
+    public IDictionary<string, string> RuntimeLedgers { get; set; } = NewMap();
 
     /// <summary>
-    /// 実行系を展開したときのランチャの版（<see cref="AppVersion.Display"/>・裁定 91）。
-    /// 版だけが動いた（台帳は同じ）ときは<b>組み直しを勧めるが急かさない</b>ための欄である。
+    /// 実行系を展開したときのランチャの版（<see cref="AppVersion.Display"/>・裁定 91）を
+    /// <b>変種ごとに</b>持つ表。版だけが動いた（台帳は同じ）ときは<b>急かさない</b>ための欄である。
     /// </summary>
-    [JsonPropertyName("installedAppVersion")]
-    public string? InstalledAppVersion { get; set; }
+    [JsonPropertyName("installedAppVersions")]
+    public IDictionary<string, string> InstalledAppVersions { get; set; } = NewMap();
+
+    /// <summary>その変種の焼き印（無ければ null）。<b>純関数</b>＝鍵の大小と前後の空白は問わない。</summary>
+    public string? RuntimeLedgerFor(string? variant) => Lookup(RuntimeLedgers, variant);
+
+    /// <summary>その変種を展開したときのランチャの版（無ければ null）。</summary>
+    public string? InstalledAppVersionFor(string? variant) => Lookup(InstalledAppVersions, variant);
+
+    /// <summary>
+    /// その変種の焼き印を書く（null・空を渡すと<b>その変種の欄を消す</b>）。
+    /// 他の変種の焼き印には触らない。
+    /// </summary>
+    public void SetRuntimeStamp(string variant, string? ledgerSha256, string? appVersion)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(variant);
+
+        RuntimeLedgers = Put(RuntimeLedgers, variant, ledgerSha256);
+        InstalledAppVersions = Put(InstalledAppVersions, variant, appVersion);
+    }
+
+    /// <summary>焼き印を持っている変種の並び（掃除の除外集合を組むときに使う）。</summary>
+    public IReadOnlyList<string> StampedVariants()
+    {
+        if (RuntimeLedgers is null || RuntimeLedgers.Count == 0)
+        {
+            return [];
+        }
+
+        var names = new List<string>(RuntimeLedgers.Count);
+        foreach (var pair in RuntimeLedgers)
+        {
+            if (!string.IsNullOrWhiteSpace(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
+            {
+                names.Add(pair.Key.Trim());
+            }
+        }
+
+        return names;
+    }
+
+    /// <summary>変種の表の作り口（鍵の大小を問わない）。</summary>
+    public static IDictionary<string, string> NewMap() =>
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>変種の表の写し（<see cref="Clone"/> と <c>Sanitize</c> が使う）。</summary>
+    public static IDictionary<string, string> CopyMap(IDictionary<string, string>? map)
+    {
+        var copy = NewMap();
+        if (map is null)
+        {
+            return copy;
+        }
+
+        foreach (var pair in map)
+        {
+            if (!string.IsNullOrWhiteSpace(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
+            {
+                copy[pair.Key.Trim()] = pair.Value.Trim();
+            }
+        }
+
+        return copy;
+    }
+
+    /// <summary>
+    /// 鍵で引く（<b>大小を問わない</b>）。System.Text.Json は表を素の
+    /// <see cref="Dictionary{TKey,TValue}"/>（既定の比較子）で作り直すので、
+    /// 読み口の側で大小を吸収する。
+    /// </summary>
+    private static string? Lookup(IDictionary<string, string>? map, string? variant)
+    {
+        if (map is null || map.Count == 0 || string.IsNullOrWhiteSpace(variant))
+        {
+            return null;
+        }
+
+        var key = variant.Trim();
+        if (map.TryGetValue(key, out var direct))
+        {
+            return string.IsNullOrWhiteSpace(direct) ? null : direct.Trim();
+        }
+
+        foreach (var pair in map)
+        {
+            if (string.Equals(pair.Key?.Trim(), key, StringComparison.OrdinalIgnoreCase))
+            {
+                return string.IsNullOrWhiteSpace(pair.Value) ? null : pair.Value.Trim();
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>鍵を 1 つ書く（値が空なら消す）。大小違いの重複鍵も一緒に落とす。</summary>
+    private static IDictionary<string, string> Put(
+        IDictionary<string, string>? map, string variant, string? value)
+    {
+        var next = CopyMap(map);
+        var key = variant.Trim();
+
+        foreach (var existing in new List<string>(next.Keys))
+        {
+            if (string.Equals(existing?.Trim(), key, StringComparison.OrdinalIgnoreCase))
+            {
+                next.Remove(existing!);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            next[key] = value.Trim();
+        }
+
+        return next;
+    }
 
     /// <summary>ランチャの起動と同時にサーバを起こすか。</summary>
     [JsonPropertyName("autoStartServer")]
@@ -182,8 +306,8 @@ public sealed class LauncherSettings
         ReadyTimeoutSeconds = ReadyTimeoutSeconds,
         FirstRunCompleted = FirstRunCompleted,
         AcceptedNoticesSha256 = AcceptedNoticesSha256,
-        RuntimeLedgerSha256 = RuntimeLedgerSha256,
-        InstalledAppVersion = InstalledAppVersion,
+        RuntimeLedgers = CopyMap(RuntimeLedgers),
+        InstalledAppVersions = CopyMap(InstalledAppVersions),
         AutoStartServer = AutoStartServer,
         ShowMemoryPanel = ShowMemoryPanel,
         LastTestVoice = LastTestVoice,

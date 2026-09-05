@@ -171,7 +171,7 @@ public sealed class CorrectionSeatVoicesTests : IDisposable
             new DriverRequirement(),
             static () => null,   // 取得系が差さっていない＝取得の段は必ず失敗する
             static () => null,
-            static () => Task.FromResult(false));
+            static _ => Task.FromResult(false));
 
         vm.Accepted = true;
         await vm.NextAsync();                       // 通知 → 変種

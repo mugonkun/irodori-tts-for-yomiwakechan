@@ -326,8 +326,8 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 | # | 裁定 | 何が変わったか |
 |---|---|---|
 | ⑴ | 94 ⑴ | **初回取得ウィザードの自動進行**＝取得→展開→モデル→起動は成功したら自動で次へ。押下は **5**（同意チェック・同意して次へ・変種・取得を始める・試し撃ちへ）。失敗した段だけで止まり、文言は「もう一度」＋理由 1 行。段の出入りは `Trail` に `― <段の名>` として残る。「中断」は各段で効く（`FirstRunViewModel.AdvanceAsync`） |
-| ⑵ | 90 Q-E2 ⑶ | **取得キャッシュの削除**＝⒜ 初回取得を通した後、「試し撃ち」で 1 射 200 が返ったら `<data>\cache` の中身を残らず消す（置き場自身は残す・消したバイトをログと Trail に）⒝ 設定に手動の「取得キャッシュを消す（n GiB）」⒞ **消す前の関門**＝`python.exe` の在否と `settings.runtimeLedgerSha256` と配布樹の台帳の一致（どちらか欠ければ 1 バイトも消さない）。**名前で選ばない**のは、前の台帳の原檔・打ち切った `.part`・名前が変わった檔が残って「展開後（cache 削除後）」の実測が合わなくなるからである（`Services/Ledger/CacheCleaner.cs`） |
-| ⑶ | 91 | **`settings.json` に `runtimeLedgerSha256` と `installedAppVersion`**（展開が通った直後に焼く）。起動時に配布樹の台帳と突き合わせ、食い違えば状態帯に 1 行と「実行系を組み直す」1 手（cache から再展開・cache が無ければ足りない檔だけ取得から）（`Services/Ledger/RuntimeStamp.cs`・`MainViewModel.RebuildRuntimeAsync`） |
+| ⑵ | 90 Q-E2 ⑶ | **取得キャッシュの削除**＝⒜ 初回取得を通した後、「試し撃ち」で 1 射 200 が返ったら `<data>\cache` の中身を残らず消す（置き場自身は残す・消したバイトをログと Trail に）⒝ 設定に手動の「取得キャッシュを消す（n GiB）」⒞ **消す前の関門**＝`python.exe` の在否と `settings.runtimeLedgers[<変種>]` と配布樹の台帳の一致（どちらか欠ければ 1 バイトも消さない）。**名前で選ばない**のは、前の台帳の原檔・打ち切った `.part`・名前が変わった檔が残って「展開後（cache 削除後）」の実測が合わなくなるからである。ただし**関門を通していない変種だけが名指す原檔は残す**（是正・便 D（3）の 3 巡目＝実機の cache 4.14 GB のうち 2.41 GiB が cu126 専用で、rocm の関門を通しただけの掃除がそれを消していた。`CacheCleaner.ProtectedFileNames`）（`Services/Ledger/CacheCleaner.cs`） |
+| ⑶ | 91 | **`settings.json` に `runtimeLedgers` と `installedAppVersions`（変種ごとの表）**（展開が通った直後にその変種の欄だけ焼く）。起動時に配布樹の台帳と突き合わせ、食い違えば状態帯に 1 行と「実行系を組み直す」1 手（cache から再展開・cache が無ければ足りない檔だけ取得から。**押す前に取り直す量を 1 行で名乗り**、走っている間は帯と「やめる」を出す）。**版だけが動いたときは 1 手を出さず焼き直して黙る**。**焼き印を押すのは `site-packages\*.dist-info` の件数が台帳と合う樹だけ**（組みかけの樹に押すと、掃除の関門が自分で作った値と突き合わせて通ってしまう）（`Services/Ledger/RuntimeStamp.cs`・`MainViewModel.RebuildRuntimeAsync`） |
 | ⑷ | 94 ⑶ | **展開係数を変種ごとの実測に**＝cu126 **1.69**・rocm-* **2.98**・cpu **3.60**・cu130 は未実測で **3.3**。見積りの 1 行は「（展開は実測 2.98 倍）」「（展開は推定 3.3 倍）」と出し分ける（`FetchPlanner.ExpansionFactorFor`） |
 | ⑸ | 92 の low 6 | ⒜ `UiText.Bytes` の綴りを **GiB／MiB／KiB** に（1024 進なのに GB と綴っていた）⒝ 「（最大 …）」を**使用量の隣**へ・`memory.error` は「（一部の欄が読めませんでした：…）」⒞ 「未対応」と **「—（サーバが動いていません）」** の出し分け ⒟ `MemoryStatus.Latents` が JSON の `null` でも落ちない（`EffectiveLatents`）⒠ `MainViewModel` の Failed 2 箇所を `IServerProcess.ReportPreflightFailure` 経由に ⒡ 「GPU メモリの欄」は「適用」した瞬間に効く（`StatusViewModel.MemoryPanelVisible` へ束縛）⒢ 409 の待ち行列は**受け取られるまで落とさない**（3 回落ちたら諦めて理由を残す） |
 | ⑹ | §20-5 ⑴ | **窓が 60 秒黙る**の手当て＝`AsyncRelayCommand` の受け口を**全例外**に（型の数え上げをやめた）・`ProcessRunner` と `ServerProcess` に**「起こす」段そのものの期限 3 s**（`Process.Start` を別スレッドへ逃がして待ち、見限った個体は後から起きたら殺す。1 度の「サーバ起動」で同じ `python.exe` を 3 回起こす＝窓の列挙・門の検分・子なので、3 つとも止まって 9 s＝無人検分の budget 10 s の内側）・`MainViewModel` は列挙が落ちても理由 1 行を残して先へ進む・`Status`／`Voices`／`Try`／`Settings`／`FirstRun` の各手の `Faulted` を画面へ繋いだ |
@@ -336,7 +336,7 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 
 | 画面 | 足した id |
 |---|---|
-| 状態 | `StatusRebuildRuntimeText`・`StatusRebuildRuntimeButton`（裁定 91 の 1 行と 1 手＝食い違っていないときは**木に出ない**。焼き印の無い樹は起動時にいまの台帳で焼き直して黙る） |
+| 状態 | `StatusRebuildRuntimeText`・`StatusRebuildRuntimeButton`（裁定 91 の 1 行と 1 手＝食い違っていないときは**木に出ない**。焼き印の無い樹は起動時にいまの台帳で焼き直して黙る）・`StatusRebuildProgressText`・`StatusRebuildProgressBar`・`StatusRebuildCancelButton`（組み直しが走っている間だけ木に出る＝是正・便 D（3）の 3 巡目） |
 | 設定 | `SettingsClearCacheButton`（文言は `取得キャッシュを消す（n GiB）`／空なら `（空です）`）・`SettingsCacheMessageText` |
 
 `StatusMemoryPanel` は `Visibility` を `StatusViewModel.MemoryPanelVisible` に束縛したので、
@@ -345,12 +345,23 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 ### 11-3 `settings.json` に足した 2 欄（契約 ⑻）
 
 ```json
-{ "runtimeLedgerSha256": "<ledger/runtime-<変種>.json の sha256（小文字 hex 64 字）>",
-  "installedAppVersion": "v0.1.0" }
+{ "runtimeLedgers":       { "rocm-gfx1151": "<ledger/runtime-rocm-gfx1151.json の sha256（小文字 hex 64 字）>",
+                            "cu126":        "<ledger/runtime-cu126.json の sha256>" },
+  "installedAppVersions": { "rocm-gfx1151": "v0.1.0", "cu126": "v0.1.0" } }
 ```
 
-どちらも **null を許す**（古い `settings.json`・台本で組んだ樹は「いつ組んだか判らない」＝黙る）。
-`docs/contract.md` ⑻ の欄の表は本席の担当パス外なので**卓が 2 行足すこと**。
+**鍵は変種**（是正・便 D（3）の 3 巡目）。1 巡目は `runtimeLedgerSha256`／`installedAppVersion` の
+**1 組しか無かった**が、実行系は変種ごとに在るので、両方組んである機体で設定の変種を切り替えただけで
+「実行系を組み直してください」の偽警告が出て 1 手が押せるようになり、押せば健全な実行系を消して
+数 GiB を取り直した（裁定 88 ⑴ が勧める「cu126 → cpu へ切り替える」導線がそのまま落ちる）。
+取得キャッシュの関門（`CacheCleaner.Blocked`）も同じ値を見るので、切り替えた瞬間に掃除まで止まった。
+
+- どの変種の欄も**無くてよい**（古い `settings.json`・台本で組んだ樹は「いつ組んだか判らない」＝黙る）。
+- **1 巡目の 2 欄は読まない**（変種の名を持たないので、いまの変種の欄へ畳むと同じ穴を作り直す）。
+  焼き印を失った樹は次の起動でいまの台帳から焼き直されるので、誰も 4 GB をやり直さない。
+- 焼くのは**その変種の欄だけ**（`LauncherSettings.SetRuntimeStamp`）。
+- `docs/contract.md` ⑻ の欄の表は本席の担当パス外なので**卓が 2 行足すこと**
+  （裁定 95 の票は 1 巡目の綴りで書かれているので、**この形で**足すこと）。
 
 ### 11-4 検分（この機体・2026-09-05）
 

@@ -76,6 +76,25 @@
                   AutomationProperties.AutomationId="StatusRebuildRuntimeButton"
                   Command="{Binding RebuildRuntimeCommand}" />
         </StackPanel>
+        <!--
+          組み直しの帯と「やめる」（是正・便 D（3）の 3 巡目）＝裁定 90 の自動削除で cache は
+          空なのが常態なので、この 1 手は押した瞬間に数 GiB の再取得になる。20 行のログ帯に
+          流すだけでは進み具合が読めず、止める手も無かった。
+        -->
+        <StackPanel Margin="0,6,0,0"
+                    Visibility="{Binding IsRebuilding, Converter={StaticResource BoolToVis}}">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock AutomationProperties.AutomationId="StatusRebuildProgressText"
+                       VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="{Binding RebuildProgressText, Mode=OneWay}" />
+            <Button Content="やめる" Padding="12,4" Margin="12,0,0,0"
+                    AutomationProperties.AutomationId="StatusRebuildCancelButton"
+                    Command="{Binding CancelRebuildCommand}" />
+          </StackPanel>
+          <ProgressBar Height="6" Margin="0,4,0,0" Minimum="0" Maximum="1"
+                       AutomationProperties.AutomationId="StatusRebuildProgressBar"
+                       Value="{Binding RebuildProgressFraction, Mode=OneWay}" />
+        </StackPanel>
       </StackPanel>
     </Border>
 

@@ -130,7 +130,7 @@ public sealed class RoundThreeWizardTests : IDisposable
         LauncherSettings settings,
         IDownloader? downloader,
         IRuntimeInstaller? installer,
-        Func<Task<bool>>? startServer = null,
+        Func<CancellationToken, Task<bool>>? startServer = null,
         Func<IProgress<string>, CancellationToken, Task<bool>>? models = null)
     {
         var vm = new FirstRunViewModel(
@@ -140,7 +140,7 @@ public sealed class RoundThreeWizardTests : IDisposable
             new DriverRequirement(),
             () => downloader,
             () => installer,
-            startServer ?? (static () => Task.FromResult(true)));
+            startServer ?? (static _ => Task.FromResult(true)));
 
         vm.ModelFetcher = models ?? ((_, _) => Task.FromResult(true));
         return vm;
@@ -225,7 +225,7 @@ public sealed class RoundThreeWizardTests : IDisposable
             new DriverRequirement(),
             static () => new HappyDownloader(),
             () => installer,
-            static () => Task.FromResult(true))
+            static _ => Task.FromResult(true))
         {
             ModelFetcher = (_, _) => Task.FromResult(true),
         };
@@ -324,13 +324,20 @@ public sealed class RoundThreeWizardTests : IDisposable
 
         Assert.Equal(
             RuntimeStamp.LedgerSha256(paths, RuntimeVariants.Cpu),
-            settings.RuntimeLedgerSha256);
-        Assert.Equal(AppVersion.Display, settings.InstalledAppVersion);
+            settings.RuntimeLedgerFor(RuntimeVariants.Cpu));
+        Assert.Equal(AppVersion.Display, settings.InstalledAppVersionFor(RuntimeVariants.Cpu));
+
+        // **焼くのはその変種の欄だけ**（是正・便 D（3）の 3 巡目）
+        Assert.Null(settings.RuntimeLedgerFor(RuntimeVariants.Cu126));
 
         // 檔にも落ちている（次の起動が読む）
         var written = new JsonSettingsStore(paths.SettingsPath).Load();
-        Assert.Equal(settings.RuntimeLedgerSha256, written.RuntimeLedgerSha256);
-        Assert.Equal(settings.InstalledAppVersion, written.InstalledAppVersion);
+        Assert.Equal(
+            settings.RuntimeLedgerFor(RuntimeVariants.Cpu),
+            written.RuntimeLedgerFor(RuntimeVariants.Cpu));
+        Assert.Equal(
+            settings.InstalledAppVersionFor(RuntimeVariants.Cpu),
+            written.InstalledAppVersionFor(RuntimeVariants.Cpu));
     }
 
     public void Dispose()
@@ -402,6 +409,10 @@ public sealed class RoundThreeStampAndCacheTests : IDisposable
         var dir = Path.Combine(paths.RuntimeRoot, variant);
         Directory.CreateDirectory(dir);
         File.WriteAllBytes(Path.Combine(dir, AppPaths.PythonExeName), []);
+
+        // **展開が済んだ樹の形**（是正・便 D（3）の 3 巡目）＝site-packages の *.dist-info が
+        // 台帳の wheel/sdist/archive の件数と合う。雛形の台帳は wheel 1 件なので 1 つ作る。
+        Directory.CreateDirectory(Path.Combine(dir, "site-packages", "torch-1.dist-info"));
     }
 
     private FetchPlan Plan(AppPaths paths) =>
@@ -432,15 +443,19 @@ public sealed class RoundThreeStampAndCacheTests : IDisposable
     }
 
     [Fact]
-    public void 焼き印_版だけ違えば急かさない()
+    public void 焼き印_版だけ違えば1手を出さない()
     {
+        // 是正・便 D（3）の 3 巡目＝1 巡目は Line を返していたので Mismatch が真になり、
+        // 「実行系を組み直す」が押せる状態のまま**毎起動**その 1 行を見せた（焼き直しも
+        // しないので永久に消えない）。覚え書き（Note）に落とし、1 手は出さない。
         var verdict = RuntimeStamp.Compare(
             "aaaa", "v0.1.0", "aaaa", "v0.2.0", runtimeInstalled: true, RuntimeVariants.Cpu);
 
-        Assert.True(verdict.Mismatch);
+        Assert.False(verdict.Mismatch);
+        Assert.Null(verdict.Line);
         Assert.False(verdict.LedgerChanged);
         Assert.True(verdict.AppVersionChanged);
-        Assert.Contains("そのまま使えます", verdict.Line!, StringComparison.Ordinal);
+        Assert.Contains("そのまま使えます", verdict.Note!, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -581,11 +596,8 @@ public sealed class RoundThreeStampAndCacheTests : IDisposable
         File.WriteAllBytes(Path.Combine(cache, "torch-1.whl"), new byte[1000]);
         File.WriteAllBytes(Path.Combine(cache, "python-embed.zip"), new byte[100]);
 
-        var settings = new LauncherSettings
-        {
-            Variant = RuntimeVariants.Cpu,
-            RuntimeLedgerSha256 = RuntimeStamp.LedgerSha256(paths, RuntimeVariants.Cpu),
-        };
+        var settings = new LauncherSettings { Variant = RuntimeVariants.Cpu };
+        RuntimeStamp.Burn(settings, paths, RuntimeVariants.Cpu);
 
         var vm = new SettingsViewModel(
             settings, new JsonSettingsStore(paths.SettingsPath), paths, null, new DriverRequirement());
@@ -1264,6 +1276,10 @@ public sealed class RoundThreeMainViewModelTests : IDisposable
         var dir = Path.Combine(paths.RuntimeRoot, variant);
         Directory.CreateDirectory(dir);
         File.WriteAllBytes(Path.Combine(dir, AppPaths.PythonExeName), []);
+
+        // **展開が済んだ樹の形**（是正・便 D（3）の 3 巡目）＝site-packages の *.dist-info が
+        // 台帳の wheel/sdist/archive の件数と合う。雛形の台帳は wheel 1 件なので 1 つ作る。
+        Directory.CreateDirectory(Path.Combine(dir, "site-packages", "torch-1.dist-info"));
     }
 
     private MainViewModel NewMain(AppPaths paths, LauncherSettings settings) =>
@@ -1362,12 +1378,9 @@ public sealed class RoundThreeMainViewModelTests : IDisposable
         AppServices.Server = new RecordingServer();
         AppServices.GpuEnumerator = null;
 
-        var settings = new LauncherSettings
-        {
-            Variant = RuntimeVariants.Cpu,
-            RuntimeLedgerSha256 = "0123456789abcdef",   // 別の台帳で展開した樹
-            InstalledAppVersion = AppVersion.Display,
-        };
+        var settings = new LauncherSettings { Variant = RuntimeVariants.Cpu };
+        settings.SetRuntimeStamp(
+            RuntimeVariants.Cpu, "0123456789abcdef", AppVersion.Display);   // 別の台帳で展開した樹
 
         var main = NewMain(paths, settings);
 
@@ -1395,18 +1408,22 @@ public sealed class RoundThreeMainViewModelTests : IDisposable
         AppServices.GpuEnumerator = null;
 
         var settings = new LauncherSettings { Variant = RuntimeVariants.Cpu };
-        Assert.Null(settings.RuntimeLedgerSha256);
+        Assert.Null(settings.RuntimeLedgerFor(RuntimeVariants.Cpu));
 
         var main = NewMain(paths, settings);
 
-        Assert.Equal(RuntimeStamp.LedgerSha256(paths, RuntimeVariants.Cpu), settings.RuntimeLedgerSha256);
-        Assert.Equal(AppVersion.Display, settings.InstalledAppVersion);
+        Assert.Equal(
+            RuntimeStamp.LedgerSha256(paths, RuntimeVariants.Cpu),
+            settings.RuntimeLedgerFor(RuntimeVariants.Cpu));
+        Assert.Equal(AppVersion.Display, settings.InstalledAppVersionFor(RuntimeVariants.Cpu));
         Assert.Null(main.Status.RebuildRuntimeText);          // 受け入れた＝黙る
 
         // 檔にも落ちている（無人検分はここを読む）
         var written = new JsonSettingsStore(paths.SettingsPath).Load();
-        Assert.Matches("^[0-9a-f]{64}$", written.RuntimeLedgerSha256 ?? string.Empty);
-        Assert.False(string.IsNullOrWhiteSpace(written.InstalledAppVersion));
+        Assert.Matches(
+            "^[0-9a-f]{64}$", written.RuntimeLedgerFor(RuntimeVariants.Cpu) ?? string.Empty);
+        Assert.False(
+            string.IsNullOrWhiteSpace(written.InstalledAppVersionFor(RuntimeVariants.Cpu)));
     }
 
     [Fact]
@@ -1420,7 +1437,7 @@ public sealed class RoundThreeMainViewModelTests : IDisposable
         var settings = new LauncherSettings { Variant = RuntimeVariants.Cpu };
         var main = NewMain(paths, settings);
 
-        Assert.Null(settings.RuntimeLedgerSha256);
+        Assert.Null(settings.RuntimeLedgerFor(RuntimeVariants.Cpu));
         Assert.Null(main.Status.RebuildRuntimeText);
     }
 
@@ -1613,6 +1630,9 @@ public sealed class RoundThreeRebuildTests : IDisposable
         var runtimeDir = Path.Combine(paths.RuntimeRoot, RuntimeVariants.Cpu);
         Directory.CreateDirectory(runtimeDir);
         File.WriteAllBytes(Path.Combine(runtimeDir, AppPaths.PythonExeName), []);
+
+        // 展開が済んだ樹の形（*.dist-info が台帳の wheel 1 件と合う）＝焼き印を押してよい樹
+        Directory.CreateDirectory(Path.Combine(runtimeDir, "site-packages", "torch-1.dist-info"));
         return paths;
     }
 
@@ -1636,11 +1656,8 @@ public sealed class RoundThreeRebuildTests : IDisposable
         AppServices.Downloader = downloader;
         AppServices.RuntimeInstaller = installer;
 
-        var settings = new LauncherSettings
-        {
-            Variant = RuntimeVariants.Cpu,
-            RuntimeLedgerSha256 = "0123456789abcdef",   // 食い違っている＝1 手が出ている
-        };
+        var settings = new LauncherSettings { Variant = RuntimeVariants.Cpu };
+        settings.SetRuntimeStamp(RuntimeVariants.Cpu, "0123456789abcdef", null);   // 食い違い＝1 手
 
         var main = NewMain(paths, settings);
         Assert.True(main.Status.CanRebuildRuntime);
@@ -1649,8 +1666,10 @@ public sealed class RoundThreeRebuildTests : IDisposable
 
         Assert.Empty(downloader.Wanted);                // 外へ 1 バイトも出ない
         Assert.Equal(1, installer.Calls);
-        Assert.Equal(RuntimeStamp.LedgerSha256(paths, RuntimeVariants.Cpu), settings.RuntimeLedgerSha256);
-        Assert.Equal(AppVersion.Display, settings.InstalledAppVersion);
+        Assert.Equal(
+            RuntimeStamp.LedgerSha256(paths, RuntimeVariants.Cpu),
+            settings.RuntimeLedgerFor(RuntimeVariants.Cpu));
+        Assert.Equal(AppVersion.Display, settings.InstalledAppVersionFor(RuntimeVariants.Cpu));
         Assert.False(main.Status.CanRebuildRuntime);    // 1 行も 1 手も消える
         Assert.Contains("実行系を組み直しました", main.Status.LogText, StringComparison.Ordinal);
     }
@@ -1667,11 +1686,8 @@ public sealed class RoundThreeRebuildTests : IDisposable
         AppServices.Downloader = downloader;
         AppServices.RuntimeInstaller = installer;
 
-        var settings = new LauncherSettings
-        {
-            Variant = RuntimeVariants.Cpu,
-            RuntimeLedgerSha256 = "0123456789abcdef",
-        };
+        var settings = new LauncherSettings { Variant = RuntimeVariants.Cpu };
+        settings.SetRuntimeStamp(RuntimeVariants.Cpu, "0123456789abcdef", null);
 
         await NewMain(paths, settings).RebuildRuntimeAsync();
 
@@ -1689,16 +1705,14 @@ public sealed class RoundThreeRebuildTests : IDisposable
         AppServices.Downloader = new CountingDownloader();
         AppServices.RuntimeInstaller = null;
 
-        var settings = new LauncherSettings
-        {
-            Variant = RuntimeVariants.Cpu,
-            RuntimeLedgerSha256 = "0123456789abcdef",
-        };
+        var settings = new LauncherSettings { Variant = RuntimeVariants.Cpu };
+        settings.SetRuntimeStamp(RuntimeVariants.Cpu, "0123456789abcdef", null);
 
         var main = NewMain(paths, settings);
         await main.RebuildRuntimeAsync();
 
-        Assert.Equal("0123456789abcdef", settings.RuntimeLedgerSha256);   // 焼き印は動かさない
+        Assert.Equal(   // 焼き印は動かさない
+            "0123456789abcdef", settings.RuntimeLedgerFor(RuntimeVariants.Cpu));
         Assert.True(main.Status.CanRebuildRuntime);
         Assert.Contains("組み直せません", main.Status.LogText, StringComparison.Ordinal);
     }

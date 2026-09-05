@@ -39,6 +39,9 @@ public sealed class StatusViewModel : ObservableObject
     private bool _serverAnswered;
     private bool _memoryPanelVisible = true;
     private string? _rebuildRuntime;
+    private bool _isRebuilding;
+    private string _rebuildProgress = string.Empty;
+    private double _rebuildFraction;
     private string _voiceMemoryText = UiText.Missing;
     private string _latentCacheText = UiText.Missing;
     private string? _noticesText;
@@ -65,6 +68,20 @@ public sealed class StatusViewModel : ObservableObject
     /// null＝この配布ではその手を出さない（<see cref="CanRebuildRuntime"/> が偽）。
     /// </param>
     public StatusViewModel(Func<Task> start, Func<Task> stop, Func<Task>? rebuildRuntime)
+        : this(start, stop, rebuildRuntime, null)
+    {
+    }
+
+    /// <param name="start">「サーバ起動」。</param>
+    /// <param name="stop">「サーバ停止」。</param>
+    /// <param name="rebuildRuntime">「実行系を組み直す」。</param>
+    /// <param name="cancelRebuild">
+    /// 走っている組み直しをやめる手（是正・便 D（3）の 3 巡目）。null＝やめる口を出さない。
+    /// <b>取消が要る理由</b>＝裁定 90 の自動削除で cache は空なのが常態なので、この 1 手は
+    /// 押した瞬間に数 GiB の再取得になる（実射＝rocm 1.44 GiB・cu126 2.58 GiB）。
+    /// </param>
+    public StatusViewModel(
+        Func<Task> start, Func<Task> stop, Func<Task>? rebuildRuntime, Action? cancelRebuild)
     {
         ArgumentNullException.ThrowIfNull(start);
         ArgumentNullException.ThrowIfNull(stop);
@@ -74,6 +91,9 @@ public sealed class StatusViewModel : ObservableObject
         RebuildRuntimeCommand = new AsyncRelayCommand(
             rebuildRuntime ?? (static () => Task.CompletedTask),
             () => rebuildRuntime is not null && RebuildRuntimeText is not null && !IsRunning);
+        CancelRebuildCommand = new RelayCommand(
+            cancelRebuild ?? (static () => { }),
+            () => cancelRebuild is not null && IsRebuilding);
     }
 
     /// <summary>
@@ -129,6 +149,65 @@ public sealed class StatusViewModel : ObservableObject
 
     /// <summary>食い違いの 1 行を入れ替える（null＝消す）。</summary>
     public void ApplyRuntimeStamp(string? mismatchLine) => RebuildRuntimeText = mismatchLine;
+
+    // ---- 組み直しの取消と進捗（是正・便 D（3）の 3 巡目） ----------------------
+
+    /// <summary>走っている組み直しをやめる。</summary>
+    public RelayCommand CancelRebuildCommand { get; }
+
+    /// <summary>組み直しが走っているか（帯と「やめる」を出す）。</summary>
+    public bool IsRebuilding
+    {
+        get => _isRebuilding;
+        private set
+        {
+            if (SetProperty(ref _isRebuilding, value))
+            {
+                CancelRebuildCommand.RaiseCanExecuteChanged();
+                RebuildRuntimeCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 組み直しの進捗 1 行。<b>ログ帯（20 行）に流すだけでは読めない</b>ので、
+    /// ウィザードと同じ帯を状態タブにも出す。
+    /// </summary>
+    public string RebuildProgressText
+    {
+        get => _rebuildProgress;
+        private set => SetProperty(ref _rebuildProgress, value);
+    }
+
+    /// <summary>0〜1（分母が無ければ 0）。</summary>
+    public double RebuildProgressFraction
+    {
+        get => _rebuildFraction;
+        private set => SetProperty(ref _rebuildFraction, value);
+    }
+
+    /// <summary>組み直しに入った。</summary>
+    public void BeginRebuild()
+    {
+        RebuildProgressText = "実行系を組み直しています…";
+        RebuildProgressFraction = 0;
+        IsRebuilding = true;
+    }
+
+    /// <summary>組み直しが終わった（通っても落ちても取消でも）。</summary>
+    public void EndRebuild()
+    {
+        IsRebuilding = false;
+        RebuildProgressFraction = 0;
+        RebuildProgressText = string.Empty;
+    }
+
+    /// <summary>組み直しの 1 行と進み具合。</summary>
+    public void ApplyRebuildProgress(string line, double fraction)
+    {
+        RebuildProgressText = line;
+        RebuildProgressFraction = double.IsFinite(fraction) ? Math.Clamp(fraction, 0, 1) : 0;
+    }
 
     /// <summary>
     /// GPU メモリ欄を出すか（設定 <c>showMemoryPanel</c>・裁定 67 ⑶）。

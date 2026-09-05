@@ -406,11 +406,17 @@ public sealed class SettingsViewModel : ObservableObject
 
     /// <summary>
     /// cache の量を数え直す（画面を開いたときと、消した後）。
-    /// <b>数えるのは台帳の item の檔だけ</b>＝<c>cache/</c> の他の住人は勘定にも削除にも入らない。
+    /// <para>
+    /// <b>数えるのは置き場ごと</b>（入れ子も <c>.part</c> も＝裁定 95 ⑵ の追認）。ただし
+    /// <b>まだ関門を通していない変種だけが名指す原檔</b>は数にも削除にも入れない
+    /// （<see cref="CacheCleaner.ProtectedFileNames"/>）＝ボタンに出る量が、押したときに
+    /// 実際に消える量と揃う。註が「台帳の item の檔だけ」と実装の逆を言っていたのを直した
+    /// （是正・便 D（3）の 3 巡目・low）。
+    /// </para>
     /// </summary>
     public void RefreshCache()
     {
-        var measured = CacheCleaner.Measure(_paths.DownloadCacheDir);
+        var measured = CacheCleaner.Measure(_paths.DownloadCacheDir, ProtectedCacheNames());
 
         _cacheFiles = measured.Files;
         _cacheBytes = measured.Bytes;
@@ -429,12 +435,24 @@ public sealed class SettingsViewModel : ObservableObject
         var result = CacheCleaner.Clean(
             _paths.DownloadCacheDir,
             _paths.ResolvePythonExe(_live.Variant) is not null,
-            _live.RuntimeLedgerSha256,
-            RuntimeStamp.LedgerSha256(_paths, _live.Variant));
+            _live.RuntimeLedgerFor(_live.Variant),
+            RuntimeStamp.LedgerSha256(_paths, _live.Variant),
+            ProtectedCacheNames());
 
         CacheMessage = result.Message;
         RefreshCache();
     }
+
+    /// <summary>
+    /// 掃除で<b>残す</b>原檔の名＝まだ関門を通していない変種<b>だけ</b>が名指す檔
+    /// （<see cref="CacheCleaner.ProtectedFileNames"/>）。
+    /// </summary>
+    private IReadOnlyCollection<string> ProtectedCacheNames() =>
+        CacheCleaner.ProtectedFileNames(
+            _paths,
+            _live,
+            CacheCleaner.LedgerVariants(ReleaseFlavors.LedgerNames(_paths.LedgerDir)),
+            variant => FirstRunViewModel.TryPlan(_paths, variant, skipVcRedist: true));
 
     /// <summary>データの置き場（読むだけ・移動は未対応）。</summary>
     public string DataDirText => _paths.DataDir;
@@ -568,11 +586,37 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>写しを捨てる。</summary>
     public void Revert()
     {
+        Resync();
+        IsDirty = false;
+        Message = "変更を取り消しました。";
+    }
+
+    /// <summary>
+    /// <b>本物が外で書き換わったので写しを取り直す</b>（是正・便 D（3）の 3 巡目・high の ⒜）。
+    /// <para>
+    /// 写しは <see cref="MainViewModel"/> の構築時に採るが、<b>初回取得ウィザードはその後に</b>
+    /// 同じ <see cref="LauncherSettings"/> 個体（変種・同意・焼き印・完了の札）を書き換える。
+    /// 取り直す口が無かったころは、設定頁で「適用」を 1 度押すだけでウィザードの成果が
+    /// 構築時の値へ巻き戻った。<c>CopyInto</c> から外した欄（ウィザードと他画面の持ち物）に
+    /// 加えて、<b>設定頁も編集する変種</b>を巻き戻さないために、ここで丸ごと合わせ直す。
+    /// </para>
+    /// <b>編集中（<see cref="IsDirty"/>）なら何もしない</b>＝利用者の入力を捨てない。
+    /// </summary>
+    public void SyncFromLive()
+    {
+        if (IsDirty)
+        {
+            return;
+        }
+
+        Resync();
+    }
+
+    private void Resync()
+    {
         _draft = _live.Clone();
         _warmupStagesText = WarmupStagesText.Format(_draft.WarmupStages);
         _warmupVoicesText = string.Join(", ", _draft.WarmupVoices);
-        IsDirty = false;
-        Message = "変更を取り消しました。";
         RaiseAll();
     }
 
@@ -615,7 +659,22 @@ public sealed class SettingsViewModel : ObservableObject
         RaisePropertyChanged(nameof(ReadyTimeoutNote));
     }
 
-    /// <summary>写しの中身を本物へ移す（<b>参照ごと差し替えない</b>＝他の画面が握っている個体を保つ）。</summary>
+    /// <summary>
+    /// 写しの中身を本物へ移す（<b>参照ごと差し替えない</b>＝他の画面が握っている個体を保つ）。
+    /// <para>
+    /// <b>移すのは設定頁が編集する欄だけ</b>（是正・便 D（3）の 3 巡目・high）。
+    /// <c>_draft</c> は <see cref="MainViewModel"/> の構築時に採った写しで、そのあと
+    /// <b>初回取得ウィザードが同じ <see cref="LauncherSettings"/> 個体を書き換える</b>のに、
+    /// 写しを取り直す口がどこにも無い。だから「適用」を 1 度押すだけで
+    /// <c>firstRunCompleted</c>（裁定 94）・<c>acceptedNoticesSha256</c>（裁定 46）・
+    /// 焼き印の表（裁定 91）・変種が<b>構築時の値へ巻き戻り</b>、
+    /// ⑴ 次の起動でウィザードがまた開く ⑵ 通知同意を撃ち直させる ⑶ 焼き印が消えて
+    /// 裁定 90 の掃除と「実行系を組み直す」の検知が両方死ぬ、という壊れ方をした（実射で再現）。
+    /// <b>設定頁はこれらの欄を 1 つも編集しないので、写しに載せる理由が無い</b>。
+    /// 「試し撃ちの記憶」（<c>lastTestVoice</c>／<c>lastTestNumSteps</c>＝<c>TryViewModel</c> が書く）と
+    /// 話者の並びも同じ理由で外す。
+    /// </para>
+    /// </summary>
     public static void CopyInto(LauncherSettings from, LauncherSettings to)
     {
         ArgumentNullException.ThrowIfNull(from);
@@ -636,15 +695,12 @@ public sealed class SettingsViewModel : ObservableObject
         to.PrecomputeOnStart = from.PrecomputeOnStart;
         to.EmptyCacheInterval = from.EmptyCacheInterval;
         to.UiScale = from.UiScale;
-        to.VoiceOrder = [.. from.VoiceOrder];
         to.ReadyTimeoutSeconds = from.ReadyTimeoutSeconds;
-        to.FirstRunCompleted = from.FirstRunCompleted;
-        to.AcceptedNoticesSha256 = from.AcceptedNoticesSha256;
-        to.RuntimeLedgerSha256 = from.RuntimeLedgerSha256;
-        to.InstalledAppVersion = from.InstalledAppVersion;
         to.AutoStartServer = from.AutoStartServer;
         to.ShowMemoryPanel = from.ShowMemoryPanel;
-        to.LastTestVoice = from.LastTestVoice;
-        to.LastTestNumSteps = from.LastTestNumSteps;
+
+        // **ここから下は写さない**（上の註）＝ウィザード（firstRunCompleted・
+        // acceptedNoticesSha256・runtimeLedgers・installedAppVersions）・話者一覧（voiceOrder）・
+        // 試し撃ち（lastTestVoice・lastTestNumSteps）が持ち主の欄である。
     }
 }

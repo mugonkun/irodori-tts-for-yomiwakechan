@@ -37,8 +37,15 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>いちばん最後に作ったウィザード（消したバイトを Trail に残すため＝裁定 90 Q-E2 ⑶）。</summary>
     private FirstRunViewModel? _firstRun;
 
-    /// <summary>取得キャッシュを消したか（1 回の起動で 1 度だけ試す）。</summary>
+    /// <summary>
+    /// 取得キャッシュを<b>実際に消したか</b>（1 回の起動で 1 度だけ「消す」）。
+    /// <b>関門に断られた回は数えない</b>（是正・便 D（3）の 3 巡目）＝断られた理由を直して
+    /// （実行系を組み直して焼き印を入れ直して）から撃ち直せば、その起動でも掃除は走る。
+    /// </summary>
     private bool _cacheCleared;
+
+    /// <summary>「実行系を組み直す」の取消（走っていなければ null）。</summary>
+    private CancellationTokenSource? _rebuildCancel;
 
     /// <param name="paths">場所（導入先と利用者データ）。</param>
     /// <param name="settings">いまの設定（<b>この個体を全画面で共有する</b>）。</param>
@@ -69,7 +76,11 @@ public sealed class MainViewModel : ObservableObject
         _attachWrapper = attachWrapper;
         _detachWrapper = detachWrapper;
 
-        Status = new StatusViewModel(StartServerAsync, StopServerAsync, RebuildRuntimeAsync);
+        Status = new StatusViewModel(
+            () => StartServerAsync(CancellationToken.None),
+            StopServerAsync,
+            RebuildRuntimeAsync,
+            CancelRebuildRuntime);
         Status.ApplySettings(settings);
 
         Voices = new VoicesViewModel(
@@ -255,7 +266,13 @@ public sealed class MainViewModel : ObservableObject
     /// 起動＝材料を組んで <see cref="IServerProcess"/> に渡す。
     /// <b>ここは組み立てだけ</b>で、実際に起こすのは差された実装である。
     /// </summary>
-    public async Task<bool> StartServerAsync()
+    /// <param name="cancellationToken">
+    /// 初回取得ウィザードの「中断」（<c>FirstRunViewModel</c> の最後の働く段）。
+    /// <b>ここまで通さないと中断ボタンは効かない</b>（是正・便 D（3）の 3 巡目）＝
+    /// ready 待ちはこの機体の設定で最長 600 秒あり、その間ずっと効かないボタンを見せて
+    /// 「中断しました（続きから取り直せます）。」と嘘を名乗っていた。
+    /// </param>
+    public async Task<bool> StartServerAsync(CancellationToken cancellationToken = default)
     {
         var pythonExe = _paths.ResolvePythonExe(_settings.Variant);
         if (pythonExe is null)
@@ -279,7 +296,8 @@ public sealed class MainViewModel : ObservableObject
         {
             try
             {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                cts.CancelAfter(TimeSpan.FromSeconds(6));
                 var gpus = await enumerator
                     .EnumerateAsync(new GpuEnumerationRequest(pythonExe, TimeSpan.FromSeconds(5)), cts.Token)
                     .ConfigureAwait(true);
@@ -316,6 +334,13 @@ public sealed class MainViewModel : ObservableObject
             }
         }
 
+        // 列挙の途中で中断されたら、そのまま起こさない（列挙の期限切れと同じ路に落とさない）。
+        if (cancellationToken.IsCancellationRequested)
+        {
+            Status.AppendLog("起動を中止しました。");
+            return false;
+        }
+
         Status.BeginRun(_settings);
 
         // 組み立ては 1 箇所（ServerLaunchPlan）に寄せる＝門の入力 3 つを窓が落とさない。
@@ -330,7 +355,7 @@ public sealed class MainViewModel : ObservableObject
 
         Status.AppendLog("起動：" + request.BaseAddress + "（変種 " + _settings.Variant + "）");
 
-        var result = await AppServices.Server.StartAsync(request, CancellationToken.None)
+        var result = await AppServices.Server.StartAsync(request, cancellationToken)
             .ConfigureAwait(true);
 
         Status.HasProcess = AppServices.Server.ProcessId is not null;
@@ -413,9 +438,15 @@ public sealed class MainViewModel : ObservableObject
         Voices.ApplyPrecompute(status?.Precompute);
     }
 
-    /// <summary>設定を保存した後に、状態帯へ新しい値を配る。</summary>
+    /// <summary>
+    /// 初回取得ウィザードを閉じた後に、各画面へ新しい値を配る。
+    /// <b>設定画面の写しも取り直す</b>（是正・便 D（3）の 3 巡目・high）＝ウィザードは
+    /// この個体（変種・同意・焼き印・完了の札）を書き換えるのに、設定画面が握っている写しは
+    /// 構築時のままだった。取り直さないと、設定頁で「適用」を 1 度押すだけで巻き戻る。
+    /// </summary>
     public void ReapplySettings()
     {
+        Settings.SyncFromLive();
         Status.ApplySettings(_settings);
         CheckRuntimeStamp();
     }
@@ -435,24 +466,88 @@ public sealed class MainViewModel : ObservableObject
     /// </summary>
     public void CheckRuntimeStamp()
     {
-        var installed = _paths.ResolvePythonExe(_settings.Variant) is not null;
-        var current = RuntimeStamp.LedgerSha256(_paths, _settings.Variant);
+        var variant = _settings.Variant;
+        var installed = _paths.ResolvePythonExe(variant) is not null;
+        var current = RuntimeStamp.LedgerSha256(_paths, variant);
 
-        if (installed && current is not null && string.IsNullOrWhiteSpace(_settings.RuntimeLedgerSha256))
+        if (installed && current is not null && string.IsNullOrWhiteSpace(_settings.RuntimeLedgerFor(variant)))
         {
-            RuntimeStamp.Burn(_settings, _paths, _settings.Variant);
-            _store.Save(_settings);
+            // **焼き印を無条件に押さない**（是正・便 D（3）の 3 巡目）＝根拠が「python.exe が在る」
+            // だけだったころは、python-embed の直後で切れた樹（python.exe 1 檔）にも今の台帳の
+            // sha256 を焼いていた。以後その樹は「この台帳から出来ている」と名乗り、取得
+            // キャッシュの関門は<b>自分で作った値</b>と突き合わせるだけなので通り、壊れた樹を
+            // 直すのに要る原檔（実射＝107 檔）が消えた。展開の件数で締めてから焼く。
+            var ledger = FirstRunViewModel.ReadLedgerFile<LedgerFile>(
+                _paths.LedgerPath(RuntimeVariants.LedgerName(variant)));
+
+            if (RuntimeStamp.LooksComplete(_paths, ledger, variant))
+            {
+                RuntimeStamp.Burn(_settings, _paths, variant);
+                _store.Save(_settings);
+            }
+            else
+            {
+                // 焼かずに 1 手を出す＝裁定 91 の「正しく組んである機体に 4 GB をやり直させない」は
+                // 満たしたまま、組みかけの樹だけを拾う。
+                Status.ApplyRuntimeStamp(WithRefetchSize(RuntimeStamp.IncompleteLine(variant)));
+                return;
+            }
         }
 
         var verdict = RuntimeStamp.Compare(
-            _settings.RuntimeLedgerSha256,
-            _settings.InstalledAppVersion,
+            _settings.RuntimeLedgerFor(variant),
+            _settings.InstalledAppVersionFor(variant),
             current,
             AppVersion.Display,
             installed,
-            _settings.Variant);
+            variant);
 
-        Status.ApplyRuntimeStamp(verdict.Line);
+        if (verdict.AppVersionChanged && !verdict.LedgerChanged)
+        {
+            // 台帳は同じで版だけ動いた＝**焼き直して黙る**（展開はしない）。焼き直さないと
+            // installedAppVersion が永久に古いまま残り、毎起動この 1 行を見せることになる。
+            RuntimeStamp.BurnAppVersion(_settings, variant);
+            _store.Save(_settings);
+            if (verdict.Note is not null)
+            {
+                Status.AppendLog(verdict.Note);
+            }
+        }
+
+        Status.ApplyRuntimeStamp(verdict.Line is null ? null : WithRefetchSize(verdict.Line));
+    }
+
+    /// <summary>
+    /// 「実行系を組み直す」の 1 行に<b>押したら何 GiB 取り直すか</b>を添える（裁定 90 との相性）。
+    /// <para>
+    /// 裁定 90 の自動削除で cache は空なのが常態なので、この 1 手は<b>押した瞬間に数 GiB の
+    /// 再取得</b>になる。押す前に量が読めなければ、利用者は代金を知らずに押す
+    /// （是正・便 D（3）の 3 巡目）。台帳が読めなければ何も足さない。
+    /// </para>
+    /// </summary>
+    private string WithRefetchSize(string line)
+    {
+        var plan = FirstRunViewModel.TryPlan(_paths, _settings.Variant, skipVcRedist: true);
+        if (plan is null)
+        {
+            return line;
+        }
+
+        var missing = MissingCacheRequests(plan);
+        if (missing.Count == 0)
+        {
+            return line + "（原檔は取得キャッシュに揃っているので、取り直しはありません）";
+        }
+
+        var bytes = 0L;
+        foreach (var request in missing)
+        {
+            bytes += request.ExpectedSize ?? 0;
+        }
+
+        return line + "（取得キャッシュに原檔が "
+            + missing.Count.ToString(CultureInfo.InvariantCulture) + " 件足りません＝押すと "
+            + FetchPlanner.FormatBytes(bytes) + " を取り直します）";
     }
 
     /// <summary>
@@ -463,6 +558,39 @@ public sealed class MainViewModel : ObservableObject
     /// </para>
     /// </summary>
     public async Task RebuildRuntimeAsync()
+    {
+        using var cancel = new CancellationTokenSource();
+        _rebuildCancel = cancel;
+        Status.BeginRebuild();
+        try
+        {
+            await RebuildRuntimeCoreAsync(cancel.Token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            Status.AppendLog("実行系の組み直しをやめました（取得キャッシュの原檔は残ります）。");
+        }
+        finally
+        {
+            _rebuildCancel = null;
+            Status.EndRebuild();
+        }
+    }
+
+    /// <summary>走っている組み直しをやめる（<see cref="StatusViewModel.CancelRebuildCommand"/>）。</summary>
+    public void CancelRebuildRuntime()
+    {
+        try
+        {
+            _rebuildCancel?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // 既に終わっていた＝やめる物が無い
+        }
+    }
+
+    private async Task RebuildRuntimeCoreAsync(CancellationToken cancellationToken)
     {
         var installer = AppServices.RuntimeInstaller;
         var ledger = FirstRunViewModel.ReadLedgerFile<LedgerFile>(
@@ -501,13 +629,23 @@ public sealed class MainViewModel : ObservableObject
                 return;
             }
 
-            Status.AppendLog("取得キャッシュに原檔が "
-                + missing.Count.ToString(CultureInfo.InvariantCulture) + " 件足りないので取り直します。");
+            var missingBytes = 0L;
+            foreach (var request in missing)
+            {
+                missingBytes += request.ExpectedSize ?? 0;
+            }
 
-            var progress = new Progress<DownloadProgress>(
-                p => Status.AppendLog(FirstRunViewModel.Describe(p)));
+            Status.AppendLog("取得キャッシュに原檔が "
+                + missing.Count.ToString(CultureInfo.InvariantCulture) + " 件（"
+                + FetchPlanner.FormatBytes(missingBytes) + "）足りないので取り直します。");
+
+            var progress = new Progress<DownloadProgress>(p =>
+            {
+                Status.ApplyRebuildProgress(FirstRunViewModel.Describe(p), p.Fraction ?? 0);
+                Status.AppendLog(FirstRunViewModel.Describe(p));
+            });
             var results = await downloader
-                .DownloadAllAsync(missing, progress, CancellationToken.None)
+                .DownloadAllAsync(missing, progress, cancellationToken)
                 .ConfigureAwait(true);
 
             if (results.FirstOrDefault(static r => !r.Ok) is { } failed)
@@ -524,9 +662,15 @@ public sealed class MainViewModel : ObservableObject
             .InstallAsync(
                 new InstallRequest(
                     ledger, _paths.DownloadCacheDir, runtimeDir, _paths.AppDir, _paths.PthTemplatePath),
-                new Progress<InstallProgress>(p => Status.AppendLog(
-                    p.Phase + "：" + (p.ItemName ?? string.Empty) + "　" + UiText.Progress(p.Done, p.Total))),
-                CancellationToken.None)
+                new Progress<InstallProgress>(p =>
+                {
+                    var line = p.Phase + "：" + (p.ItemName ?? string.Empty)
+                        + "　" + UiText.Progress(p.Done, p.Total);
+                    Status.ApplyRebuildProgress(
+                        line, p.Total > 0 ? Math.Clamp((double)p.Done / p.Total, 0, 1) : 0);
+                    Status.AppendLog(line);
+                }),
+                cancellationToken)
             .ConfigureAwait(true);
 
         if (!install.Ok)
@@ -573,23 +717,42 @@ public sealed class MainViewModel : ObservableObject
     /// 「起動の確認」が通っている）。消したバイトは<b>ログとウィザードの Trail</b>の両方に残す。
     /// 手で消したいときは設定画面の「取得キャッシュを消す」（<see cref="SettingsViewModel"/>）。
     /// </para>
+    /// <b>差し口は <see cref="TryViewModel.Succeeded"/> の 1 本</b>（public なのは釘のため）。
     /// </summary>
-    private void ClearCacheAfterFirstShot()
+    public void ClearCacheAfterFirstShot()
     {
         if (_cacheCleared || !_settings.FirstRunCompleted)
         {
             return;
         }
 
-        _cacheCleared = true;
-
         var result = CacheCleaner.Clean(
             _paths.DownloadCacheDir,
             _paths.ResolvePythonExe(_settings.Variant) is not null,
-            _settings.RuntimeLedgerSha256,
-            RuntimeStamp.LedgerSha256(_paths, _settings.Variant));
+            _settings.RuntimeLedgerFor(_settings.Variant),
+            RuntimeStamp.LedgerSha256(_paths, _settings.Variant),
+            ProtectedCacheNames());
+
+        // **札は結末の後に立てる**（是正・便 D（3）の 3 巡目）＝関門に断られた回を
+        // 「1 度やった」と数えると、断られた理由を直して撃ち直しても、その起動では
+        // 二度と掃除が走らない（受け入れ条件のサイズ行は自動の掃除を前提に書き直された）。
+        if (result.Ok)
+        {
+            _cacheCleared = true;
+        }
 
         Status.AppendLog(result.Message);
         _firstRun?.Note(result.Message);
     }
+
+    /// <summary>
+    /// 掃除で<b>残す</b>原檔の名（<see cref="CacheCleaner.ProtectedFileNames"/>）＝
+    /// まだ関門を通していない変種<b>だけ</b>が名指す檔。
+    /// </summary>
+    public IReadOnlyCollection<string> ProtectedCacheNames() =>
+        CacheCleaner.ProtectedFileNames(
+            _paths,
+            _settings,
+            CacheCleaner.LedgerVariants(ReleaseFlavors.LedgerNames(_paths.LedgerDir)),
+            variant => FirstRunViewModel.TryPlan(_paths, variant, skipVcRedist: true));
 }

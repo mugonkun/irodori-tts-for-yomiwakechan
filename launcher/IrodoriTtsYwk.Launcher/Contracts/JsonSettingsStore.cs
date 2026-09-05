@@ -170,6 +170,11 @@ public sealed class JsonSettingsStore : ISettingsStore
         settings.WarmupVoices ??= [];
         settings.VoiceOrder ??= [];
 
+        // 焼き印の表（裁定 91・変種ごと）＝空の鍵と空の値を落とし、鍵の大小を問わない比較子で組み直す。
+        // System.Text.Json は既定の比較子で表を作り直すので、ここを通さないと "CU126" が引けない。
+        settings.RuntimeLedgers = LauncherSettings.CopyMap(settings.RuntimeLedgers);
+        settings.InstalledAppVersions = LauncherSettings.CopyMap(settings.InstalledAppVersions);
+
         return settings;
     }
 }

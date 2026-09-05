@@ -1027,6 +1027,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$exe = 'C:\ywk\driver\53
 >    `cd /` → `cd ywk` → `powershell -NoProfile -ExecutionPolicy Bypass -File run-b7-elevated.ps1` を撃つ（CRD の鍵盤は日本語配列に写るので `:` と `\` を打たない＝相対パスにする）。
 >    以後は遠隔席がログを読む（`C:\ywk\logs\step-B7-3-3-3-6-elevated.log`）。
 >
+> 4. **CRD の鍵盤は大文字を小文字に写す**（2026-09-05 E-1 で実射＝`nvidia-smi -L` が `-l`＝5 秒ごとの無限ループになった）。大文字が要る引数は打たない（`-L` の代わりに `nvidia-smi` を素で撃つ・PowerShell の cmdlet と檔名は大小無視なので支障なし）。ループに入ったら Ctrl+C は届かないことがある＝窓ごと閉じる。
+>
 > **`PromptOnSecureDesktop = 1` は CRD の妨げにならなかった**（この機体で実測＝同意窓は CRD に映り、押せた）。参考として 3-5 の `ELEVATED =` の隣に
 > `Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' | Select-Object EnableLUA,ConsentPromptBehaviorAdmin,ConsentPromptBehaviorUser,PromptOnSecureDesktop,FilterAdministratorToken`
 > を添えてよいが、**その値で「押せない」と断定しない**。

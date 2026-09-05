@@ -60,11 +60,19 @@ public static class RuntimeStamp
         return Sha256OfFile(paths.LedgerPath(RuntimeVariants.LedgerName(variant)));
     }
 
-    /// <summary>突合の結末（<see cref="Line"/> が null なら黙る）。</summary>
-    /// <param name="Line">状態帯に出す 1 行（合っている・判らないなら null）。</param>
+    /// <summary>突合の結末（<see cref="Line"/> が null なら 1 手を出さない）。</summary>
+    /// <param name="Line">
+    /// 状態帯に出して<b>「実行系を組み直す」1 手を添える</b>行（合っている・判らないなら null）。
+    /// </param>
     /// <param name="LedgerChanged">台帳が変わった（＝中身が別物）。</param>
     /// <param name="AppVersionChanged">ランチャの版だけが変わった。</param>
-    public sealed record Verdict(string? Line, bool LedgerChanged, bool AppVersionChanged)
+    /// <param name="Note">
+    /// <b>1 手を添えない</b>覚え書き（ログに 1 度だけ流す）。版だけが動いたときの
+    /// 「そのまま使えます」はこちら＝<b>4 GB の組み直しを毎起動勧めない</b>
+    /// （是正・便 D（3）の 3 巡目）。
+    /// </param>
+    public sealed record Verdict(
+        string? Line, bool LedgerChanged, bool AppVersionChanged, string? Note = null)
     {
         /// <summary>何も出さない結末。</summary>
         public static readonly Verdict Silent = new(null, false, false);
@@ -82,7 +90,11 @@ public static class RuntimeStamp
     /// 「いつ組んだか判らない」だけで腐っている証拠ではない（便 D（2）以前の配布と混ぜても
     /// 壊れない＝§20-5 ⑵ と同じ流儀）。</item>
     /// <item>台帳の sha256 が違う＝<b>組み直す</b>。</item>
-    /// <item>台帳は同じで版だけ違う＝<b>勧める</b>（急かさない文言）。</item>
+    /// <item>台帳は同じで版だけ違う＝<b><see cref="Verdict.Note"/> だけ</b>（1 手は出さない）。
+    /// 1 手を出していたころ（便 D（3）の 1 巡目）は、<c>CheckRuntimeStamp</c> が焼き印の空欄しか
+    /// 焼き直さないので <c>installedAppVersion</c> が永久に古いまま残り、ランチャを更新した機体は
+    /// <b>毎起動</b>「実行系を組み直す」を見せられた（消す手立ては 4 GB の再展開だけ＝しかも
+    /// 裁定 90 で cache は空なので実際は数 GiB の再取得）。</item>
     /// </list>
     /// </summary>
     /// <param name="storedLedgerSha256">settings の <c>runtimeLedgerSha256</c>。</param>
@@ -118,23 +130,96 @@ public static class RuntimeStamp
             && !string.Equals(storedAppVersion.Trim(), currentAppVersion.Trim(), StringComparison.Ordinal))
         {
             return new Verdict(
-                "この実行系はランチャ " + storedAppVersion.Trim() + " で展開した物です（いまは "
-                + currentAppVersion.Trim() + "）。取得台帳は同じなので、そのまま使えます。",
+                Line: null,
                 LedgerChanged: false,
-                AppVersionChanged: true);
+                AppVersionChanged: true,
+                Note: "この実行系はランチャ " + storedAppVersion.Trim() + " で展開した物です（いまは "
+                    + currentAppVersion.Trim() + "）。取得台帳は同じなので、そのまま使えます。");
         }
 
         return Verdict.Silent;
     }
 
-    /// <summary>いまの配布樹の値を settings へ焼く（展開が通った直後に呼ぶ）。</summary>
+    /// <summary>
+    /// いまの配布樹の値を settings へ焼く（展開が通った直後に呼ぶ）。
+    /// <b>焼くのはその変種の欄だけ</b>＝他の変種の焼き印には触らない。
+    /// </summary>
     public static void Burn(LauncherSettings settings, AppPaths paths, string variant)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentException.ThrowIfNullOrWhiteSpace(variant);
 
-        settings.RuntimeLedgerSha256 = LedgerSha256(paths, variant);
-        settings.InstalledAppVersion = AppVersion.Display;
+        settings.SetRuntimeStamp(variant, LedgerSha256(paths, variant), AppVersion.Display);
     }
+
+    /// <summary>
+    /// 台帳は同じで<b>版だけ</b>が動いたときの焼き直し（展開はしない）。
+    /// これを撃たないと <c>installedAppVersion</c> が永久に古いまま残る。
+    /// </summary>
+    public static void BurnAppVersion(LauncherSettings settings, string variant)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentException.ThrowIfNullOrWhiteSpace(variant);
+
+        settings.SetRuntimeStamp(
+            variant, settings.RuntimeLedgerFor(variant), AppVersion.Display);
+    }
+
+    /// <summary>
+    /// <b>展開が本当に済んでいる樹か</b>（<c>site-packages\*.dist-info</c> の件数が台帳と合うか）。
+    /// <para>
+    /// <c>python.exe</c> の在否だけを根拠に焼き印を押すと、<b>python-embed の直後で切れた樹</b>
+    /// （<c>python.exe</c> 1 檔だけ）でも「この台帳から出来ている」と名乗り、取得キャッシュの
+    /// 関門は自分で作ったその値と突き合わせるだけなので通ってしまう＝<b>壊れた樹を直すのに要る
+    /// 原檔が消える</b>（是正・便 D（3）の 3 巡目）。<c>WheelInstaller</c> が展開の最後に撃つ
+    /// のと同じ数え方（<see cref="WheelInstaller.ExpectedDistInfoCount"/>）で締める。
+    /// </para>
+    /// <para>
+    /// 台帳が読めない・置き場が読めないときは<b>真</b>を返す（＝黙る）。推測で
+    /// 「組み直せ」と急かさないのは <see cref="Compare"/> と同じ流儀である。
+    /// </para>
+    /// </summary>
+    public static bool LooksComplete(AppPaths paths, LedgerFile? ledger, string variant)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentException.ThrowIfNullOrWhiteSpace(variant);
+
+        if (ledger?.Items is null || ledger.Items.Count == 0)
+        {
+            return true;
+        }
+
+        var runtimeDir = paths.ResolveRuntimeDir(variant);
+        if (runtimeDir is null)
+        {
+            return true;
+        }
+
+        var sitePackages = Path.Combine(runtimeDir, "site-packages");
+        try
+        {
+            if (!Directory.Exists(sitePackages))
+            {
+                return false;
+            }
+
+            var found = Directory
+                .GetDirectories(sitePackages, "*.dist-info", SearchOption.TopDirectoryOnly).Length;
+            return found == WheelInstaller.ExpectedDistInfoCount(ledger.Items);
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return true;
+        }
+    }
+
+    /// <summary>展開が途中で切れている樹に出す 1 行（<b>純関数</b>）。</summary>
+    public static string IncompleteLine(string variant) =>
+        "実行系（" + RuntimeVariants.DisplayName(variant)
+        + "）が途中までしか組み上がっていません。実行系を組み直してください。";
 }

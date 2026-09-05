@@ -2007,3 +2007,204 @@ E2E の中の 1 射は 200 で返り cache も消えたが、台本が結果の�
 6. **E2E の台本が結果の行を `—` のまま読む罠**は便 E（2）から 2 度目である。
    `probe/d-launch-probe.ps1` の段 5・7 は `Wait-ForResultText` 相当を持っていて掛からないが、
    スクラッチパッドの E2E 台本は毎回この手当てが要る（`try-shot.ps1` の待ち方が正しい形）。
+
+## 24. 是正席（便 D（3）の 3 巡目）の記帳（2026-09-05・opus サブ席）
+
+敵対検分 2 席が挙げた **high 3・medium 7・low 11** を受けた席である。
+**誤りだった所見は 0 件**＝10 件すべて、この機体で（実窓・実物のデータ樹・模型のいずれかで）
+**壊れている形をそのまま組んでから**直した。書いた path は `launcher/**`・
+`probe/d-launch-probe.ps1`・本節だけである（`docs/contract.md`・`docs/acceptance.md`・
+`probe/README.md`・§22-5 の表は担当パス外＝24-6 の票に回した）。
+
+### 24-1 焼き印を変種ごとの表にした（high ⑴＋medium ⑻＝同じ穴の表と裏）
+
+**壊れていた形**＝`settings.json` の焼き印は `runtimeLedgerSha256`／`installedAppVersion` の
+**1 組**しか無いのに、突き合わせる相手（`ledger/runtime-<変種>.json`）も実行系
+（`runtime\<変種>\`）も**変種ごとに在る**。両方組んである機体で設定の変種を切り替えただけで
+「配布物の取得台帳（runtime-cu126.json）が、いまの実行系を展開したときの台帳と違います。
+実行系を組み直してください。」の**偽警告**が出て 1 手が押せるようになり、取得キャッシュの関門
+（`CacheCleaner.Blocked`）も同じ値を見るので掃除まで止まった。裁定 88 ⑴ が勧める
+「cu126 → cpu へ切り替える」導線がそのままこの穴に落ちる。
+
+**直した形**（`Contracts/LauncherSettings.cs`・`Services/Ledger/RuntimeStamp.cs`）＝
+
+```json
+{ "runtimeLedgers":       { "rocm-gfx1151": "ceec8560…", "cu126": "2235fc71…" },
+  "installedAppVersions": { "rocm-gfx1151": "v0.1.0",    "cu126": "v0.1.0" } }
+```
+
+- 読み口＝`settings.RuntimeLedgerFor(変種)`／`InstalledAppVersionFor(変種)`（**純関数**・
+  鍵の大小と前後の空白を問わない）。書き口＝`SetRuntimeStamp(変種, sha256, 版)`＝
+  **その変種の欄だけ**を書く（他の変種には触らない）。`JsonSettingsStore.Sanitize` が
+  空の鍵・空の値を落とし、比較子を大小無視で組み直す（`System.Text.Json` は素の
+  `Dictionary` で作り直すので、通さないと `"CU126"` が引けない）。
+- `RuntimeStamp.Compare`／`Burn`／`CacheCleaner.Blocked` の**引数の形は変えていない**
+  （どれも「いまの変種の」1 組を受けるだけ）＝呼び手 4 箇所（`MainViewModel.CheckRuntimeStamp`・
+  `ClearCacheAfterFirstShot`・`SettingsViewModel.ClearCache`・`FirstRunViewModel.RunInstallAsync`）
+  で鍵を引くようにしただけである。
+- **1 巡目の 2 欄は読まない**（移行しない）＝旧欄は**変種の名を持たない**ので、いまの変種の欄へ
+  畳むと「別の変種の焼き印を自分の物と名乗る」＝**まさにこの穴を作り直す**。焼き印を失った樹は
+  次の起動でいまの台帳から焼き直されるので（裁定 91・ただし 24-4 の門を通ってから）、
+  **誰も 4 GB をやり直さない**。旧欄は保存で消える。
+
+**再実射**（実物のデータ樹を**読むだけ**で走らせた一時の xUnit・撃った後に消した）＝
+
+```
+ledger variants = cpu, cu126, cu130, rocm-gfx1151
+cpu:          python.exe=False looksComplete=True blocked=実行系がまだ組み上がっていないので、取得キャッシュは消しません。
+cu126:        python.exe=True  looksComplete=True blocked=展開に使った取得台帳が判らないので、取得キャッシュは消しません（実行系を組み直すと判るようになります）。
+cu130:        python.exe=False looksComplete=True blocked=実行系がまだ組み上がっていないので、取得キャッシュは消しません。
+rocm-gfx1151: python.exe=True  looksComplete=True blocked=(clean)
+```
+
+釘＝`焼き印は変種ごと_隣の変種へ切り替えても偽警告を出さない`（cpu → cu126 → cpu と往復して
+1 手が 1 度も出ない・両方の欄が別々に残る）・`焼き印は変種ごと_掃除の関門も変種ごとに読む`・
+無人検分の新しい 1 段 `the stamp of a variant that was never built is not written`。
+
+### 24-2 掃除は「まだ検めていない変種だけが名指す原檔」を残す（medium ⑵）
+
+**壊れていた形**＝関門は「いまの変種 1 つ」としか突き合わせないのに、消す範囲は
+`<data>\cache` **全部**だった。実物の cache 110 檔 4,139,511,669 B のうち
+**2,591,681,699 B（2.41 GiB）が cu126 専用**（`torch-2.10.0+cu126…whl` 2,589,881,452 B と
+`torchaudio-2.10.0+cu126…whl` 1,800,247 B）で、`variant: rocm-gfx1151` の関門を通しただけの
+掃除がそれを**cu126 の台帳を 1 度も検めないまま**消していた。
+
+**直した形**（`Services/Ledger/CacheCleaner.cs`）＝`Clean`／`Measure` が
+**除外集合**（`protectedFileNames`）を受ける。集合は純関数 `ProtectedFileNames` が組む＝
+
+> 配布樹に取得台帳が在る変種を並べ、**関門（`Blocked`）を通った変種**の台帳が名指す檔を
+> 「消してよい」側に、**通っていない変種**の台帳が名指す檔を「残す」側に入れ、
+> **両方に居る檔（共有の wheel）は「消してよい」を採る**。
+
+**共有の檔を残さないのが眼目**である。所見の逐語（「配布樹に在る**全**変種の台帳が名指す檔だけは
+残す」）をそのまま実装すると、rocm と cu126 が同じ名で持つ wheel が全部残り、**置き場が空にならない**
+＝裁定 94 ⑶ が書き直した受け入れ条件のサイズ行（「展開後（cache 削除後）≤ 9.0 GB」）と
+便 D（3）の E2E（「cache は最初の 200 の後に 0 B」）が両方崩れる。通った変種の展開で既に使われた
+1 檔なので、消してよい。裁定 95 ⑵ が挙げた 3 つの理由（⒜ 前の台帳の原檔 ⒝ 打ち切った `.part`
+⒞ 名前が変わった檔）は**どの台帳も名指さない**ので、今までどおり消える。
+
+**再実射**（同上・実物を読むだけ）＝
+
+```
+cache total     = 110 files / 4139511669 B
+would delete    = 108 files / 1547829970 B
+would KEEP      =   2 files / 2591681699 B   (2.41 GiB)
+  keep: torch-2.10.0+cu126-cp312-cp312-win_amd64.whl 2589881452 B
+  keep: torchaudio-2.10.0+cu126-cp312-cp312-win_amd64.whl 1800247 B
+```
+
+**限界（正直に）**＝守れるのは**配布樹に台帳が在る変種**だけである。Radeon 版だけを導入した機体に
+CUDA 版で落とした原檔が残っていると、その檔はどの台帳も名指さない＝裁定 95 ⑵ ⒜「前の台帳の原檔」
+として消える。ランチャがその檔を検める術が無いのだから、これは仕様として正しい側だと本席は読む
+（この機体は開発起動で `build/out/app/ledger` に 4 変種ぶん在るので、上の実射では守られている）。
+
+釘＝`別の変種だけが名指す原檔は残る`・`関門を通った変種の原檔は残さない`（両方の関門が通れば
+置き場は空）・`除外集合は純関数で決まる`・`台帳の名から変種を拾う`・`設定の量と消える量は同じ`
+（ボタンの文言に出る量＝押して消える量）。
+
+### 24-3 版だけ違うときは 1 手を出さず、焼き直して黙る（medium ⑷）
+
+**壊れていた形**＝`Compare` が「版だけ違う」でも `Line` を返すので `Verdict.Mismatch` が真になり、
+「実行系を組み直す」が押せる状態になった。しかも `CheckRuntimeStamp` は焼き印が**空のときしか**
+焼き直さないので `installedAppVersion` は永久に古いまま＝ランチャを更新した機体は**毎起動**この
+1 行を見せられ、消す手立ては 4 GB の再展開（cache は自動削除済みなので実際は数 GiB の再取得）だけ。
+
+**直した形**＝`Verdict` に `Note`（**1 手を添えない**覚え書き）を足し、版だけの差は `Line` ではなく
+`Note` に落とす。`CheckRuntimeStamp` は `AppVersionChanged && !LedgerChanged` のとき
+`RuntimeStamp.BurnAppVersion`（**展開はしない**・台帳の sha256 はそのまま）で焼き直し、
+`Note` をログに 1 度だけ流して黙る。`LedgerChanged`／`AppVersionChanged` の 2 つの札は
+これで**本番の檔からも読まれる**ようになった（1 巡目は釘の中でしか読まれていなかった）。
+
+釘＝`焼き印_版だけ違えば1手を出さない`（純関数）・`版だけ違えば焼き直して黙る_2度目の起動でも黙る`
+（檔を読み直して 2 つ目の窓を作り、`そのまま使えます` が 2 度目には出ないことまで見る）。
+
+### 24-4 焼き印を押す前に「展開が済んでいるか」を見る（medium ⑸）
+
+**壊れていた形**＝根拠が「`python.exe` が在る」だけだったので、`WheelInstaller.InstallAsync` の
+`catch` に当たらない型（`Win32Exception`・`NotSupportedException`）や電源断で
+**python-embed の直後に切れた樹**（`python.exe` 1 檔）にも今の台帳の sha256 を焼いた。以後その樹は
+「この台帳から出来ている」と名乗り、取得キャッシュの関門は**自分で作った値**と突き合わせるだけなので
+通ってしまい、壊れた樹を直すのに要る原檔が消えた。
+
+**直した形**＝`RuntimeStamp.LooksComplete(paths, ledger, variant)`＝
+`runtime\<変種>\site-packages\*.dist-info` の件数が `WheelInstaller.ExpectedDistInfoCount`
+（展開の最後に `WheelInstaller` 自身が撃つのと同じ数え方）と合うときだけ焼く。合わなければ**焼かず**に
+`実行系（…）が途中までしか組み上がっていません。実行系を組み直してください。` を出す。
+台帳が読めない・置き場が読めないときは**真**を返す（＝黙る）＝推測で急かさない流儀は `Compare` と同じ。
+
+**「正しく組んである機体に 4 GB をやり直させない」（裁定 91）は壊れていない**ことを実測で確かめた＝
+
+| 樹 | `*.dist-info` | 台帳の wheel/sdist/archive |
+|---|---|---|
+| `%LOCALAPPDATA%\irodori-tts-ywk\runtime\rocm-gfx1151` | **107** | 107 |
+| `%LOCALAPPDATA%\irodori-tts-ywk\runtime\cu126` | **101** | 101 |
+| `build/out/runtime-rocm-gfx1151`（`assemble-runtime.ps1` の樹） | **107** | 107 |
+| `build/out/runtime-cpu`（同上） | **101** | 101 |
+
+＝**台本で組んだ樹も実物の樹も 4 つとも一致**するので、この門で新たに赤くなる機体はこの機体には無い。
+
+釘＝`組みかけの樹には焼き印を押さずに1手を出す`・`組みかけの樹では取得キャッシュを消さない`。
+
+### 24-5 その他の是正
+
+| # | 所見 | 直した形 | 釘 |
+|---|---|---|---|
+| ⑴ | **high**＝設定の「適用」1 押しでウィザードの成果が巻き戻る | ⒜ `SettingsViewModel.CopyInto` から**設定頁が編集しない欄**を全部外した（`firstRunCompleted`・`acceptedNoticesSha256`・焼き印の 2 表・`voiceOrder`・`lastTestVoice`・`lastTestNumSteps`）＋ ⒝ `SettingsViewModel.SyncFromLive()` を新設し `MainViewModel.ReapplySettings()`（＝窓がウィザードを閉じた直後に呼ぶ手）で**写しを取り直す**。⒝ が要るのは、**変種は設定頁も編集する**欄なので ⒜ だけでは巻き戻りが残るからである（所見の「効き ⑷」）。`SyncFromLive` は `IsDirty` なら何もしない＝利用者の入力を捨てない | `ウィザードが焼いた後に適用しても巻き戻らない`（`live` と `settings.json` の両方を見る）・`写しの取り直しは編集中なら何もしない`・`写しの複写は設定頁の欄だけを移す`（旧 `写しの複写は全欄を移す` を置き換え） |
+| ⑵ | **medium**＝ウィザードの最後の働く段で「中断」が効かない | `_startServer` を `Func<CancellationToken, Task<bool>>` にし、`RunStartAsync` が `CancellationTokenSource` を作って `MainViewModel.StartServerAsync(token)` → `AppServices.Server.StartAsync(request, token)` まで通した。起こす側は取消を**例外で返さない**（ツリー kill して `Stopped` で返る＝契約）ので、`IsCancellationRequested` を見て「中断」に読み替える。`CancelRunning` は**止める物が無いときに「中断しました」と名乗らない** | `起動の段でも中断が効く`（token が届く・その段で押せる・`Done` へ進まない・`firstRunCompleted` が焼かれない）・`起こす側が取消を例外で返さなくても中断と読む`・`止める物が無いときは中断しましたと名乗らない` |
+| ⑶ | **medium**＝「実行系を組み直す」に取消も進捗帯も無い | `RebuildRuntimeAsync` に `CancellationTokenSource` を持たせ、取得と展開の両方へ通した。状態タブに `StatusRebuildProgressText`／`StatusRebuildProgressBar`／`StatusRebuildCancelButton`（「やめる」）を足し、走っている間だけ木に出す。**押す前に代金を告げる**＝1 行に「（取得キャッシュに原檔が n 件足りません＝押すと x GiB を取り直します）」を添える（揃っていれば「取り直しはありません」） | `組み直しは取消と進捗帯を持つ`（token が届く・走行中は帯と「やめる」が出る・後始末で下ろす・**焼き印は動かさない**）・`組み直しの1行は取り直す量を名乗る` |
+| ⑷ | **medium**＋**low ⑴**＝断られた掃除を「1 度やった」と数える | `_cacheCleared = true` を `Clean` の**結末の後**（`result.Ok` のときだけ）に移した | `関門に断られた回は1度と数えない`（断られる → 焼き印を入れ直す → 2 射目で消える → 3 射目は何も言わない） |
+| ⑸ | **high**＝無人検分の段 h が空の釘 | `$T.Fetch`（「取得」の 2 字）は**「取得（実行系）」と「取得（モデル）」の両方**に部分一致するので、段 3 で止まるべき試験が段 5 に居ても緑になっていた。**題の全一致と段番号**（`3 / 7`）の両方を要求する形に締めた（`$T.FetchRun`／`$T.FetchModel` を新設） | 台本の 2 段＝`the failed step keeps the wizard where it failed`／`pressing next on a failed step retries it instead of walking on`（実走で緑・締めた後も緑） |
+| ⑹ | **low**＝`RefreshCache` の註が実装と逆 | 「数えるのは台帳の item の檔だけ」を「**置き場ごと数える。ただし守る檔は数にも削除にも入れない**」に書き直した（24-2 と揃えた） | 同上 `設定の量と消える量は同じ` |
+| ⑺ | **low**＝`EstimatedPeakDiskBytes` を実際の空きと突き合わせていない | `FirstRunViewModel.FreeSpaceShortfall`（**純関数**）と `FreeBytes`（読めなければ null＝黙る）を足し、⒜ 変種の段の見積り 1 行に足りない量を添え ⒝ **落とし始める前に**足りなければその段を失敗させる（理由 1 行＋「もう一度」） | `空きが足りなければ1行で名乗る`・`空きは実際のドライブから読める` |
+| ⑻ | **low**＝「戻る」が失敗した段ではなく前の段をやり直させる／Trail が重なる | 働く段からの「戻る」は**変種の段**へ戻す（1 つ前の働く段へは戻さない）。`Trail` は同じ段の見出しを続けて重ねない | `働く段からの戻るは変種の段へ戻る`・`同じ段を撃ち直してもTrailは重ねない` |
+| ⑼ | **low**＝展開係数 `cpu` 3.60 の分母 | 数は動かさず（**多めに出す側**なので「必要な空き」を低く見せない）、註に「分母は `build/out/runtime-cpu`＝ランチャの展開した樹なら 3.23・測り直しは便 D（4）」と書いた | （数を動かしていないので釘は増やしていない） |
+
+### 24-6 卓へ／後続へ（担当パス外の宿題）
+
+1. **`docs/contract.md` ⑻ の 1 行は書かれたが、綴りが 1 巡目のままである**（本席の担当パス外）。
+   本席が走っている最中（2026-09-05 16:05）に別席が入れた 1 行＝
+   「…`runtimeLedgerSha256`（展開に使った台帳 … の sha256・小文字 hex 64 字・null 可）と
+   `installedAppVersion`（`v0.1.0` の形・null 可）…」は、**この巡で消えた欄を名指している**。
+   **この形に直すこと**＝`runtimeLedgers`（**表**・鍵＝変種名・値＝小文字 hex 64 字・
+   欄そのものが無くてよい）と `installedAppVersions`（同じ形・値は `v0.1.0` の形）。
+   **旧 `runtimeLedgerSha256`／`installedAppVersion` は書かないこと**＝ランチャは読まない
+   （24-1 の理由＝変種の名を持たない値をいまの変種の欄へ畳むと、同じ穴を作り直す）。
+   同じ理由で `launcher/README.md` §11-3 は本席が新しい形に書き直してある＝**そこを写せばよい**。
+2. **§22-5 の「台本が当てにしている文言」の表**に `取得` が単独で載っている（本節 24-5 ⑸ で
+   台本は直したが、表は本席の担当パス外）＝**`取得（実行系）`** に直すこと。
+3. **`probe/README.md`**（118 行あたり）が `runtimeLedgerSha256`・`installedAppVersion` を
+   名指している＝`runtimeLedgers.<変種>`・`installedAppVersions.<変種>` に直すこと。
+4. **`docs/acceptance.md`**＝⒜ 導入行「利用者操作 ≤ 6（vc_redist 自動なら ≤ 5）」の実測 5 は
+   **vc_redist を飛ばせた機体の数**である。裁定 96 が実射した E-1 の経路（`AskVcRedist` の問い 1 押下＋
+   UAC 1 押下）では **7** になり条件を割る＝数え方（UAC を押下に数えるか）を裁定すること。
+   ⒝ サイズ行が今も `FetchPlanner.ExpansionFactor=3.3` という**便 D（3）で消えた識別子**を名指しており、
+   cpu の実測（展開後 4.26 GiB）も入っていない。⒞ 速度行（CPU RTF 3.33）も実物では未更新である。
+5. **§5-2 と §10-1 の `/ywk/status.warmup` は「9 鍵」と書いてあるが実物は 8 鍵**（本檔自身の数え違い）。
+6. **cu130 の展開後サイズは未実測のまま**（RTX 機・§21-5 の 6 ⒠ と §23-9 の 5 を引き継ぐ）。
+
+### 24-7 本席の再検証（逐語）
+
+| 手 | 結果 |
+|---|---|
+| `dotnet build --no-incremental` | **0 個の警告 / 0 エラー** |
+| `dotnet test`（xUnit） | **成功! - 失敗: 0、合格: 581**（1 巡目 559 ＋ **本席の新設 22 本**） |
+| `build/run-tests.ps1`（契約テスト） | `339 passed, 2 warnings in 6.75s`・`upstream/Irodori-TTS: clean`・`upstream/Irodori-TTS-Server: clean` |
+| `build/check-tree.ps1` | `A-7 PASSED: no third-party binary, model or wheel is tracked; submodules clean and pinned` |
+| `build/check-licenses.ps1` | `A-6 PASSED: 13 license files, all indexed and non-empty`（`rights_source_fetched` の WARN は既知・据え置き） |
+| `build/assemble-app.ps1` | `done: 108 files under build\out\app; patches applied: 1; preset wavs: 11; upstream clean: True` |
+| `probe/d-launch-probe.ps1`（**全段**・Debug の窓） | **`=== 0 failure(s) of 89 ===`**（1 巡目の 88 段＋本席の 1 段） |
+| 同（**発行 exe** `build/out/launcher/win-x64/IrodoriTtsYwk.Launcher.exe`） | **`=== 0 failure(s) of 89 ===`** |
+| `build/installer-build.ps1 -All` | **`DONE: 2 installer(s), 20 gate(s), 0 failed.`**（cuda 85,007,352 B・sha256 `a2454d6f…` / radeon 85,021,827 B・sha256 `c8111bf0…`） |
+| `build/release-build.ps1` | `DONE: v0.1.0 / upstream 8224daf+841fb7c / exe **69,624,712 B**`（1 巡目 69,610,933 B） |
+| `probe/e-install-probe.ps1`（既定の段 1,2,3,5,6,7,8） | **`=== 0 failure(s) of 72 ===`**・`the operator data tree came back byte for byte (count, bytes and every name)` |
+
+**利用者データ樹の退避と復帰**＝`e-install-probe` 自身の `irodori-tts-ywk.e2-backup`（裁定 93 ⑵）に
+任せ、本席は前後で独立に数えた＝**前 53,769 檔 16,990,584,628 B／後 53,769 檔 16,990,584,628 B**
+（差 0）。`settings.json` も走の前後で同じ（`variant: rocm-gfx1151`・`firstRunCompleted: true`・
+焼き印の欄はまだ無い＝**次に本物のランチャを起こした瞬間に rocm の欄だけが焼かれ、cu126 専用の
+2.41 GiB は守られる**＝24-1 と 24-2 の実効）。
+
+**後片付け**＝実射に使った一時の xUnit（`ZzCorrectionSeatRealTreeProbe.cs`）は撃った後に消し、
+`dotnet build --no-incremental`（0 警告 0 エラー）と `dotnet test`（581 合格）に戻してある。
+`build/out` 以外へは 1 檔も足していない（`git status` の未追跡は新設の釘 1 檔
+`launcher/IrodoriTtsYwk.Launcher.Tests/RoundThreeCorrectionTests.cs` だけ）。commit・push はしていない。

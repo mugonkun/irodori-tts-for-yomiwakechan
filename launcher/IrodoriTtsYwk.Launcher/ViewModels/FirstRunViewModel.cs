@@ -62,7 +62,7 @@ public sealed class FirstRunViewModel : ObservableObject
     private readonly IDriverCheck _driverCheck;
     private readonly Func<IDownloader?> _downloader;
     private readonly Func<IRuntimeInstaller?> _installer;
-    private readonly Func<Task<bool>> _startServer;
+    private readonly Func<CancellationToken, Task<bool>> _startServer;
 
     private CancellationTokenSource? _cancel;
     private FirstRunStep _step = FirstRunStep.Notices;
@@ -86,7 +86,7 @@ public sealed class FirstRunViewModel : ObservableObject
         IDriverCheck driverCheck,
         Func<IDownloader?> downloader,
         Func<IRuntimeInstaller?> installer,
-        Func<Task<bool>> startServer)
+        Func<CancellationToken, Task<bool>> startServer)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(settings);
@@ -380,7 +380,12 @@ public sealed class FirstRunViewModel : ObservableObject
 
             if (IsWorkStep)
             {
-                Trail.Add("― " + Title(step));
+                // 同じ段を「もう一度」で撃ち直しても行は重ねない（是正・便 D（3）の 3 巡目）。
+                var head = "― " + Title(step);
+                if (Trail.Count == 0 || !string.Equals(Trail[^1], head, StringComparison.Ordinal))
+                {
+                    Trail.Add(head);
+                }
             }
 
             if (!await RunStepAsync(step).ConfigureAwait(true))
@@ -440,18 +445,33 @@ public sealed class FirstRunViewModel : ObservableObject
 
     public void Back()
     {
-        if (Step > FirstRunStep.Notices && !IsBusy)
+        if (Step <= FirstRunStep.Notices || IsBusy)
         {
-            // 戻った＝失敗の札は下ろす（「もう一度」ではなく普通の「次へ」に戻す）。
-            SetStepOk(true);
-            Step = (FirstRunStep)((int)Step - 1);
+            return;
         }
+
+        // 戻った＝失敗の札は下ろす（「もう一度」ではなく普通の「次へ」に戻す）。
+        SetStepOk(true);
+
+        // **働く段からの「戻る」は変種の段へ戻す**（是正・便 D（3）の 3 巡目）。
+        // 1 つ前の働く段へ戻していたころは、次の「次へ」が<b>失敗した段ではなく前の段</b>を
+        // やり直した（展開で失敗して「戻る」を押すと、取得の段からやり直しになる）。
+        Step = IsWorkStep ? FirstRunStep.Variant : (FirstRunStep)((int)Step - 1);
     }
 
-    /// <summary>走っている取得を止める（<c>.part</c> は残るので次回は続きから）。</summary>
+    /// <summary>
+    /// 走っている仕事を止める（<c>.part</c> は残るので次回は続きから）。
+    /// <b>止める物が無いときは「中断しました」と名乗らない</b>（是正・便 D（3）の 3 巡目）。
+    /// </summary>
     public void CancelRunning()
     {
-        _cancel?.Cancel();
+        if (_cancel is null)
+        {
+            Message = "いま中断できる仕事はありません。";
+            return;
+        }
+
+        _cancel.Cancel();
         Message = "中断しました（続きから取り直せます）。";
     }
 
@@ -522,7 +542,53 @@ public sealed class FirstRunViewModel : ObservableObject
 
         var verdict = _driverCheck.Check(_variant, null);
         DriverText = verdict.Message;
-        SizeText = EstimateSizeText(_paths, _variant, _skipVcRedist);
+
+        // 「必要な空き」は**実際の空きと突き合わせて**から出す（是正・便 D（3）の 3 巡目）。
+        // 突き合わせていなかったころは、空きが足りない機体が 4.8 GiB を落とし切ってから
+        // 展開の段で落ちた（インストーラ側の門＝裁定 89 は導入の時点の話で、初回取得は別の日である）。
+        var text = EstimateSizeText(_paths, _variant, _skipVcRedist);
+        var plan = TryPlan(_paths, _variant, _skipVcRedist, out _);
+        var shortfall = plan is null
+            ? null
+            : FreeSpaceShortfall(plan.EstimatedPeakDiskBytes, FreeBytes(_paths.DataDir));
+        SizeText = shortfall is null ? text : text + "　" + shortfall;
+    }
+
+    /// <summary>
+    /// 空きが足りないときの 1 行（足りている・読めないなら null＝<b>純関数</b>）。
+    /// </summary>
+    public static string? FreeSpaceShortfall(long neededBytes, long? freeBytes)
+    {
+        if (freeBytes is not long free || neededBytes <= 0 || free >= neededBytes)
+        {
+            return null;
+        }
+
+        return "【空き容量が足りません】必要 " + FetchPlanner.FormatBytes(neededBytes)
+            + "・いまの空き " + FetchPlanner.FormatBytes(free)
+            + "（あと " + FetchPlanner.FormatBytes(neededBytes - free) + "）。";
+    }
+
+    /// <summary>その場所が乗っているドライブの空き（読めなければ null＝黙る）。</summary>
+    public static long? FreeBytes(string path)
+    {
+        try
+        {
+            var root = Path.GetPathRoot(Path.GetFullPath(path));
+            return string.IsNullOrWhiteSpace(root) ? null : new DriveInfo(root).AvailableFreeSpace;
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -705,7 +771,15 @@ public sealed class FirstRunViewModel : ObservableObject
                 return false;
             }
 
-            SizeText = EstimateSizeText(_paths, _variant, _skipVcRedist);
+            UpdateVariantNotes();
+
+            // **落とし始める前に空きを見る**（是正・便 D（3）の 3 巡目）。
+            if (FreeSpaceShortfall(plan.EstimatedPeakDiskBytes, FreeBytes(_paths.DataDir))
+                is string shortfall)
+            {
+                Message = shortfall + "空けてから「もう一度」を押してください。";
+                return false;
+            }
 
             var requests = FetchPlanner.ToDownloadRequests(plan, _paths.DownloadCacheDir);
             if (requests.Count == 0)
@@ -948,13 +1022,32 @@ public sealed class FirstRunViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// 起動の確認（最後の働く段）。
+    /// <para>
+    /// <b>ここも取消を持つ</b>（是正・便 D（3）の 3 巡目）＝1 巡目は <c>_cancel</c> を作らず
+    /// <c>_startServer</c> にも token を渡していなかったのに、<see cref="CancelCommand"/> は
+    /// 押せて「中断しました（続きから取り直せます）。」と名乗り、そのまま Done まで進んで
+    /// <c>firstRunCompleted=true</c> が焼かれた（直前の段の <c>finally</c> が
+    /// <c>_cancel</c> を null にした後だからである）。ready 待ちはこの機体の設定で 600 秒。
+    /// </para>
+    /// </summary>
     private async Task<bool> RunStartAsync()
     {
         IsBusy = true;
+        _cancel = new CancellationTokenSource();
         try
         {
             ProgressText = "サーバを起こしています…";
-            var ok = await _startServer().ConfigureAwait(true);
+            var ok = await _startServer(_cancel.Token).ConfigureAwait(true);
+            if (_cancel.IsCancellationRequested)
+            {
+                // 起こす側は取消を例外で返さない（IServerProcess.StartAsync の約束＝
+                // ツリー kill して Stopped で返る）ので、ここで「中断」に読み替える。
+                Message = "中断しました（続きから取り直せます）。";
+                return false;
+            }
+
             if (ok)
             {
                 Record("サーバが起動しました。");
@@ -966,8 +1059,15 @@ public sealed class FirstRunViewModel : ObservableObject
 
             return ok;
         }
+        catch (OperationCanceledException)
+        {
+            Message = "中断しました（続きから取り直せます）。";
+            return false;
+        }
         finally
         {
+            _cancel?.Dispose();
+            _cancel = null;
             IsBusy = false;
         }
     }

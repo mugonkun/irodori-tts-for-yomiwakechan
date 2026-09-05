@@ -29,8 +29,10 @@
 #      step that succeeded walks on by itself) and a FAILED step is proved to stop it
 #   i  the download cache is still there when the first shot is fired and GONE once that shot
 #      came back 200 -- read in BYTES               (decisions 90 Q-E2 (3), 94 (3))
-#   j  settings.json carries runtimeLedgerSha256 / installedAppVersion, and a ledger that no
-#      longer matches makes the window offer to rebuild the runtime   (decisions 91)
+#   j  settings.json carries runtimeLedgers.<variant> / installedAppVersions.<variant> (a table
+#      PER VARIANT since the correction seat of convoy D (3) round three -- one pair of scalars for
+#      the whole file made switching variants raise a false "rebuild the runtime"), and a ledger
+#      that no longer matches makes the window offer to rebuild the runtime   (decisions 91)
 #   k  a runtime whose python.exe cannot be started is told in <= 10 s with a one line reason
 #      (design 20-5 (1): the window used to sit there for 60 s saying nothing at all)
 #   l  the "delete the download cache" button really empties it      (decisions 90 Q-E2 (3))
@@ -145,7 +147,12 @@ $T = [ordered]@{
     # ---- round three (decisions 92 / 94) ----
     Estimate   = New-JpText 0x6982, 0x7B97                           # "estimate" (the word itself)
     Ledger     = New-JpText 0x53F0, 0x5E33                           # "ledger"
-    Fetch      = New-JpText 0x53D6, 0x5F97                           # "fetch"  (wizard step 3 title)
+    Fetch      = New-JpText 0x53D6, 0x5F97                           # "fetch"  (the word alone)
+    # The FULL titles of the two fetch steps. "fetch" alone is a substring of BOTH of them
+    # ("fetch (runtime)" is step 3, "fetch (models)" is step 5), so a -like '*fetch*' test passes
+    # even when the wizard walked two pages past the step that failed. Match the whole title.
+    FetchRun   = New-JpText 0x53D6, 0x5F97, 0xFF08, 0x5B9F, 0x884C, 0x7CFB, 0xFF09   # "fetch (runtime)"
+    FetchModel = New-JpText 0x53D6, 0x5F97, 0xFF08, 0x30E2, 0x30C7, 0x30EB, 0xFF09   # "fetch (models)"
     Finished   = New-JpText 0x5B8C, 0x4E86                           # "done"   (wizard step 7 title)
     ToTry      = New-JpText 0x8A66, 0x3057, 0x6483, 0x3061, 0x3078   # "to the try screen" (last press)
     # "rebuild the runtime" -- the one move decisions 91 asks for when the ledger stops matching.
@@ -723,6 +730,28 @@ function Get-JsonMember {
     return $Doc.$Name
 }
 
+function Get-RuntimeStamp {
+    <#
+      .SYNOPSIS
+        The stamp of ONE variant out of settings.json (decisions 91).
+      .DESCRIPTION
+        The stamp used to be a single pair of scalars for the whole file
+        (runtimeLedgerSha256 / installedAppVersion). A machine with two runtimes built then cried
+        "rebuild the runtime" the moment the variant was switched, because the one stored sha256 was
+        compared against the OTHER variant's ledger. Since the correction seat of convoy D (3) round
+        three the file carries a table per variant -- runtimeLedgers / installedAppVersions -- so the
+        probe reads one level down.
+    #>
+    [CmdletBinding()]
+    param(
+        $Doc,
+        [Parameter(Mandatory = $true)][string]$Member,
+        [Parameter(Mandatory = $true)][string]$Variant
+    )
+    $table = Get-JsonMember -Doc $Doc -Name $Member
+    return (Get-JsonMember -Doc $table -Name $Variant)
+}
+
 function Remove-PrivateTree {
     <#
       .SYNOPSIS
@@ -982,8 +1011,12 @@ function Invoke-WizardPressProbe {
         Add-Step 'a ledger that cannot be planned from fails the fetch step with a reason' (
             $failed.ok -and ($message -like ('*' + $T.Ledger + '*'))) (
             $message + ' [' + [math]::Round($failed.elapsed, 2) + ' s]')
+        # The title must be the WHOLE "fetch (runtime)" and the counter must be step 3, not just
+        # "contains fetch": the models step is called "fetch (models)", so a substring test stays
+        # green after the wizard walked past the step that failed (proved with a deliberate break).
         Add-Step 'the failed step keeps the wizard where it failed' (
-            $title -like ('*' + $T.Fetch + '*')) ('step = ' + $title + ' (' + $number + ')')
+            ($title -eq $T.FetchRun) -and ($number -eq '3 / 7')) (
+            'step = ' + $title + ' (' + $number + ')')
         Add-Step 'the presses up to the failed step are four' ($script:WizardPresses -eq 4) (
             'presses = ' + $script:WizardPresses +
             ' (consent, agree, variant, start; the fifth is "to the try screen")')
@@ -994,10 +1027,13 @@ function Invoke-WizardPressProbe {
         $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'next, on the failed step'
         Start-Sleep -Seconds 2
         $title2 = Get-TextById -Root $wizard -Id 'FirstRunStepTitle'
+        $number2 = Get-TextById -Root $wizard -Id 'FirstRunStepNumber'
         if ($null -eq $title2) { $title2 = '' }
-        Write-Host ('[wizard] step after the retry = ' + $title2)
+        if ($null -eq $number2) { $number2 = '' }
+        Write-Host ('[wizard] step after the retry = ' + $title2 + '  (' + $number2 + ')')
         Add-Step 'pressing next on a failed step retries it instead of walking on' (
-            $title2 -like ('*' + $T.Fetch + '*')) ('step = ' + $title2)
+            ($title2 -eq $T.FetchRun) -and ($number2 -eq '3 / 7')) (
+            'step = ' + $title2 + ' (' + $number2 + ')')
 
         try {
             ($wizard.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)).Close()
@@ -1105,21 +1141,33 @@ function Invoke-LedgerStampProbe {
         $waited = 0
         while ($waited -lt 20) {
             $doc = Read-SettingsDoc -Path $settingsPath
-            $sha = Get-JsonMember -Doc $doc -Name 'runtimeLedgerSha256'
-            $stampedVersion = Get-JsonMember -Doc $doc -Name 'installedAppVersion'
+            $sha = Get-RuntimeStamp -Doc $doc -Member 'runtimeLedgers' -Variant $Variant
+            $stampedVersion = Get-RuntimeStamp -Doc $doc -Member 'installedAppVersions' -Variant $Variant
             if ((-not [string]::IsNullOrWhiteSpace([string]$sha)) -and
                 (-not [string]::IsNullOrWhiteSpace([string]$stampedVersion))) { break }
             Start-Sleep -Seconds 1
             $waited++
         }
         Write-Host ('[ledger] window version   = ' + $version)
-        Write-Host ('[ledger] runtimeLedgerSha256 = ' + $sha)
-        Write-Host ('[ledger] installedAppVersion = ' + $stampedVersion)
-        Add-Step 'settings.json is stamped with the runtime ledger sha256' (
-            ([string]$sha) -match '^[0-9a-fA-F]{64}$') ('runtimeLedgerSha256 = ' + $sha + ' after ' + $waited + ' s')
+        Write-Host ('[ledger] runtimeLedgers.' + $Variant + '        = ' + $sha)
+        Write-Host ('[ledger] installedAppVersions.' + $Variant + ' = ' + $stampedVersion)
+        Add-Step 'settings.json is stamped with the runtime ledger sha256 of THIS variant' (
+            ([string]$sha) -match '^[0-9a-fA-F]{64}$') (
+            'runtimeLedgers.' + $Variant + ' = ' + $sha + ' after ' + $waited + ' s')
         Add-Step 'settings.json is stamped with the version that was installed' (
             -not [string]::IsNullOrWhiteSpace([string]$stampedVersion)) (
-            'installedAppVersion = ' + $stampedVersion + ' :: window says ' + $version)
+            'installedAppVersions.' + $Variant + ' = ' + $stampedVersion + ' :: window says ' + $version)
+
+        # The stamp of a variant that was never built must NOT be there: one pair of scalars for the
+        # whole file is what made switching variants raise a false "rebuild the runtime" (convoy D (3)
+        # round three, high). Pick a name this release does not carry.
+        $otherVariant = 'cu126'
+        if ($Variant -eq 'cu126') { $otherVariant = 'cpu' }
+        $otherSha = Get-RuntimeStamp -Doc (Read-SettingsDoc -Path $settingsPath) `
+            -Member 'runtimeLedgers' -Variant $otherVariant
+        Add-Step 'the stamp of a variant that was never built is not written' (
+            [string]::IsNullOrWhiteSpace([string]$otherSha)) (
+            'runtimeLedgers.' + $otherVariant + ' = ' + $otherSha)
 
         $offerBefore = Test-RebuildOffer -Window $win -TimeoutSeconds 3
         Add-Step 'a ledger that still matches offers nothing' ($null -eq $offerBefore) (
@@ -1134,9 +1182,11 @@ function Invoke-LedgerStampProbe {
         if (([string]$sha) -notmatch '^[0-9a-fA-F]{64}$') {
             if (Test-Path -LiteralPath $ledgerPath) {
                 $sha = Get-Sha256Hex -Path $ledgerPath
-                $null = Set-SettingsValue -Path $settingsPath -Name 'runtimeLedgerSha256' -Value $sha
+                $null = Set-RuntimeStamp -Path $settingsPath -Member 'runtimeLedgers' `
+                    -Variant $Variant -Value $sha
                 $guessed = $true
-                Write-Host ('[ledger] the probe stamped runtimeLedgerSha256 = ' + $sha + ' by hand')
+                Write-Host ('[ledger] the probe stamped runtimeLedgers.' + $Variant + ' = ' + $sha +
+                    ' by hand')
             }
         }
 
@@ -1362,6 +1412,29 @@ function Set-SettingsValue {
     $doc = Read-SettingsDoc -Path $Path
     if ($null -eq $doc) { throw ('settings.json is not there: ' + $Path) }
     $doc | Add-Member -NotePropertyName $Name -NotePropertyValue $Value -Force
+    $json = $doc | ConvertTo-Json -Depth 8
+    [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding($false)))
+    return $Path
+}
+
+function Set-RuntimeStamp {
+    <#
+      .SYNOPSIS
+        Write ONE variant's entry into a per-variant table in settings.json (decisions 91).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Member,
+        [Parameter(Mandatory = $true)][string]$Variant,
+        [Parameter(Mandatory = $true)][string]$Value
+    )
+    $doc = Read-SettingsDoc -Path $Path
+    if ($null -eq $doc) { throw ('settings.json is not there: ' + $Path) }
+    $table = Get-JsonMember -Doc $doc -Name $Member
+    if ($null -eq $table) { $table = New-Object psobject }
+    $table | Add-Member -NotePropertyName $Variant -NotePropertyValue $Value -Force
+    $doc | Add-Member -NotePropertyName $Member -NotePropertyValue $table -Force
     $json = $doc | ConvertTo-Json -Depth 8
     [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding($false)))
     return $Path

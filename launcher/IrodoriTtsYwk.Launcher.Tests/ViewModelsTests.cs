@@ -1134,8 +1134,10 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
-    public void 写しの複写は全欄を移す()
+    public void 写しの複写は設定頁の欄だけを移す()
     {
+        // 是正・便 D（3）の 3 巡目（high）＝写しはウィザードより**前**に採られるので、
+        // ウィザードと他画面が持ち主の欄まで移すと「適用」1 押しでそれが巻き戻る。
         var from = new LauncherSettings
         {
             GpuUuid = "GPU-1",
@@ -1146,18 +1148,32 @@ public sealed class SettingsViewModelTests : IDisposable
             VoiceOrder = ["b"],
             LastTestVoice = "c",
         };
-        var to = new LauncherSettings();
+        var to = new LauncherSettings
+        {
+            VoiceOrder = ["z"],
+            LastTestVoice = "z",
+            FirstRunCompleted = true,
+            AcceptedNoticesSha256 = "sha",
+        };
+        to.SetRuntimeStamp(RuntimeVariants.Cpu, "0123456789abcdef", "v0.1.0");
 
         SettingsViewModel.CopyInto(from, to);
 
+        // 設定頁の欄は移る
         Assert.Equal("GPU-1", to.GpuUuid);
         Assert.Equal(RuntimeVariants.Cpu, to.Variant);
         Assert.Equal(18099, to.Port);
         Assert.Equal(["a"], to.WarmupVoices);
-        Assert.Equal(["b"], to.VoiceOrder);
-        Assert.Equal("c", to.LastTestVoice);
         // 参照ごと差し替えない（他の画面が握っている個体を保つ）
         Assert.NotSame(from.WarmupVoices, to.WarmupVoices);
+
+        // 他の持ち主の欄は**動かない**
+        Assert.Equal(["z"], to.VoiceOrder);
+        Assert.Equal("z", to.LastTestVoice);
+        Assert.True(to.FirstRunCompleted);
+        Assert.Equal("sha", to.AcceptedNoticesSha256);
+        Assert.Equal("0123456789abcdef", to.RuntimeLedgerFor(RuntimeVariants.Cpu));
+        Assert.Equal("v0.1.0", to.InstalledAppVersionFor(RuntimeVariants.Cpu));
     }
 
     public void Dispose()
@@ -1204,7 +1220,7 @@ public sealed class FirstRunViewModelTests : IDisposable
             new DriverRequirement(),
             static () => null,
             static () => null,
-            static () => Task.FromResult(false));
+            static _ => Task.FromResult(false));
 
     [Fact]
     public void 最初の段は通知で同意するまで進めない()
@@ -1257,7 +1273,7 @@ public sealed class FirstRunViewModelTests : IDisposable
             new DriverRequirement(),
             static () => null,
             static () => null,
-            static () => Task.FromResult(false));
+            static _ => Task.FromResult(false));
 
         Assert.Equal("通知の本文", vm.NoticesText);
         Assert.NotNull(vm.NoticesSha256);
