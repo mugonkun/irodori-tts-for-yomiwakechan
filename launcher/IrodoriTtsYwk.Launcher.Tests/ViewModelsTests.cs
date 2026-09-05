@@ -833,6 +833,8 @@ public sealed class StatusViewModelTests
     [Fact]
     public void 概算メモリはwav参照の数で決まる()
     {
+        // 便 D（2）＝主役は「1 名あたり」で、全員分は「同時に載せたときの上限」に落ちた
+        // （裁定 67 ⑵・low 13）。上限の値は wav 参照 1 名分＝潜在と参照なしは 0 のまま。
         var vm = Create();
         vm.ApplyVoices(
         [
@@ -841,7 +843,8 @@ public sealed class StatusViewModelTests
             new VoiceRow("b", "b", "b.wav", false, false, true, false, null),
         ]);
 
-        Assert.Contains("wav 参照 1 名", vm.VoiceMemoryText, StringComparison.Ordinal);
+        Assert.Contains("全部を同時に載せたときの上限 "
+            + UiText.Bytes(MemoryEstimate.WavReferenceBytes), vm.VoiceMemoryText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1300,8 +1303,10 @@ public sealed class FirstRunViewModelTests : IDisposable
             paths.LedgerPath("runtime-cpu"),
             """
             {"schema":1,"items":[
-              {"kind":"wheel","name":"a","url":"u","size":1048576},
-              {"kind":"wheel","name":"b","url":"u","size":1048576}]}
+              {"kind":"wheel","name":"a","url":"u","size":1048576,
+               "sha256":"0000000000000000000000000000000000000000000000000000000000000000"},
+              {"kind":"wheel","name":"b","url":"u","size":1048576,
+               "sha256":"0000000000000000000000000000000000000000000000000000000000000000"}]}
             """);
 
         // 見積りは FetchPlanner の計画そのもの＝取得の総量と**必要な空き**を出す
@@ -1310,7 +1315,8 @@ public sealed class FirstRunViewModelTests : IDisposable
             paths.LedgerPath("python-embed"),
             """
             {"schema":1,"items":[
-              {"kind":"python-embed","name":"python","url":"u","size":1048576}]}
+              {"kind":"python-embed","name":"python","url":"u","size":1048576,
+               "sha256":"0000000000000000000000000000000000000000000000000000000000000000"}]}
             """);
 
         var text = FirstRunViewModel.EstimateSizeText(paths, RuntimeVariants.Cpu);
@@ -1328,19 +1334,22 @@ public sealed class FirstRunViewModelTests : IDisposable
             paths.LedgerPath("python-embed"),
             """
             {"schema":1,"items":[
-              {"kind":"python-embed","name":"python","url":"u","size":1048576}]}
+              {"kind":"python-embed","name":"python","url":"u","size":1048576,
+               "sha256":"0000000000000000000000000000000000000000000000000000000000000000"}]}
             """);
         File.WriteAllText(
             paths.LedgerPath("runtime-cpu"),
             """
             {"schema":1,"items":[
-              {"kind":"wheel","name":"a","url":"u","size":1048576}]}
+              {"kind":"wheel","name":"a","url":"u","size":1048576,
+               "sha256":"0000000000000000000000000000000000000000000000000000000000000000"}]}
             """);
         File.WriteAllText(
             paths.LedgerPath("vc_redist"),
             """
             {"schema":1,"name":"vc-redist","items":[
               {"kind":"installer","name":"vc_redist.x64","url":"u","size":1048576,
+               "sha256":"0000000000000000000000000000000000000000000000000000000000000000",
                "silent_args":["/install","/quiet","/norestart"]}]}
             """);
 

@@ -179,12 +179,13 @@ public sealed class GpuEnumerationTests
     [InlineData(RuntimeVariants.Cu130, "591.86", true)]
     [InlineData(RuntimeVariants.Cu130, "580.00", true)]
     [InlineData(RuntimeVariants.Cu130, "579.99", false)]
-    [InlineData(RuntimeVariants.Cu126, "560.76", true)]
-    [InlineData(RuntimeVariants.Cu126, "560.75", false)]
+    [InlineData(RuntimeVariants.Cu126, "528.33", true)]
+    [InlineData(RuntimeVariants.Cu126, "528.32", false)]
+    [InlineData(RuntimeVariants.Cu126, "537.58", true)]
     [InlineData(RuntimeVariants.Cu126, "561", true)]
     public void ドライバの閾は変種ごとに決まる(string variant, string driver, bool ok)
     {
-        // 決定 4＝cu130 ≥ 580／cu126 ≥ 560.76（便 B の U-14 で更新するのはここ 1 箇所）
+        // 裁定 88 ⑵＝cu130 ≥ 580.00／cu126 ≥ 528.33（便 B の U-14 で 560.76 から改めた）
         var verdict = new DriverRequirement().Check(variant, driver);
 
         Assert.Equal(ok, verdict.Ok);

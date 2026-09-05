@@ -55,6 +55,13 @@
         <TextBlock AutomationProperties.AutomationId="StatusSettingsPendingText"
                    Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#606060"
                    Text="{Binding SettingsPendingText, Mode=OneWay}" />
+        <!--
+          起動の告知（裁定 88 ⑴⑵）＝門で断られた理由 1 行と、cu126 の「未実測の帯」などの
+          注意を**そのまま**出す（畳まない・言い換えない）。
+        -->
+        <TextBlock AutomationProperties.AutomationId="StatusNoticesText"
+                   Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#A05000"
+                   Text="{Binding NoticesText, Mode=OneWay}" />
       </StackPanel>
     </Border>
 
@@ -81,7 +88,11 @@
                  Style="{StaticResource ValueText}" Text="{Binding PrecomputeText, Mode=OneWay}" />
     </WrapPanel>
 
-    <!-- 4 行目＝GPU メモリ（裁定 67 ⑵⑶。/ywk/status.memory が無ければ「未対応」） -->
+    <!--
+      4 行目＝GPU メモリ（裁定 67 ⑵⑶・87 ⑴）。
+      使用量＝allocated・占有量＝reserved・GPU 全体＝gpu_used／gpu_total。
+      /ywk/status.memory が無ければ「未対応」・cpu なら「CPU（GPU メモリなし）」。
+    -->
     <Border x:Name="MemoryPanel" Grid.Row="3" Margin="0,10,0,0" Padding="10,8"
             Background="#F6F6F6" CornerRadius="4"
             AutomationProperties.AutomationId="StatusMemoryPanel">
@@ -92,12 +103,17 @@
                      Style="{StaticResource ValueText}" Text="{Binding MemoryText, Mode=OneWay}" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-          <TextBlock Text="参照ボイスの概算" Style="{StaticResource LabelText}" />
+          <TextBlock Text="潜在キャッシュ" Style="{StaticResource LabelText}" />
+          <TextBlock AutomationProperties.AutomationId="StatusLatentCacheText"
+                     Style="{StaticResource ValueText}" Text="{Binding LatentCacheText, Mode=OneWay}" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+          <TextBlock Text="参照ボイス" Style="{StaticResource LabelText}" />
           <TextBlock AutomationProperties.AutomationId="StatusVoiceMemoryText"
                      Style="{StaticResource ValueText}" Text="{Binding VoiceMemoryText, Mode=OneWay}" />
         </StackPanel>
         <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#666666" FontSize="11"
-                   Text="wav 参照の話者は載せるたびに 0.7 GB 級を使い、焼いた参照潜在（.pt）は増えません。数字は概算です。" />
+                   Text="使用量＝torch が使っている分・占有量＝torch が確保している分・GPU 全体＝他のプログラムを含めたカード全体の占有です。wav 参照の話者は載せるたびに 0.7 GB 級を使い、焼いた参照潜在（.pt）は増えません。" />
       </StackPanel>
     </Border>
 

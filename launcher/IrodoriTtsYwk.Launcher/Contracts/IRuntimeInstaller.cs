@@ -61,7 +61,19 @@ public sealed record InstallResult(
     int DistInfoCount,
     IReadOnlyList<string> DroppedPth,
     string? PthPath,
-    string? FailureReason);
+    string? FailureReason)
+{
+    /// <summary>
+    /// 畳み残った <c>&lt;name&gt;-&lt;ver&gt;.data</c>（<b>1 件でもあれば失敗</b>＝low 9）。
+    /// <para>
+    /// wheel の <c>.data</c> は <c>purelib</c>／<c>platlib</c> を 1 段上へ合流し、
+    /// <c>scripts</c>／<c>headers</c>／<c>data</c> を捨てれば空になる。空にならなかった＝
+    /// <b>知らない小分類が入っていた</b>ということで、<c>import</c> の路に乗らない檔が
+    /// site-packages に残る。黙って成功を名乗らず、名前を挙げて落とす。
+    /// </para>
+    /// </summary>
+    public IReadOnlyList<string> DataResidue { get; init; } = [];
+}
 
 /// <summary>
 /// 契約 ⑶＝取得した原檔を変種ディレクトリへ組み上げる。<b>参照実装は

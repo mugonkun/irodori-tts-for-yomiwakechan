@@ -34,21 +34,32 @@ public static class TorchGpuProbe
     /// <summary>
     /// 列挙の台本（ASCII のみ・依存は torch と標準ライブラリだけ）。
     /// <b>何も載せない・何も書かない</b>＝<c>get_device_properties</c> を読むだけ。
+    /// <para>
+    /// <b><c>is_available()</c> と <c>device_count()</c> を別々に載せる</b>（裁定 80・88 ⑴）＝
+    /// cu130 は古いドライバでも <c>import torch</c> が通るので、import の成否では変種の可否を決められない。
+    /// 実射（RTX 3090・ドライバ 537.58）では cu130 が
+    /// <c>cudaGetDeviceCount() returned cudaErrorNotSupported</c>＝<c>is_available=False</c>・
+    /// <c>device_count=0</c> になり、それでも <c>/health</c> は 200 を返し
+    /// <b>最初の合成でプロセスが 0xC0000005 で消えた</b>（裁定 83）。
+    /// </para>
     /// </summary>
     public const string Script = """
 import json
 import sys
 
-out = {"ok": False, "torch": None, "cuda": None, "hip": None, "count": 0, "devices": [], "error": None}
+out = {"ok": False, "torch": None, "cuda": None, "hip": None, "available": False,
+       "count": 0, "devices": [], "error": None}
 try:
     import torch
 
     out["torch"] = torch.__version__
     out["cuda"] = torch.version.cuda
     out["hip"] = torch.version.hip
-    if torch.cuda.is_available():
-        count = torch.cuda.device_count()
-        out["count"] = count
+    available = bool(torch.cuda.is_available())
+    out["available"] = available
+    count = int(torch.cuda.device_count())
+    out["count"] = count
+    if available:
         for i in range(count):
             p = torch.cuda.get_device_properties(i)
             out["devices"].append({
@@ -126,7 +137,20 @@ sys.stdout.flush()
                 }
             }
 
-            return new TorchProbeResult(gpus, torch, cuda, hip, error);
+            var count = root.TryGetProperty("count", out var countValue)
+                        && countValue.ValueKind == JsonValueKind.Number
+                        && countValue.TryGetInt32(out var parsedCount)
+                ? parsedCount
+                : gpus.Count;
+
+            // `available` を載せない古い出力（便 D 1 巡目の台本）も読めるようにしておく＝
+            // 欄が無ければ「1 台でも数えられたなら使える」と読む。
+            var available = root.TryGetProperty("available", out var availableValue)
+                            && availableValue.ValueKind is JsonValueKind.True or JsonValueKind.False
+                ? availableValue.GetBoolean()
+                : count > 0 || gpus.Count > 0;
+
+            return new TorchProbeResult(gpus, torch, cuda, hip, error, available, count);
         }
         catch (JsonException ex)
         {
@@ -160,15 +184,28 @@ sys.stdout.flush()
     /// <param name="CudaVersion"><c>torch.version.cuda</c>（ROCm ビルドは null）。</param>
     /// <param name="HipVersion"><c>torch.version.hip</c>（CUDA ビルドは null）。</param>
     /// <param name="Error">読めなかった・torch が落ちた理由 1 行。</param>
+    /// <param name="Available"><c>torch.cuda.is_available()</c>（<b>変種の門の一次入力</b>＝裁定 88 ⑴）。</param>
+    /// <param name="DeviceCount"><c>torch.cuda.device_count()</c>（同上）。</param>
     public sealed record TorchProbeResult(
         IReadOnlyList<GpuInfo> Gpus,
         string? TorchVersion,
         string? CudaVersion,
         string? HipVersion,
-        string? Error)
+        string? Error,
+        bool Available = false,
+        int DeviceCount = 0)
     {
         /// <summary>ROCm ビルドか（<c>hip</c> が読めた＝Radeon 機）。</summary>
         public bool IsRocmBuild => !string.IsNullOrWhiteSpace(HipVersion);
+
+        /// <summary>
+        /// 台本そのものが走ったか（<c>error</c> が無い＝torch を import して問い合わせられた）。
+        /// 偽なら <see cref="Available"/> は「見ていない」であって「無い」ではない。
+        /// </summary>
+        public bool Observed => Error is null;
+
+        /// <summary>この変種で GPU を掴めるか（<b>門の判定そのもの</b>）。</summary>
+        public bool GpuUsable => Observed && Available && DeviceCount > 0;
 
         /// <summary>UI に出す 1 行（版の告知）。</summary>
         public string Describe() =>

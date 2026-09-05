@@ -171,8 +171,8 @@ launcher/IrodoriTtsYwk.Launcher/
 |---|---|
 | 窓 | `MainWindow`・`MainTabs`・`MainStartButton`・`MainStopButton`・`MainFirstRunButton`・`MainStateText`・`MainEndpointText`・`MainVersionText`・`MainHeaderText` |
 | タブ | `TabStatus`・`TabVoices`・`TabTry`・`TabSettings`・`TabAbout` |
-| 状態 | `StatusStateText`・`StatusReasonText`・`StatusGpuText`・`StatusVariantText`・`StatusEndpointText`・`StatusDeviceText`・`StatusWarmupText`・`StatusPrecomputeText`・`StatusMemoryPanel`／`StatusMemoryText`・`StatusVoiceMemoryText`・`StatusLogBox`・`StatusUpstreamMismatchText` |
-| 話者 | `VoicesGrid`・`VoicesBrowseButton`・`VoicesSourcePathBox`・`VoicesNewNameBox`・`VoicesNewCaptionBox`・`VoicesAddButton`・`VoicesPreviewButton`・`VoicesStopPreviewButton`・`VoicesRemoveButton`・`VoicesRefreshButton`・`VoicesPrecomputeButton`・`VoicesMessageText` |
+| 状態 | `StatusStateText`・`StatusReasonText`・`StatusGpuText`・`StatusVariantText`・`StatusEndpointText`・`StatusDeviceText`・`StatusWarmupText`・`StatusPrecomputeText`・`StatusMemoryPanel`／`StatusMemoryText`・**`StatusLatentCacheText`**・`StatusVoiceMemoryText`・**`StatusNoticesText`**・`StatusLogBox`・`StatusUpstreamMismatchText` |
+| 話者 | `VoicesGrid`・`VoicesBrowseButton`・`VoicesSourcePathBox`・`VoicesNewNameBox`・`VoicesNewCaptionBox`・`VoicesAddButton`・`VoicesPreviewButton`・`VoicesStopPreviewButton`・`VoicesRemoveButton`・`VoicesRefreshButton`・`VoicesPrecomputeButton`・`VoicesSelectedMemoryText`・**`VoicesPreviewBlockedText`**・**`VoicesRemoveBlockedText`**・`VoicesMessageText` |
 | 試し撃ち | `TryInputBox`・`TryInputLengthText`・`TryVoiceCombo`・`TryStepsPreset10`／`TryStepsPreset40`／`TryStepsBox`・`TryCaptionBox`・`TryCfgTextBox`／`TryCfgCaptionBox`／`TryCfgSpeakerBox`・`TrySpeedBox`・`TrySeedBox`・`TrySynthesizeButton`・`TryReplayButton`・`TryStopButton`・`TrySaveButton`・`TryResultText`・`TryMessageText` |
 | 設定 | `SettingsGpuCombo`・`SettingsRefreshGpuButton`・`SettingsDriverText`・`SettingsVariantCombo`・`SettingsPrecisionCombo`・`SettingsPortBox`・`SettingsWarmupCheck`／`SettingsWarmupStagesBox`／`SettingsWarmupVoicesBox`・`SettingsPrecomputeCheck`・`SettingsEmptyCacheBox`・`SettingsAutoStartCheck`・`SettingsShowMemoryCheck`・`SettingsReadyTimeoutBox`・`SettingsDataDirText`／`SettingsModelDirText`／`SettingsVoicesDirText`／`SettingsRuntimeRootText`／`SettingsAppDirText`・`SettingsApplyButton`／`SettingsRevertButton`・`SettingsMessageText` |
 | このアプリについて | `AboutDisclaimerText`・`AboutVersionText`・`AboutUpstreamText`・`AboutWatermarkText`・`AboutEthicsText`・`AboutLicensesDirText`・`AboutNoticesPathText`・`AboutLicenseList` |
@@ -209,3 +209,109 @@ dotnet test  launcher\IrodoriTtsYwk.sln --nologo   # 356 本（うち L3 が 130
 `autoStartServer:false`・`port:18094` の `settings.json` を置き、`YWK_LAUNCHER_RUNTIME_DIR` を
 **渡さずに**（＝`python.exe` が見つからず子プロセスが起きない形で）立てた。**8088・18088・7861 を
 含めどのポートも開いていないこと**を `Get-NetTCPConnection` で確認し、終わったらツリー kill した。
+
+## 9. 画面の 2 巡目（2026-09-05・便 D（2）・画面席 LB）
+
+> §8 は起動席（LB は §9 を使う）。**この節も実装の逐語**であって §1〜§7 の設計を覆さない。
+
+### 9-1 GPU メモリの帯（裁定 87 ⑴・67 ⑵⑶）
+
+`/ywk/status.memory` の欄が確定したので `Contracts/WrapperResponses.MemoryStatus` を
+**11 欄**（`device`・`allocated`・`reserved`・`max`・`gpu_total`・`gpu_free`・`gpu_used`・
+`latents`・`latents_total`・`sampled_at`・`error`）に合わせた。画面の読み替えは
+
+| 画面の語 | 欄 | 出所 |
+|---|---|---|
+| **使用量** | `allocated` | torch の allocator（**このプロセス**） |
+| **占有量** | `reserved` | 同上 |
+| **GPU 全体** | `gpu_used` / `gpu_total` | `mem_get_info`（**カード全体・他プロセス込み**） |
+
+`null` は `—`（0 と混ぜない）・`device` が `cpu` なら「CPU（GPU メモリなし）」・欄ごと無ければ
+「未対応」。`sampled_at` は**文字列のまま**持つ（地域設定で揺らさない）。
+
+### 9-2 概算は「1 名あたり」が主役（low 13）
+
+状態帯は `1 名あたり「<話者>」＝…（全員分＝全部を同時に載せたときの上限 …）`。
+**焼いてある話者は `memory.latents[<id>]` の実サイズ**（「実測」と書く）で、焼いていなければ
+係数 0.70 GB に「実測前の概算」を添える。話者一覧の「メモリ（1 名あたり）」列も同じ 1 行である。
+
+### 9-3 潜在キャッシュ（裁定 67 ⑴）
+
+設定の `SettingsPrecomputeCheck`（三値＝中間は変種の既定）を状態帯が
+`潜在キャッシュ ON／OFF（焼いた話者 n 名・合計 m MB）`（`StatusLatentCacheText`）で受ける。
+件数と合計は `memory.latents` が正本で、口が無ければ一覧の `latent` の数だけを名乗る（合計は `—`）。
+
+### 9-4 窓は `/ywk/status` を叩かない（low 3）
+
+`MainWindow` の `DispatcherTimer` を落とし、`IServerProcess.LatestStatus`／`StatusSampled` を
+読むだけにした。**状態の書き手は状態機械 1 本**＝`Warming` の出入りも窓は書かない
+（`MainViewModel.ApplyStatusSample` は描くだけ）。
+
+### 9-5 試聴は wav だけ・削除は Command（low 11・14）
+
+`VoiceRow.CanPreview` は `.wav` のときだけ真。押せない理由（`PreviewBlockedReason`）は
+ボタンの `AutomationProperties.HelpText`・`ToolTip`・1 行の表示（`VoicesPreviewBlockedText`）の
+3 箇所に同じ文言で出る。削除も `RemoveCommand` に寄せ（確認窓は View が
+`VoicesViewModel.ConfirmRemove` に差す）、理由は `VoicesRemoveBlockedText` から読める。
+一覧の見出しは **「表示名（＝話者 id）」と「参照 wav の檔名」**（`HeaderTemplate` の `ToolTip` 付き）。
+
+### 9-6 実測（この機体・rocm-gfx1151・私設ポート 18098・**8088／7861／18088 は無傷**）
+
+```
+[ready] ok=True text=待機 seconds=26.53
+[band] StatusDeviceText      = cuda:0／AMD Radeon(TM) 8060S Graphics（gfx1151）／bf16
+[band] StatusMemoryText      = 使用量 1.73 GB／占有量 2.07 GB／GPU 全体 2.33 GB / 99.74 GB（最大 3.01 GB）
+[band] StatusLatentCacheText = ON（焼いた話者 0 名・合計 0 B）
+[band] StatusVoiceMemoryText = 1 名あたり「デフォルト」＝参照なし（増えません）（全員分＝全部を同時に載せたときの上限 7.70 GB）
+[stop] private port listening = False / python 残骸 0
+```
+
+## 10. 統合の 2 巡目（2026-09-05・便 D（2）・統合席）
+
+> §8 は起動席・§9 は画面席。**この節も実装の逐語**であって §1〜§7 の設計を覆さない。
+> 詳細と実射の逐語は `docs/design/ben-d-launcher.md` §19。
+
+### 10-1 席と席の間に落ちていた 3 つ
+
+1. **窓が変種の門に入力を渡していなかった**＝`MainViewModel.StartServerAsync` は
+   `ServerLaunchPlan.Build` を通すようになり、`Variant`（台帳の綴り）・`DriverVersion`
+   （`GpuEnumerator.DriverVersionOf`）・`InstalledVariants`（`VariantGate.DetectInstalled`）を載せる。
+   載せる前は門が env の `YWK_VARIANT`（cu130 と cu126 が `cuda` に畳まれた名）で代用していたので、
+   **断れても勧める先が `cpu` に落ちた**。実射＝`cu130 はこの機体で GPU を見られません
+   （is_available=False・device_count=0）。rocm-gfx1151 か cpu の変種に切り替えてください。`
+2. **写したプリセットが上流の別名表に入っていなかった**＝`LauncherComposition.PrepareVoices`
+   （新設・**テストの継ぎ目は public**）が、移送→初回展開→**`voices.json` の書き出し**まで通す。
+   `PresetVoices` が書くのはランチャの台帳（`voices.ywk.json`）だけなので、これが無いと
+   **11 名は画面に見えるのに合成できない**（`GET /v1/audio/voices` にも試し撃ちの候補にも出ない）。
+3. **走行中で断られた焼きを出し直していなかった**＝`VoicesViewModel` が
+   **409 `ywk_precompute_running`**（機械可読な code で判定・文言では見ない）で断られた話者を覚え、
+   `MainViewModel.ApplyStatusSample` が配る `/ywk/status.precompute` が走行中でなくなった標本で
+   **1 度だけ**出し直す。`rocm-*` は ready の直後にプリセット 11 名を焼くので、その最中に足した
+   話者はここを通らないと永久に「未」のままだった。
+
+### 10-2 無人検分は 57 段（`probe/d-launch-probe.ps1`）
+
+1 巡目の 31 段に、裁定 87・88 の 26 段を足した＝**変種の門**（別個体・私設ポート 18099・
+子プロセス 0）・**プリセット 11 名の 4 箇所突合**・**削除の押せない理由（`HelpText` と表示が同文言）**・
+**GPU メモリの 4 数**・**潜在キャッシュの ON/OFF と件数**・**概算 → 実測の切り替わり**・
+**死活 2 種**（待機中の kill／合成中の kill）。`-GateOnly` で門だけ 6 秒で撃てる。
+
+```
+pwsh -File probe/d-launch-probe.ps1 -Port 18094 -GatePort 18099          # 0 failure(s) of 57
+pwsh -File probe/d-launch-probe.ps1 -Exe build/out/launcher/win-x64/IrodoriTtsYwk.Launcher.exe `
+     -Port 18095 -GatePort 18099 -DataDir $env:TEMP\ywk-d-launch-probe-exe   # 0 failure(s) of 57
+```
+
+### 10-3 検分（この機体・2026-09-05）
+
+```powershell
+dotnet build launcher\IrodoriTtsYwk.sln --nologo   # 警告 0・エラー 0
+dotnet test  launcher\IrodoriTtsYwk.sln --nologo   # 476 本（統合席の新規 9 本を含む）
+pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB）・EXIT=0
+```
+
+実射の逐語＝起動 → 待機 **27.6 s**（2 度目以降 23.2 s）・門の拒否 **2.95 s**・
+待機中の kill から「失敗」まで **0.31 s**・合成中の kill から「サーバが落ちました」まで **0.39 s**・
+`使用量 1.74 GB／占有量 2.06 GB／GPU 全体 2.36 GB / 99.74 GB（最大 3.64 GB）`・
+`ON（焼いた話者 12 名・合計 1.2 MB）`・`1 名あたり＝潜在参照（実測 113.4 KB）`。
+**8088・7861・18088 は一度も起こしていない**（私設ポートは 18094／18095／18099 だけ）。

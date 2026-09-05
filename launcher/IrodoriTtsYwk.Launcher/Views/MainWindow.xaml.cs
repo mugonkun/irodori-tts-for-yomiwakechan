@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Threading;
 using IrodoriTtsYwk.Launcher.Audio;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.ViewModels;
@@ -9,8 +8,15 @@ using IrodoriTtsYwk.Launcher.ViewModels;
 namespace IrodoriTtsYwk.Launcher.Views;
 
 /// <summary>
-/// 主窓。<b>持つのは 4 つだけ</b>＝⑴ ViewModel の組み立て ⑵ 子プロセスの事象を UI スレッドへ
-/// 渡す marshal ⑶ <c>/ywk/status</c> を定期に読む時計 ⑷ 初回取得ウィザードの開閉。
+/// 主窓。<b>持つのは 3 つだけ</b>＝⑴ ViewModel の組み立て ⑵ 子プロセスの事象を UI スレッドへ
+/// 渡す marshal ⑶ 初回取得ウィザードの開閉。
+/// <para>
+/// <b>窓は <c>/ywk/status</c> を叩かない</b>（low 3・裁定 88 ⑶）＝見張りは
+/// <see cref="IServerProcess"/> の 1 本に寄せ、窓はその標本
+/// （<see cref="IServerProcess.LatestStatus"/>／<see cref="IServerProcess.StatusSampled"/>）を
+/// 読むだけである。時計（<c>DispatcherTimer</c>）は無くなった＝2 秒ごとの GET が生む
+/// uvicorn の access log も、窓と状態機械の二重の書き手も消える。
+/// </para>
 /// <para>
 /// 判断も文言も <see cref="MainViewModel"/> 以下に在る。窓の × は閉じずにトレイへ隠す
 /// （常駐が主・裁定 6）。
@@ -18,12 +24,8 @@ namespace IrodoriTtsYwk.Launcher.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
-    /// <summary>状態を読む間隔（暖機の進みが見える程度に短く・要求は軽い）。</summary>
-    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
-
     private readonly IAudioPlayer _player = new NAudioPlayer();
     private readonly MainViewModel _model;
-    private readonly DispatcherTimer _timer;
     private bool _firstRunShown;
 
     public MainWindow()
@@ -57,11 +59,9 @@ public partial class MainWindow : Window
 
         AppServices.Server.StateChanged += OnServerStateChanged;
         AppServices.Server.LogLine += OnServerLogLine;
+        AppServices.Server.StatusSampled += OnStatusSampled;
         _model.ApplyServerState(AppServices.Server.State, AppServices.Server.FailureReason);
-
-        _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = PollInterval };
-        _timer.Tick += OnTick;
-        _timer.Start();
+        _model.ApplyStatusSample(AppServices.Server.LatestStatus);
 
         Loaded += OnLoaded;
     }
@@ -80,9 +80,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        _timer.Stop();
         AppServices.Server.StateChanged -= OnServerStateChanged;
         AppServices.Server.LogLine -= OnServerLogLine;
+        AppServices.Server.StatusSampled -= OnStatusSampled;
         _player.Dispose();
         base.OnClosing(e);
     }
@@ -124,5 +124,7 @@ public partial class MainWindow : Window
     private void OnServerLogLine(object? sender, ServerLogLineEventArgs e) =>
         Dispatcher.BeginInvoke(() => _model.AppendLog(e.Event.Line));
 
-    private void OnTick(object? sender, EventArgs e) => _ = _model.PollStatusAsync();
+    /// <summary>見張りが採った <c>/ywk/status</c> の標本（窓は読むだけ＝low 3）。</summary>
+    private void OnStatusSampled(object? sender, StatusResponse e) =>
+        Dispatcher.BeginInvoke(() => _model.ApplyStatusSample(e));
 }

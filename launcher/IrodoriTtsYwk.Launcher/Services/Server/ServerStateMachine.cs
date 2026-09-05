@@ -120,8 +120,17 @@ public sealed class ServerStateMachine
 {
     /// <summary>
     /// Ready／Warming から降ろすまでに要る「届かない」標本の数（是正・2026-09-05）。
-    /// 見張りは 2 秒間隔なので 3 標本＝約 6 秒。プロセスが生きていても応答が消えた個体
-    /// （HIP のハング・event loop の詰まり）を「待機」のまま放置しない。
+    /// プロセスが生きていても応答が消えた個体（HIP のハング・event loop の詰まり）を
+    /// 「待機」のまま放置しない。
+    /// <para>
+    /// <b>実効は「見張りの間隔＋1 標本の代金」×この数</b>（是正・便 D（2）＝1 巡目の註は
+    /// 「2 秒間隔なので 3 標本＝約 6 秒」と書いていたが、<b>1 標本そのものが只ではない</b>）。
+    /// 誰も listen していない相手への HTTP は 1 本 2.0 秒（実測）かかり、1 巡目の 1 標本は
+    /// <c>/ywk/status</c> と <c>/health</c> の 2 本＝4.0 秒だったので、
+    /// <b>実測は 18.0 秒</b>だった。⒜ 応答が 1 つも返らない相手に 2 本目を撃たない
+    /// ⒝ 接続の期限 1.5 秒（<c>WrapperClient.ConnectTimeout</c>）の 2 つで
+    /// <b>1 標本 1.5 秒・降ろすまで 10.5 秒</b>（実測）になった。
+    /// </para>
     /// </summary>
     public const int UnreachableSamplesToDowngrade = 3;
 
@@ -134,6 +143,20 @@ public sealed class ServerStateMachine
     private int _unreachable;
 
     public ServerState State { get; private set; } = ServerState.Stopped;
+
+    /// <summary>
+    /// <b>自分の子が <c>Uvicorn running on …</c> を吐いたか</b>（是正・便 D（2））。
+    /// <para>
+    /// bind 失敗の検知を切る条件は「listen した」ではなく<b>「自分の子が listen した」</b>である。
+    /// wrapper は <c>preload=true</c> でモデルを載せてから bind する（この機体で 20〜28 s）ので、
+    /// その窓の間に<b>他人が同じポートを握る</b>と、ランチャは他人の <c>/ywk/status</c> を読んで
+    /// <c>Listening</c>／<c>Ready</c> へ上がってしまう。1 巡目はそこで検知を切っていたため、
+    /// 後から流れてくる<b>自分の子の bind 失敗の行を無視した</b>（実射＝他席の HttpListener が
+    /// 18098 を握った走行で「10.1 s で待機」＝清浄な走行の 27.5〜27.8 s の 3 分の 1）。
+    /// この印は<b>子の口（pipe）から来た行でしか立たない</b>ので、他人の応答では立たない。
+    /// </para>
+    /// </summary>
+    public bool OwnListenLineSeen { get; private set; }
 
     /// <summary>
     /// <c>runtime loaded in</c> を見たか（<b>Ready の根拠にはしない</b>＝印だけ）。
@@ -169,6 +192,7 @@ public sealed class ServerStateMachine
             LastStderrLine = null;
             DeviceActual = null;
             RuntimeLoadedSeen = false;
+            OwnListenLineSeen = false;
             _unreachable = 0;
         }
     }
@@ -203,9 +227,18 @@ public sealed class ServerStateMachine
                 RuntimeLoadedSeen = true;
             }
 
-            // bind 失敗は listen する前にしか来ない。listen した後も掛け続けると、
+            if (read.Signal == ServerLogSignal.Listening)
+            {
+                // **自分の子**が bind した（この行は子の口からしか来ない）。
+                OwnListenLineSeen = true;
+            }
+
+            // bind 失敗は自分の子が listen する前にしか来ない。listen した後も掛け続けると、
             // 走行中の 1 行（OOM・access log・所要）が状態を Failed へ落としうる。
-            if (State < ServerState.Listening && ServerBindFailure.Detect(line))
+            // **切る条件は状態ではなく「自分の子の Uvicorn の行を見たか」**（是正・便 D（2））＝
+            // 他人が同じポートを握っていると状態だけが先に上がり、後から来る子の bind 失敗を
+            // 取りこぼした（<see cref="OwnListenLineSeen"/> の註）。
+            if (!OwnListenLineSeen && ServerBindFailure.Detect(line))
             {
                 changed = MoveToUnlocked(ServerState.Failed, ServerBindFailure.Message(port));
             }

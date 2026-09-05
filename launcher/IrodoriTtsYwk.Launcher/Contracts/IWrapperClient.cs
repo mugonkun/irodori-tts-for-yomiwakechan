@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -90,10 +91,22 @@ public sealed record WarmupRequest(
     IReadOnlyList<string>? Voices = null,
     string? Text = null);
 
+/// <summary>
+/// <c>POST /ywk/warmup</c> の応答（契約 ⑺ 7-2＝<b>202</b>）。
+/// <para>
+/// <b>欄名は属性で書く</b>（裁定 87 ⑶）＝<c>WrapperClient.JsonOptions</c> の
+/// <c>SnakeCaseLower</c> に頼ると、<c>shots_total</c> のように綴りが規則どおりの間は読めても、
+/// 規則に乗らない欄（<c>ref_wav</c>／<c>gcn_arch</c> のような綴り）を足した日に<b>黙って null</b> になる。
+/// 契約側に書いてあれば、命名方針を外した読み手でも同じ物が読める。
+/// </para>
+/// </summary>
 /// <param name="Id">走行の id（<c>DELETE /ywk/warmup/{id}</c> に渡す）。</param>
 /// <param name="ShotsTotal"><c>len(stages)+len(voices)</c>。</param>
 /// <param name="State">受理直後は <c>running</c>。</param>
-public sealed record WarmupStartResult(string? Id, int? ShotsTotal, string? State);
+public sealed record WarmupStartResult(
+    [property: JsonPropertyName("id")] string? Id,
+    [property: JsonPropertyName("shots_total")] int? ShotsTotal,
+    [property: JsonPropertyName("state")] string? State);
 
 /// <summary>
 /// <c>POST /ywk/voices/precompute</c> の body（契約 ⑺ 7-3）。
@@ -107,15 +120,23 @@ public sealed record PrecomputeRequest(
     bool? All = null,
     bool? Force = null);
 
+/// <summary><c>POST /ywk/voices/precompute</c> の応答（契約 ⑺ 7-3＝<b>202</b>・欄名は裁定 87 ⑶）。</summary>
 /// <param name="Id">走行の id。</param>
 /// <param name="Total">焼く件数。</param>
 /// <param name="State">受理直後は <c>running</c>。</param>
-public sealed record PrecomputeStartResult(string? Id, int? Total, string? State);
+public sealed record PrecomputeStartResult(
+    [property: JsonPropertyName("id")] string? Id,
+    [property: JsonPropertyName("total")] int? Total,
+    [property: JsonPropertyName("state")] string? State);
 
+/// <summary>暖機／事前計算の取消の応答（契約 ⑺ 7-2・7-3・欄名は裁定 87 ⑶）。</summary>
 /// <param name="Id">止めた走行。</param>
 /// <param name="State">止めた時点の state。</param>
 /// <param name="CancelRequested">取消が受理されたか。</param>
-public sealed record CancelResult(string? Id, string? State, bool? CancelRequested);
+public sealed record CancelResult(
+    [property: JsonPropertyName("id")] string? Id,
+    [property: JsonPropertyName("state")] string? State,
+    [property: JsonPropertyName("cancel_requested")] bool? CancelRequested);
 
 /// <summary>
 /// <c>DELETE /ywk/voices/{話者 id}/latent</c> の応答（契約 ⑺ 7-3・⑷ 4-3）。
@@ -131,10 +152,10 @@ public sealed record CancelResult(string? Id, string? State, bool? CancelRequest
 /// <param name="Alias">別名がどうなったか（<c>ref_wav</c>／<c>ref_wavs</c>／<c>removed</c>／<c>unchanged</c>）。</param>
 /// <param name="Removed">実際に消えた檔。</param>
 public sealed record DropLatentResult(
-    string? Id,
-    string? State,
-    string? Alias,
-    IReadOnlyList<string> Removed);
+    [property: JsonPropertyName("id")] string? Id,
+    [property: JsonPropertyName("state")] string? State,
+    [property: JsonPropertyName("alias")] string? Alias,
+    [property: JsonPropertyName("removed")] IReadOnlyList<string> Removed);
 
 /// <summary>
 /// 契約 ⑸＝wrapper の HTTP 口（<c>docs/contract.md</c> の写し）。

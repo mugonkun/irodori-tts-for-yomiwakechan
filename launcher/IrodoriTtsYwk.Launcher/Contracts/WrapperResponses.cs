@@ -187,22 +187,106 @@ public sealed record PrecomputeStatus
 }
 
 /// <summary>
-/// <c>/ywk/status.memory</c>（裁定 67 ⑶）。<b>便 C（2）が wrapper に足している最中</b>＝
-/// <b>欄が無い応答にも耐える</b>（すべて null 許容・生の JSON も残す）。
-/// 値は torch の allocated／reserved／max。OS 側の GPU Process Memory は性能カウンタから読む
-/// （ランチャ側の仕事＝この型には入らない）。
+/// <c>/ywk/status.memory</c>（<b>裁定 87 ⑴ で欄が確定した</b>・裁定 67 ⑶）。
+/// <b>単位はすべてバイト</b>。
+/// <list type="bullet">
+/// <item><see cref="AllocatedBytes"/>／<see cref="ReservedBytes"/>／<see cref="MaxAllocatedBytes"/>
+/// ＝torch の allocator（<c>memory_allocated</c>／<c>memory_reserved</c>／
+/// <c>max_memory_allocated</c>）。<b>画面では 使用量＝allocated・占有量＝reserved</b>。</item>
+/// <item><see cref="GpuTotalBytes"/>／<see cref="GpuFreeBytes"/>＝<c>torch.cuda.mem_get_info</c>
+/// （ROCm も同じ口）。<see cref="GpuUsedBytes"/>＝<c>total − free</c>＝
+/// <b>カード全体の占有（他プロセス込み）</b>。</item>
+/// <item><see cref="Latents"/>＝<c>latents/&lt;stem&gt;.pt</c> の実サイズを話者 id で引く表
+/// （<b>焼いていない話者は載らない</b>）。<see cref="LatentsTotalBytes"/> はその合計。</item>
+/// </list>
+/// <para>
+/// <b><see cref="Device"/> が <c>cpu</c> か未読込のときは数値欄が全部 null</b>で
+/// <see cref="Latents"/> だけが来る（裁定 87 ⑴）＝欄の欠けを「0」と読まないために、
+/// 数値はすべて null 許容のままにしてある。
+/// </para>
 /// </summary>
 public sealed record MemoryStatus
 {
+    /// <summary><c>cuda:0</c>／<c>cpu</c>／未読込なら null。</summary>
+    [JsonPropertyName("device")] public string? Device { get; init; }
+
+    /// <summary>torch の <c>memory_allocated</c>＝画面の<b>使用量</b>。</summary>
     [JsonPropertyName("allocated")] public long? AllocatedBytes { get; init; }
 
+    /// <summary>torch の <c>memory_reserved</c>＝画面の<b>占有量</b>。</summary>
     [JsonPropertyName("reserved")] public long? ReservedBytes { get; init; }
 
+    /// <summary>torch の <c>max_memory_allocated</c>。</summary>
     [JsonPropertyName("max")] public long? MaxAllocatedBytes { get; init; }
 
-    /// <summary>話者ごとの潜在の大きさ（欄名は便 C（2）の実装で確定＝無ければ空）。</summary>
+    /// <summary><c>mem_get_info</c> の total（カード全体）。</summary>
+    [JsonPropertyName("gpu_total")] public long? GpuTotalBytes { get; init; }
+
+    /// <summary><c>mem_get_info</c> の free。</summary>
+    [JsonPropertyName("gpu_free")] public long? GpuFreeBytes { get; init; }
+
+    /// <summary><c>total − free</c>＝カード全体の占有（<b>他プロセス込み</b>）。</summary>
+    [JsonPropertyName("gpu_used")] public long? GpuUsedBytes { get; init; }
+
+    /// <summary>話者 id → 焼いた <c>.pt</c> の実サイズ（焼いていない話者は載らない）。</summary>
     [JsonPropertyName("latents")] public IReadOnlyDictionary<string, long> Latents { get; init; } =
         new Dictionary<string, long>(StringComparer.Ordinal);
+
+    /// <summary><see cref="Latents"/> の合計。</summary>
+    [JsonPropertyName("latents_total")] public long? LatentsTotalBytes { get; init; }
+
+    /// <summary>採った時刻（ISO 8601 の<b>文字列のまま</b>持つ＝地域設定で揺らさない）。</summary>
+    [JsonPropertyName("sampled_at")] public string? SampledAt { get; init; }
+
+    /// <summary>読めなかった理由 1 行（読めていれば null）。</summary>
+    [JsonPropertyName("error")] public string? Error { get; init; }
+
+    /// <summary>CPU で走っている（GPU メモリの欄は出ない＝裁定 87 ⑴）。</summary>
+    public bool IsCpu => Device is not null
+        && Device.Trim().StartsWith("cpu", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>torch と mem_get_info の数値がひとつでも来ているか。</summary>
+    public bool HasNumbers => AllocatedBytes is not null || ReservedBytes is not null
+        || MaxAllocatedBytes is not null || GpuTotalBytes is not null
+        || GpuFreeBytes is not null || GpuUsedBytes is not null;
+
+    /// <summary>
+    /// カード全体の占有（<c>gpu_used</c>。欄が無ければ <c>total − free</c> から起こす）。
+    /// </summary>
+    public long? EffectiveGpuUsed => GpuUsedBytes
+        ?? (GpuTotalBytes is long total && GpuFreeBytes is long free ? total - free : null);
+
+    /// <summary>焼いてある話者の数（<see cref="Latents"/> の件数）。</summary>
+    public int LatentCount => Latents.Count;
+
+    /// <summary>焼いた潜在の合計（<c>latents_total</c>。無ければ表から足す）。</summary>
+    public long? EffectiveLatentsTotal
+    {
+        get
+        {
+            if (LatentsTotalBytes is long total)
+            {
+                return total;
+            }
+
+            if (Latents.Count == 0)
+            {
+                return null;
+            }
+
+            var sum = 0L;
+            foreach (var value in Latents.Values)
+            {
+                sum += value;
+            }
+
+            return sum;
+        }
+    }
+
+    /// <summary>この話者の焼いた潜在の実サイズ（焼いていなければ null）。</summary>
+    public long? LatentBytesFor(string? voiceId) =>
+        voiceId is not null && Latents.TryGetValue(voiceId, out var bytes) ? bytes : null;
 }
 
 /// <summary>
@@ -220,6 +304,18 @@ public sealed record StatusResponse
     [JsonPropertyName("host")] public string? Host { get; init; }
 
     [JsonPropertyName("port")] public int? Port { get; init; }
+
+    /// <summary>
+    /// 答えた個体の pid（契約 ⑹・便 D（2） で足した欄）。<b>古い wrapper では null</b>＝
+    /// 欄が無いことを「別人だ」と読まない。
+    /// <para>
+    /// 何のためか＝wrapper は <c>preload=true</c> でモデルを載せてから bind するので、
+    /// 起動の 20〜28 秒の窓の間に<b>他人が同じポートを握って同じ形で答える</b>ことがある。
+    /// ランチャは自分が起こした子の pid と突合し、違えば<b>その標本を自分の物として採らない</b>
+    /// （状態帯に他人の GPU メモリを出さない＝裁定 67 ⑶）。
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("pid")] public int? Pid { get; init; }
 
     /// <summary>env <c>YWK_VARIANT</c> の値そのまま（<c>cuda</c>／<c>cpu</c>／<c>rocm-gfx1151</c>）。</summary>
     [JsonPropertyName("variant")] public string? Variant { get; init; }

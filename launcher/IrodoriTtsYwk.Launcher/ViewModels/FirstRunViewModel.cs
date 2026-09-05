@@ -477,10 +477,15 @@ public sealed class FirstRunViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentException.ThrowIfNullOrWhiteSpace(variant);
 
-        var plan = TryPlan(paths, variant, skipVcRedist);
+        var plan = TryPlan(paths, variant, skipVcRedist, out var reason);
         if (plan is null)
         {
-            return "不明（取得台帳が読めません）";
+            // **理由を添える**（是正・便 D（2））＝low 6 で `FetchPlanner` が sha256 の無い item を
+            // 投げて弾くようになったのに、ここは「読めない」としか言えなかった（実際は
+            // 例外がそのまま UI スレッドへ抜けていた＝下の TryPlan の註）。
+            return reason is null
+                ? "不明（取得台帳が読めません）"
+                : "不明（取得台帳が読めません：" + reason + "）";
         }
 
         var runtime = plan.Steps
@@ -504,25 +509,54 @@ public sealed class FirstRunViewModel : ObservableObject
     /// 台帳 4 種から計画を組む（読めない台帳が 1 つでもあれば null）。
     /// <b>ここが唯一の計画の作り口</b>＝見積りも注文もこれを通す。
     /// </summary>
-    public static FetchPlan? TryPlan(AppPaths paths, string variant, bool skipVcRedist)
+    public static FetchPlan? TryPlan(AppPaths paths, string variant, bool skipVcRedist) =>
+        TryPlan(paths, variant, skipVcRedist, out _);
+
+    /// <summary>
+    /// 同上＋読めなかった理由 1 行（読めたなら null）。
+    /// <para>
+    /// <b>投げない</b>（是正・便 D（2））＝檔頭の約束は「読めない台帳が 1 つでもあれば null」だが、
+    /// low 6 の直し（<c>FetchPlanner.RejectItemsWithoutSha256</c> が <see cref="LedgerException"/> を
+    /// 投げる）を素通しにしていた。ここは <see cref="UpdateVariantNotes"/> → 構築時と
+    /// <see cref="Variant"/> の setter＝<b>UI スレッドの束縛経路</b>から呼ばれ、
+    /// <c>App.xaml.cs</c> に <c>DispatcherUnhandledException</c> の受け口は無く、
+    /// <c>AsyncRelayCommand</c> も <see cref="LedgerException"/> を捕らない
+    /// ＝台帳が 1 件でも欠けた日に<b>窓ごと落ちる</b>（実射＝sha256 の無い item 1 件で再現）。
+    /// </para>
+    /// </summary>
+    public static FetchPlan? TryPlan(
+        AppPaths paths, string variant, bool skipVcRedist, out string? failureReason)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentException.ThrowIfNullOrWhiteSpace(variant);
+
+        failureReason = null;
 
         var embed = ReadLedgerFile<LedgerFile>(paths.LedgerPath(LedgerFileNames.PythonEmbed));
         var runtime = ReadLedgerFile<LedgerFile>(paths.LedgerPath(RuntimeVariants.LedgerName(variant)));
         if (embed is null || runtime is null)
         {
+            failureReason = embed is null
+                ? LedgerFileNames.PythonEmbed + ".json が読めません"
+                : RuntimeVariants.LedgerName(variant) + ".json が読めません";
             return null;
         }
 
-        return FetchPlanner.Plan(
-            variant,
-            embed,
-            runtime,
-            ReadLedgerFile<VcRedistLedger>(paths.LedgerPath(LedgerFileNames.VcRedist)),
-            ReadLedgerFile<ModelsLedger>(paths.LedgerPath(LedgerFileNames.Models)),
-            new FetchPlanOptions(SkipVcRedist: skipVcRedist));
+        try
+        {
+            return FetchPlanner.Plan(
+                variant,
+                embed,
+                runtime,
+                ReadLedgerFile<VcRedistLedger>(paths.LedgerPath(LedgerFileNames.VcRedist)),
+                ReadLedgerFile<ModelsLedger>(paths.LedgerPath(LedgerFileNames.Models)),
+                new FetchPlanOptions(SkipVcRedist: skipVcRedist));
+        }
+        catch (LedgerException ex)
+        {
+            failureReason = ex.Message;
+            return null;
+        }
     }
 
     /// <summary>台帳 1 檔を読む（無い・壊れているなら null＝黙って既定に落ちない）。</summary>
@@ -553,8 +587,29 @@ public sealed class FirstRunViewModel : ObservableObject
     /// vc_redist を通す手（判定 → 要れば取得 → sha256 → UAC 昇格で silent 実行）。
     /// 差さっていなければ<b>飛ばさずに告げる</b>（<c>msvcp140.dll</c> が無い機体で
     /// <c>torch/lib/c10.dll</c> が読めなくなるのを黙って見過ごさない）。
+    /// <para>
+    /// 第 1 引数＝<b>「判らない」でも入れる</b>（利用者が下の <see cref="AskVcRedist"/> で
+    /// 「入れる」と答えた）。既定の 1 巡目は必ず偽で撃つ＝勝手に UAC を出さない（裁定 87 ⑷）。
+    /// </para>
     /// </summary>
-    public Func<IProgress<DownloadProgress>, CancellationToken, Task<VcRedistResult?>>? VcRedistRunner { get; set; }
+    public Func<bool, IProgress<DownloadProgress>, CancellationToken, Task<VcRedistResult?>>? VcRedistRunner
+    {
+        get;
+        set;
+    }
+
+    /// <summary>
+    /// <b>「入れる／飛ばす」を利用者に問う手</b>（裁定 87 ⑷・是正・便 D（2））。
+    /// <para>
+    /// 真＝入れる・偽＝飛ばす・<c>null</c>＝答えなかった（＝先へ進めない）。
+    /// 窓（<c>Views/FirstRunWizard</c>）が差す＝ViewModel は WPF の型に触れない（§12-2 ⑴）。
+    /// <b>差さっていなければ問わずに止まる</b>（1 巡目の挙動）＝
+    /// <see cref="VcRedistResult.NeedsUserDecision"/> は定義されていたのに
+    /// <b>launcher/ の中でどこからも読まれておらず</b>、System32 が読めない機体では
+    /// 初回取得が先へ進めなかった（飛ばす口も入れる口も無かった）。
+    /// </para>
+    /// </summary>
+    public Func<string, bool?>? AskVcRedist { get; set; }
 
     private async Task<bool> RunDownloadAsync()
     {
@@ -579,10 +634,11 @@ public sealed class FirstRunViewModel : ObservableObject
             }
 
             // ⑵ python-embed → runtime-<変種>（vc_redist は判定の結果で計画から外れる）。
-            var plan = TryPlan(_paths, _variant, _skipVcRedist);
+            var plan = TryPlan(_paths, _variant, _skipVcRedist, out var planReason);
             if (plan is null)
             {
-                Message = "取得台帳が読めないので取得を始められません。";
+                Message = "取得台帳が読めないので取得を始められません"
+                    + (planReason is null ? "。" : "（" + planReason + "）。");
                 return false;
             }
 
@@ -640,7 +696,7 @@ public sealed class FirstRunViewModel : ObservableObject
         }
 
         ProgressText = "Visual C++ 再頒布可能パッケージを確かめています…";
-        var result = await VcRedistRunner(progress, cancellationToken).ConfigureAwait(true);
+        var result = await VcRedistRunner(false, progress, cancellationToken).ConfigureAwait(true);
         if (result is null)
         {
             _skipVcRedist = true;
@@ -649,6 +705,32 @@ public sealed class FirstRunViewModel : ObservableObject
 
         // 入った・飛ばした、のどちらでも「もう落とさなくてよい」＝計画から外す。
         _skipVcRedist = true;
+
+        // **判らないときは利用者に問う**（裁定 87 ⑷）＝勝手に入れない・黙って止まらない。
+        if (result.NeedsUserDecision)
+        {
+            Record(result.Message);
+            var answer = AskVcRedist?.Invoke(result.Message);
+            if (answer == false)
+            {
+                Record("Visual C++ 再頒布可能パッケージの導入を飛ばしました（利用者の選択）。"
+                    + "torch の読み込みで msvcp140.dll が見つからないと出たら、"
+                    + "Microsoft の再頒布可能パッケージを手で入れてください。");
+                return true;
+            }
+
+            if (answer is null)
+            {
+                // 問う口が無い（または利用者が答えなかった）＝1 巡目と同じ「止まる」。
+                Message = result.Message;
+                return false;
+            }
+
+            ProgressText = "Visual C++ 再頒布可能パッケージを入れています…";
+            result = await VcRedistRunner(true, progress, cancellationToken).ConfigureAwait(true)
+                     ?? result;
+        }
+
         Record(result.Message);
 
         if (!result.Ok)

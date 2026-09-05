@@ -97,6 +97,14 @@ GPU メモリの標本 `gpu-<日時>-*.csv`）、読み方は `docs/radeon.md` �
 **Radeon 機が使えるのは 2026-09-07（月）まで**（`decisions.md` 19）。C-1〜C-5 と便 P
 （プリセット話者の一次 wav 生成）はこの枠で済ませる。
 
+### 便 D（ランチャ・この機体で実射済み）
+
+台本は `probe/d-launch-probe.ps1`（＋共通 `probe/common.ps1`）＝31 段・`-Variant`／`-Port` を引数で取る。
+**便 E（インストーラの UIA 検分）の前提として、便 D の実機で判った 2 つをここに残す**（設計書 §13-3・§14-3）＝
+
+- **UI Automation は自プロセスの持ち窓と共通檔窓を列挙しないことがある**＝`RootElement.FindAll(Children, ProcessId)` は自プロセスの modal 窓（`FirstRunWizard`）も `OpenFileDialog`（`#32770`）も 1 度も返さないのに、Win32 の `EnumWindows` は同じ瞬間に返す（実測）。**`EnumWindows`＋`AutomationElement.FromHandle` を併用する**（`probe/common.ps1` の `Get-ProcessWindowHandles`）。閉じられない窓で走行が止まるので、窓を開かせない路（貼り付け）も併せて用意すること。
+- **PS 5.1 の `Get-Content` は `-Encoding UTF8` が必須**＝BOM 無しの `voices.json`／`settings.json` を機体の ANSI 頁で読むため、日本語の突合が **5.1 でだけ**落ちる（7 では通る）。檔頭の「PS 5.1／7 両対応」を守るなら読みは全部 `-Encoding UTF8`。
+
 ### 便 E（導入）
 
 `installer/README.md` §4 の E-1〜E-4。

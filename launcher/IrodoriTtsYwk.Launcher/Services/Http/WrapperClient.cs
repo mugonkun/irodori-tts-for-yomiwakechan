@@ -102,12 +102,26 @@ public sealed class WrapperClient : IWrapperClient
     {
     }
 
+    /// <summary>
+    /// 接続そのものの期限（<b>誰も listen していない相手を待つ上限</b>）。
+    /// <para>
+    /// 既定の <see cref="HttpClient"/> は接続に期限を持たない。実測＝誰も居ない
+    /// <c>127.0.0.1</c> への 1 本が <b>2.0 秒</b>（proxy のせいではない＝<c>UseProxy=false</c> でも
+    /// 2.0 秒）。この代金は死活の見張り（2 秒間隔・3 標本で降ろす）にそのまま乗るので、
+    /// loopback だけを相手にする本 client では <b>1.5 秒</b>で打ち切る
+    /// （生きている相手への loopback 接続は 1 ms 未満＝正常路には掛からない）。
+    /// </para>
+    /// </summary>
+    public static readonly TimeSpan ConnectTimeout = TimeSpan.FromSeconds(1.5);
+
     /// <summary>テスト用＝<paramref name="handler"/> に偽物を差す。</summary>
     public WrapperClient(Uri baseAddress, HttpMessageHandler? handler)
     {
         ArgumentNullException.ThrowIfNull(baseAddress);
         BaseAddress = baseAddress;
-        _http = handler is null ? new HttpClient() : new HttpClient(handler, disposeHandler: false);
+        _http = handler is null
+            ? new HttpClient(new SocketsHttpHandler { ConnectTimeout = ConnectTimeout }, disposeHandler: true)
+            : new HttpClient(handler, disposeHandler: false);
         _http.BaseAddress = baseAddress;
         _http.Timeout = System.Threading.Timeout.InfiniteTimeSpan; // 期限は要求ごとの CTS で掛ける
         _http.DefaultRequestHeaders.ExpectContinue = false;
@@ -480,8 +494,19 @@ public sealed class WrapperClient : IWrapperClient
         {
             throw;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            // **接続の期限は「繋がらない」であって「遅い」ではない**（是正・便 D（2））。
+            // SocketsHttpHandler は ConnectTimeout の満了を TaskCanceledException（内側が
+            // TimeoutException）で返すので、要求そのものの期限（5 秒）と混ぜない＝
+            // 死活の 1 行が「期限切れ（5 秒）」と嘘をつかない。
+            if (ex.InnerException is TimeoutException)
+            {
+                return new HttpCall(
+                    0, null, null, null, null, Elapsed(started),
+                    "サーバに繋がりません（まだ起きていないか、落ちています）。");
+            }
+
             return new HttpCall(0, null, null, null, null, Elapsed(started), "期限切れ（"
                 + timeout.TotalSeconds.ToString("0.#", CultureInfo.InvariantCulture) + " 秒）で応答がありませんでした。");
         }

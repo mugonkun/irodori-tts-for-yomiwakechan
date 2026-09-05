@@ -22,6 +22,16 @@ public partial class VoicesView : UserControl
         InitializeComponent();
         EthicsText.Text = VoicesViewModel.ImpersonationNotice;
         LengthNoticeText.Text = VoicesViewModel.ReferenceLengthNotice;
+
+        // 削除は Command に寄せた（low 14）。確認窓は「窓が要る仕事」なので、
+        // ここで手を差す＝ViewModel は窓を知らないまま確認を挟める。
+        DataContextChanged += (_, _) =>
+        {
+            if (Model is { } model)
+            {
+                model.ConfirmRemove = ConfirmRemove;
+            }
+        };
     }
 
     private VoicesViewModel? Model => DataContext as VoicesViewModel;
@@ -68,12 +78,10 @@ public partial class VoicesView : UserControl
         }
     }
 
-    private async void OnRemoveClick(object sender, RoutedEventArgs e)
+    /// <summary>削除の確認窓（<see cref="VoicesViewModel.ConfirmRemove"/> に差す手）。</summary>
+    private bool ConfirmRemove(VoiceRow row)
     {
-        if (Model is not { Selected: { } row } model || !row.CanRemove)
-        {
-            return;
-        }
+        ArgumentNullException.ThrowIfNull(row);
 
         // プリセットとそれ以外で文言を分ける（設計書 §4＝プリセットは入れ直せる）。
         var tail = row.IsPreset
@@ -81,17 +89,12 @@ public partial class VoicesView : UserControl
               + "同梱のプリセットは「同梱のプリセットを入れ直す」でいつでも戻せます。"
             : "写した参照 wav と焼いた参照潜在も消えます。元の音声檔からもう 1 度登録できます。";
 
-        var answer = MessageBox.Show(
+        return MessageBox.Show(
             Window.GetWindow(this),
             "「" + row.DisplayName + "」を削除します。" + tail + "よろしいですか。",
             "話者の削除",
             MessageBoxButton.OKCancel,
-            MessageBoxImage.Question);
-
-        if (answer == MessageBoxResult.OK)
-        {
-            await model.RemoveSelectedAsync().ConfigureAwait(true);
-        }
+            MessageBoxImage.Question) == MessageBoxResult.OK;
     }
 
     private void OnRestorePresetsClick(object sender, RoutedEventArgs e) => Model?.RestorePresets();

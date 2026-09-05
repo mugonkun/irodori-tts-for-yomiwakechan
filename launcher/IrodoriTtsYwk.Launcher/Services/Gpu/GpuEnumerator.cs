@@ -105,6 +105,17 @@ public sealed class ProcessRunner : IProcessRunner
             {
                 // もう死んでいる
             }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                // **落とせなかった**（是正・便 D（2））＝`Kill` は権限・ハンドルの都合で
+                // Win32Exception も投げる。ここで漏らすと `TorchProbeRunner` は catch を持たず、
+                // `ServerProcess.StartAsync` が例外で抜ける＝契約（例外は投げず結末で返す）に反した。
+                // 期限切れの結末は変わらない＝台本の子は %TEMP% の 2 KB を読むだけで自然に終わる。
+            }
+            catch (AggregateException)
+            {
+                // ツリーの子の 1 つが落ちなかっただけ（同上）
+            }
 
             try
             {
@@ -157,7 +168,7 @@ public sealed class GpuEnumerator : IGpuEnumerator
 
     private readonly IProcessRunner _runner;
     private readonly Func<string, bool> _fileExists;
-    private readonly string _scriptDirectory;
+    private readonly ITorchProbe _torchProbe;
 
     /// <summary>実機用。</summary>
     public GpuEnumerator()
@@ -174,7 +185,9 @@ public sealed class GpuEnumerator : IGpuEnumerator
         ArgumentNullException.ThrowIfNull(runner);
         _runner = runner;
         _fileExists = fileExists ?? (path => path == "nvidia-smi" || File.Exists(path));
-        _scriptDirectory = scriptDirectory ?? Path.GetTempPath();
+
+        // 台本を書いて撃つ手は 1 本（変種の門＝VariantGate も同じ物を使う）。
+        _torchProbe = new TorchProbeRunner(runner, scriptDirectory);
     }
 
     public async Task<GpuEnumerationResult> EnumerateAsync(
@@ -257,83 +270,9 @@ public sealed class GpuEnumerator : IGpuEnumerator
         return [];
     }
 
-    private async Task<TorchGpuProbe.TorchProbeResult> TryTorchAsync(
+    private Task<TorchGpuProbe.TorchProbeResult> TryTorchAsync(
         string pythonExe,
         TimeSpan timeout,
-        CancellationToken cancellationToken)
-    {
-        string script;
-        try
-        {
-            script = WriteScript();
-        }
-        catch (IOException ex)
-        {
-            return new TorchGpuProbe.TorchProbeResult([], null, null, null, "列挙の台本を書けませんでした：" + ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return new TorchGpuProbe.TorchProbeResult([], null, null, null, "列挙の台本を書けませんでした：" + ex.Message);
-        }
-
-        try
-        {
-            var env = new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["PYTHONUTF8"] = "1",
-                ["PYTHONDONTWRITEBYTECODE"] = "1",
-                ["PYTHONUNBUFFERED"] = "1",
-                ["PYTHONIOENCODING"] = "utf-8",
-
-                // 取得は台帳の路 1 本（裁定 8）＝列挙のために外へ出ない
-                ["HF_HUB_OFFLINE"] = "1",
-
-                // **数えるときと起こすときで index の並べ方を揃える**（是正・2026-09-05）。
-                // torch の既定は FASTEST_FIRST・nvidia-smi は PCI バス順で、揃えないと
-                // ここで数えた index と `cuda:N` の N が別の個体を指しうる
-                // （ServerEnvironment.Build も同じ 1 本を載せる）。
-                [Contracts.ServerEnvironment.CudaDeviceOrder] = Contracts.ServerEnvironment.PciBusIdOrder,
-            };
-
-            var run = await _runner.RunAsync(pythonExe, [script], env, timeout, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (!run.Started)
-            {
-                return new TorchGpuProbe.TorchProbeResult(
-                    [], null, null, null, "実行系を起こせませんでした：" + (run.FailureReason ?? string.Empty));
-            }
-
-            if (run.TimedOut)
-            {
-                return new TorchGpuProbe.TorchProbeResult(
-                    [], null, null, null, "GPU の列挙が期限内に終わりませんでした。");
-            }
-
-            return TorchGpuProbe.Parse(run.StandardOutput);
-        }
-        finally
-        {
-            try
-            {
-                File.Delete(script);
-            }
-            catch (IOException)
-            {
-                // 消し損ねは無害（%TEMP% の 2 KB）
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // 同上
-            }
-        }
-    }
-
-    private string WriteScript()
-    {
-        Directory.CreateDirectory(_scriptDirectory);
-        var path = Path.Combine(_scriptDirectory, TorchGpuProbe.ScriptFileName);
-        File.WriteAllText(path, TorchGpuProbe.Script, new UTF8Encoding(false));
-        return path;
-    }
+        CancellationToken cancellationToken) =>
+        _torchProbe.ProbeAsync(pythonExe, timeout, cancellationToken);
 }

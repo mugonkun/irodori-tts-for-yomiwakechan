@@ -72,6 +72,18 @@ public sealed class WheelInstaller : IRuntimeInstaller
 
         try
         {
+            // **消す前に原檔を一巡して検める**（是正・2026-09-05・low 8）。
+            // これまでは item ごとに「展開の直前」に sha256 を突き合わせていたので、
+            // 101 件目で cache が欠けていると**既に消した変種ディレクトリ**が戻らない
+            // （RemovePartialOnFailure が残骸を消して、動いていた実行系が丸ごと失われる）。
+            // 1 巡の代金は 903 MB で 0.2 s（§10-2 の実走＝VERIFY cache-hit=102/102 in 0.2s）。
+            var preflight = await PreflightAsync(request, cancellationToken).ConfigureAwait(false);
+            if (preflight is not null)
+            {
+                progress?.Report(new InstallProgress(InstallPhase.Failed, null, 0, ledger.Items.Count));
+                return new InstallResult(false, 0, 0, 0, dropped, null, preflight);
+            }
+
             if (CleanBeforeInstall && Directory.Exists(runtimeDir))
             {
                 Directory.Delete(runtimeDir, recursive: true);
@@ -161,6 +173,18 @@ public sealed class WheelInstaller : IRuntimeInstaller
                 return Fail(runtimeDir, started, dropped,
                     "site-packages に *.pth が残っている（import site が無い環境では読まれない檔）："
                     + string.Join("・", stray.Select(Path.GetFileName)));
+            }
+
+            // **<name>-<ver>.data の残骸は失敗**（是正・2026-09-05・low 9）。
+            // MergeDataDirectories は purelib／platlib を上げ scripts／headers／data を捨てるので、
+            // 空になった dataDir だけを消す。残っている＝知らない小分類が入っていた、である。
+            var residue = ResidualDataDirectories(sitePackages);
+            if (residue.Count > 0)
+            {
+                return Fail(runtimeDir, started, dropped,
+                    "wheel の .data が畳めずに残っている（知らない小分類が入っている）："
+                    + string.Join("・", residue),
+                    residue);
             }
 
             var distInfos = Directory.GetDirectories(sitePackages, "*.dist-info", SearchOption.TopDirectoryOnly).Length;
@@ -431,10 +455,81 @@ public sealed class WheelInstaller : IRuntimeInstaller
         return path;
     }
 
-    private InstallResult Fail(string runtimeDir, bool started, IReadOnlyList<string> dropped, string reason)
+    private InstallResult Fail(
+        string runtimeDir,
+        bool started,
+        IReadOnlyList<string> dropped,
+        string reason,
+        IReadOnlyList<string>? dataResidue = null)
     {
         RemovePartial(runtimeDir, started);
-        return new InstallResult(false, 0, 0, 0, dropped, null, reason);
+        return new InstallResult(false, 0, 0, 0, dropped, null, reason)
+        {
+            DataResidue = dataResidue ?? [],
+        };
+    }
+
+    /// <summary>
+    /// <b>組み始める前に</b>台帳の全 item が cache に在り sha256 が合うことを 1 巡して確かめる
+    /// （low 8）。落ちた理由 1 行を返す（健全なら null）。
+    /// </summary>
+    private static async Task<string?> PreflightAsync(
+        InstallRequest request, CancellationToken cancellationToken)
+    {
+        var items = new List<LedgerItem>(request.Ledger.Items.Count + 1);
+        if (request.Ledger.PythonEmbed is null && TryReadPythonEmbed(request.AppDir) is { } embed)
+        {
+            items.Add(embed);
+        }
+
+        items.AddRange(request.Ledger.Items);
+
+        foreach (var item in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await VerifiedCachedPathAsync(request.CacheDir, item, cancellationToken).ConfigureAwait(false);
+            }
+            catch (FileNotFoundException ex)
+            {
+                return ex.Message;
+            }
+            catch (LedgerException ex)
+            {
+                return ex.Message;
+            }
+            catch (IOException ex)
+            {
+                return item.Name + " の原檔が読めない：" + ex.Message;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return item.Name + " の原檔が読めない：" + ex.Message;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 畳み残った <c>*.data</c>（<b>純関数に近い＝檔を読むだけ</b>）。名前だけを返す。
+    /// </summary>
+    public static IReadOnlyList<string> ResidualDataDirectories(string sitePackages)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sitePackages);
+        if (!Directory.Exists(sitePackages))
+        {
+            return [];
+        }
+
+        return Directory
+            .GetDirectories(sitePackages, "*.data", SearchOption.TopDirectoryOnly)
+            .Select(Path.GetFileName)
+            .Where(name => !string.IsNullOrEmpty(name))
+            .Select(name => name!)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
     }
 
     private void RemovePartial(string runtimeDir, bool started)

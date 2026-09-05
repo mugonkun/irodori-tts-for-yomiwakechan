@@ -88,7 +88,12 @@ public static class ArchiveExtractor
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var name = entry.Name.Replace('\\', '/').TrimStart('.', '/');
+            // **落とすのは先頭の '/' だけ**（是正・2026-09-05・low 4）。
+            // TrimStart('.', '/') は⑴ `.gitignore`・`.dockerignore` のような**檔名の頭の点まで削り**
+            // （`gitignore` という別の檔になる）⑵ `../evil` を `evil` に均して
+            // **zip slip の検出（ResolveInside）を素通りさせる**。外へ出る名は削って直すのではなく
+            // ResolveInside に投げさせるのが正しい（削るのは「直した」の嘘）。
+            var name = entry.Name.Replace('\\', '/').TrimStart('/');
             if (name.Length == 0)
             {
                 continue;

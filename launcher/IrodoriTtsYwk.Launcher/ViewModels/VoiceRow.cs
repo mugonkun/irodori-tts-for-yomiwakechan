@@ -18,6 +18,10 @@ namespace IrodoriTtsYwk.Launcher.ViewModels;
 /// 配布版の台帳（<c>voices.ywk.json</c>）がこの話者を知っているか。
 /// <b>偽＝サーバ側の走査でだけ見えている檔</b>で、ランチャからは消せない（是正・2026-09-05）。
 /// </param>
+/// <param name="LatentBytes">
+/// 焼いた <c>.pt</c> の<b>実サイズ</b>（<c>/ywk/status.memory.latents[id]</c>＝裁定 87 ⑴）。
+/// サーバが居ない・まだ焼いていないなら null＝そのときだけ係数の概算を出す（裁定 67 ⑵・low 13）。
+/// </param>
 public sealed record VoiceRow(
     string Id,
     string DisplayName,
@@ -27,7 +31,8 @@ public sealed record VoiceRow(
     bool HasLatent,
     bool IsLatentStale,
     string? Caption,
-    bool IsInTable = true)
+    bool IsInTable = true,
+    long? LatentBytes = null)
 {
     /// <summary>種別の 1 語（プリセット／利用者／参照なし／サーバ側）。</summary>
     public string KindText => IsNoRef
@@ -42,8 +47,13 @@ public sealed record VoiceRow(
         ? UiText.Missing
         : IsLatentStale ? "要・焼き直し" : HasLatent ? "焼き済み" : "未";
 
-    /// <summary>消費メモリの概算（裁定 67 ⑵）。</summary>
-    public string MemoryText => MemoryEstimate.Describe(IsNoRef, HasLatent);
+    /// <summary>
+    /// 消費メモリ（裁定 67 ⑵・low 13）＝<b>1 名あたり</b>。焼いてあれば実サイズ、無ければ概算。
+    /// </summary>
+    public string MemoryText => MemoryEstimate.Describe(IsNoRef, HasLatent, LatentBytes);
+
+    /// <summary>この 1 名を載せたときのバイト数（焼いてあれば実サイズ）。</summary>
+    public long MemoryBytes => MemoryEstimate.ForVoice(IsNoRef, HasLatent, LatentBytes);
 
     /// <summary>
     /// 消せる行か（「デフォルト」は常在＝契約 ⑷ 4-2）。
@@ -52,8 +62,63 @@ public sealed record VoiceRow(
     /// </summary>
     public bool CanRemove => !IsNoRef && IsInTable;
 
-    /// <summary>試聴できる行か（参照 wav を持つ行だけ）。</summary>
-    public bool CanPreview => !IsNoRef && !string.IsNullOrWhiteSpace(FileName);
+    /// <summary>
+    /// 消せない理由 1 行（消せるなら null）。<b>UIA から読める形にする</b>ため、
+    /// 画面はこの文言をボタンの <c>HelpText</c> と 1 行の表示の両方に出す（low 14）。
+    /// </summary>
+    public string? RemoveBlockedReason
+    {
+        get
+        {
+            if (CanRemove)
+            {
+                return null;
+            }
+
+            return IsNoRef
+                ? "「" + DisplayName + "」は一覧に常在するので消せません。"
+                : "「" + DisplayName + "」は配布版の台帳にありません（サーバ側の走査で見えている檔です）。";
+        }
+    }
+
+    /// <summary>
+    /// 試聴できる行か（<b><c>.wav</c> のときだけ</b>＝low 11）。
+    /// <para>
+    /// <c>NAudio.WinMM</c>／<c>NAudio.Core</c> には <c>Mp3FileReader</c>／<c>AudioFileReader</c> が
+    /// 入っていないので、受ける 5 拡張子のうち<b>鳴らせるのは wav だけ</b>である（README §7-2 ⑷）。
+    /// 「押せるのに必ず失敗する」形を作らず、押せない理由を
+    /// <see cref="PreviewBlockedReason"/> で 1 行出す。
+    /// </para>
+    /// </summary>
+    public bool CanPreview => !IsNoRef
+        && !string.IsNullOrWhiteSpace(FileName)
+        && FileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>試聴できない理由 1 行（できるなら null＝low 11）。</summary>
+    public string? PreviewBlockedReason
+    {
+        get
+        {
+            if (CanPreview)
+            {
+                return null;
+            }
+
+            if (IsNoRef)
+            {
+                return "「" + DisplayName + "」は参照なしの話者なので試聴する音がありません。";
+            }
+
+            if (string.IsNullOrWhiteSpace(FileName))
+            {
+                return "「" + DisplayName + "」には配布版が写した参照音声がありません（サーバ側の檔です）。";
+            }
+
+            return "「" + DisplayName + "」の参照音声は "
+                + System.IO.Path.GetExtension(FileName).TrimStart('.').ToUpperInvariant()
+                + " なので試聴できません（試聴は wav だけ。登録と合成には使えます）。";
+        }
+    }
 }
 
 /// <summary>
@@ -73,10 +138,18 @@ public sealed record VoiceRow(
 public static class VoiceRowBuilder
 {
     /// <summary>台帳＋（あれば）<c>/ywk/voices</c>＋設定の並びから一覧を組む。</summary>
+    /// <param name="store">配布版の台帳。</param>
+    /// <param name="live">走っている wrapper の <c>/ywk/voices</c>（無ければ null）。</param>
+    /// <param name="preferredOrder">設定の並び。</param>
+    /// <param name="memory">
+    /// <c>/ywk/status.memory</c>（裁定 87 ⑴）。<c>latents</c> から<b>焼いた <c>.pt</c> の実サイズ</b>を
+    /// 話者ごとに引く（無ければ null＝係数の概算に落ちる）。
+    /// </param>
     public static IReadOnlyList<VoiceRow> Build(
         VoicesYwkFile? store,
         VoicesResponse? live,
-        IReadOnlyList<string>? preferredOrder)
+        IReadOnlyList<string>? preferredOrder,
+        MemoryStatus? memory = null)
     {
         var entries = store?.Voices ?? new Dictionary<string, VoiceEntry>(StringComparer.Ordinal);
 
@@ -127,7 +200,8 @@ public static class VoiceRowBuilder
                 !noRef && stale,
                 entry?.Caption,
                 // 「デフォルト」は台帳に無くても常在する（裁定 16）＝台帳の物として扱う。
-                entry is not null || VoiceIds.IsNoRef(id)));
+                entry is not null || VoiceIds.IsNoRef(id),
+                noRef ? null : memory?.LatentBytesFor(id)));
         }
 
         return rows;

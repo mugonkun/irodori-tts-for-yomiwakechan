@@ -153,7 +153,7 @@ public static class GpuResolver
 /// <summary>ドライバ検査の結末。</summary>
 /// <param name="Ok">その変種を走らせてよいか。</param>
 /// <param name="Unknown">ドライバ版が読めなかった（AMD 機など）＝止めはしないが名乗る。</param>
-/// <param name="RequiredMinimum">その変種の下限（<c>580</c>／<c>560.76</c>）。</param>
+/// <param name="RequiredMinimum">その変種の下限（<c>580.00</c>／<c>528.33</c>＝裁定 88 ⑵）。</param>
 /// <param name="Message">UI に出す 1 行。</param>
 /// <param name="SuggestedVariant">下限に届かないときに勧める変種（自動切替はしない＝裁定 4）。</param>
 public sealed record DriverVerdict(
@@ -170,27 +170,67 @@ public interface IDriverCheck
 }
 
 /// <summary>
-/// ドライバの下限（決定 4・設計書 §3）。<b>純関数</b>。
+/// ドライバの下限（裁定 88 ⑵・設計書 §3）。<b>純関数</b>。
 /// <para>
-/// cu130 ≥ 580／cu126 ≥ 560.76。cu126 の下限の謳い方は便 B の U-14（RTX 機でドライバを
-/// 2023 年秋の版に落として実射）の結果で更新する＝<b>ここが唯一の定義箇所</b>。
+/// <b>cu130 ≥ 580.00／cu126 ≥ 528.33</b>。便 B の U-14（RTX 3090 をドライバ 537.58 へ降格して実射）で
+/// <c>torch 2.10.0+cu126</c> が <c>is_available=True</c>・<c>device_count=1</c> で通り、同じドライバで
+/// cu130 は <c>cudaErrorNotSupported</c> だったことが判った（裁定 80）。よって cu126 の下限は
+/// NVIDIA の CUDA 12.x minor version compatibility の Windows 下限 <b>528.33</b>（<b>未実測</b>）とし、
+/// <b>528.33 ≤ v &lt; 537.58 は「未実測の帯」</b>として合成は許す（1 行の注意を出す＝
+/// <see cref="Services.Gpu.VariantGate"/>）。<b>ここが唯一の定義箇所</b>。
 /// </para>
 /// </summary>
 public sealed class DriverRequirement : IDriverCheck
 {
-    /// <summary>cu130 の下限。</summary>
-    public const string Cu130Minimum = "580";
+    /// <summary>cu130 の下限（裁定 88 ⑵）。</summary>
+    public const string Cu130Minimum = "580.00";
 
-    /// <summary>cu126 の下限（便 B の実射で更新しうる）。</summary>
-    public const string Cu126Minimum = "560.76";
+    /// <summary>cu126 の下限（裁定 88 ⑵＝NVIDIA の Windows 下限・<b>未実測</b>）。</summary>
+    public const string Cu126Minimum = "528.33";
 
-    /// <summary>その変種の下限（要らない変種は null）。</summary>
-    public static string? Minimum(string variant) => variant switch
+    /// <summary>
+    /// cu126 を<b>実射で通した</b>いちばん低いドライバ（裁定 80＝537.58・RTX 3090・2026-09-05）。
+    /// <see cref="Cu126Minimum"/> との間は「未実測の帯」＝止めずに 1 行の注意を出す。
+    /// </summary>
+    public const string Cu126MeasuredMinimum = "537.58";
+
+    /// <summary>
+    /// その変種の下限（要らない変種は null）。
+    /// <para>
+    /// <b>綴りの受けは大小と前後の空白を無視する</b>（是正・便 D（2）＝1 巡目は定数パターンの
+    /// <c>switch</c> で、同じ門の中の <see cref="Services.Gpu.VariantGate.IsUnmeasuredBand"/> が
+    /// <c>OrdinalIgnoreCase</c> なのに<b>ここだけ厳密一致</b>だった＝
+    /// <c>settings.json</c> に <c>"CU130"</c> と書かれた機体で閾が静かに外れる）。
+    /// </para>
+    /// <para>
+    /// <b>畳んだ名 <c>cuda</c> は cu130 と同じ閾で見る</b>（是正・便 D（2））。env の
+    /// <c>YWK_VARIANT</c> は cu130 と cu126 を <c>cuda</c> に畳むので、この名で来た要求は
+    /// <b>どちらの実行系なのか判らない</b>。1 巡目はここが <c>null</c> を返し、
+    /// <b>ドライバの閾も「未実測の帯」の 1 行も丸ごと落ちていた</b>（実射＝
+    /// <c>Decide("cuda", usable, "500.00")</c> が <c>Allow=True</c>）。判らない以上は
+    /// <b>厳しい方（cu130）</b>で見る＝裁定 83 の「cu130 の CPU 転落は禁止」を、
+    /// 綴りが畳まれた経路でも守る。正しい綴りを載せたい呼び手は
+    /// <see cref="Services.Server.ServerLaunchPlan.Build"/> を通すこと。
+    /// </para>
+    /// </summary>
+    public static string? Minimum(string? variant)
     {
-        RuntimeVariants.Cu130 => Cu130Minimum,
-        RuntimeVariants.Cu126 => Cu126Minimum,
-        _ => null,
-    };
+        var name = variant?.Trim();
+        if (string.IsNullOrEmpty(name))
+        {
+            return null;
+        }
+
+        if (string.Equals(name, RuntimeVariants.Cu130, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, RuntimeVariants.CudaLabel, StringComparison.OrdinalIgnoreCase))
+        {
+            return Cu130Minimum;
+        }
+
+        return string.Equals(name, RuntimeVariants.Cu126, StringComparison.OrdinalIgnoreCase)
+            ? Cu126Minimum
+            : null;
+    }
 
     public DriverVerdict Check(string variant, string? driverVersion)
     {
@@ -244,8 +284,18 @@ public sealed class DriverRequirement : IDriverCheck
     }
 
     /// <summary>
-    /// <c>591.86</c> のような版を数の列として比べる（<b>純関数</b>）。
+    /// <c>591.86</c> のような版を比べる（<b>純関数</b>）。
     /// 読めなければ偽（＝止めずに「読めなかった」と名乗る）。
+    /// <para>
+    /// <b>2 節の版（NVIDIA の Windows ドライバの形）は小数として比べる</b>（是正・便 D（2））。
+    /// 1 巡目は「.」で割った<b>整数の列</b>として比べていたので、桁数が違う相手で順序が逆になった
+    /// （実射＝<c>TryCompare("537.58", "537.6")</c> が <c>1</c>＝537.58 のほうが大きい。
+    /// 実際の版としては <c>537.6</c>＝<c>537.60</c> のほうが新しい）。閾 <c>528.33</c>／
+    /// <c>537.58</c>／<c>580.00</c> と比べる相手が 1 桁で来た日に、届いているドライバを
+    /// 「下限に届かない」と誤判定して合成を止める形だった。
+    /// 3 節以上（ドライバ版には無い形）は<b>従来どおり節ごとの整数</b>で比べる＝
+    /// <c>10.0.1</c> と <c>10.0.10</c> を同じ物にしない。
+    /// </para>
     /// </summary>
     public static bool TryCompare(string left, string right, out int result)
     {
@@ -255,6 +305,21 @@ public sealed class DriverRequirement : IDriverCheck
         if (a is null || b is null)
         {
             return false;
+        }
+
+        if (a.Count == 2 && b.Count == 2)
+        {
+            var integral = a[0].CompareTo(b[0]);
+            if (integral != 0)
+            {
+                result = integral < 0 ? -1 : 1;
+                return true;
+            }
+
+            // 小数点以下は桁を揃えてから比べる（58 対 6 ではなく 58 対 60）。
+            var fractional = CompareFraction(Fraction(left), Fraction(right));
+            result = fractional;
+            return true;
         }
 
         for (var i = 0; i < Math.Max(a.Count, b.Count); i++)
@@ -269,6 +334,23 @@ public sealed class DriverRequirement : IDriverCheck
         }
 
         return true;
+    }
+
+    /// <summary>「.」の後ろの桁（2 節の版だけで使う）。</summary>
+    private static string Fraction(string version)
+    {
+        var parts = version.Trim().Split('.', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 2 ? parts[1] : string.Empty;
+    }
+
+    /// <summary>小数点以下を桁数を揃えて比べる（<c>58</c> 対 <c>6</c>＝<c>58</c> 対 <c>60</c>）。</summary>
+    private static int CompareFraction(string left, string right)
+    {
+        var width = Math.Max(left.Length, right.Length);
+        var a = left.PadRight(width, '0');
+        var b = right.PadRight(width, '0');
+        var comparison = string.CompareOrdinal(a, b);
+        return comparison == 0 ? 0 : (comparison < 0 ? -1 : 1);
     }
 
     private static List<int>? Parse(string? version)

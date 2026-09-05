@@ -126,6 +126,15 @@
 > ほぼ一定だが、`empty_cache_interval=0` のまま 1 セッション撃ち続けると **10〜13 GB まで単調に増える**。
 > **測っている物が違う**ので、片方の数字でもう片方を否定しないこと。
 
+**この 3 つは走らせながら `GET /ywk/status.memory` で見える**（`decisions.md` 87 ⑴・67 ⑵⑶＝ランチャが
+2 秒ごとに読んで常時表示する）。allocator の値が `allocated`（使用量）・`reserved`（占有量）・`max`
+（累積ピーク）、**カード全体（他プロセス込み）**が `gpu_used`／`gpu_total`（`torch.cuda.mem_get_info`＝
+**ROCm も同じ口**）。**潜在キャッシュの大きさは `memory.latents`**＝焼いてある話者の
+`latents/<stem>.pt` の実サイズを**話者 id で引いた表**（＋合計 `latents_total`・単位はバイト）で、
+この機体の実測は **11 名で 1,105,836 B**（§8-3）＝**VRAM ではなくディスク**の話である
+（潜在は射ごとのピークを増やさない＝`research/lab/notes/40` §6-2）。焼いていない話者は行ごと出ない。
+欄の逐語と意味は `docs/contract.md` ⑹ 6-1。
+
 ---
 
 ## 4. 環境の判定

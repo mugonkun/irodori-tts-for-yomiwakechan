@@ -37,6 +37,8 @@ public sealed class StatusViewModel : ObservableObject
     private string _memoryText = UiText.NotSupported;
     private bool _memorySupported;
     private string _voiceMemoryText = UiText.Missing;
+    private string _latentCacheText = UiText.Missing;
+    private string? _noticesText;
     private string _logText = string.Empty;
     private string? _upstreamMismatch;
     private bool _hasProcess;
@@ -44,6 +46,9 @@ public sealed class StatusViewModel : ObservableObject
     private string? _settingsPending;
     private LauncherSettings? _desired;
     private RunningSettings? _running;
+    private MemoryStatus? _memory;
+    private IReadOnlyList<VoiceRow>? _rows;
+    private VoiceRow? _selectedVoice;
 
     public StatusViewModel(Func<Task> start, Func<Task> stop)
     {
@@ -61,7 +66,12 @@ public sealed class StatusViewModel : ObservableObject
     /// <param name="Port">起こしたときのポート。</param>
     /// <param name="GpuName">起こしたときの GPU の名前。</param>
     /// <param name="GpuUuid">起こしたときの GPU の UUID。</param>
-    private sealed record RunningSettings(string Variant, int Port, string? GpuName, string? GpuUuid);
+    /// <param name="PrecomputeOnStart">
+    /// 起こしたときの参照潜在キャッシュの<b>実効値</b>（裁定 65・67 ⑴）。走行中の状態帯は
+    /// いま走っている個体の ON／OFF を名乗る（設定を変えても次の起動まで変わらない）。
+    /// </param>
+    private sealed record RunningSettings(
+        string Variant, int Port, string? GpuName, string? GpuUuid, bool PrecomputeOnStart);
 
     /// <summary>「サーバ起動」。走っている間は押せない。</summary>
     public AsyncRelayCommand StartCommand { get; }
@@ -189,11 +199,33 @@ public sealed class StatusViewModel : ObservableObject
         private set => SetProperty(ref _memorySupported, value);
     }
 
-    /// <summary>載っている参照ボイスの概算合計（裁定 67 ⑵）。</summary>
+    /// <summary>
+    /// 参照ボイスの消費メモリ（裁定 67 ⑵・low 13）＝<b>1 名あたりが主役</b>で、
+    /// 全員分は「全部を同時に載せたときの上限」として括弧に落とす。
+    /// </summary>
     public string VoiceMemoryText
     {
         get => _voiceMemoryText;
         private set => SetProperty(ref _voiceMemoryText, value);
+    }
+
+    /// <summary>
+    /// 参照潜在キャッシュ（裁定 67 ⑴）＝<c>ON／OFF（焼いた話者 n 名・合計 m MB）</c>。
+    /// </summary>
+    public string LatentCacheText
+    {
+        get => _latentCacheText;
+        private set => SetProperty(ref _latentCacheText, value);
+    }
+
+    /// <summary>
+    /// 起動の告知（<c>ServerStartResult.Notices</c>＝裁定 88 ⑵の「未実測の帯」など）。
+    /// <b>そのまま出す</b>＝畳んだり言い換えたりしない。無ければ null。
+    /// </summary>
+    public string? NoticesText
+    {
+        get => _noticesText;
+        private set => SetProperty(ref _noticesText, value);
     }
 
     /// <summary>ログ末尾 20 行。</summary>
@@ -248,7 +280,12 @@ public sealed class StatusViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(settings);
         _desired ??= settings;
-        _running = new RunningSettings(settings.Variant, settings.Port, settings.GpuName, settings.GpuUuid);
+        _running = new RunningSettings(
+            settings.Variant,
+            settings.Port,
+            settings.GpuName,
+            settings.GpuUuid,
+            settings.EffectivePrecomputeOnStart());
         Repaint();
     }
 
@@ -288,6 +325,22 @@ public sealed class StatusViewModel : ObservableObject
             : (gpuName ?? "GPU") + "（UUID …" + UiText.UuidTail(gpuUuid) + "）";
 
         SettingsPendingText = DescribePending(_running, settings);
+        RepaintMemory();
+    }
+
+    /// <summary>
+    /// GPU メモリ・参照潜在キャッシュ・参照ボイスの 3 欄を引き直す（材料が変わるたびに呼ぶ）。
+    /// </summary>
+    private void RepaintMemory()
+    {
+        MemorySupported = _memory is not null;
+        MemoryText = DescribeMemory(_memory);
+
+        var on = _running?.PrecomputeOnStart
+            ?? _desired?.EffectivePrecomputeOnStart()
+            ?? false;
+        LatentCacheText = DescribeLatentCache(on, _memory, _rows);
+        VoiceMemoryText = DescribeVoiceMemory(_selectedVoice, _rows);
     }
 
     /// <summary>走行中の個体と設定の食い違いの 1 行（<b>純関数</b>）。</summary>
@@ -312,7 +365,15 @@ public sealed class StatusViewModel : ObservableObject
             : null;
     }
 
-    /// <summary>状態機械が動いた。</summary>
+    /// <summary>
+    /// 状態機械が動いた（<b>状態の書き手はここ 1 本</b>＝low 3）。
+    /// <para>
+    /// 窓も見張りもこの口を直に叩かない。<c>Warming</c> への出入りを含めて、状態を決めるのは
+    /// <see cref="IServerProcess"/> の状態機械だけである（<c>StateChanged</c> を窓が
+    /// marshal してここへ運ぶ）。<c>/ywk/status</c> の標本は
+    /// <see cref="ApplyStatus"/> で<b>読むだけ</b>で、状態は動かさない。
+    /// </para>
+    /// </summary>
     public void ApplyState(ServerState state, string? reason)
     {
         State = state;
@@ -330,9 +391,66 @@ public sealed class StatusViewModel : ObservableObject
             DeviceText = UiText.Missing;
             WarmupText = "—";
             PrecomputeText = "—";
-            MemorySupported = false;
-            MemoryText = UiText.NotSupported;
+            NoticesText = null;
+            _memory = null;
+            RepaintMemory();
         }
+    }
+
+    /// <summary>
+    /// 起動の告知（「未実測の帯」＝裁定 88 ⑵）をそのまま状態帯に載せる。
+    /// </summary>
+    public void ApplyNotices(IReadOnlyList<string>? notices) =>
+        NoticesText = ComposeNotices(notices);
+
+    /// <summary>
+    /// 起動の結末を載せる（裁定 88 ⑴⑵）＝<b>門で断られた理由 1 行と告知をそのまま出す</b>。
+    /// <para>
+    /// 理由は状態機械が <see cref="Reason"/> に書くのが筋だが、<b>断られた事実が
+    /// 状態に載らない実装でも画面から消えない</b>ように、<see cref="Reason"/> と食い違うときだけ
+    /// 告知の先頭に足す（同じ文言を 2 度出さない）。
+    /// </para>
+    /// </summary>
+    public void ApplyStartOutcome(bool ok, string? failureReason, IReadOnlyList<string>? notices) =>
+        NoticesText = ComposeStartOutcome(ok, failureReason, notices, Reason);
+
+    /// <summary>起動の結末の畳み方（<b>純関数</b>）。</summary>
+    public static string? ComposeStartOutcome(
+        bool ok, string? failureReason, IReadOnlyList<string>? notices, string? shownReason)
+    {
+        var lines = new List<string>();
+        if (!ok && !string.IsNullOrWhiteSpace(failureReason)
+            && !string.Equals(shownReason?.Trim(), failureReason.Trim(), StringComparison.Ordinal))
+        {
+            lines.Add(failureReason.Trim());
+        }
+
+        if (notices is not null)
+        {
+            lines.AddRange(notices);
+        }
+
+        return ComposeNotices(lines);
+    }
+
+    /// <summary>告知の畳み方（<b>純関数</b>＝行はそのまま・空は null）。</summary>
+    public static string? ComposeNotices(IReadOnlyList<string>? notices)
+    {
+        if (notices is null || notices.Count == 0)
+        {
+            return null;
+        }
+
+        var lines = new List<string>(notices.Count);
+        foreach (var notice in notices)
+        {
+            if (!string.IsNullOrWhiteSpace(notice))
+            {
+                lines.Add(notice.Trim());
+            }
+        }
+
+        return lines.Count == 0 ? null : string.Join(Environment.NewLine, lines);
     }
 
     /// <summary>stderr の 1 行（畳んでから入れる）。</summary>
@@ -356,8 +474,8 @@ public sealed class StatusViewModel : ObservableObject
     {
         if (status is null)
         {
-            MemorySupported = false;
-            MemoryText = UiText.NotSupported;
+            _memory = null;
+            RepaintMemory();
             GpuMismatch = null;
             return;
         }
@@ -365,7 +483,8 @@ public sealed class StatusViewModel : ObservableObject
         DeviceText = Compose(status.Device);
         WarmupText = Compose(status.Warmup);
         PrecomputeText = Compose(status.Precompute);
-        ApplyMemory(status.Memory);
+        _memory = status.Memory;
+        RepaintMemory();
         UpstreamMismatch = DescribeUpstreamMismatch(status.Upstream);
         GpuMismatch = DescribeGpuMismatch(_running?.GpuUuid ?? _desired?.GpuUuid, status.Device);
     }
@@ -402,46 +521,142 @@ public sealed class StatusViewModel : ObservableObject
               + "／" + (device?.Name ?? "名前不明") + "）が違います。";
     }
 
-    /// <summary>載っている話者から概算合計を出す（裁定 67 ⑵）。</summary>
+    /// <summary>話者一覧が変わった（裁定 67 ⑵）。</summary>
     public void ApplyVoices(IReadOnlyList<VoiceRow>? rows)
     {
-        if (rows is null || rows.Count == 0)
-        {
-            VoiceMemoryText = UiText.Missing;
-            return;
-        }
+        _rows = rows;
 
-        var total = 0L;
-        var wav = 0;
-        foreach (var row in rows)
+        // 選んでいた話者は作り直された同じ id の行に付け替える（実サイズが載るのは新しい行）。
+        if (_selectedVoice is { } previous && rows is not null)
         {
-            total += MemoryEstimate.ForVoice(row.IsNoRef, row.HasLatent);
-            if (!row.IsNoRef && !row.HasLatent)
+            foreach (var row in rows)
             {
-                wav++;
+                if (string.Equals(row.Id, previous.Id, StringComparison.Ordinal))
+                {
+                    _selectedVoice = row;
+                    break;
+                }
             }
         }
 
-        VoiceMemoryText = "wav 参照 " + wav.ToString(CultureInfo.InvariantCulture)
-            + " 名で概算 " + UiText.Bytes(total)
-            + (MemoryEstimate.IsProvisional ? "（実測前の概算）" : string.Empty);
+        RepaintMemory();
     }
 
-    private void ApplyMemory(MemoryStatus? memory)
+    /// <summary>話者画面で選んでいる 1 名（<b>概算の主役</b>＝裁定 67 ⑵・low 13）。</summary>
+    public void ApplySelectedVoice(VoiceRow? row)
     {
-        if (memory is null
-            || (memory.AllocatedBytes is null && memory.ReservedBytes is null && memory.MaxAllocatedBytes is null))
+        _selectedVoice = row;
+        RepaintMemory();
+    }
+
+    /// <summary>
+    /// GPU メモリの 1 行（<b>純関数</b>・裁定 67 ⑶・87 ⑴）＝
+    /// <b>使用量＝allocated・占有量＝reserved・GPU 全体＝gpu_used／gpu_total</b>。
+    /// null は「—」・<c>cpu</c> は「CPU（GPU メモリなし）」・欄ごと無ければ「未対応」。
+    /// </summary>
+    public static string DescribeMemory(MemoryStatus? memory)
+    {
+        if (memory is null)
         {
-            MemorySupported = false;
-            MemoryText = UiText.NotSupported;
-            return;
+            return UiText.NotSupported;
         }
 
-        MemorySupported = true;
-        MemoryText = "割当 " + UiText.Bytes(memory.AllocatedBytes)
-            + "／確保 " + UiText.Bytes(memory.ReservedBytes)
-            + "／最大 " + UiText.Bytes(memory.MaxAllocatedBytes);
+        if (memory.IsCpu)
+        {
+            return "CPU（GPU メモリなし）" + ErrorSuffix(memory.Error);
+        }
+
+        if (!memory.HasNumbers)
+        {
+            // device が null＝モデル未読込（裁定 87 ⑴＝数値欄は null で latents だけ来る）
+            return UiText.Missing + "（モデル未読込）" + ErrorSuffix(memory.Error);
+        }
+
+        var text = "使用量 " + UiText.Bytes(memory.AllocatedBytes)
+            + "／占有量 " + UiText.Bytes(memory.ReservedBytes)
+            + "／GPU 全体 " + UiText.Bytes(memory.EffectiveGpuUsed)
+            + " / " + UiText.Bytes(memory.GpuTotalBytes);
+
+        if (memory.MaxAllocatedBytes is not null)
+        {
+            text += "（最大 " + UiText.Bytes(memory.MaxAllocatedBytes) + "）";
+        }
+
+        return text + ErrorSuffix(memory.Error);
     }
+
+    /// <summary>
+    /// 参照潜在キャッシュの 1 行（<b>純関数</b>・裁定 67 ⑴）＝
+    /// <c>ON／OFF（焼いた話者 n 名・合計 m MB）</c>。
+    /// <c>memory.latents</c> が正本で、無ければ一覧の <c>latent</c> の数だけを名乗る。
+    /// </summary>
+    public static string DescribeLatentCache(
+        bool on, MemoryStatus? memory, IReadOnlyList<VoiceRow>? rows)
+    {
+        var head = on ? "ON" : "OFF";
+
+        if (memory is not null && memory.LatentCount > 0)
+        {
+            return head + "（焼いた話者 " + memory.LatentCount.ToString(CultureInfo.InvariantCulture)
+                + " 名・合計 " + UiText.Bytes(memory.EffectiveLatentsTotal) + "）";
+        }
+
+        if (memory is not null)
+        {
+            return head + "（焼いた話者 0 名・合計 " + UiText.Bytes(0L) + "）";
+        }
+
+        var baked = 0;
+        if (rows is not null)
+        {
+            foreach (var row in rows)
+            {
+                if (row.HasLatent)
+                {
+                    baked++;
+                }
+            }
+        }
+
+        return head + "（焼いた話者 " + baked.ToString(CultureInfo.InvariantCulture)
+            + " 名・合計 " + UiText.Missing + "）";
+    }
+
+    /// <summary>
+    /// 参照ボイスの概算の 1 行（<b>純関数</b>・裁定 67 ⑵・low 13）。
+    /// <b>1 名あたりが主役</b>＝選んでいる話者の値を先に出し、全員分は
+    /// 「全部を同時に載せたときの上限」と明記して括弧に落とす。
+    /// </summary>
+    public static string DescribeVoiceMemory(VoiceRow? selected, IReadOnlyList<VoiceRow>? rows)
+    {
+        if (selected is null && (rows is null || rows.Count == 0))
+        {
+            return UiText.Missing;
+        }
+
+        var upper = 0L;
+        if (rows is not null)
+        {
+            foreach (var row in rows)
+            {
+                upper += row.MemoryBytes;
+            }
+        }
+
+        var tail = rows is null || rows.Count == 0
+            ? string.Empty
+            : "（全員分＝全部を同時に載せたときの上限 " + UiText.Bytes(upper) + "）";
+
+        if (selected is null)
+        {
+            return "1 名あたり＝話者を選ぶと出ます" + tail;
+        }
+
+        return "1 名あたり「" + selected.DisplayName + "」＝" + selected.MemoryText + tail;
+    }
+
+    private static string ErrorSuffix(string? error) =>
+        string.IsNullOrWhiteSpace(error) ? string.Empty : "：" + error.Trim();
 
     private static string Compose(StatusDevice? device)
     {

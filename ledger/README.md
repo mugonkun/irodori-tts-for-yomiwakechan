@@ -289,7 +289,26 @@ torchaudio==2.11.0.2+rocm10.0.0             （cpu 変種は torchaudio==2.10.0�
 | `runtime-rocm-gfx1151` | 107 | **1,465.5 MiB**（うち AMD 由来 8 件で 1,367,591,795 B・残り 169,104,569 B は cpu 変種と同じ item） |
 
 ＋ `python-embed` 11,133,606 B ＋ `vc_redist` 25,635,768 B ＋ モデル 3,570,982,039 B。
-cu130 の初回取得は合計 **約 5.4 GiB**（`research/report/irodori-native-handoff-2026-09-04.md` §5-3 の見積と一致）。
+
+**初回取得の合計（台帳の `size` の総和）と、取得中に要る空きは別物**（便 D（2）の low 10 の是正・2026-09-05）。
+
+| 変種 | 落とすバイト（`python-embed`＋`vc_redist`＋`runtime-<変種>`＋`models` の `size`） | GiB | 取得中に要る空き |
+|---|---|---|---|
+| `cpu` | 3,891,000,522 B | **3.62 GiB** | **4.53 GiB** |
+| `cu130` | 5,646,269,459 B | **5.26 GiB** | **11.56 GiB** |
+| `cu126` | 6,368,537,681 B | **5.93 GiB** | **14.45 GiB** |
+| `rocm-gfx1151` | 5,144,447,777 B | **4.79 GiB** | **9.55 GiB** |
+
+- この表は各 json の `size` を足し直した値（工具席・便 D（2）・2026-09-05）。cu130 は **5.26 GiB** であり、
+  以前ここに書いていた「約 5.4 GiB」は調査便の**見積の丸め**であって台帳の実値ではない
+  （`research/report/irodori-native-handoff-2026-09-04.md` §5-3 の見積とは桁が合うだけで一致はしない）。
+- **「取得中に要る空き」は落とすバイトではない**＝ランチャの
+  `launcher/IrodoriTtsYwk.Launcher/Services/Ledger/FetchPlanner.cs` の `FetchPlan.EstimatedPeakDiskBytes`
+  ＝`CacheBytes`（cache に落ちる原檔）＋`EstimatedRuntimeBytes`（展開後の見積り＝`ExpansionFactor = 3.3`）
+  ＋`ModelBytes`。展開が済めば cache は消してよいが、取得の**途中では両方在る**のでこの値が要る。
+  ランチャの 1 行（`FetchPlan.Summary()`）は「取得 …・必要な空き …」とこの 2 つを並べて出す。
+- 実測との突合＝`rocm-gfx1151` は `docs/design/ben-d-launcher.md` §14-2 の「取得 4.79 GiB・必要な空き 9.55 GiB」、
+  `cpu` は同 §13-6 の「取得 3.62 GiB・必要な空き 4.53 GiB」と一致する（席が手で写した値ではなく、同じ式を踏んだ結果）。
 
 ---
 

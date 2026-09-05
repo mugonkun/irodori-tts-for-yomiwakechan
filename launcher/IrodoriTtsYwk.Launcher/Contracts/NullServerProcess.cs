@@ -28,9 +28,19 @@ public sealed class NullServerProcess : IServerProcess
 
     public Uri? BaseAddress => null;
 
+    /// <summary>何も起こさないので標本も無い。</summary>
+    public StatusResponse? LatestStatus => null;
+
     public event EventHandler<ServerStateChangedEventArgs>? StateChanged;
 
     public event EventHandler<ServerLogLineEventArgs>? LogLine;
+
+    /// <summary>上がらない（見張りが居ない）＝購読は受けるが呼ばない。</summary>
+    public event EventHandler<StatusResponse>? StatusSampled
+    {
+        add { }
+        remove { }
+    }
 
     public Task<ServerStartResult> StartAsync(ServerStartRequest request, CancellationToken cancellationToken)
     {

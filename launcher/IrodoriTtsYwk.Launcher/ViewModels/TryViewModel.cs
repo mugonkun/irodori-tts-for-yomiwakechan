@@ -46,6 +46,8 @@ public sealed class TryViewModel : ObservableObject
     private string _resultText = UiText.Missing;
     private byte[]? _lastAudio;
     private long? _lastSeed;
+    private CancellationTokenSource? _inFlight;
+    private string? _serverDown;
 
     public TryViewModel(Func<IWrapperClient?> wrapper, IAudioPlayer player, LauncherSettings settings)
     {
@@ -330,19 +332,30 @@ public sealed class TryViewModel : ObservableObject
         }
 
         Message = "合成しています…";
+        _serverDown = null;
         var watch = Stopwatch.StartNew();
         SpeechResult result;
+
+        // 裁定 88 ⑶＝**サーバの子が消えたら HTTP の期限を待たない**。
+        // 見張り（状態機械）が Failed を告げたら NotifyServerFailed がこの札を切る。
+        using var cts = new CancellationTokenSource();
+        _inFlight = cts;
         try
         {
             // 読込中に撃つと待たされて 200 が返る（契約 ⑸）＝期限は ready 待ちを飲み込む値にする。
             result = await client
-                .SynthesizeAsync(built.Request, _settings.EffectiveReadyTimeout(), CancellationToken.None)
+                .SynthesizeAsync(built.Request, _settings.EffectiveReadyTimeout(), cts.Token)
                 .ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {
-            Message = "合成が期限内に終わりませんでした。";
+            // 落ちたのなら理由 1 行、そうでなければ期限切れ（黙って同じ文言にしない）。
+            Message = _serverDown ?? "合成が期限内に終わりませんでした。";
             return;
+        }
+        finally
+        {
+            _inFlight = null;
         }
 
         watch.Stop();
@@ -377,6 +390,43 @@ public sealed class TryViewModel : ObservableObject
         Message = played.Ok
             ? "再生中（音量を −16 dBFS 相当に揃えています）。"
             : played.FailureReason ?? "再生できませんでした。";
+    }
+
+    /// <summary>
+    /// サーバの子が消えた（状態機械が <c>Failed</c> を告げた＝裁定 88 ⑶）。
+    /// <para>
+    /// <b>走っている HTTP をその場で切る</b>＝合成中にプロセスが 0xC0000005 で消える形
+    /// （裁定 83）では、上流の応答も切断も返らないまま ready 待ちの期限（既定 120 s）まで
+    /// 画面が「合成しています…」を出し続ける。<b>期限を待たずに理由 1 行を出す</b>。
+    /// </para>
+    /// </summary>
+    public void NotifyServerFailed(int? exitCode, string? reason)
+    {
+        _serverDown = DescribeServerDown(exitCode, reason);
+        Message = _serverDown;
+
+        // 走っている射があれば切る（無ければ札だけ置く）。
+        try
+        {
+            _inFlight?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // 直前に終わっていた＝切る物が無い
+        }
+    }
+
+    /// <summary>
+    /// サーバが落ちたときの 1 行（<b>純関数</b>＝裁定 88 ⑶ の逐語）。
+    /// 終了コードが取れていれば必ず出す（0xC0000005＝−1073741819 が見分けの手がかり）。
+    /// </summary>
+    public static string DescribeServerDown(int? exitCode, string? reason)
+    {
+        var head = exitCode is int code
+            ? "サーバが落ちました（exit " + code.ToString(CultureInfo.InvariantCulture) + "）。"
+            : "サーバが落ちました。";
+
+        return string.IsNullOrWhiteSpace(reason) ? head : head + " " + reason.Trim();
     }
 
     /// <summary>直前の音をもう一度鳴らす。</summary>

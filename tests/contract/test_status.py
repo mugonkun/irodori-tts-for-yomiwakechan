@@ -74,6 +74,24 @@ def test_bind_and_port_defaults(client):
     assert payload["port"] == 18088
 
 
+def test_status_names_the_process_that_answered(client):
+    """便 D（2）: ``pid`` は「この応答は誰の物か」の 1 欄（契約 ⑹）.
+
+    Why it has to be here: ``preload=true`` (裁定 7) loads the model *before*
+    uvicorn binds -- 20-28 s on the Radeon machine -- so during startup another
+    process can be holding the port and answering in this very shape.  Without
+    this field the launcher reads a stranger's numbers into 状態帯 (裁定 67 ⑶)
+    and promotes to 待機 on someone else's readiness; with it, it compares
+    against the pid it started and drops the sample.
+    """
+    import os
+
+    payload = client.get("/ywk/status").json()
+    assert payload["pid"] == os.getpid()
+    assert isinstance(payload["pid"], int)
+    assert not isinstance(payload["pid"], bool)
+
+
 def test_device_line_is_logged_once_when_the_model_is_in(ywk, capsys, baseline):
     """§4-8: 読込完了時に実 device を 1 行。二度は出さない。"""
     ywk._device_logged = False

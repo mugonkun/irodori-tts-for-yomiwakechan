@@ -163,7 +163,38 @@ public static class FetchPlanner
             }
         }
 
+        // **素性の判らない檔を計画に入れない**（是正・2026-09-05・low 6）。
+        // 取得側（HttpDownloader）は sha256 が無ければ長さしか見られないので、
+        // 「入れない」判断はここと LedgerReader.Validate の 2 箇所で先に済ませる
+        // （assemble-runtime.ps1 の Get-YwkCachedItem が throw するのと同じ規律）。
+        RejectItemsWithoutSha256(steps);
+
         return new FetchPlan(variant, steps, modelBytes);
+    }
+
+    /// <summary>
+    /// cache を経由する手（<see cref="FetchStage.Models"/> 以外）に sha256 の無い item が
+    /// 1 件でもあれば投げる（<b>純関数</b>）。
+    /// <c>models</c> の手は URL 単位の注文にならない（<c>ywk_fetch_models.py</c> が取る）ので見ない。
+    /// </summary>
+    public static void RejectItemsWithoutSha256(IReadOnlyList<FetchStep> steps)
+    {
+        ArgumentNullException.ThrowIfNull(steps);
+        var bad = steps
+            .Where(s => s.Stage != FetchStage.Models && s.Item is not null
+                        && string.IsNullOrWhiteSpace(s.Item.Sha256))
+            .Select(s => s.Name)
+            .ToArray();
+
+        if (bad.Length > 0)
+        {
+            throw new LedgerException(
+                "取得台帳に sha256 の無い item がある（検証できない物は取らない）："
+                + string.Join("・", bad.Take(3))
+                + (bad.Length > 3
+                    ? string.Create(CultureInfo.InvariantCulture, $"（他 {bad.Length - 3} 件）")
+                    : string.Empty));
+        }
     }
 
     /// <summary>

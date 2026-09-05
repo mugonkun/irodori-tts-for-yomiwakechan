@@ -158,7 +158,14 @@ public sealed record VcRedistResult(
     VcRedistAction Action,
     int? ExitCode,
     string Message,
-    bool RebootRequired);
+    bool RebootRequired)
+{
+    /// <summary>
+    /// <b>利用者に問わないと進めない</b>（裁定 87 ⑷・low 7）＝System32 が読めず、入れるべきか
+    /// 飛ばしてよいかが判らなかった。<b>「入れる」に落とさない</b>＝UAC の窓を勝手に出さない。
+    /// </summary>
+    public bool NeedsUserDecision => !Ok && Action == VcRedistAction.Unknown;
+}
 
 /// <summary>
 /// <c>ledger/vc_redist.json</c> の installer を通す。
@@ -168,10 +175,11 @@ public sealed record VcRedistResult(
 /// <item>台帳の <c>silent_args</c> で <b>UAC 昇格して</b>走らせる（利用者操作 1 回）。</item>
 /// </list>
 /// <para>
-/// <b>引数は台帳の逐語をそのまま使う</b>（<c>ledger/vc_redist.json</c> は
-/// <c>/install /quiet /norestart</c>・設計書 §6 は <c>/install /passive /norestart</c>＝
-/// <b>食い違っている</b>。台帳が唯一の正本なので台帳を採り、<see cref="SilentArgsOverride"/> で
-/// 差し替えられるようにしてある。卓の裁定が出たら台帳側を直す）。
+/// <b>引数は台帳の逐語をそのまま使う</b>＝<c>ledger/vc_redist.json</c> の
+/// <c>/install /quiet /norestart</c>。裁定 87 ⑷ で<b>台帳が正</b>と決着し、設計書 §6 の
+/// <c>/passive</c> は工具席が台帳に合わせて直した（是正・便 D（2）＝この註の
+/// 「食い違っている」は決着前の記述だった）。<see cref="SilentArgsOverride"/> は
+/// 差し替えの継ぎ目として残す。
 /// </para>
 /// <para>継ぎ目は public コンストラクタ（<see cref="IDownloader"/> とプロセス起動子を差せる）。</para>
 /// </summary>
@@ -213,6 +221,21 @@ public sealed class VcRedistInstaller
     public string? DllPathOverride { get; init; }
 
     /// <summary>
+    /// System32 の観測そのものを差し替える（既定＝<see cref="VcRedistDecision.Probe"/>）。
+    /// <b>「読めなかった」（<see cref="MsvcpState.ProbeError"/> つき）を作れるのはここだけ</b>＝
+    /// <c>File.Exists</c> は権限が無くても投げずに偽を返すので、檔の場所だけでは再現できない。
+    /// </summary>
+    public Func<MsvcpState>? StateProbe { get; init; }
+
+    /// <summary>
+    /// <b>「判らない」でも入れる</b>（既定 偽）。<see cref="VcRedistAction.Unknown"/> のとき、
+    /// 利用者が画面で「入れる」と答えた場合だけ真で作り直す
+    /// （<c>ViewModels/FirstRunViewModel.AskVcRedist</c>）。
+    /// <b>既定で真にはしない</b>＝裁定 87 ⑷「Unknown は『入れる』に落とさず利用者に問う」。
+    /// </summary>
+    public bool AssumeInstallWhenUnknown { get; init; }
+
+    /// <summary>
     /// 判定 →（要れば）取得 → sha256 → 昇格実行。<b>取得は判定の後</b>＝
     /// 在る機体では 1 バイトも落とさない。
     /// </summary>
@@ -228,13 +251,34 @@ public sealed class VcRedistInstaller
         var item = ledger.Installer
             ?? throw new LedgerException("vc_redist.json に installer が無い。");
 
+        var state = StateProbe is null ? VcRedistDecision.Probe(DllPathOverride) : StateProbe();
         var verdict = VcRedistDecision.Evaluate(
-            VcRedistDecision.Probe(DllPathOverride), item.Version, VcRedistDecision.MinimumFileVersion);
+            state, item.Version, VcRedistDecision.MinimumFileVersion);
 
         if (verdict.Action == VcRedistAction.Skip)
         {
             return new VcRedistResult(true, VcRedistAction.Skip, null, verdict.Message, false);
         }
+
+        // **Unknown は「入れる」に落とさない**（裁定 87 ⑷・是正・2026-09-05・low 7）。
+        // System32 が読めなかったのは「無い」ではない。落として UAC を出すと、
+        // 既に入っている機体で管理者の窓を出し（利用者操作を 1 つ増やし）、断られれば
+        // 1602 で初回取得ごと止まる。判らないときは<b>確認が要る</b>と言って止まる。
+        if (verdict.Action == VcRedistAction.Unknown && !AssumeInstallWhenUnknown)
+        {
+            return new VcRedistResult(
+                false,
+                VcRedistAction.Unknown,
+                null,
+                verdict.Message
+                + " Visual C++ 再頒布可能パッケージを入れるかどうかは利用者に確かめてください"
+                + "（勝手には入れません）。",
+                false);
+        }
+
+        // 利用者が「入れる」と答えた Unknown は、以後 Install と同じ道を通る
+        // （結末の Action も Install＝「判らないまま入れた」を「判らない」と記帳しない）。
+        var action = verdict.Action == VcRedistAction.Unknown ? VcRedistAction.Install : verdict.Action;
 
         var download = await _downloader
             .DownloadAsync(DownloadRequest.FromLedgerItem(item, cacheDir), progress, cancellationToken)
@@ -243,7 +287,7 @@ public sealed class VcRedistInstaller
         if (!download.Ok)
         {
             return new VcRedistResult(
-                false, verdict.Action, null,
+                false, action, null,
                 download.FailureReason ?? "vc_redist を取得できなかった。", false);
         }
 
@@ -254,7 +298,7 @@ public sealed class VcRedistInstaller
         }
 
         var exitCode = await _runElevated(download.Path, args, cancellationToken).ConfigureAwait(false);
-        return Describe(verdict.Action, exitCode);
+        return Describe(action, exitCode);
     }
 
     /// <summary>終了コードを結末に落とす（<b>純関数</b>）。</summary>

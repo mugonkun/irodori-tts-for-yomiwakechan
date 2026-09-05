@@ -40,6 +40,20 @@ public static class MemoryEstimate
     public static long ForVoice(bool noRef, bool hasLatent) =>
         noRef || hasLatent ? LatentReferenceBytes : WavReferenceBytes;
 
+    /// <summary>
+    /// 話者 1 件（<b>焼いてあれば実測</b>＝<c>/ywk/status.memory.latents[id]</c> の実サイズ。
+    /// 裁定 67 ⑵・low 13＝<b>主役は 1 名あたり</b>である）。
+    /// </summary>
+    public static long ForVoice(bool noRef, bool hasLatent, long? latentBytes)
+    {
+        if (noRef)
+        {
+            return 0L;
+        }
+
+        return hasLatent ? latentBytes ?? LatentReferenceBytes : WavReferenceBytes;
+    }
+
     /// <summary><see cref="VoiceInfo"/> 1 件の概算（<c>/ywk/voices</c> の欄をそのまま読む）。</summary>
     public static long ForVoice(VoiceInfo voice)
     {
@@ -68,7 +82,13 @@ public static class MemoryEstimate
     }
 
     /// <summary>話者 1 件の欄に出す 1 行。</summary>
-    public static string Describe(bool noRef, bool hasLatent)
+    public static string Describe(bool noRef, bool hasLatent) => Describe(noRef, hasLatent, null);
+
+    /// <summary>
+    /// 話者 1 件の欄に出す 1 行（<b>焼いてあれば実サイズ</b>・無ければ係数と「実測前の概算」）。
+    /// low 13＝<b>この 1 行が主役</b>で、全員分は「同時に載せたときの上限」として括弧に落とす。
+    /// </summary>
+    public static string Describe(bool noRef, bool hasLatent, long? latentBytes)
     {
         if (noRef)
         {
@@ -77,10 +97,13 @@ public static class MemoryEstimate
 
         if (hasLatent)
         {
-            return "潜在参照（増えません）";
+            return latentBytes is long bytes
+                ? "潜在参照（実測 " + UiText.Bytes(bytes) + "）"
+                : "潜在参照（増えません）";
         }
 
-        return "wav 参照（概算 +" + UiText.Bytes(WavReferenceBytes) + "）";
+        return "wav 参照（概算 +" + UiText.Bytes(WavReferenceBytes)
+            + (IsProvisional ? "・実測前の概算" : string.Empty) + "）";
     }
 
     /// <summary><see cref="VoiceInfo"/> 1 件の欄に出す 1 行。</summary>

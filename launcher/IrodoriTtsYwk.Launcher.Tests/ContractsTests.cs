@@ -342,11 +342,13 @@ public sealed class GpuTests
     }
 
     [Fact]
-    public void cu126の下限は560_76()
+    public void cu126の下限は528_33()
     {
+        // 裁定 88 ⑵（便 B の U-14 で 560.76 から改めた）＝537.58 は実射で通した版（裁定 80）。
         var check = new DriverRequirement();
-        Assert.True(check.Check(RuntimeVariants.Cu126, "560.76").Ok);
-        Assert.False(check.Check(RuntimeVariants.Cu126, "560.75").Ok);
+        Assert.True(check.Check(RuntimeVariants.Cu126, "528.33").Ok);
+        Assert.True(check.Check(RuntimeVariants.Cu126, "537.58").Ok);
+        Assert.False(check.Check(RuntimeVariants.Cu126, "528.32").Ok);
     }
 
     [Fact]

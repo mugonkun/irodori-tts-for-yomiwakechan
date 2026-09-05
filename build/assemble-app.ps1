@@ -15,6 +15,8 @@
         ledger/  licenses/            <- copied whole (first-run-notices.md included)
         voices/voices.json            <- {"<default>": {"no_ref": true}} (decisions.md 16)
         voices/voices.ywk.json        <- empty distributor-side speaker table (convoy D fills it)
+        voices/presets.json           <- convoy P's preset ledger (the launcher reads it)
+        voices/presets/*.wav          <- the 11 secondary reference voices (decisions.md 88 (5))
 
     licenses/first-run-notices.md IS copied (decisions.md 46). What stays out of the
     distributable is the third-party bytes (decisions.md 8), not the notice about them: the
@@ -329,6 +331,89 @@ $ywkTable.voices[$defaultName] = [ordered]@{
 $null = Write-YwkJsonFile -Path (Join-Path $AppVoices 'voices.ywk.json') -Value $ywkTable -Depth 8
 Write-YwkLog -Message ('wrote voices/voices.json and voices/voices.ywk.json (default speaker U+30C7 U+30D5 U+30A9 U+30EB U+30C8)')
 
+# --------------------------------------------------------------------------- 4b. presets
+
+# decisions.md 17, 37 and 88 (5): the eleven secondary reference wavs the seats generated in
+# convoy P ship with the app. They are not third-party bytes (decisions.md 37) -- they are this
+# project's own output -- so they are the one binary asset the distributable carries. Convoy A
+# left this out; without it the launcher installs zero preset speakers and says nothing.
+#
+# The names below are load-bearing, not a convention. The launcher reads
+#   <app>\voices\presets.json   (launcher Contracts/AppPaths.PresetsJsonPath)
+#   <app>\voices\presets\*.wav  (launcher Contracts/AppPaths.PresetVoicesDir)
+# and Services/Voices/PresetVoices.cs takes the speaker id from "display_name", the file name
+# from "secondary.file", and skips every row whose "status" is not "done" (decisions.md 27 = the
+# CeVIO row). Flattening the wavs into voices\ would still be found -- by the third fallback of
+# PresetVoices.Discover -- but then the ascii file stems would become the speaker ids.
+
+function Get-YwkJsonMember {
+    <#
+      .SYNOPSIS
+        One property off a ConvertFrom-Json object, or $null when it is absent.
+      .DESCRIPTION
+        Set-StrictMode -Version Latest turns a missing property into a terminating error, and
+        "this row has no secondary wav yet" is a normal state of voices/presets.json.
+    #>
+    param([AllowNull()]$Object, [Parameter(Mandatory = $true)][string]$Name)
+    if ($null -eq $Object) { return $null }
+    if ($Object.PSObject.Properties.Name -notcontains $Name) { return $null }
+    return $Object.$Name
+}
+
+$presetJsonSrc = Join-Path $RepoRoot 'voices\presets.json'
+$presetDirSrc  = Join-Path $RepoRoot 'voices\presets'
+$presetDirDst  = Join-Path $AppVoices 'presets'
+$presetWanted  = New-Object System.Collections.Generic.List[string]
+
+if (-not (Test-Path -LiteralPath $presetJsonSrc)) {
+    Write-YwkLog -Level 'WARN' -Message 'voices/presets.json is not there; the app tree will carry no preset speakers'
+} else {
+    Copy-Item -LiteralPath $presetJsonSrc -Destination (Join-Path $AppVoices 'presets.json') -Force
+    $presetTable = Read-YwkJsonFile -Path $presetJsonSrc
+    $presetRows = @(Get-YwkJsonMember -Object $presetTable -Name 'presets')
+    $presetSkipped = 0
+    foreach ($row in $presetRows) {
+        $status = [string](Get-YwkJsonMember -Object $row -Name 'status')
+        $secondary = Get-YwkJsonMember -Object $row -Name 'secondary'
+        $file = [string](Get-YwkJsonMember -Object $secondary -Name 'file')
+        if ($status -ne 'done' -or [string]::IsNullOrEmpty($file)) {
+            $presetSkipped = $presetSkipped + 1
+            continue
+        }
+        if (-not $presetWanted.Contains($file)) { $presetWanted.Add($file) }
+    }
+    Write-YwkLog -Message ('copied voices/presets.json: ' + $presetRows.Count + ' row(s), ' +
+                           $presetWanted.Count + ' with status=done and a secondary wav, ' +
+                           $presetSkipped + ' skipped (decisions.md 27)')
+}
+
+$presetCopied = 0
+$presetBytes = [int64]0
+if (Test-Path -LiteralPath $presetDirSrc) {
+    $null = New-YwkDirectory -Path $presetDirDst
+    foreach ($w in @(Get-ChildItem -LiteralPath $presetDirSrc -File | Sort-Object Name)) {
+        if ($w.Extension.ToLowerInvariant() -ne '.wav') { continue }
+        Copy-Item -LiteralPath $w.FullName -Destination (Join-Path $presetDirDst $w.Name) -Force
+        $presetCopied = $presetCopied + 1
+        $presetBytes = $presetBytes + [int64]$w.Length
+        Write-YwkLog -Message ('  preset wav ' + $w.Name + ' ' + $w.Length + ' bytes')
+    }
+} elseif ($presetWanted.Count -gt 0) {
+    Write-YwkLog -Level 'WARN' -Message 'voices/presets/ is not there, but presets.json lists secondary wavs'
+}
+Write-YwkLog -Message ('copied voices/presets/: ' + $presetCopied + ' wav file(s), ' + $presetBytes + ' bytes')
+
+# A "done" row whose wav is not in the tree is a broken build, not a warning: the launcher would
+# write a speaker table pointing at a file that never shipped.
+$presetMissing = New-Object System.Collections.Generic.List[string]
+foreach ($file in $presetWanted) {
+    if (-not (Test-Path -LiteralPath (Join-Path $presetDirDst $file))) { $presetMissing.Add($file) }
+}
+if ($presetMissing.Count -gt 0) {
+    throw ('voices/presets.json has status=done rows whose wav did not reach the app tree: ' +
+           ($presetMissing -join ', '))
+}
+
 # --------------------------------------------------------------------------- 5. postflight
 
 $post = Test-YwkUpstreamClean -RepoRoot $RepoRoot
@@ -361,9 +446,12 @@ $report = [ordered]@{
     patches_applied = $applied.ToArray()
     wrapper_files  = @($wrapperFiles | ForEach-Object { $_.Name })
     wrapper_missing = $missing
+    preset_wavs     = $presetCopied
+    preset_bytes    = $presetBytes
+    preset_expected = $presetWanted.ToArray()
     upstream_clean = $post.Ok
 }
 $null = Write-YwkJsonFile -Path (Join-Path $LogDir 'assemble-app.json') -Value $report
 
-Write-YwkLog -Level 'STEP' -Message ('done: ' + $fileCount + ' files under ' + $AppDir + '; patches applied: ' + $applied.Count + '; upstream clean: ' + $post.Ok)
+Write-YwkLog -Level 'STEP' -Message ('done: ' + $fileCount + ' files under ' + $AppDir + '; patches applied: ' + $applied.Count + '; preset wavs: ' + $presetCopied + '; upstream clean: ' + $post.Ok)
 exit 0

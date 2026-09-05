@@ -57,6 +57,21 @@ public sealed class HttpDownloader : IDownloader, IDisposable
     /// <summary>進捗を出す間隔（既定 200 ms）。</summary>
     public TimeSpan ProgressInterval { get; init; } = TimeSpan.FromMilliseconds(200);
 
+    /// <summary>
+    /// <b>無通信の期限</b>（既定 60 秒＝是正・便 D（2））。
+    /// <para>
+    /// <see cref="HttpClient.Timeout"/> は <c>InfiniteTimeSpan</c>（1 檔 1.8 GB を落とすので
+    /// 全体の期限は掛けられない）で、読み回しは呼び手の <see cref="CancellationToken"/> しか
+    /// 見ていなかった。呼び手（<c>FirstRunViewModel</c>）の CTS にも期限は無いので、
+    /// <b>本文を返さない相手に当たると利用者が「中止」を押すまで永久に止まる</b>
+    /// （実射＝<c>Content-Length</c> だけ返して黙る相手に 45 秒待っても返らない）。
+    /// ⇒ <b>この秒数のあいだ 1 バイトも進まなければ打ち切る</b>（受け入れ条件 D-5 の
+    /// 「失敗時の理由と再試行」に落とす）。打ち切りは <see cref="IOException"/> なので
+    /// <c>.part</c> は残り、次の試行が <c>Range</c> で続きから取る。
+    /// </para>
+    /// </summary>
+    public TimeSpan IdleTimeout { get; init; } = TimeSpan.FromSeconds(60);
+
     /// <summary>既定の client（<c>Common.ps1</c> の <c>UserAgent</c> と読み待ちを倣う）。</summary>
     public static HttpClient CreateDefaultClient()
     {
@@ -102,7 +117,15 @@ public sealed class HttpDownloader : IDownloader, IDisposable
             Report(progress, request, DownloadPhase.Verifying, 0, null, 0, 1, null);
             var have = await Sha256OfAsync(request.DestinationPath, cancellationToken).ConfigureAwait(false);
             var length = new FileInfo(request.DestinationPath).Length;
-            if (want is null || string.Equals(have, want, StringComparison.Ordinal))
+
+            // **sha256 が無い item は長さを見る**（是正・2026-09-05・low 6）。
+            // 見ないと、途中で切れた檔・別物が居座った檔をそのまま「cache hit」と名乗って
+            // 展開へ渡す（sha256 を持たない item は models.json の非 LFS 檔＝台帳の size は在る）。
+            var sizeOk = want is not null
+                         || request.ExpectedSize is not > 0
+                         || length == request.ExpectedSize.Value;
+
+            if (sizeOk && (want is null || string.Equals(have, want, StringComparison.Ordinal)))
             {
                 Report(progress, request, DownloadPhase.CacheHit, length, length, 0, 1, null);
                 return new DownloadResult(true, request.DestinationPath, length, have, null, false, true, 0, null);
@@ -309,9 +332,23 @@ public sealed class HttpDownloader : IDownloader, IDisposable
             message.Headers.Range = new RangeHeaderValue(offset, null);
         }
 
-        using var response = await _client
-            .SendAsync(message, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-            .ConfigureAwait(false);
+        // **無通信の期限**（是正・便 D（2））＝進むたびに押し直す。呼び手の取消はそのまま通す。
+        using var idle = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        idle.CancelAfter(IdleTimeout);
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await _client
+                .SendAsync(message, HttpCompletionOption.ResponseHeadersRead, idle.Token)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new IOException(Stalled("応答の頭"));
+        }
+
+        using var _ = response;
 
         if (offset > 0 && response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
         {
@@ -323,6 +360,23 @@ public sealed class HttpDownloader : IDownloader, IDisposable
         response.EnsureSuccessStatusCode();
 
         var resumed = offset > 0 && response.StatusCode == HttpStatusCode.PartialContent;
+        if (resumed)
+        {
+            // **206 の Content-Range が本当に頼んだ所から始まっているか見る**
+            // （是正・2026-09-05・low 5）。CDN・proxy は Range を丸めた 206 を返しうるし、
+            // Content-Range を付けない 206 も在りうる。確かめずに FileMode.Append で書き足すと
+            // .part の途中に穴か重なりができ、sha256 が合わないまま 5 回取り直して諦める
+            // （長さだけは合ってしまう形もある）。違えば .part を捨てて 0 から取り直す。
+            var range = response.Content.Headers.ContentRange;
+            if (range is null || range.From != offset)
+            {
+                SafeDelete(part);
+                throw new IOException(string.Create(CultureInfo.InvariantCulture,
+                    $"続きの位置がサーバの返した Content-Range（{range?.From?.ToString(CultureInfo.InvariantCulture) ?? "無し"}）"
+                    + $"と食い違う（頼んだのは {offset}）ので 0 から取り直す"));
+            }
+        }
+
         var start = resumed ? offset : 0;
         if (offset > 0 && !resumed)
         {
@@ -346,14 +400,30 @@ public sealed class HttpDownloader : IDownloader, IDisposable
         var lastReport = TimeSpan.Zero;
         var lastReportedBytes = start;
 
+        idle.CancelAfter(IdleTimeout);
+
         while (true)
         {
-            var read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)
-                .ConfigureAwait(false);
+            int read;
+            try
+            {
+                read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), idle.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // .part は消さない＝次の試行が Range で続きから取る。
+                await file.FlushAsync(CancellationToken.None).ConfigureAwait(false);
+                throw new IOException(Stalled("本文"));
+            }
+
             if (read <= 0)
             {
                 break;
             }
+
+            // 進んだので期限を押し直す（止まっている間だけ数える）。
+            idle.CancelAfter(IdleTimeout);
 
             await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
             received += read;
@@ -372,6 +442,11 @@ public sealed class HttpDownloader : IDownloader, IDisposable
         await file.FlushAsync(cancellationToken).ConfigureAwait(false);
         return (resumed, received);
     }
+
+    /// <summary>無通信で打ち切ったときの理由 1 行。</summary>
+    private string Stalled(string what) => string.Create(
+        CultureInfo.InvariantCulture,
+        $"{what}が {IdleTimeout.TotalSeconds:0} 秒のあいだ 1 バイトも進まなかったので打ち切った");
 
     /// <summary>檔全体の sha256（小文字 hex）をストリームで計算する。</summary>
     public static async Task<string> Sha256OfAsync(string path, CancellationToken cancellationToken)

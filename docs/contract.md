@@ -456,7 +456,7 @@
 > あって、応答本文にこの文字が入るわけではない。`…` は省略の印である。
 
 ```json
-{"engine":"irodori-ywk","version":"<配布版の版>","upstream":{"irodori_tts":"8224daf","server":"841fb7c"},"host":"127.0.0.1","port":18088,"runtime":{"loaded":bool,"loading":bool,"error":str|null},"device":{"configured":"cuda:0","actual":"cuda:0"|null,"name":"NVIDIA GeForce RTX 3090"|null,"uuid":"…"|null,"pci_bus_id":…,"precision":"bf16"},"torch":{"version":"2.10.0+cu130","cuda":"13.0","hip":null},"voices":{"count":13,"dir":"<絶対パスは出さない・末尾 1 段のみ>"},"warmup":{"state":"idle|running|done","shots":0}}
+{"engine":"irodori-ywk","version":"<配布版の版>","upstream":{"irodori_tts":"8224daf","server":"841fb7c"},"host":"127.0.0.1","port":18088,"runtime":{"loaded":bool,"loading":bool,"error":str|null},"device":{"configured":"cuda:0","actual":"cuda:0"|null,"name":"NVIDIA GeForce RTX 3090"|null,"uuid":"…"|null,"pci_bus_id":"…"|null,"precision":"bf16"},"torch":{"version":"2.10.0+cu130","cuda":"13.0","hip":null},"voices":{"count":13,"dir":"<絶対パスは出さない・末尾 1 段のみ>"},"warmup":{"state":"idle|running|done","shots":0}}
 ```
 
 - **`device.actual` はモデル読込後に実測した値**（`next(model.parameters()).device`・
@@ -466,12 +466,26 @@
 - **GPU の同定は UUID（と PCI bus id）で行う**。index は再起動で変わりうる
   （`CUDA_DEVICE_ORDER` の既定は `FASTEST_FIRST`・nvidia-smi 自身が再起動間の一貫性を保証しないと明記）。
   torch は CUDA でも AMD でも `uuid` と `pci_bus_id` を持つ。
+- **`device.pci_bus_id` は `string|null`**（`decisions.md` 87 ⑵）。**torch は CUDA でも ROCm でも
+  `int` を返す**（gfx1151 の実射で `197`・RTX 3090 の実射で `1`＝`decisions.md` 75 ⑷）＝
+  両者は同じ C++ binding 1 つで、torch 自身も整数として扱い（`torch/numa/binding.py` の
+  `f"{bus:02x}"`）、型 stub（`torch/_C/__init__.pyi` の `_CudaDeviceProperties`）はこの属性を
+  宣言してすらいない。そのまま出すと本体・ランチャの同じ 1 欄が**数**のまま流れるので、
+  **wrapper が `str()` を掛けて必ず文字列にする**（属性が無い・未読込なら `null` のまま）。
+  〔便 D（2）の是正＝1 巡目の「CUDA 側は文字列」は席が足した推測で、裁定 87 ⑵ 自身は
+  「ROCm は int を返す」としか言っていない。実測は上のとおり両方 int。〕
 - **精度は device と連動**＝GPU→`bf16`・CPU→`fp32`（`decisions.md` 7）。
   上流は **CPU×bf16 を起動時に `ValueError` で弾き**（`inference_runtime.py:306-310`）、
   **fp32×GPU 不在は黙って CPU に落ちて 200 を返す**（2 文字・10 steps で 267 秒＝340 倍の実測）。
   配布版は `cuda` 指定で `torch.cuda.is_available()` が偽なら**起動前に理由 1 行で exit 2** にする。
 - **絶対パスは出さない**（`voices.dir` は末尾 1 段だけ）。
-- 上の逐語に**足した欄が 4 つある**（**欄を足すのは `schema` を上げない**＝⑻）：
+- 上の逐語に**足した欄が 6 つある**（**欄を足すのは `schema` を上げない**＝⑻）：
+  - **`pid`**（`int`）＝**この応答を返した個体の pid**（便 D（2）の是正で追加）。
+    要る理由＝`preload=true`（裁定 7）は**モデルを載せてから bind する**ので、起動の 20〜28 秒
+    （gfx1151 の実測）の間は**別の個体が同じポートを握って同じ形で答えられる**。ランチャは
+    自分が起こした子の pid と突合し、違えばその標本を採らない（状態帯＝裁定 67 ⑶ に他人の
+    GPU メモリを出さず、`Ready` にも上げない）。**欄が無ければ突合しない**＝古い個体・上流の
+    素の Server を「別人」と読まない。パスでも秘密でもない（OS のタスク一覧と同じ数）。
   - `voices.error`（`string|null`）＝`voices.json` が読めないときの理由 1 行（⑷ の「0 件＋理由」の相方）。
   - **`variant`**（`string`）＝ランチャが起こしたビルドの名前。既定 **`"cuda"`**（`decisions.md` 4）・
     CPU 版は `"cpu"`・Radeon 版は `"rocm-gfx1151"`（`decisions.md` 5＝**arch を名乗る**。
@@ -488,6 +502,7 @@
     **`state` は `idle|running|done|failed|cancelled`**。走ったことが無ければ
     `{"state":"idle","id":null,"done":0,"total":0,…}`。**変種に依らず必ず在る欄**で、
     CUDA 版では既定で `idle` のまま（⑷ 4-4）。
+  - **`memory`**（`object`）＝GPU メモリと潜在の大きさ（`decisions.md` 87 ⑴・67 ⑵⑶）＝**6-1**。
 - **`warmup` は⑺ 7-2 の暖機の記録**に育った（便 C）。便 A が約束した `state`・`shots` の 2 欄は
   そのままの意味で残っている。
 - **Radeon 版は精度が bf16 に固定**（`decisions.md` 5・36）＝`IRODORI_MODEL_PRECISION=fp32` を
@@ -504,9 +519,63 @@
   ランチャで選んだ GPU が**暗黙に**使われる（`decisions.md` 15・⑼ の D-7）。
   `/ywk/status` は**表示と記録のため**の口であって、切り替えの口ではない。
 
+### 6-1 `memory`＝GPU メモリと潜在の大きさ（`decisions.md` 87 ⑴）
+
+**ランチャが常時（2 秒ごと）読む欄**（`decisions.md` 67 ⑶）。**単位はすべてバイト。**
+
+```json
+{"device":"cuda:0"|"cpu"|null,"allocated":int|null,"reserved":int|null,"max":int|null,
+ "gpu_total":int|null,"gpu_free":int|null,"gpu_used":int|null,
+ "latents":{"<話者 id>":int,…},"latents_total":int,"sampled_at":"<ISO 8601・UTC・末尾 Z>"}
+```
+
+| 欄 | 何を測っているか | 出所 |
+|---|---|---|
+| `device` | いま測っている device＝`device.actual` と同じ値。未読込は `null` | 実測（⑹） |
+| `allocated` | **このプロセスが今つかんでいる量**（ランチャの表示＝**使用量**） | `torch.cuda.memory_allocated` |
+| `reserved` | **このプロセスが OS から取り上げてある量**（同＝**占有量**）。`allocated` **以上**（等しくもなる＝読込前はどちらも 0） | `torch.cuda.memory_reserved` |
+| `max` | このプロセスの `allocated` の**累積ピーク**（プロセス起動以来） | `torch.cuda.max_memory_allocated` |
+| `gpu_total` | **カード全体**の容量 | `torch.cuda.mem_get_info`（**ROCm も同じ口**） |
+| `gpu_free` | **カード全体**の空き | 同上 |
+| `gpu_used` | **`gpu_total − gpu_free`＝カード全体の占有＝他プロセス込み** | 同上 |
+| `latents` | 焼いてある話者の `latents/<stem>.pt` の**実サイズ**を**話者 id で引いた表** | `stat` |
+| `latents_total` | `latents` の合計 | 同上 |
+| `sampled_at` | 測った時刻（ISO 8601・UTC・`…Z`） | — |
+
+- **`gpu_used` と `allocated`／`reserved` は測っている物が違う**。前 3 つは torch の allocator が見た
+  **このプロセス**、`gpu_*` は HIP／CUDA のドライバが見た**カード全体（他プロセス込み）**である。
+  Radeon 機では両者が大きく食い違うことがある（`docs/radeon.md` §3 と §7-7＝in-process 対 OS 側）。
+  **片方の数字でもう片方を否定しない。**
+- **`max` はピーク・`reserved` は現在**＝`allocated ≤ reserved ≤ max` は**不変条件ではない**
+  （gfx1151 の実射で `max` 4,002,721,792 ＞ `reserved` 2,212,495,360）。
+- **`gpu_total` が何の全体かは機体で違う**＝離散 GPU なら VRAM だが、**gfx1151 は共有メモリ**なので
+  実射で **107,090,132,992 B（99.7 GiB）**＝「カードの残り」ではなく**共有プールの残り**である。
+  Radeon 機かどうかは `device.gcn_arch` が非 `null` かで分かる。
+- **device が `cpu` か未読込のときは数値 6 欄が `null`**（`0` ではない＝「測っていない」の意）。
+  そのときも **`latents` は出る**＝焼いた `.pt` は何が載っているかに依らず檔として在る。
+  〔便 D（2）の是正＝1 巡目の「**ランチャは ready の前から大きさを出せる**」は、
+  **配布する構成では成り立たない**。`preload=true`（裁定 7）だと uvicorn は lifespan
+  （＝モデル読込）を**終えてから bind する**ので、その間はこの口ごと答えが無い（同じ理由で
+  上の⑵ の「起動後しばらくは `loaded=false`・`loading=true` が返る」も、配布する構成では
+  ほぼ観測されない＝`preload=false` の個体でだけ通る話）。この欄が ready の前に効くのは
+  **`preload=false` で起こした個体**と、**別プロセスが同じ形で答えている場合**だけである。〕
+- **`latents` に載るのは焼いてある話者だけ**＝焼いていない話者は**行ごと出ない**
+  （`0` と「まだ焼いていない」を混ぜない）。`latents/<stem>.pt` の `<stem>` は⑷ 4-4 と同じ。
+  **話者 id で引ける表**なので、台帳から消えた話者の残骸 `.pt` はここに現れない。
+- **絶対パスは出さない**（⑹ の全体規則と同じ＝檔名も `<stem>` も外に出ない）。
+- **取得に失敗しても `/ywk/status` は 200 のまま**＝`memory` の中に **`error` が 1 行**増えるだけで、
+  読めた欄は読めたまま残る（allocator は取れたが `mem_get_info` が落ちた、など）。
+  `error` は**失敗したときだけ現れる**欄で、絶対パスは `<path>` に畳む（⑶ 3-3 と同じ規則）。
+- **所要は数 ms**（`stat` が話者の数だけ＋ドライバ問い合わせ 1 回）＝2 秒間隔の polling に耐える。
+- **`schema` は上がらない**（欄を足しただけ＝⑻）。
+
 題目＝`ywkstatusのdeviceactualは実測値でモデル未読込ならnull`／`ywkstatusに絶対パスが0件`／
 `ywkstatusが変種を名乗る`／`ywkstatusのdeviceにhipとgcnarchが載る`／`rocm変種はfp32指定でexit2`／
-`rocm変種はMIOpenのdbを利用者データ配下に置く`／`ywkstatusにprecomputeの欄が在る`。
+`rocm変種はMIOpenのdbを利用者データ配下に置く`／`ywkstatusにprecomputeの欄が在る`／
+`memoryは裁定87の10欄を名乗る`／`cpuではmemoryの数値6欄がnull`／`未読込でもmemoryの数値6欄がnull`／
+`GPUではmemoryに数値が載る`／`gpuusedはカード全体`／`latentsは話者idで引ける`／
+`焼いていない話者はlatentsに載らない`／`latentsはcpuでも読める`／`pcibusidは文字列`／
+`memoryの取得に失敗しても200でerrorが1行`／`memoryのerrorに絶対パスが0件`。
 
 ---
 

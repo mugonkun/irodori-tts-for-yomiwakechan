@@ -19,7 +19,7 @@ public static class RuntimeVariants
     /// <summary>既定（裁定 4＝NVIDIA・ドライバ 580 以上）。</summary>
     public const string Cu130 = "cu130";
 
-    /// <summary>ドライバ 560.76 以上。UI で選べる（自動切替はしない＝裁定 4）。</summary>
+    /// <summary>ドライバ 528.33 以上（裁定 88 ⑵）。UI で選べる（自動切替はしない＝裁定 4）。</summary>
     public const string Cu126 = "cu126";
 
     /// <summary>上級者・「遅い」の注記つき（裁定 13）。</summary>
@@ -88,7 +88,7 @@ public static class RuntimeVariants
     public static string DisplayName(string variant) => variant switch
     {
         Cu130 => "CUDA 13.0（既定・ドライバ 580 以上）",
-        Cu126 => "CUDA 12.6（ドライバ 560.76 以上）",
+        Cu126 => "CUDA 12.6（ドライバ 528.33 以上）",
         Cpu => "CPU（遅い・配信用途では非推奨）",
         RocmGfx1151 => "Radeon gfx1151（未保障・bf16 固定）",
         _ => variant,

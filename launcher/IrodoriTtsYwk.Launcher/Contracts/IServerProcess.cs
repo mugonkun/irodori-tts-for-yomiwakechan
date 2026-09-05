@@ -299,6 +299,28 @@ public sealed record ServerStartRequest(
     IReadOnlyDictionary<string, string> Environment,
     TimeSpan ReadyTimeout)
 {
+    /// <summary>
+    /// 台帳の綴り（<c>cu130</c>／<c>cu126</c>／<c>cpu</c>／<c>rocm-gfx1151</c>）＝<b>変種の門</b>の入力
+    /// （裁定 88 ⑴）。空なら <see cref="Environment"/> の <c>YWK_VARIANT</c> を代わりに見る。
+    /// <para>
+    /// <b>畳んだ名で入ると判断が変わる</b>（是正・便 D（2））＝cu130 と cu126 はどちらも
+    /// <c>cuda</c> に畳まれているので、⒜ 勧める変種は <c>cpu</c> に落ち ⒝ ドライバの閾は
+    /// <b>厳しい方（cu130 の 580.00）</b>が掛かり ⒞ 検分が読めなければ<b>起こさない</b>。
+    /// 1 巡目はここが「勧める変種が粗くなる」だけだと書いていたが、実際には
+    /// <see cref="DriverRequirement.Minimum"/> が畳んだ名に <c>null</c> を返していたので
+    /// <b>閾も「未実測の帯」の 1 行も丸ごと落ちていた</b>（実射＝ドライバ 500.00 でも
+    /// <c>Allow=True</c>）。cu126 を正しく走らせたい呼び手は<b>この欄に台帳の綴りを載せる</b>こと
+    /// （<c>ServerLaunchPlan.Build</c> が載せる）。
+    /// </para>
+    /// </summary>
+    public string Variant { get; init; } = string.Empty;
+
+    /// <summary><c>nvidia-smi</c> の <c>driver_version</c>（AMD 機・ツール不在なら null）。</summary>
+    public string? DriverVersion { get; init; }
+
+    /// <summary>この機体に組んである変種（門が勧める先を選ぶのに使う）。</summary>
+    public IReadOnlyList<string> InstalledVariants { get; init; } = [];
+
     /// <summary><c>python.exe -m ywk_server --host … --port …</c> の引数。</summary>
     public IReadOnlyList<string> Arguments =>
     [
@@ -324,7 +346,18 @@ public sealed record ServerStartResult(
     int? ProcessId,
     int? ExitCode,
     TimeSpan Elapsed,
-    string? FailureReason);
+    string? FailureReason)
+{
+    /// <summary>
+    /// <b>止めはしないが伝える 1 行の列</b>（裁定 88 ⑵）。いまの住人は「未実測の帯」＝
+    /// cu126 をドライバ 528.33 以上 537.58 未満で起こしたときの注意で、状態帯に出す。
+    /// <para>
+    /// <see cref="FailureReason"/> とは別物である＝理由は「起こさなかった／落ちた」ことの説明、
+    /// 注意は「起こしたが知らせておく」ことの説明。既定は空（<b>null にはならない</b>）。
+    /// </para>
+    /// </summary>
+    public IReadOnlyList<string> Notices { get; init; } = [];
+}
 
 public sealed class ServerStateChangedEventArgs(ServerState previous, ServerState current, string? reason)
     : EventArgs
@@ -373,7 +406,24 @@ public interface IServerProcess : IAsyncDisposable
     /// <summary>この個体を叩く根（起こしていなければ null）。</summary>
     Uri? BaseAddress { get; }
 
+    /// <summary>
+    /// <b>見張り 1 本が採った最新の <c>/ywk/status</c></b>（まだ 1 度も読めていなければ null）。
+    /// <para>
+    /// <b>窓はこれを読むだけにする</b>（low 3・裁定 88 ⑶）＝窓側の <c>DispatcherTimer</c> で
+    /// <c>/ywk/status</c> を別に叩くと、⑴ uvicorn の access log が 2 倍になって受け入れ条件 D-4 の
+    /// 3 行を末尾 20 行から押し出し ⑵ 暖機・事前計算の判定が 2 つの標本に割れる。
+    /// 標本を採るのは <c>ServerProcess.StartWatch</c> の 1 本だけである。
+    /// </para>
+    /// </summary>
+    StatusResponse? LatestStatus { get; }
+
     event EventHandler<ServerStateChangedEventArgs>? StateChanged;
+
+    /// <summary>
+    /// 見張りが 1 標本を読むたびに上がる（<see cref="LatestStatus"/> と同じ物）。
+    /// <b>UI スレッドではない</b>＝窓は <c>Dispatcher</c> へ渡してから描くこと（§12-2 ⑴）。
+    /// </summary>
+    event EventHandler<StatusResponse>? StatusSampled;
 
     /// <summary>stderr の 1 行（畳んだ形＝<see cref="ServerLogParser.ForLog"/> を通したもの）。</summary>
     event EventHandler<ServerLogLineEventArgs>? LogLine;

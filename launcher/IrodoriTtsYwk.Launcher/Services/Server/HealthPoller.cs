@@ -38,6 +38,15 @@ public interface IReadinessProbe
 /// <para>
 /// <b>標本 1 回の期限は 5 秒</b>（契約 ⑵）。ready 待ちそのものの期限は呼ぶ側（120 s・CPU は 300 s）。
 /// </para>
+/// <para>
+/// <b>誰も居ない相手には 2 本目を撃たない</b>（是正・便 D（2））＝<c>StatusCode == 0</c> は
+/// 「HTTP の応答が 1 つも返っていない」（接続できない・期限切れ）の印で、その相手に
+/// <c>/health</c> をもう 1 本撃っても同じ代金を 2 度払うだけである。実測＝
+/// 誰も listen していない <c>127.0.0.1</c> への 1 本が <b>2.0 秒</b>（接続が拒まれるまでの待ち）で、
+/// 是正前の 1 標本は <b>4.0 秒</b>かかっていた。これが
+/// <see cref="ServerStateMachine.UnreachableSamplesToDowngrade"/> の 3 標本に掛かり、
+/// 「応答が消えた個体を降ろす」までの実測が 18.0 秒になっていた。
+/// </para>
 /// </summary>
 public sealed class HealthPoller : IReadinessProbe, IDisposable
 {
@@ -73,6 +82,16 @@ public sealed class HealthPoller : IReadinessProbe, IDisposable
         if (!status.Available)
         {
             return new ReadinessSample(true, false, false, null, "この個体は配布版の wrapper ではありません。");
+        }
+
+        // **応答が 1 つも返っていない相手には /health を撃たない**（是正・便 D（2））。
+        // ここで 2 本目を撃つと 1 標本の代金が倍になり、Ready から降ろすまでの実測が
+        // 3 標本 × 4.0 s ＋ 見張りの 2 s × 3 ＝ 18.0 s になっていた。
+        if (status.StatusCode == 0)
+        {
+            return new ReadinessSample(
+                false, false, false, null,
+                status.FailureReason ?? "サーバに繋がりません。");
         }
 
         var health = await client.GetHealthAsync(cancellationToken).ConfigureAwait(false);

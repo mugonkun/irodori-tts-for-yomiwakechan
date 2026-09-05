@@ -45,15 +45,7 @@ public static class LauncherComposition
         // 失敗しても起動は止めない（話者 0 名でも「デフォルト」で合成できる＝裁定 45）。
         try
         {
-            // 旧い置き場（voices_dir 直下）に残っている参照 wav を refs/ へ移す
-            // （是正・2026-09-05＝直下に置くと上流の走査が檔名の幹を話者 id にして
-            //   同じ話者が一覧に 2 件出る）。移してから voices.json を書き直す。
-            if (store.MigrateReferences() > 0)
-            {
-                new VoicesJsonWriter().Write(paths.VoicesJsonPath, store.Load());
-            }
-
-            PresetVoices.InstallIfFirstRun(paths, store);
+            PrepareVoices(paths, store, new VoicesJsonWriter());
         }
         catch (System.IO.IOException)
         {
@@ -63,6 +55,43 @@ public static class LauncherComposition
         {
             // 同上
         }
+    }
+
+    /// <summary>
+    /// 起動の前に話者の置き場を整える（<b>テストの継ぎ目は public</b>＝実機に触れずに撃てる）。
+    /// <para>
+    /// ⑴ 旧い置き場（<c>voices_dir</c> 直下）に残っている参照 wav を <c>refs/</c> へ移す
+    /// （是正・2026-09-05＝直下に置くと上流の走査が檔名の幹を話者 id にして同じ話者が一覧に 2 件出る）。
+    /// ⑵ 初回だけプリセットを利用者データへ写す（配布樹は読むだけ）。
+    /// ⑶ <b>写した話者を <c>voices.json</c> にも載せる</b>（統合席 §19・裁定 78 ⑴）。
+    /// </para>
+    /// <para>
+    /// ⑶ が要る理由＝<see cref="Voices.PresetVoices"/> が書くのはランチャの台帳
+    /// （<c>voices.ywk.json</c>）だけで、<b>上流が読む別名表には 1 行も入らない</b>。
+    /// 載せないままだと wrapper はプリセットを 1 名も知らず、<c>GET /v1/audio/voices</c> にも
+    /// 試し撃ちにも 11 名が出てこない（一覧はランチャの台帳だけが持つので画面では見える＝
+    /// <b>見えるのに合成できない</b>形になる）。wrapper の起動時の事前計算 <c>all</c> は
+    /// <b>ready 時点の <c>voices.json</c></b> を見るので、ここで書いてあれば
+    /// <c>rocm-*</c> 変種は起動のたびに自動で焼ける（裁定 78 ⑴）。
+    /// 檔が既に在るときは書き手が読み直して <c>ref_latent</c> を残す（契約 ⑷ 4-3）。
+    /// </para>
+    /// </summary>
+    /// <returns>写したプリセットの数（<c>voices.json</c> を書いたかは <c>File.Exists</c> で判る）。</returns>
+    public static int PrepareVoices(AppPaths paths, VoiceStore store, IVoicesJsonWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(writer);
+
+        var moved = store.MigrateReferences();
+        var copied = PresetVoices.InstallIfFirstRun(paths, store);
+
+        if (moved > 0 || copied > 0 || !System.IO.File.Exists(paths.VoicesJsonPath))
+        {
+            writer.Write(paths.VoicesJsonPath, store.Load());
+        }
+
+        return copied;
     }
 
     /// <summary>

@@ -11,6 +11,11 @@
         GET /params       200 and under -ParamsBudgetMs (default 100 ms)
         GET /ywk/status   200, and its "variant" field really is -Variant
 
+    Before the server is started -- on every run, -HealthOnly included -- the assembled app tree
+    is checked for the preset reference voices (decisions.md 88 (5)): every voices/presets.json
+    row with status=done has to have its secondary.file under build/out/app/voices/presets/ with
+    the size_bytes and md5 that ledger records. There is no sha256 field in presets.json.
+
     With -WithModel the /ywk/status body is read, not merely saved: device.actual and
     device.precision have to be -Device / -Precision, and on a rocm variant device.name
     must be non-empty, device.hip (torch.version.hip) non-null and device.gcn_arch equal to
@@ -276,6 +281,89 @@ function Get-YwkField {
     if ($null -eq $Object) { return $null }
     if ($Object.PSObject.Properties.Name -notcontains $Name) { return $null }
     return $Object.$Name
+}
+
+# ------------------------------------------------------------------- preset speakers (A-2)
+#
+# decisions.md 88 (5). The app tree has to carry the eleven secondary reference wavs and the
+# ledger that names them, because the launcher's first run builds its speaker table out of
+#   <app>\voices\presets.json  +  <app>\voices\presets\*.wav
+# (launcher Services/Voices/PresetVoices.Discover). Nothing else in this repository checked
+# that build\assemble-app.ps1 really copied them, and a tree without them installs zero preset
+# speakers with no error at all -- the launcher deliberately does not mark the install as done
+# when it finds none, so the failure is silent on both sides.
+#
+# voices/presets.json records md5 and size_bytes per file and has no sha256 field, so those two
+# are what is compared here. The rule for which rows must be present is the one PresetVoices.cs
+# uses: status = "done" AND a non-empty secondary.file (decisions.md 27 leaves one row skipped).
+#
+# This check is static -- it runs before the server is started, so it is made on every run,
+# -HealthOnly included.
+
+function Get-YwkMd5 {
+    <#
+      .SYNOPSIS
+        Lower-case md5 hex of a file (voices/presets.json records md5, not sha256).
+    #>
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if ($null -ne (Get-Command 'Get-FileHash' -ErrorAction SilentlyContinue)) {
+        return (Get-FileHash -LiteralPath $Path -Algorithm MD5).Hash.ToLowerInvariant()
+    }
+    $md5 = [System.Security.Cryptography.MD5]::Create()
+    try {
+        $fs = [System.IO.File]::Open($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+        try { $bytes = $md5.ComputeHash($fs) } finally { $fs.Dispose() }
+    } finally {
+        $md5.Dispose()
+    }
+    return (($bytes | ForEach-Object { $_.ToString('x2') }) -join '')
+}
+
+$presetsJson = Join-Path $AppVoices 'presets.json'
+$presetsDir  = Join-Path $AppVoices 'presets'
+if (-not (Test-Path -LiteralPath $presetsJson)) {
+    Add-YwkResult -Name 'app tree carries the preset voices' -Ok $false `
+        -Detail ('missing ' + $presetsJson + ' -- run build\assemble-app.ps1 (decisions.md 88 (5))')
+} else {
+    $presetTable = Read-YwkJsonFile -Path $presetsJson
+    $presetRows = @(Get-YwkField -Object $presetTable -Name 'presets')
+    $presetWant = 0
+    $presetOk = 0
+    $presetBad = New-Object System.Collections.Generic.List[string]
+    foreach ($row in $presetRows) {
+        $status = [string](Get-YwkField -Object $row -Name 'status')
+        $secondary = Get-YwkField -Object $row -Name 'secondary'
+        $file = [string](Get-YwkField -Object $secondary -Name 'file')
+        if ($status -ne 'done' -or [string]::IsNullOrEmpty($file)) { continue }
+        $presetWant = $presetWant + 1
+        $wav = Join-Path $presetsDir $file
+        if (-not (Test-Path -LiteralPath $wav)) {
+            $presetBad.Add($file + ': not in the app tree')
+            continue
+        }
+        $size = Get-YwkFileSize -Path $wav
+        $wantSize = Get-YwkField -Object $secondary -Name 'size_bytes'
+        if ($null -ne $wantSize -and [int64]$wantSize -ne $size) {
+            $presetBad.Add($file + ': ' + $size + ' bytes, presets.json says ' + $wantSize)
+            continue
+        }
+        $wantMd5 = [string](Get-YwkField -Object $secondary -Name 'md5')
+        if (-not [string]::IsNullOrEmpty($wantMd5)) {
+            $gotMd5 = Get-YwkMd5 -Path $wav
+            if ($gotMd5 -ne $wantMd5.ToLowerInvariant()) {
+                $presetBad.Add($file + ': md5 ' + $gotMd5 + ', presets.json says ' + $wantMd5.ToLowerInvariant())
+                continue
+            }
+        }
+        $presetOk = $presetOk + 1
+    }
+    $presetDetail = ('presets.json rows=' + $presetRows.Count + ' status=done=' + $presetWant +
+                     ' verified=' + $presetOk + ' (size + md5) under ' + $presetsDir)
+    if ($presetBad.Count -gt 0) {
+        $presetDetail = $presetDetail + '; bad: ' + ($presetBad -join '; ')
+    }
+    Add-YwkResult -Name 'app tree carries the preset voices' `
+        -Ok (($presetWant -gt 0) -and ($presetBad.Count -eq 0)) -Detail $presetDetail
 }
 
 try {

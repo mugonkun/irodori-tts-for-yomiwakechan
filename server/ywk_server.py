@@ -61,6 +61,7 @@ import threading
 import time
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -1354,12 +1355,130 @@ def _cuda_device_info(device: Any) -> dict[str, Any]:
         info["name"] = getattr(props, "name", None)
         uuid_value = getattr(props, "uuid", None)
         info["uuid"] = None if uuid_value is None else str(uuid_value)
-        info["pci_bus_id"] = getattr(props, "pci_bus_id", None)
+        # 裁定 87 ⑵: string|null, never a bare int.  ROCm's properties carry an
+        # ``int`` here and CUDA's a ``str``; letting that difference out would
+        # make the launcher's one field two types depending on the machine.
+        bus_id = getattr(props, "pci_bus_id", None)
+        info["pci_bus_id"] = None if bus_id is None else str(bus_id)
         info["hip"] = getattr(torch.version, "hip", None)
         info["gcn_arch"] = getattr(props, "gcnArchName", None)
     except Exception:  # noqa: BLE001 -- status must never fail
         pass
     return info
+
+
+# ---- memory (裁定 87 ⑴ / 67 ⑵⑶) -----------------------------------------
+#
+# The launcher polls ``/ywk/status`` every two seconds and draws three things
+# from this field: 使用量 = ``allocated``, 占有量 = ``reserved``, and the whole
+# card = ``gpu_used``/``gpu_total``.  The first three come from torch's own
+# allocator and describe *this process*; ``mem_get_info`` (the same call on
+# ROCm) describes the **card**, other processes included -- which is why the
+# two disagree and why 裁定 87 names them apart.  ``docs/radeon.md`` §3 has the
+# in-process numbers and §7-7 the OS-side ones for the same machine.
+#
+# Everything here is best effort: a status route that 500s because a memory
+# probe threw would take the launcher's whole status pane with it, so a failure
+# lands as one line in ``memory.error`` and the numbers stay ``null``.
+
+#: 裁定 87 ⑴ verbatim, in the state that says "nothing could be read".  Bytes.
+_MEMORY_EMPTY: dict[str, Any] = {
+    "device": None,
+    "allocated": None,
+    "reserved": None,
+    "max": None,
+    "gpu_total": None,
+    "gpu_free": None,
+    "gpu_used": None,
+    "latents": {},
+    "latents_total": 0,
+}
+
+
+def _one_line(exc: BaseException) -> str:
+    """``TypeName: message`` on one line, absolute paths folded (⑶ 3-3)."""
+    return scrub_text(" ".join(f"{type(exc).__name__}: {exc}".split()))
+
+
+def _latent_sizes(voice_ids: Any) -> tuple[dict[str, int], int]:
+    """``latents/<stem>.pt`` sizes keyed by speaker id, plus their sum.
+
+    Keyed by *speaker id* rather than by file, so a ``.pt`` whose speaker is
+    gone from the ledger does not show up as a row nobody can act on -- and a
+    speaker that was never baked is simply absent (裁定 87 ⑴), which is what
+    lets the launcher tell "0 バイト" from "焼いていない".
+    """
+    sizes: dict[str, int] = {}
+    total = 0
+    if not voice_ids:
+        return sizes, total
+    root = latents_dir()
+    for voice_id in voice_ids:
+        name = str(voice_id)
+        path = root / f"{latent_stem(name)}.pt"
+        # ``is_file`` and not ``exists``: a directory sitting on that name would
+        # otherwise be reported as a 0 バイト latent, which reads as "baked and
+        # empty" instead of "not baked".
+        if not path.is_file():
+            continue
+        try:
+            size = path.stat().st_size
+        except OSError:
+            continue  # vanished between the two calls: leave the speaker out
+        sizes[name] = int(size)
+        total += int(size)
+    return sizes, total
+
+
+def memory_snapshot(device: Any = None, voice_ids: Any = None) -> dict[str, Any]:
+    """``/ywk/status.memory`` (裁定 87 ⑴).  Every number is **bytes**.
+
+    ``device`` is the *actual* device the model sits on (``None`` when nothing
+    is loaded), and ``voice_ids`` the ids of the speaker list the same response
+    is already carrying -- passed in rather than re-read so this costs a few
+    ``stat`` calls, not a second pass over ``voices.json``.
+
+    On CPU or with no model in, the six numeric fields stay ``null`` and only
+    ``latents`` is answered: the baked ``.pt`` files exist regardless of what is
+    loaded, and the launcher shows their size even before the server is ready.
+    """
+    snapshot: dict[str, Any] = dict(_MEMORY_EMPTY)
+    snapshot["latents"] = {}  # never hand out the module-level dict itself
+    reasons: list[str] = []
+
+    try:
+        snapshot["latents"], snapshot["latents_total"] = _latent_sizes(voice_ids)
+    except Exception as exc:  # noqa: BLE001 -- a status field must never fail
+        reasons.append(_one_line(exc))
+
+    if device is not None:
+        snapshot["device"] = str(device)
+    if device is not None and getattr(device, "type", None) == "cuda":
+        try:
+            import torch  # noqa: PLC0415
+
+            index = device.index
+            if index is None:
+                index = torch.cuda.current_device()
+            # This process, from torch's allocator.
+            snapshot["allocated"] = int(torch.cuda.memory_allocated(index))
+            snapshot["reserved"] = int(torch.cuda.memory_reserved(index))
+            snapshot["max"] = int(torch.cuda.max_memory_allocated(index))
+            # The whole card, other processes included.
+            free, total = torch.cuda.mem_get_info(index)
+            snapshot["gpu_total"] = int(total)
+            snapshot["gpu_free"] = int(free)
+            snapshot["gpu_used"] = int(total) - int(free)
+        except Exception as exc:  # noqa: BLE001 -- ditto
+            reasons.append(_one_line(exc))
+
+    stamp = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+    snapshot["sampled_at"] = stamp.replace("+00:00", "Z")
+    # Only on failure, and only ever one line: 裁定 87 ⑴'s verbatim shape is the
+    # healthy shape, and an absent key reads as null to the launcher either way.
+    if reasons:
+        snapshot["error"] = " / ".join(reasons)
+    return snapshot
 
 
 @app.get("/ywk/status")
@@ -1401,6 +1520,14 @@ def ywk_status() -> dict[str, Any]:
         "upstream": {"irodori_tts": UPSTREAM_IRODORI_TTS, "server": UPSTREAM_SERVER},
         "host": live.host,
         "port": live.port,
+        # Whose answer this is.  preload=true means the model is loaded *before*
+        # uvicorn binds (20-28 s on this machine), so during that window another
+        # process can be holding the port and answering in this exact shape --
+        # and the launcher would read a stranger's numbers as its own child's
+        # (裁定 67 ⑶ の状態帯).  One integer lets it compare against the pid it
+        # started.  Not a path and not a secret: it is the same number the OS
+        # already shows in the task list.
+        "pid": os.getpid(),
         "runtime": {
             "loaded": bool(getattr(manager, "is_loaded", False)),
             "loading": bool(getattr(manager, "is_loading", False)),
@@ -1424,6 +1551,9 @@ def ywk_status() -> dict[str, Any]:
             "dir": live.voices_dir.expanduser().name,
             "error": voices_error,
         },
+        # 裁定 87 ⑴: the speaker ids come from the list built just above, so the
+        # latents table is answered from the same reading of voices.json.
+        "memory": memory_snapshot(device_obj, [item["id"] for item in voices]),
         "warmup": warmup_snapshot(),
         "precompute": precompute_snapshot(),
     }

@@ -38,11 +38,31 @@
               HeadersVisibility="Column" GridLinesVisibility="Horizontal"
               SelectionMode="Single">
       <DataGrid.Columns>
-        <DataGridTextColumn Header="表示名" Binding="{Binding DisplayName}" Width="*" />
-        <DataGridTextColumn Header="檔名（id）" Binding="{Binding FileName}" Width="180" />
+        <!--
+          low 14＝**id は表示名の列**である（本体はこの名前で話者を選ぶ）。
+          檔名の列は「参照 wav の檔名」＝配布版が voices\refs\ へ写した ASCII の檔名で、
+          話者 id ではない。見出しを取り違えると、利用者は檔名を本体に渡そうとする。
+        -->
+        <DataGridTextColumn Header="表示名（＝話者 id）" Binding="{Binding DisplayName}" Width="*">
+          <!-- HeaderTemplate で吊る＝見出しの既定の見た目（枠・余白）を落とさずに ToolTip を足す -->
+          <DataGridTextColumn.HeaderTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding}"
+                         ToolTip="この列が話者 id です（本体・試し撃ちはこの名前で話者を選びます）。日本語で構いません。" />
+            </DataTemplate>
+          </DataGridTextColumn.HeaderTemplate>
+        </DataGridTextColumn>
+        <DataGridTextColumn Header="参照 wav の檔名" Binding="{Binding FileName}" Width="180">
+          <DataGridTextColumn.HeaderTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding}"
+                         ToolTip="配布版が voices\refs\ へ写した檔の名前です（話者 id ではありません）。" />
+            </DataTemplate>
+          </DataGridTextColumn.HeaderTemplate>
+        </DataGridTextColumn>
         <DataGridTextColumn Header="種別" Binding="{Binding KindText}" Width="90" />
         <DataGridTextColumn Header="参照潜在" Binding="{Binding LatentText}" Width="100" />
-        <DataGridTextColumn Header="メモリ概算" Binding="{Binding MemoryText}" Width="200" />
+        <DataGridTextColumn Header="メモリ（1 名あたり）" Binding="{Binding MemoryText}" Width="220" />
       </DataGrid.Columns>
     </DataGrid>
 
@@ -87,16 +107,34 @@
                  AutomationProperties.AutomationId="VoicesSelectedMemoryText"
                  Text="{Binding SelectedMemoryText, Mode=OneWay}" />
       <WrapPanel>
+        <!--
+          low 11＝試聴は wav のときだけ押せる。押せない理由は HelpText（UIA から読める）と
+          下の 1 行の両方に出す＝「押せるのに必ず失敗する」形を作らない。
+        -->
         <Button Content="試聴" Padding="12,4" Margin="0,0,6,6"
                 AutomationProperties.AutomationId="VoicesPreviewButton"
+                AutomationProperties.HelpText="{Binding PreviewBlockedText, Mode=OneWay}"
+                ToolTip="{Binding PreviewBlockedText, Mode=OneWay}"
                 Command="{Binding PreviewCommand}" />
         <Button Content="停止" Padding="12,4" Margin="0,0,6,6"
                 AutomationProperties.AutomationId="VoicesStopPreviewButton"
                 Click="OnStopPreviewClick" />
+        <!--
+          low 14＝削除は Command に寄せる（押せる・押せないを 1 箇所で決める）。
+          確認窓は窓が要る仕事なので View が VoicesViewModel.ConfirmRemove に差す。
+        -->
         <Button Content="削除" Padding="12,4" Margin="0,0,6,6"
                 AutomationProperties.AutomationId="VoicesRemoveButton"
-                Click="OnRemoveClick" />
+                AutomationProperties.HelpText="{Binding RemoveBlockedText, Mode=OneWay}"
+                ToolTip="{Binding RemoveBlockedText, Mode=OneWay}"
+                Command="{Binding RemoveCommand}" />
       </WrapPanel>
+      <TextBlock Margin="0,2,0,0" TextWrapping="Wrap" Foreground="#7A5200" FontSize="11"
+                 AutomationProperties.AutomationId="VoicesPreviewBlockedText"
+                 Text="{Binding PreviewBlockedText, Mode=OneWay}" />
+      <TextBlock Margin="0,2,0,0" TextWrapping="Wrap" Foreground="#7A5200" FontSize="11"
+                 AutomationProperties.AutomationId="VoicesRemoveBlockedText"
+                 Text="{Binding RemoveBlockedText, Mode=OneWay}" />
 
       <Separator Margin="0,10,0,10" />
 
