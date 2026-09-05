@@ -831,3 +831,382 @@ PS 5.1 では `Get-Content` に **`-Encoding UTF8` を必ず付ける**（`decis
 4. 09-06 に段 4・9（管理者 1 回）と E-1（Sandbox・管理者 1 回＋再起動）＝**Q-E3 の裁定を得てから**。
 5. 09-06〜07 に W-1（cu126 だけ）＝**Q-E3 の裁定を得てから**。
 6. 月曜以降、RTX 機に Inno 6.7.3 を公式インストーラで入れ、cu130／cu126 の 1 周を時計付きで撃つ。
+---
+
+## 11. 台本席（便 E（1））の記帳（2026-09-05 08:14〜08:26・Radeon 機・実装サブ席 opus）
+
+> 本節は**この席が実際に撃った物だけ**を書く。読んだだけ・推したものは「推測」と明記する。
+> 書いた檔は `installer/irodori-tts-ywk.iss` **1 檔**と本節だけ（設計書 §10-1・§10-2 の担当 path）。
+> `launcher/`・`server/`・`build/`・`probe/`・`docs/acceptance.md`・`docs/design/ben-d-launcher.md` は
+> **読むだけ**（便 D（2）が在飛行中）。`git commit` していない。外部へ出ていない。
+> **`%LOCALAPPDATA%\Programs\` に本導入していない**（試しの導入はスクラッチパッドの下・終わったら畳んだ）。
+> **ランチャは 1 度も起動していない**（`[Run]` は `skipifsilent` なので `/VERYSILENT` では走らない）。
+
+### 11-1 置いた檔（**断定**・実測）
+
+| 檔 | バイト | 形 |
+|---|---|---|
+| `installer/irodori-tts-ywk.iss` | **15,283** | UTF-8 **BOM 付き**（先頭 3 バイト＝`239,187,191`＝`EF BB BF`）・**CRLF 282 対・単独 LF 0 個**・283 行 |
+
+`.gitattributes:7` の `*.iss text eol=crlf` と `installer/README.md` §1 の「UTF-8 **BOM 付き**」に合わせた。
+日本語（`[Messages]`・`MsgBox`・`SuppressibleTaskDialogMsgBox` の文言）が**アンインストールのログに逐語で出た**
+（§11-4 の `Defaulting to No …` の 2 行）＝BOM が効いていることは実射で裏が取れている。
+
+### 11-2 `.iss` の要点（設計書 §2 の骨との対応）
+
+- **`/D` は 7 本**（`AppVersion`・`AppVersionNumeric`・`Flavor`・`SrcApp`・`SrcExe`・`Repo`・`OutDir`＝裁定 91）。
+  7 本とも `#ifndef` → `#error` で受け、**版も路も上流 pin も檔に書き写していない**。`Flavor` だけ既定 `"cuda"`。
+- **`AppId` は `Flavor` で切り替え**＝CUDA `{F228543A-DCF9-45A3-8826-7485C81E1757}`／
+  Radeon `{ECA98712-1574-4D2A-A1FE-0FF5347BF185}`（裁定 90）。`AppId={{#MyAppId}` の書き方で
+  **アンインストール鍵の名が `{ECA98712-…-0FF5347BF185}_is1` になることを実射で確かめた**（§11-4）。
+- `PrivilegesRequired=lowest`・`PrivilegesRequiredOverridesAllowed` は**書かない**・
+  `DefaultDirName={autopf}\irodori-tts-ywk`（Radeon 版は `…-radeon`）・`MinVersion=10.0`・
+  `ArchitecturesAllowed=x64compatible`。
+- **`AppMutex=Local\irodori-tts-ywk-launcher`**＝`launcher/IrodoriTtsYwk.Launcher/App.xaml.cs:32` の逐語
+  `private const string MutexName = @"Local\irodori-tts-ywk-launcher";` を 1 字も変えずに写した
+  （本席が実見。CHM 逐語＝mutex 名の比較は大小文字を区別する）。
+- `Compression=lzma2/max`・`SolidCompression=yes`・`WizardStyle=modern`・
+  `OutputBaseFilename=irodori-tts-ywk-setup-{#AppVersion}-{#Flavor}`（`setup` にしない＝CHM の hijack の逐語）。
+- `[Languages]` は `ja` 1 本（`compiler:Languages\Japanese.isl`）。**警告 0 で通った**＝6.7.3 の
+  `Japanese.isl` に対して必須メッセージの過不足が無い。
+- `[InstallDelete]` 4 行・`[Files]`（`docs` は明示列挙＝Radeon 版のみ `radeon.md` を足す 3 檔）・
+  `[Icons]` 1 行（`{autoprograms}`）・`[Run]`（`postinstall skipifsilent`）・`[UninstallDelete]` 2 行。
+- `[Code]` は設計書 §2 のまま＝`DataDir()`・`TwoLabels`・`StartsWithDir`・`NextButtonClick`（場所の門＋空きの告知）・
+  `CurUninstallStepChanged`（2 段の問い・既定 No・もう一方の種が居れば 1 段目を出さない）。
+- **compile 時の門を 1 本足した**（設計書 §2 は 4 本＋種別 1 本）＝CUDA 版で `runtime-cu126.json` の在否、
+  Radeon 版で `{#Repo}\docs\radeon.md` の在否。`[Files]` に名指しで書いてある檔が消えたときに
+  **ISCC が自分で止まる**（`#error`）ようにするため。
+
+### 11-3 ISCC の逐語（**断定**・2 版・警告 0・exit 0）
+
+道具＝`C:\Users\mugonkun\AppData\Local\Programs\Inno Setup 6\ISCC.exe`（1,456,272 B）。
+冒頭の逐語＝`Compiler engine version: Inno Setup 6.7.3` ／ `Non-commercial use only`。
+`/O` はスクラッチパッド（`…\scratchpad\ben-e1\out`）。`/D` は 7 本を手で渡した
+（`AppVersion=v0.1.0`・`AppVersionNumeric=0.1.0`＝`launcher/Directory.Build.props:31` の
+`<AppDisplayVersion>v0.1.0</AppDisplayVersion>` から v を剥いだ値）。
+
+| 版 | 逐語 | 終了コード | 檔数（`Compressing:` 行） | 出た exe のバイト | sha256 |
+|---|---|---|---|---|---|
+| cuda | `Successful compile (12.297 sec).` | **0** | **110** | **84,984,160**（81.05 MiB） | `569f885c9c74c3d0c6af813d241010188a9d78625cf15a8c462625200be6f426` |
+| radeon | `Successful compile (12.438 sec).` | **0** | **110** | **84,998,686**（81.06 MiB） | `bdfe280d4b02f5381fe16011a739e931d1cad852cd5d19e6e096862d2ec9789c` |
+
+- **警告は 2 版とも 0 行**（`warning`／`error` を大小無視で引いて 0 件）。
+- **110 檔の内訳**＝ランチャ exe 1 ＋ 配布樹 106（cuda は `runtime-rocm-gfx1151.json` を、radeon は
+  `runtime-cu130.json`／`runtime-cu126.json` を写さない）＋ docs（cuda 2 檔・radeon 3 檔）。
+  配布樹の実測＝**108 檔・37,111,160 B**（`.pyc` を除く）で、設計書 §1-2 の数字と 1 バイトも違わない。
+- **`.pyc` と `__pycache__` は 1 檔も入っていない**（`Compressing:` 行を `pycache|\.pyc` で引いて 0 件）。
+  ※ 本席が撃った時点の `build/out/app` には `__pycache__` が **3 つ・`.pyc` が 21 檔（541,008 B）**
+  生えていた（設計書 §5-4 の「実測＝0 件」は本席の時点では**古い**。便 D（2）がサーバを走らせた跡と見られる＝**推測**）。
+  **`[Files]` の `Excludes` が実際に効いた**ことがこれで裏取りできた。
+- **サイズの帯**＝門 B-2（設計書 §3-3）の暫定帯 75〜95 MiB の中。**2 版とも 81.0 MiB**なので、
+  帯を ±5 % に締めるなら **77〜85 MiB** が実測に基づく提案（生産ライン席＝E-2 へ）。
+  ※ この 2 本は `/O` でスクラッチパッドに出しただけで、`build/out/installer` には 1 檔も置いていない。
+
+### 11-4 試しの導入 1 周の逐語（**断定**・Radeon 版・スクラッチパッドの下）
+
+撃った物＝`irodori-tts-ywk-setup-v0.1.0-radeon.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+/DIR=<scratch>\ben-e1\app-radeon /LOG=<scratch>\ben-e1\install-radeon.log`。
+
+**導入**＝**exit 0**・**3.08 s**。ログ 612 行。求められた 3 行の逐語（`install-radeon.log`）＝
+
+```
+2026-09-05 08:21:04.863   Setup version: Inno Setup version 6.7.3
+2026-09-05 08:21:04.863   Windows version: 10.0.26200
+2026-09-05 08:21:04.863   User privileges: None
+2026-09-05 08:21:04.865   Administrative install mode: No
+2026-09-05 08:21:04.865   Install mode root key: HKEY_CURRENT_USER
+2026-09-05 08:21:04.865   64-bit install mode: Yes
+2026-09-05 08:21:07.368   Detected previous administrative 64-bit install? No
+2026-09-05 08:21:07.368   Creating new uninstall key: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall\{ECA98712-1574-4D2A-A1FE-0FF5347BF185}_is1
+2026-09-05 08:21:07.370   Installation process succeeded.
+```
+
+⇒ **E-7（導入で UAC が出ない）は本席の走でも再現**（`User privileges: None`）。
+
+**`{app}` の実測**＝**112 檔・22 ディレクトリ・111,137,002 B**（106.0 MiB）。内訳（本席が `find` で実測）＝
+
+| 枝 | 檔 | バイト | 設計書 §1-2 との照合 |
+|---|---|---|---|
+| `IrodoriTtsYwk.Launcher.exe` | 1 | **69,608,415** | 設計書は 69,588,729＝**便 D（2）が再発行して 19,686 B 増えている**（本席は読むだけ） |
+| `server\` | 73 | **3,946,008** | 一致 |
+| `licenses\` | 13 | **155,094** | 一致 |
+| `voices\`（`presets\` 11 檔を含む） | 14 | **32,622,995** | 一致 |
+| `ledger\` | **6** | 221,167 | Radeon 版の間引き＝`README.md` `models.json` `python-embed.json` `vc_redist.json` `runtime-rocm-gfx1151.json` `runtime-cpu.json`（**cu130／cu126 は 1 檔も無い**） |
+| `docs\` | 3 | 70,596 | `README.md` `install.md` `radeon.md` のみ＝**`acceptance.md`・`contract.md` は出ていない** |
+| `unins000.exe`／`unins000.dat` | 2 | 4,442,820／69,907 | Inno が作る |
+
+- **`__pycache__` は 0 ディレクトリ・`.pyc` は 0 檔**（導入後の樹で確認）。
+- **sha256 の突合＝110 / 110 一致・不一致 0**（`unins000.*` の 2 檔を除く全檔を配布樹・リポの docs・
+  発行済み exe と 1 檔ずつ突き合わせた）。⇒ 受け入れ条件 **I-3 は本席の走で満たしている**。
+- HKCU のアンインストール鍵（`{ECA98712-…}_is1`）の値＝
+  `DisplayName=irodori-TTS for 読み分けちゃん（Radeon 版） v0.1.0`／`DisplayVersion=0.1.0`／
+  `Publisher=irodori-tts-for-yomiwakechan（非公式・Aratako 氏とは無関係＝decisions.md 1）`／
+  `InstallLocation=<scratch>\ben-e1\app-radeon\`／`UninstallString="<scratch>\ben-e1\app-radeon\unins000.exe"`。
+  **CUDA 版の鍵は最後まで作られていない**（`KEY_CUDA=False`）。
+- スタートメニューに `irodori-TTS for 読み分けちゃん（Radeon 版）.lnk` が 1 本だけ出来た（`{autoprograms}`）。
+
+**アンインストール**＝`unins000.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG=…`＝
+**親 exit 0・1.10 s**。ログ 167 行。末尾の逐語（`uninstall-radeon.log`）＝
+
+```
+2026-09-05 08:22:15.833   Failed to delete directory (145). Will retry later.
+2026-09-05 08:22:16.344   Deleting directory: …\ben-e1\app-radeon
+2026-09-05 08:22:16.354   Uninstallation process succeeded.
+2026-09-05 08:22:16.354   Removed all? Yes
+2026-09-05 08:22:16.354   Need to restart Windows? No
+2026-09-05 08:22:16.356   Defaulting to No for suppressed message box (Yes/No):
+                          C:\Users\mugonkun\AppData\Local\irodori-tts-ywk に残っています。残しておくと、次に入れ直したときそのまま使えます。
+2026-09-05 08:22:16.356   Defaulting to No for suppressed message box (Yes/No):
+                          追加した参照 wav・話者の名前・設定は利用者の資産です。既定では残します。
+2026-09-05 08:22:16.356   Log closed.
+```
+
+ここから取れた**断定**が 4 つ。
+
+1. **2 段の問いが両方とも出て、両方とも既定の「残す」に落ちた**（M-8 の再現）。1 段目が出たのは
+   もう一方の種（CUDA 版）の鍵が無かったから＝`RegKeyExists(HKEY_CURRENT_USER, OtherFlavorKey)` の
+   分岐が**期待どおり False に落ちている**。※ **もう一方の種が居るときに 1 段目が消えること自体は未実射**＝
+   設計書 §7 段 8（検分席＝E-3 の持ち場）。
+2. **日本語の文言がそのままログに出た**＝`.iss` の UTF-8 BOM と `Japanese.isl` の組が実際に効いている。
+3. **アンインストールでも `User privileges: None`／`Administrative install mode: No`／
+   `Install mode root key: HKEY_CURRENT_USER`**（M-7 の再現）＝この機体・この口座では UAC が出ない。
+   ※ 設計書 §5-4 ⑸ の但し書き（口座次第で出る）は**覆さない**＝1 機体 1 口座の標本 1 個。
+4. `Failed to delete directory (145)`（＝`ERROR_DIR_NOT_EMPTY`）が 2 行出たあと、
+   0.5 s 後の再試行で消えて `Removed all? Yes` に至る（M-7 と同型）。
+
+**消えたことの確認**（**断定**）＝アンインストール鍵 `{ECA98712-…}_is1` **無し**・
+`{app}`（`…\ben-e1\app-radeon`）**無し**・スタートメニューの `.lnk` **無し**。
+
+**データ樹に触っていないことの確認**（**断定**）＝`%LOCALAPPDATA%\irodori-tts-ywk`（`miopen`・`models`・`voices`）は
+導入前・導入後・アンインストール後の 3 時点で **28 檔・3,571,678,193 B のまま 1 バイトも動いていない**。
+`[Code]` 末尾の `RemoveDir(Data)` は中身が在るので何もしていない（設計どおり）。
+
+### 11-5 設計書 §2 からの差分（**3 件**）と理由
+
+| # | §2 の骨 | 置いた檔 | 理由 |
+|---|---|---|---|
+| ⒜ | `Excludes: "__pycache__\*,*.pyc"` | **`Excludes: "__pycache__,*.pyc"`** | **実射で確かめた**＝`__pycache__\*` は「Source の根からの相対パス」に当たるので**入れ子の `__pycache__` に当たらず**、`createallsubdirs` が**空の `__pycache__` を掘る**。使い捨ての樹（`a\y.py`＋`a\__pycache__\x.pyc`＋`__pycache__\z.pyc`）を 2 通りの `Excludes` で包んで無人導入した実測＝`__pycache__\*` 版の導入後は `__pycache__` と `a\__pycache__` の**空 2 つが残る**、`__pycache__` 版は `a\y.py` **1 檔だけ**。名前で引く形（区切りを含めない）ならディレクトリごと落ちる。`.pyc` は `*.pyc` が全階層で捕まえるので**檔は 2 通りとも 0 件**＝差は「空の器」だけだが、`[UninstallDelete]` の `dirifempty {app}` を空振りさせる芽なので潰した |
+| ⒝ | `if GetSpaceOnDisk64(DataDir(), FreeBytes, TotalBytes)` | **`GetSpaceOnDisk64(ExpandConstant('{localappdata}'), …)`**（文言に出す路は `DataDir()` のまま） | **実射で確かめた**＝`GetSpaceOnDisk64` は**まだ無いディレクトリに `False` を返す**。使い捨ての `.iss`（`InitializeSetup` で撃って `False` を返し何も導入しない形）の実測＝`…\Local`→`True free=1159695134720`、`…\Local\irodori-tts-ywk`（在る）→`True`、`…\Local\irodori-tts-ywk-does-not-exist-e1probe`→**`False`**。§2 のままだと**まっさらな機体＝いちばん警告が要る機体で告知が黙って消える**。ドライブは同じなので数字は変わらない |
+| ⒞ | `#if FileExists(SrcApp + "\ledger\runtime-rocm-gfx1151.json") && false` の中に `;` 注釈を置く形 | **素の `;` 注釈 1 行**にした。あわせて **compile 時の門を 2 本足した**（CUDA 版の `runtime-cu126.json`・Radeon 版の `{#Repo}\docs\radeon.md`） | 常に偽の `#if` は死んだ枝で、読む側に「ここで何か見ている」と誤読させる。種の混入を見るのは設計書 §3-2 の**門 A-3（`installer-build.ps1`）**であって `.iss` ではない、と注釈で名指しした。足した 2 本は「`[Files]` に名指しで書いてある檔が消えたら ISCC が自分で止まる」ための門で、§2 の 4 本＋種別 1 本と同じ型 |
+
+**あわせて 1 件の書き足し**（差分ではなく作法）＝`[Code]` の `{ … }` 注釈に**波括弧の定数を書かない**。
+Pascal の注釈は入れ子にならないので `{ … {commonpf} … }` と書くと注釈が `{commonpf}` の `}` で閉じ、
+残りが式として読まれてコンパイルが落ちる。§2 の骨には無い落とし穴だが、§2 の文章を注釈に写すと踏む。
+
+**採らなかった指示 1 件**＝依頼文は `[UninstallRun]` を挙げていたが、**設計書 §1-6 の
+「`[UninstallRun]` は 1 行も書かない」に従った**（走らせる外部プログラムが無く、`installer/README.md:29`
+「bat を使わない」に触れる経路を作らない）。消す仕事は `[UninstallDelete]` 2 行と `[Code]` が持つ。
+
+### 11-6 卓への票（4 件）
+
+1. **門 B-2 のサイズ帯を 77〜85 MiB に締めてよい**（§3-3 の暫定 75〜95 MiB）。実測＝cuda 84,984,160 B・
+   radeon 84,998,686 B の 2 標本。ただし**本番の帯は `installer-build.ps1` が出した 2 本で確定すべき**
+   （本席の 2 本は `/D` を手で渡した走で、`assemble-app`／`release-build` を回していない）。
+2. **設計書 §5-4 ⑴ の「`build/out/app` に `__pycache__` は 0 件」は本席の時点で古い**＝
+   `__pycache__` 3 つ・`.pyc` 21 檔（541,008 B）が生えていた。`[Files]` の `Excludes` が受け止めたので
+   配布物には 1 檔も出ていないが、**門 A-4（拡張子の白名簿）に `.pyc` が載っていないと配布樹の走査が
+   exit 1 になる**。生産ライン席（E-2）へ＝門 A-4 は `__pycache__` を**走査から除く**か、
+   `assemble-app` の出力を掃除する側に寄せるかを決める要がある（本席は `build/` に触れないので提起のみ）。
+3. **設計書 §1-2 のランチャ exe のバイトが 69,588,729 → 69,608,415 に動いた**（便 D（2）の再発行）。
+   §1-2 の表と「106,699,889 B（101.76 MiB）」は**便 D（2）の着地後に測り直す**のがよい。
+   本席の実測＝`{app}` は **111,137,002 B（106.0 MiB・アンインストーラ込み）**。
+4. **`AppId` の GUID は実射で「永久の値」になった**＝この機体の HKCU に
+   `{ECA98712-1574-4D2A-A1FE-0FF5347BF185}_is1` が実際に作られ、消えた。裁定 90 の記帳のとおりで齟齬なし。
+
+### 11-7 まだ撃っていない（＝この席の外）
+
+段 2（UI の 3 頁）・段 3（通知）・段 5（`AppMutex`）・段 6（`[InstallDelete]` の種跨ぎ）・
+段 7・8（アンインストール 2 通り・もう一方の種が居るときの 1 段目）＝**検分席（E-3）の持ち場**。
+`build/installer-build.ps1` は**生産ライン席（E-2）**＝便 D（2）の着地後。
+
+---
+
+## 11-8 是正席（便 E（1）是正）の記帳（2026-09-05 08:5x〜09:0x・Radeon 機・実装サブ席 opus）
+
+> 敵対検分の **medium 6 件・low 4 件**を受けた是正。書いた檔は `installer/irodori-tts-ywk.iss` **1 檔**と本節だけ。
+> `launcher/`・`server/`・`build/`・`probe/`・`docs/acceptance.md`・`docs/design/ben-d-launcher.md`・
+> `docs/install.md` は**読むだけ**。`git commit` していない。外部へ出ていない。
+> **`%LOCALAPPDATA%\Programs\` に本導入していない**（試しの導入はすべて `/DIR=` でスクラッチパッドの下・
+> 終わったら `/VERYSILENT` で畳み、レジストリの `Uninstall` 鍵が消えたことを確かめた）。
+> **ランチャは 1 度も起動していない**（`[Run]` は `skipifsilent`）。
+
+### 11-8-1 檔の形（**断定**・実測）
+
+| | 台本席（§11-1） | 是正後 |
+|---|---|---|
+| `installer/irodori-tts-ywk.iss` | 15,283 B・283 行 | **26,955 B・421 行** |
+| 形 | UTF-8 BOM 付き・CRLF 282 対・単独 LF 0 | **UTF-8 BOM 付き（`EF BB BF`）・CRLF 421 対・単独 LF 0** |
+
+### 11-8-2 ISCC の挙動を実射で確かめ直した（**旧注釈は誤りだった**）
+
+使い捨ての `.iss` 3 檔（`scratchpad/ben-e1/xt/`）を ISCC 6.7.3 で撃った逐語。
+
+| # | 形 | 逐語 | 終了コード |
+|---|---|---|---|
+| ⑴ | 空ディレクトリへの wildcard | `Error on line 9 in …\wild.iss: No files found matching "…\src\empty\*"` ／ `Compile aborted.` | **2** |
+| ⑵ | 名指しの Source が無い | `Error on line 10 in …\named.iss: Source file "…\src\does-not-exist.json" does not exist.` ／ `Compile aborted.` | **2** |
+| ⑶ | wildcard が**一部だけ**当たる（`voices\` から `presets\` の枝ごと落とした樹） | `   Compressing: …\voices\presets.json` ／ `   Compressing: …\voices\voices.json` ／ `Successful compile (0.688 sec). Resulting Setup program filename is:` | **0**（警告 0・**wav 0 檔のまま setup が出た**） |
+
+⇒ **`.iss:44-45` の旧注釈**「Inno は『Source が 0 件』を既定では止めない＝EXIT=0・Successful compile のまま
+中身の欠けた setup が出る（設計書 §3-2 の実測＝65,021,007 B）」は **⑴⑵ で反証された**。
+正しい言い方は「**wildcard が 1 檔も当たらなければ ISCC は exit 2 で止まる。止まらないのは wildcard が
+一部だけ当たる場合**」である。**設計書 §3-2 冒頭と §8 危険 3 の同じ主張も訂正が要る**（→ §11-8-6 の卓へ ⑴）。
+
+### 11-8-3 直した 6 件（medium）と 3 件（low）
+
+| # | 何を直したか | 実射の裏 |
+|---|---|---|
+| M-1 | **`voices\presets\*.wav` を数える compile 時の門を新設**（ISPP の `FindFirst`／`FindNext`／`FindClose`）。11 でなければ `#pragma message` で数を出してから `#error`。11 の出所＝`decisions.md` 37 の逐語「自作の生成物・配布物の同梱資産（**11 本**・32 MB）」／裁定 88 ⑸ | **わざと壊した樹 2 通りで実射**＝⒜ `presets\` 丸ごと無し→`Line 89: voices\presets\*.wav count = 0 (expected 11)`／`Error on line 90 in …\irodori-tts-ywk.iss: voices/presets/*.wav is not 11 files (see the message line above for the count found)`／`Compile aborted.`／**exit 2** ⒝ 11 檔のうち 10 檔→`count = 10 (expected 11)`／**exit 2**。正しい樹では `count` が 11 で `#pragma message` すら出ない |
+| M-2 | **`.iss:44-45` の注釈を実測に書き直した**。あわせて 8 本の門を「⑶ の門（wildcard が一部だけ当たる＝**ここに要る門**）」と「保険（`[Files]` に名指しで書いてあるので ⑵ で ISCC が自分で止まる）」に**名札で分けた** | §11-8-2 の ⑴⑵⑶ |
+| M-3 | **`[Messages]` 4 本と `[Code]` の `PeakDiskBytes` を `#if Flavor` で二重化**。Radeon 版＝取得 4.79 GiB・要る空き 9.55 GiB（`PeakDiskBytes = 10252286678`）。CUDA 版＝既定 cu130 で 5.26 GiB・cu126 で 5.93 GiB、要る空きは**その版が選ばせる最大＝cu126 の 14.45 GiB**（`PeakDiskBytes = 15515873265`。cu130 の 11.56 GiB＝12,410,119,910 も本文に併記） | 台帳から式を踏み直した**実測**（下表）。Int64 で桁落ちしないことを使い捨ての `.iss` で実射＝`PeakRadeon=10252286678 GiB=9`／`PeakCuda=15515873265 GiB=14`／`free=1159160840192 total=2047236632576` |
+| M-4 | **場所の門にデータ樹を足した**（両向き＝`StartsWithDir(Dir, DataDir()) or StartsWithDir(DataDir(), Dir)`）。設計書 §1-1「インストーラはデータ樹に 1 檔も作らず、更新でも 1 檔も触らない」を機械で守る 1 本 | 使い捨ての `.iss` で門の式だけを 8 通りに撃った逐語（下表） |
+| M-5 | **アンインストール 2 段目**は抑止せず、もう一方の種が居るときだけ本文に 1 行足す形にした（敵対検分の ⑵ を採用）。⑴＝2 段目も抑止する案を採らなかった理由＝`docs/install.md` §5-4 の 3 が「別に尋ねる」と**例外なしで**約束しており、抑止すると利用者が話者を消す唯一の口を失う | **2 種を同居させて実射**（下の 11-8-5） |
+| M-6 | junction 利用者の挙動は**実装を変えず**、`[Code]` に**実装が本当にしていること**を CHM 逐語つきで書いた＝「`DelTree` の reparse point 免除が当たるのは `Data` 自身であって `Data\runtime` ではない。ここは `Data` の**下**を名指しで消すので junction を通り抜けて実体が消える」。**`docs/install.md` §5-3 の但し書きのほうが実装と食い違う**＝卓へ（→ §11-8-6 ⑶） | 未実射（機体の D: は停止域）＝**推測のまま**。ただし CHM 逐語と `.iss` の行の突合は断定 |
+| L-1 | **空きの告知が更新導入で沈黙する穴**を塞いだ＝`NotifyFreeSpace` を切り出し、`NextButtonClick(wpSelectDir)` と **`PrepareToInstall`** の両方から呼ぶ（1 周に 1 回だけ＝`SpaceNotified`）。**無人（`WizardSilent`）では出さない**＝`/VERYSILENT` の走を MsgBox で止めない | 無人導入が **exit 0・2.85 s** で通った（`PrepareToInstall` が例外を投げていない）。UI での発火は**未実射**＝この機体の空きが 1,159,160,840,192 B（1.05 TiB）で閾値に掛からない |
+| L-2 | **手作りの `PeakDiskBytes = 12413511598` を廃した**。台帳から導いた値に差し替え、導き方（`FetchPlanner.cs:54,57-59,65` の式）を注釈に書いた | 下表 |
+| L-4 | **`DefaultGroupName` を消した**（`[Icons]` が `{group}` を 1 度も使わず `{autoprograms}` を直に指すので誰も読まない）。`DisableProgramGroupPage=yes` は**残した**＝これは効いている（消すと「スタートメニューフォルダーを選ぶ」頁が出て、実射した 3 頁が 4 頁になる）。その旨を注釈に書いた | 2 版とも**警告 0・exit 0** で通り、スタートメニューに `.lnk` が 1 本だけ出来て消えた |
+
+**台帳から踏み直した「取得中に要る空き」（本席の実測・`build/out/app/ledger/*.json` の `size` の総和）**
+
+| 変種 | 落とすバイト | 要る空き（`EstimatedPeakDiskBytes`） | GiB | `ledger/README.md`:297-300 |
+|---|---|---|---|---|
+| `cpu` | 3,891,000,522 | **4,862,463,481** | 4.5285 | 4.53 GiB ✓ |
+| `cu130` | 5,646,269,459 | **12,410,119,910** | 11.5578 | 11.56 GiB ✓ |
+| `cu126` | 6,368,537,681 | **15,515,873,265** | 14.4503 | 14.45 GiB ✓ |
+| `rocm-gfx1151` | 5,144,447,777 | **10,252,286,678** | 9.5482 | 9.55 GiB ✓ |
+
+式＝`CacheBytes`（python-embed 11,133,606 ＋ vc_redist 25,635,768 ＋ runtime）＋
+`(python-embed + runtime) * 3.3`（`FetchPlanner.ExpansionFactor`）＋ `ModelBytes` 3,570,982,039。
+**旧値 12,413,511,598 は cu130 の実値と 3,391,688 B ずれる**（このリポのどこからも導けない数字だった）。
+
+**場所の門の実射（使い捨ての `.iss`・`InitializeSetup` で門の式だけを撃って何も導入しない形）**
+
+```
+DataDir=C:\Users\mugonkun\AppData\Local\irodori-tts-ywk
+REFUSED (data tree)   <-  C:\Users\mugonkun\AppData\Local\irodori-tts-ywk
+REFUSED (data tree)   <-  C:\Users\mugonkun\AppData\Local\irodori-tts-ywk\app
+REFUSED (data tree)   <-  C:\Users\mugonkun\AppData\Local
+ALLOWED               <-  C:\Users\mugonkun\AppData\Local\Programs\irodori-tts-ywk
+ALLOWED               <-  C:\Users\mugonkun\AppData\Local\Programs\irodori-tts-ywk-radeon
+ALLOWED               <-  C:\Users\mugonkun\AppData\Local\irodori-tts-ywk-radeon
+REFUSED (admin place) <-  C:\Program Files (x86)\irodori-tts-ywk
+ALLOWED               <-  C:\ywk
+```
+
+⇒ **両向き**（導入先がデータ樹の中／データ樹が導入先の中）を捕まえ、**似た名前の枝（`…-radeon`）は誤爆しない**。
+2 種の既定の導入先はどちらも通る。※ **UI で実際に断られる走は未実射**＝設計書 §7 段 2 の持ち場（検分席 E-3）。
+
+### 11-8-4 退けた 1 件（**rejected**・根拠つき）
+
+**「`[Files]` の `voices\*` から `voices.json`・`voices.ywk.json` を `Excludes` で除く」（medium 4 の後半・low 3 の前半）は退けた。**
+
+逐語＝`launcher/IrodoriTtsYwk.Launcher/Services/Voices/PresetVoices.cs:53-54`
+
+```
+        var fromTable = FromTable(paths.PresetsJsonPath, appVoices)
+            ?? FromTable(Path.Combine(appVoices, "voices.ywk.json"), appVoices);
+```
+
+同 `:61-62`
+
+```
+        var scanned = FromDirectory(paths.PresetVoicesDir);
+        return scanned.Count > 0 ? scanned : FromDirectory(appVoices);
+```
+
+（`appVoices` は同 `:42` の逐語 `var appVoices = Path.Combine(paths.AppDir, "voices");`＝**配布樹側の `voices\`**。）
+⇒ **`{app}\voices\voices.ywk.json` は死に檔ではない**。`presets.json` が 0 件のときの落ち先として**実際に読まれる**。
+除くと落ち先を 1 枚失う。所見の「誰も読まない死に檔」は `voices.ywk.json` については**偽**である。
+
+`{app}\voices\voices.json`（80 B）だけは読み手が見当たらない（`AppDir` 側の `voices.json` を引くコードは grep で 0 件。
+`paths.VoicesJsonPath` はすべて `DataDir` 側＝`AppPaths.cs:104`）。それでも残した理由は 2 つ＝
+⑴ **衝突の的そのものは `[Code]` の門（M-4）が消した**（`{app}` をデータ樹に重ねる経路が断たれた）
+⑵ 除くと配布檔数が **110 → 109** に動き、受け入れ条件 I-3（sha256 突合）と設計書 §3-2 の門 A-1（檔数）の
+期待値を巻き添えにする。**費用が便益を上回る。**
+※ 所見の後半「`docs/install.md` のアプリ樹の表に 2 檔が載っていない」は**そのとおり**＝卓へ（→ §11-8-6 ⑷）。
+
+### 11-8-5 ISCC と試しの導入の逐語（**断定**・2 版・警告 0・exit 0）
+
+道具＝`C:\Users\mugonkun\AppData\Local\Programs\Inno Setup 6\ISCC.exe`。逐語＝`Compiler engine version: Inno Setup 6.7.3`。
+`/D` は 7 本を手で渡した（`AppVersion=v0.1.0`・`AppVersionNumeric=0.1.0`）。`/O` はスクラッチパッド。
+
+| 版 | 逐語 | 終了コード | `Compressing:` 行 | バイト | sha256 |
+|---|---|---|---|---|---|
+| cuda | `Successful compile (11.859 sec).` | **0** | **110** | **84,984,627**（81.05 MiB） | `423bf8f4e38aafa3ddffec904e69de84d6ec010797fdec04d11bffed140bea77` |
+| radeon | `Successful compile (12.000 sec).` | **0** | **110** | **84,999,119**（81.06 MiB） | `a9767fdd91d8810bc1763b4266460cf59564b4a29ae5f127ea9d06cd3cc49399` |
+
+- **警告は 2 版とも 0 行**（`warning`／`error` を大小無視で引いて 0 件）。**檔数は台本席の 110 から動いていない**
+  （`Excludes` を足していないので当然）。バイトは台本席の 84,984,160／84,998,686 から **+467／+433 B**＝`.iss` が
+  太った分（注釈と `[Code]`）。**門 B-2 の帯 77〜85 MiB の中**。
+
+**試しの導入 1 周（Radeon 版・スクラッチパッドの下）**
+
+- 導入＝`/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR=<scratch>\ben-e1\app-final /LOG=…`＝**exit 0・2.85 s**。
+  ログ逐語＝`Setup version: Inno Setup version 6.7.3`／`Windows version: 10.0.26200`／
+  **`User privileges: None`**／**`Administrative install mode: No`**／**`Install mode root key: HKEY_CURRENT_USER`**／
+  `64-bit install mode: Yes`／`Creating new uninstall key: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall\{ECA98712-1574-4D2A-A1FE-0FF5347BF185}_is1`／`Installation process succeeded.`
+- `{app}` の実測＝**112 檔・22 ディレクトリ・111,138,146 B**。**sha256 の突合＝110 / 110 一致・不一致 0**
+  （`unins000.*` の 2 檔を除く全檔を配布樹・リポの docs・発行済み exe と 1 檔ずつ）。
+  `ledger\` は 6 檔（`runtime-cu130`／`runtime-cu126` は 1 檔も無い）・`docs\` は 3 檔（`acceptance.md`・`contract.md` は出ていない）・
+  `voices\presets\*.wav` は **11 檔**・`__pycache__` 0・`.pyc` 0。
+- アンインストール＝`unins000.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG=…`＝**exit 0・0.98 s**。
+  逐語＝`Uninstallation process succeeded.`／`Removed all? Yes`／`Need to restart Windows? No`／
+  `Defaulting to No for suppressed message box (Yes/No):` **2 本**（1 段目・2 段目とも既定の「残す」に落ちた）。
+- **消えたことの確認**＝`{ECA98712-…}_is1` **無し**・`{F228543A-…}_is1` **無し**・`{app}` **無し**・`.lnk` **無し**・
+  `%LOCALAPPDATA%\Programs\irodori*` **0 件**・HKCU の `Uninstall` に `DisplayName` が `*irodori*` の鍵 **0 件**。
+- **データ樹に触っていないことの確認**＝`%LOCALAPPDATA%\irodori-tts-ywk` は導入前・導入後・アンインストール後の
+  3 時点で **28 檔・3,571,678,193 B のまま 1 バイトも動いていない**。
+
+**2 種を同居させた走（設計書 §7 段 8 の一部を実射で埋めた）**
+
+CUDA 版と Radeon 版を**両方**スクラッチパッドへ入れた（両方 exit 0・`KEY_CUDA=True`・`KEY_RADEON=True`）あと、
+**Radeon 版だけ**を `/VERYSILENT /SUPPRESSMSGBOXES` で畳んだログの末尾の逐語＝
+
+```
+2026-09-05 09:02:05.756   Removed all? Yes
+2026-09-05 09:02:05.756   Need to restart Windows? No
+2026-09-05 09:02:05.757   Defaulting to No for suppressed message box (Yes/No):
+                          追加した参照 wav・話者の名前・設定は利用者の資産です。既定では残します。
+                          CUDA 版がまだこの機体に入っています。話者と設定は 2 つの版が同じ場所（C:\Users\mugonkun\AppData\Local\irodori-tts-ywk）を共有しているので、ここで消すとそちらからも消えます。
+2026-09-05 09:02:05.758   Log closed.
+```
+
+ここから取れた**断定**が 3 つ。
+
+1. **`Defaulting to No` が 1 本しか出ていない**＝**1 段目（取得物）が出ていない**。
+   `RegKeyExists(HKEY_CURRENT_USER, OtherFlavorKey)` の抑止が**もう一方の種が居るときに実際に効く**ことを
+   初めて実射で確かめた（台本席は「未実射」と記帳していた＝設計書 §11-4 の 1）。
+2. **2 段目には新しい 1 行がそのまま出た**＝M-5 の手当てが効いている。
+3. そのあと CUDA 版を畳んだ走では `Defaulting to No` が **2 本**に戻った（Radeon 版の鍵が消えているので 1 段目が復活）。
+   最後に鍵・`{app}`・`.lnk` がすべて消え、データ樹は **28 檔・3,571,678,193 B のまま**。
+
+### 11-8-6 卓へ（**本席の停止域の外＝檔の訂正が要る 4 件**）
+
+1. **設計書 §3-2 冒頭と §8 危険 3 の「Inno は『Source が 0 件』を既定では止めない」は誤り**（§11-8-2 の ⑴⑵ で反証）。
+   正しくは「wildcard が**一部だけ**当たるときに止まらない」。`.iss` 側の注釈は本席が直したが、設計書は書けない。
+   ついでに §3-2 の門 A-2 は「`voices\presets\*.wav` が 11 檔」を見る玉で、**`.iss` にも同じ玉を張った**（M-1）＝
+   生産ライン席（E-2）は門 A-2 を「二重の網の 2 枚目」として書けばよい。
+2. **設計書 §6-3 ⑵ の閾値「11.56 GiB」は種を分ける前の値**。本席は `.iss` を
+   「その版が選ばせる変種の**最大**」（radeon 9.55 GiB／cuda 14.45 GiB）に据えた＝「最大 … の空きが要ります」を
+   嘘にしないため。**「既定の変種で読む（radeon 9.55／cuda 11.56）」に戻す裁定なら定数 1 本の差し替えで済む**
+   （`PeakDiskBytes` の CUDA 側を `12410119910` に）。
+3. **`docs/install.md` §5-3 の但し書き「junction だけが消えて実体（`D:\ywk-data`）は残る」は実装と食い違う**（M-6）。
+   推奨＝**檔のほうを直す**（「junction 越しでも実体ごと消える。残したいなら『残す』を選ぶこと」）。
+   実装を檔に合わせる案（reparse point を判って `Data` ごと `DelTree(Data, True, False, False)`）は、
+   利用者が明示で「削除する」を選んだのに何も消えない形になるので採らなかった。
+4. **`docs/install.md` §1 の括弧書き「11.56 GiB を割っていたら告知する」は種別に直す要がある**（M-3 と同じ玉）。
+   あわせて同 §2 のアプリ樹の表に `voices\voices.json`・`voices\voices.ywk.json` の 2 檔が載っていない
+   （後者は `PresetVoices.cs:54` が読む生きた檔＝§11-8-4）。
+5. **アンインストール 2 段目を「抑止する」に倒す裁定もありうる**（敵対検分 medium 5 の ⑴）。
+   本席は `docs/install.md` §5-4 の 3 の約束（例外なしで「別に尋ねる」）に素直な ⑵ を採った。
+   倒すなら `.iss` の `if OtherInstalled then` を 2 段目にも被せる 2 行で済む。`decisions.md` 90 は 1 段目しか触れていない。
+
+### 11-8-7 まだ撃っていない（＝この席の外）
+
+- **UI の走**（3 頁・場所の門が実際に断る画面・空きの告知の画面）＝設計書 §7 段 2・検分席（E-3）。
+  ※ 空きの告知はこの機体では**閾値に掛からない**（空き 1,159,160,840,192 B）＝空きを絞った機体か、
+  定数を一時的に上げた使い捨ての版でしか撃てない。
+- **更新導入で `PrepareToInstall` 経由の告知が出ること**（L-1）＝同上。無人では設計どおり**出さない**。
+- **junction を張っての走**（M-6）＝機体の D: が停止域。
+- 段 3（通知）・段 5（`AppMutex`）・段 6（`[InstallDelete]` の種跨ぎ）・段 9（日本語＋空白のユーザ名）＝E-3。
+- `build/installer-build.ps1`（門 A 6 本・門 B 3 本）＝生産ライン席（E-2）・便 D（2）の着地後。
