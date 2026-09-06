@@ -224,7 +224,7 @@ range_source, note, required, default, default_source, nullable, exposed_to_ywk}
 | `string` | **Text** | `caption`・`seed` など。`max_length` があれば入力長の上限に |
 
 - **`cfg_scale_text` の `label` は「感情表現の強さ」**＝本体はこれをそのまま `DisplayName` にする（§4-2・§6・`decisions.md` 99）。
-  **`IsEmotion` は立てない**（AivisSpeech の `intonationScale` と同じ帯）。**`group` は配布版自身の UI 用＝本体は帯の判断に使わない**
+  **`IsEmotion` を立てる**（`decisions.md` 100＝本体の「感情」見出しの帯に出す。AivisSpeech の `intonationScale` は基本帯＝表示名だけ同じ）。**`group` は配布版自身の UI 用＝本体は帯の判断に使わない**
   （`caption`・`cfg_scale_text`・`cfg_scale_caption` は 3 欄とも `group:"emotion"`＝`max_caption_len` も同じ群だが、本体の帯は記述子の申告＝`IsEmotion`／`PrefersFullWidth` で決まる）。
   **`description` は `NoteToolTip` に写してよい・`note` は写さない**（実装席向けの注記＝裁定番号や上流の行番号を含む）。
   ただし**本体の Number の帯は現状 `Note`／`NoteToolTip` を出さない**（`SettingsTemplates.xaml` の `NumberParamViewModel` の雛形に束縛が無い・出るのは Text だけ＝`TextParamViewModel.cs:82-83`）＝出したいなら本体側の 1 手が要る。
@@ -517,7 +517,7 @@ VOICEROID2 参照で **14.8 s**＝`decisions.md` 40）。**CUDA では同じ罰�
 | **num_steps** | `/params.irodori[key=num_steps]` | Number・1〜120・既定 40・**プリセット 10／40**（`presets` 欄がそのまま来る） |
 | **seed** | `/params.irodori[key=seed]` | Text・**空欄＝毎回の乱数**（`""` を送っても 400 にならない） |
 | **caption（演技指示）** | `/params.irodori[key=caption]` | Text・**空欄＝未指定** |
-| **感情表現の強さ（`cfg_scale_text`）** | `/params.irodori[key=cfg_scale_text]` | Number・0.0〜10.0・step 0.1・**既定は `/params` の `default` を読む**（現在 3.0・`IRODORI_DEFAULT_CFG_SCALE_TEXT` で動く＝焼かない）。**本体の「感情表現の強さ」＝この欄**（`decisions.md` 99）＝表示名は `/params` の `label` をそのまま `DisplayName` に・この欄を「CFG 強度」の名では出さない。**帯は AivisSpeech の `intonationScale` と同じ＝`IsEmotion` は立てない**（「感情」見出しの帯に入れるなら `IsEmotion=true`＋`IrodoriCapabilityBuilderTests.cs:222` の釘の差し替え＝本体席の裁定）。**表示名だけが同じで目盛りは互換でない**（Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0・本体にマスター感情の写像は無い）。**0 は本文 CFG を切る**（表情が薄くなるのではなく本文への追従が弱る＝上流 `rf.py:264`・実用下限 1.0 付近）。**本体の裁定 6（露出 5 本・`cfg_scale_*` 非露出＝`Engines/Irodori/IrodoriConstants.cs:343`）はこの欄・`num_steps`、および次の「余力があれば」行の `cfg_scale_caption`・`cfg_scale_speaker`・`t_schedule_mode` について改訂が要る**（`sway_coeff` は 343 行の列挙に無い・10 番目のエンジンの話・9 番目の 8088 アダプタは変えない）。この名の規則は本体の面だけ＝ランチャの「試す」は生の欄名 `cfg_scale_text` のまま |
+| **感情表現の強さ（`cfg_scale_text`）** | `/params.irodori[key=cfg_scale_text]` | Number・0.0〜10.0・step 0.1・**既定は `/params` の `default` を読む**（現在 3.0・`IRODORI_DEFAULT_CFG_SCALE_TEXT` で動く＝焼かない）。**本体の「感情表現の強さ」＝この欄**（`decisions.md` 99）＝表示名は `/params` の `label` をそのまま `DisplayName` に・この欄を「CFG 強度」の名では出さない。**`IsEmotion` を立てる＝本体の「感情」見出しの帯に出す**（`decisions.md` 100）。9 番目（8088）の `IrodoriCapabilityBuilderTests.cs:222`（全欄 `IsEmotion=false`）は 9 番目の釘＝10 番目が別 builder なら触らない・共有するなら差し替える。**表示名だけが同じで目盛りは互換でない**（Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0・本体にマスター感情の写像は無い）。**0 は本文 CFG を切る**（表情が薄くなるのではなく本文への追従が弱る＝上流 `rf.py:264`・実用下限 1.0 付近）。**本体の裁定 6（露出 5 本・`cfg_scale_*` 非露出＝`Engines/Irodori/IrodoriConstants.cs:343`）はこの欄・`num_steps`、および次の「余力があれば」行の `cfg_scale_caption`・`cfg_scale_speaker`・`t_schedule_mode` について改訂が要る**（`sway_coeff` は 343 行の列挙に無い・10 番目のエンジンの話・9 番目の 8088 アダプタは変えない）。この名の規則は本体の面だけ＝ランチャの「試す」は生の欄名 `cfg_scale_text` のまま |
 | （余力があれば）`cfg_scale_caption`・`cfg_scale_speaker`・`sway_coeff`・`t_schedule_mode` | `/params.irodori` | `exposed_to_ywk: true` の残り 4 欄 |
 
 **出さない欄**（理由つき）：

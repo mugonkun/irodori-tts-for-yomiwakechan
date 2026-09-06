@@ -462,7 +462,7 @@ IRODORI_PARAMS: tuple[dict[str, Any], ...] = (
             "発音・滑舌が弱いときに少し上げる。0 は本文条件の誘導を切る（実用下限は 1.0 付近）。"
         ),
         "note": (
-            "本体はこの欄を「感情表現の強さ」の表示名で出す（AivisSpeech の intonationScale と同じ帯＝IsEmotion は立てない・"
+            "本体はこの欄を「感情表現の強さ」の表示名で出し、IsEmotion を立てて「感情」の帯に置く（decisions.md 100・表示名は AivisSpeech の intonationScale と同じだが帯は違う＝Aivis は基本帯・"
             "目盛りは互換でない＝Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0）。"
             "0 は本文 CFG の枝そのものを外す（上流 rf.py:264 has_text_cfg = cfg_scale_text > 0）＝表情が薄くなるのではなく本文への追従が弱る。"
             "caption／cfg_scale_caption は演技指示の欄（caption を使うときだけ意味がある）。decisions.md 99"

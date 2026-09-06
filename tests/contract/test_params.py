@@ -287,4 +287,4 @@ def test_cfg_scale_text_is_the_emotion_strength_field(params):
     assert "絵文字" in field["description"]
     assert "追従" in field["description"]
     assert "0 は" in field["description"]
-    assert "IsEmotion" in field["note"]
+    assert "IsEmotion を立てて" in field["note"]  # decisions.md 100

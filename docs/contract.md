@@ -396,7 +396,7 @@
  "irodori": [
    {"key":"caption","type":"string","default":"","nullable":true,"exposed_to_ywk":true,"group":"emotion","label":"演技指示（キャプション）","description":"…","max_length":2048,"note":"空文字・空白のみ＝未指定（wrapper が欄ごと畳む）"},
    {"key":"num_steps","type":"integer","default":40,"min":1,"max":120,"step":1,"nullable":false,"exposed_to_ywk":true,"presets":[10,40],"group":"quality","label":"サンプリング歩数","range_source":"上流 gradio_app.py のスライダ（UI の範囲であって検査ではない）（:481・minimum=1 maximum=120 step=1）"},
-   {"key":"cfg_scale_text","type":"number","default":3.0,"min":0.0,"max":10.0,"step":0.1,"nullable":false,"exposed_to_ywk":true,"group":"emotion","label":"感情表現の強さ","description":"本文条件（本文の文字列そのもの＝挿した絵文字を含む）への追従の強さ。上げるほど本文どおりに読み、絵文字で指定した表情も強く出るが、上げすぎると不自然になる。発音・滑舌が弱いときに少し上げる。0 は本文条件の誘導を切る（実用下限は 1.0 付近）。","note":"本体はこの欄を「感情表現の強さ」の表示名で出す（AivisSpeech の intonationScale と同じ帯＝IsEmotion は立てない・目盛りは互換でない＝Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0）。0 は本文 CFG の枝そのものを外す（上流 rf.py:264 has_text_cfg = cfg_scale_text > 0）＝表情が薄くなるのではなく本文への追従が弱る。caption／cfg_scale_caption は演技指示の欄（caption を使うときだけ意味がある）。decisions.md 99","range_source":"上流 gradio_app.py のスライダ（UI の範囲であって検査ではない）（:520-526）"},
+   {"key":"cfg_scale_text","type":"number","default":3.0,"min":0.0,"max":10.0,"step":0.1,"nullable":false,"exposed_to_ywk":true,"group":"emotion","label":"感情表現の強さ","description":"本文条件（本文の文字列そのもの＝挿した絵文字を含む）への追従の強さ。上げるほど本文どおりに読み、絵文字で指定した表情も強く出るが、上げすぎると不自然になる。発音・滑舌が弱いときに少し上げる。0 は本文条件の誘導を切る（実用下限は 1.0 付近）。","note":"本体はこの欄を「感情表現の強さ」の表示名で出し、IsEmotion を立てて「感情」の帯に置く（decisions.md 100・表示名は AivisSpeech の intonationScale と同じだが帯は違う＝Aivis は基本帯・目盛りは互換でない＝Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0）。0 は本文 CFG の枝そのものを外す（上流 rf.py:264 has_text_cfg = cfg_scale_text > 0）＝表情が薄くなるのではなく本文への追従が弱る。caption／cfg_scale_caption は演技指示の欄（caption を使うときだけ意味がある）。decisions.md 99","range_source":"上流 gradio_app.py のスライダ（UI の範囲であって検査ではない）（:520-526）"},
    {"key":"t_schedule_mode","type":"enum","default":"…","enum":["linear","sway"], …},
    …（`IrodoriOptions` 44 欄を全部載せる。既定は **env 反映後の実効値**＝`settings.default_*` があればそれ、無ければ `SamplingRequest` の dataclass 既定。`cfg_scale_caption` は Server 実効値 3.0 を採り、gradio 4.0 は `note` に残す。`speaker_kv_min_t` は「`speaker_kv_scale` 指定時のみ 0.9 に解決」を `note` に書く）
  ],
@@ -426,8 +426,8 @@
   配布版の UI（上級者向け `advanced` 群）だけが扱う。
 - **`cfg_scale_text` は本体の「感情表現の強さ」**（`decisions.md` 99）＝本体はこの欄を表示名「感情表現の強さ」で出す
   （表示名は `/params` の `label` をそのまま `DisplayName` に・Number・0.0〜10.0・step 0.1・**既定は `/params` の `default`**＝
-  現在 3.0・`IRODORI_DEFAULT_CFG_SCALE_TEXT` で動くので焼かない）。**帯は AivisSpeech の `intonationScale` と同じ＝`IsEmotion` は立てない**
-  （本体の「感情」見出しの帯に入れるなら `IsEmotion=true`＋本体テストの釘の差し替えが要る＝本体席の裁定）。
+  現在 3.0・`IRODORI_DEFAULT_CFG_SCALE_TEXT` で動くので焼かない）。**`IsEmotion` を立てる＝本体の「感情」見出しの帯に出す**（`decisions.md` 100・司令官の裁定）。
+  表示名だけ AivisSpeech の `intonationScale` と同じで、帯は違う（Aivis は基本帯）。
   **表示名だけが同じで目盛りは互換でない**（Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0）・本体にマスター感情の写像は無く、値はエンジンごとに独立。
   意味＝本文条件（挿した絵文字を含む本文そのもの）への追従の強さ（上流 `docs/parameters.md:129`・README「Emoji-based Style Control」）＝
   **0 は本文 CFG を切る**（表情が薄くなるのではなく本文への追従が弱る＝上流 `rf.py:264`・実用下限 1.0 付近）。
