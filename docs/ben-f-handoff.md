@@ -211,7 +211,7 @@ range_source, note, required, default, default_source, nullable, exposed_to_ywk}
   `cfg_scale_speaker`・`cfg_scale_text`・`num_steps`・`seed`・`sway_coeff`・`t_schedule_mode`）
   ＋ top-level 2 欄（`voice`・`speed`）。**この配列が正**＝
   `docs/contract.md` ⑸ の散文「9 欄＋`voice`・`speed`」（と `docs/acceptance.md` の同文）は
-  **数え違い**である（§10 ⑵）。**本体は配列を読む**＝数を焼かない。
+  **数え違いだった**（§10 ⑵＝`decisions.md` 99 で 8 欄に直した）。**本体は配列を読む**＝数を焼かない。
 
 ### 2-6 `ParamDescriptor` への写像（`docs/contract.md` ⑸ 5-2 の表を逐語）
 
@@ -223,6 +223,11 @@ range_source, note, required, default, default_source, nullable, exposed_to_ywk}
 | `boolean` | **Flag** | `default` |
 | `string` | **Text** | `caption`・`seed` など。`max_length` があれば入力長の上限に |
 
+- **`cfg_scale_text` の `label` は「感情表現の強さ」**＝本体はこれをそのまま `DisplayName` にする（§4-2・§6・`decisions.md` 99）。
+  **`IsEmotion` は立てない**（AivisSpeech の `intonationScale` と同じ帯）。**`group` は配布版自身の UI 用＝本体は帯の判断に使わない**
+  （`caption`・`cfg_scale_text`・`cfg_scale_caption` は 3 欄とも `group:"emotion"`＝`max_caption_len` も同じ群だが、本体の帯は記述子の申告＝`IsEmotion`／`PrefersFullWidth` で決まる）。
+  **`description` は `NoteToolTip` に写してよい・`note` は写さない**（実装席向けの注記＝裁定番号や上流の行番号を含む）。
+  ただし**本体の Number の帯は現状 `Note`／`NoteToolTip` を出さない**（`SettingsTemplates.xaml` の `NumberParamViewModel` の雛形に束縛が無い・出るのは Text だけ＝`TextParamViewModel.cs:82-83`）＝出したいなら本体側の 1 手が要る。
 - **`exposed_to_ywk: true` の欄に `default: null` は 0 件**（「既定が決まっていない」を返さない）。
   `caption`・`seed` のように「未指定」が意味を持つ欄は **`default: ""`＋`nullable: true`** で表す
   ＝**`""` を送り返しても 400 にならない**。
@@ -361,7 +366,8 @@ range_source, note, required, default, default_source, nullable, exposed_to_ywk}
 | `irodori.caption` | ネスト | 演技指示。**空文字・空白のみは「未指定」に畳まれる（200）** |
 | `irodori.num_steps` | ネスト | 1〜120・既定 **40**・UI のプリセットは **10／40**（`decisions.md` 10） |
 | `irodori.seed` | ネスト | **`""` は「未指定」＝毎回の乱数**に畳まれる |
-| `irodori.cfg_scale_text`／`cfg_scale_caption`／`cfg_scale_speaker`／`sway_coeff`／`t_schedule_mode` | ネスト | `exposed_to_ywk: true`（§2-5） |
+| **`irodori.cfg_scale_text`** | ネスト | **本体の「感情表現の強さ」**（§6・`decisions.md` 99）＝Number・0.0〜10.0・step 0.1・既定は `/params` の `default`（現在 3.0・env で動く＝焼かない）。**0 は本文 CFG を切る**（実用下限 1.0 付近）。表示名は `/params` の `label` |
+| `irodori.cfg_scale_caption`／`cfg_scale_speaker`／`sway_coeff`／`t_schedule_mode` | ネスト | `exposed_to_ywk: true`（§2-5） |
 | **`irodori.duration_scale`** | ネスト | **送らない**＝`speed` と**除算で合成される**（両方送ると尺が二重に効く）。**どちらか一方**にする |
 | **`irodori.seconds`** | ネスト | **送らない**＝明示すると**チャンク分割が黙って無効**になり、**出力長が指定秒ちょうどになる**（14 字を 12 秒に間延びさせる・警告なし）。**暖機の射だけで使う欄**である |
 | `stream_format` | top-level | **`"sse"` だけ受ける・本体は使わない**（§4-6） |
@@ -500,6 +506,9 @@ VOICEROID2 参照で **14.8 s**＝`decisions.md` 40）。**CUDA では同じ罰�
 
 **原則**＝**`/params` を読んで組む**（固定表を持たない＝§2-1）。そのうえで**画面に出すのはこれだけ**：
 
+> ※ **2026-09-06 時点の `build/out` の組み上げ済み樹と、設計席の機体に導入済みの Radeon 版（`decisions.md` 98）は旧 label「CFG 強度（本文）」を返す**
+> ＝組み直し前の樹を叩いて `label` を確かめないこと（`decisions.md` 99 の注意・次の `assemble-app.ps1`→組みで変わる）。
+
 | 欄 | 出所 | 備考 |
 |---|---|---|
 | **エンジンの URL** | 本体の設定 | 既定 **`http://127.0.0.1:18088`**。**`localhost` は選ばせない**（+1.2〜2.0 秒）。**8088 の既存アダプタとは別項目**（D-9） |
@@ -508,7 +517,8 @@ VOICEROID2 参照で **14.8 s**＝`decisions.md` 40）。**CUDA では同じ罰�
 | **num_steps** | `/params.irodori[key=num_steps]` | Number・1〜120・既定 40・**プリセット 10／40**（`presets` 欄がそのまま来る） |
 | **seed** | `/params.irodori[key=seed]` | Text・**空欄＝毎回の乱数**（`""` を送っても 400 にならない） |
 | **caption（演技指示）** | `/params.irodori[key=caption]` | Text・**空欄＝未指定** |
-| （余力があれば）`cfg_scale_text`・`cfg_scale_caption`・`cfg_scale_speaker`・`sway_coeff`・`t_schedule_mode` | `/params.irodori` | `exposed_to_ywk: true` の残り 5 欄 |
+| **感情表現の強さ（`cfg_scale_text`）** | `/params.irodori[key=cfg_scale_text]` | Number・0.0〜10.0・step 0.1・**既定は `/params` の `default` を読む**（現在 3.0・`IRODORI_DEFAULT_CFG_SCALE_TEXT` で動く＝焼かない）。**本体の「感情表現の強さ」＝この欄**（`decisions.md` 99）＝表示名は `/params` の `label` をそのまま `DisplayName` に・この欄を「CFG 強度」の名では出さない。**帯は AivisSpeech の `intonationScale` と同じ＝`IsEmotion` は立てない**（「感情」見出しの帯に入れるなら `IsEmotion=true`＋`IrodoriCapabilityBuilderTests.cs:222` の釘の差し替え＝本体席の裁定）。**表示名だけが同じで目盛りは互換でない**（Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0・本体にマスター感情の写像は無い）。**0 は本文 CFG を切る**（表情が薄くなるのではなく本文への追従が弱る＝上流 `rf.py:264`・実用下限 1.0 付近）。**本体の裁定 6（露出 5 本・`cfg_scale_*` 非露出＝`Engines/Irodori/IrodoriConstants.cs:343`）はこの欄・`num_steps`、および次の「余力があれば」行の `cfg_scale_caption`・`cfg_scale_speaker`・`t_schedule_mode` について改訂が要る**（`sway_coeff` は 343 行の列挙に無い・10 番目のエンジンの話・9 番目の 8088 アダプタは変えない）。この名の規則は本体の面だけ＝ランチャの「試す」は生の欄名 `cfg_scale_text` のまま |
+| （余力があれば）`cfg_scale_caption`・`cfg_scale_speaker`・`sway_coeff`・`t_schedule_mode` | `/params.irodori` | `exposed_to_ywk: true` の残り 4 欄 |
 
 **出さない欄**（理由つき）：
 
@@ -730,7 +740,7 @@ class FakeRuntimeManager:
 ## §10 突合の記録（正典 対 実装・**本檔の JSON はすべてこれで直した**）
 
 `docs/contract.md` の逐語と `server/ywk_server.py`／`server/ywk_params.py` の実装を突き合わせた。
-**本檔の JSON は実装側の実物に合わせてある。**下の 6 件は**正典の内部で食い違っている／
+**本檔の JSON は実装側の実物に合わせてある。**下の 6 件（うち ⑵ は `decisions.md` 99 で解消＝卓への票は 5 件）は**正典の内部で食い違っている／
 正典の抜粋の外に在る**もので、**本檔では正典側の逐語（⑸ 5-1・⑹ の JSON）を正とし、
 散文の側を採らなかった**。卓（設計席）への票として置く。
 
@@ -744,7 +754,7 @@ class FakeRuntimeManager:
    `docs/contract.md` ⑸ 5-2 の散文と `docs/acceptance.md` API 行の散文が「9 欄」と書くが、
    同 ⑸ 5-1 の逐語 `rules.exposed_to_ywk` は **10 件**で、実装の
    `EXPOSED_TO_YWK`（8 件）＋`EXPOSED_REQUEST_KEYS`（2 件）と**完全に一致**する。
-   ⇒ **本檔は逐語（10 件の配列）を採った。** 卓への票＝散文の「9 欄」を「8 欄」に直す。
+   ⇒ **本檔は逐語（10 件の配列）を採った。** 卓への票＝散文の「9 欄」を「8 欄」に直す。**直った**（`decisions.md` 99＝`contract.md` ⑸ 5-2・`acceptance.md` API 行・`ywk_params.py` の docstring）。
 3. **`/params.prefetch.planned` の値は `"/ywk/prefetch"`**（実装）。
    `docs/contract.md` ⑸ 5-1 の逐語は `"/ywk/prefetch（§6）"` と書き、直前の但し書きで
    「末尾の `planned` の `（§6）` は設計書の節番号を指す＝本書では⑺である」と断っている

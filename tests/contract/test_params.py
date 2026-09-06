@@ -268,3 +268,23 @@ def test_schema_and_engine(params):
     assert params["schema"] == 1
     assert params["engine"] == "irodori-ywk"
     assert params["checkpoint"]["hf"] == "Aratako/Irodori-TTS-v4.1-Small"
+
+
+def test_cfg_scale_text_is_the_emotion_strength_field(params):
+    """decisions.md 99: the 本体 shows ``cfg_scale_text`` as 「感情表現の強さ」.
+
+    The label is what the 本体 turns into ``ParamDescriptor.DisplayName``, so
+    the canon word is pinned here; the description must keep the upstream
+    meaning (text-condition adherence, emoji included) and the 0 warning.
+    """
+    by_key = {item["key"]: item for item in params["irodori"]}
+    field = by_key["cfg_scale_text"]
+    assert field["label"] == "感情表現の強さ"
+    assert not field["label"].startswith("CFG 強度")
+    assert field["group"] == "emotion"
+    assert field["exposed_to_ywk"] is True
+    assert (field["min"], field["max"], field["step"]) == (0.0, 10.0, 0.1)
+    assert "絵文字" in field["description"]
+    assert "追従" in field["description"]
+    assert "0 は" in field["description"]
+    assert "IsEmotion" in field["note"]

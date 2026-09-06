@@ -147,7 +147,7 @@ irodori-tts-for-yomiwakechan/
  "irodori": [
    {"key":"caption","type":"string","default":"","nullable":true,"group":"emotion","label":"演技指示（キャプション）","description":"…","max_length":null,"exposed_to_ywk":true,"note":"空文字＝未指定（wrapper が欄ごと省略して上流へ渡す・上流は空文字を 400 にするので wrapper が畳む）"},
    {"key":"num_steps","type":"integer","default":40,"min":1,"max":120,"step":1,"group":"quality","label":"サンプリング歩数","range_source":"gradio","exposed_to_ywk":true,"presets":[10,40]},
-   {"key":"cfg_scale_text","type":"number","default":3.0,"min":1.0,"max":10.0,"step":0.1,"group":"emotion", …},
+   {"key":"cfg_scale_text","type":"number","default":3.0,"min":0.0,"max":10.0,"step":0.1,"group":"emotion","label":"感情表現の強さ", …},
    {"key":"t_schedule_mode","type":"enum","default":"…","enum":["linear","sway"], …},
    …（`IrodoriOptions` 44 欄を全部載せる。既定は **env 反映後の実効値**＝`settings.default_*` があればそれ、無ければ `SamplingRequest` の dataclass 既定。`cfg_scale_caption` は Server 実効値 3.0 を採り、gradio 4.0 は `note` に残す。`speaker_kv_min_t` は「`speaker_kv_scale` 指定時のみ 0.9 に解決」を `note` に書く）
  ],

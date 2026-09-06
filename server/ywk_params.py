@@ -48,7 +48,7 @@ crucially, whether a ``null`` default is a fact or a bug:
 
 Two more machine-readable flags ride on every field (design §4-2 ⑴⑵):
 
-``exposed_to_ywk``   true only for the nine fields the 本体 turns into a
+``exposed_to_ywk``   true only for the eight fields the 本体 turns into a
                      ``ParamDescriptor`` (:data:`EXPOSED_TO_YWK`).  The
                      acceptance condition A-5 -- "``default: null`` 0 件" -- is
                      shot at **this set**; the rest are the ``advanced`` group
@@ -455,8 +455,18 @@ IRODORI_PARAMS: tuple[dict[str, Any], ...] = (
         "key": "cfg_scale_text",
         "type": "number",
         "group": _G_EMOTION,
-        "label": "CFG 強度（本文）",
-        "description": "本文条件の効き。高いほど原稿に忠実になるが、上げすぎると不自然になる。滑舌が弱いときに少し上げる。",
+        "label": "感情表現の強さ",
+        "description": (
+            "本文条件（本文の文字列そのもの＝挿した絵文字を含む）への追従の強さ。"
+            "上げるほど本文どおりに読み、絵文字で指定した表情も強く出るが、上げすぎると不自然になる。"
+            "発音・滑舌が弱いときに少し上げる。0 は本文条件の誘導を切る（実用下限は 1.0 付近）。"
+        ),
+        "note": (
+            "本体はこの欄を「感情表現の強さ」の表示名で出す（AivisSpeech の intonationScale と同じ帯＝IsEmotion は立てない・"
+            "目盛りは互換でない＝Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0）。"
+            "0 は本文 CFG の枝そのものを外す（上流 rf.py:264 has_text_cfg = cfg_scale_text > 0）＝表情が薄くなるのではなく本文への追従が弱る。"
+            "caption／cfg_scale_caption は演技指示の欄（caption を使うときだけ意味がある）。decisions.md 99"
+        ),
         "min": 0.0,
         "max": 10.0,
         "step": 0.1,
