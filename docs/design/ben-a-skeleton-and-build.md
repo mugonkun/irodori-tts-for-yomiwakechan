@@ -95,6 +95,9 @@ irodori-tts-for-yomiwakechan/
   ```
   （調査の実射正本＝`research/lab/notes/30-embed-and-gpu-control-facts.md` §0-3。パスは `._pth` 専管・設定は env。`PYTHONPATH` は無視される。）
 - 既定 env（wrapper が `os.environ.setdefault` で焼く＝ランチャが上書きできる）：
+  〔**是正・便 G（裁定 105・2026-09-07）**＝下の `IRODORI_PRELOAD=true` は**`false` に変わった**
+  （ポート先行＝bind してから裏の糸でモデルを載せる）。他の欄はそのまま。
+  詳細＝`docs/design/ben-d-launcher.md` §25・`docs/contract.md` ⑵。〕
   `IRODORI_HOST=127.0.0.1`・`IRODORI_PORT=18088`・`IRODORI_HF_CHECKPOINT=Aratako/Irodori-TTS-v4.1-Small`・`IRODORI_PRELOAD=true`・`IRODORI_EMPTY_CACHE_INTERVAL=0`・`IRODORI_ALLOW_NO_REF_VOICE=false`・**`IRODORI_DEFAULT_VOICE=デフォルト`**（`decisions.md` 45＝`/params` の `request.voice.default` と揃える。省いた `voice` は参照なし合成になる）・`IRODORI_DEFAULT_NUM_STEPS=40`・`IRODORI_DEFAULT_RESPONSE_FORMAT=wav`・`IRODORI_VOICES_DIR=<絶対パス>`・`IRODORI_VOICE_ALIASES_FILE=<絶対パス>/voices.json`・`IRODORI_MODEL_DEVICE`／`IRODORI_CODEC_DEVICE`（ランチャが載せる・既定 `auto`）・精度＝device 連動（wrapper が起動時に決める＝§4-6）・`PYTHONUTF8=1`・`PYTHONDONTWRITEBYTECODE=1`・`PYTHONUNBUFFERED=1`・`HF_HOME=<models>`・`HF_HUB_OFFLINE=1`（初回取得後）。
 - api_key は持たない（裁定 2）。bind は 127.0.0.1 固定。
 

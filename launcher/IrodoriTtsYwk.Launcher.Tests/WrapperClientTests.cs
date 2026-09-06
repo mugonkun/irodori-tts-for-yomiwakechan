@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Services.Http;
+using IrodoriTtsYwk.Launcher.Services.Server;
 using IrodoriTtsYwk.Launcher.Services.Voices;
 using Xunit;
 
@@ -56,6 +57,79 @@ public sealed class WrapperClientTests
         Assert.Equal(13, status.Voices!.Count);
         Assert.True(status.Warmup!.IsRunning);
         Assert.False(status.Precompute!.IsRunning);
+    }
+
+    [Fact]
+    public async Task 読込中のruntimeを3欄そのまま読む()
+    {
+        // 裁定 105（ポート先行）＝bind の直後はこの形が 20〜70 秒続く。
+        using var client = Client(Respond(HttpStatusCode.OK, """
+            {"engine":"irodori-ywk","pid":4242,
+             "runtime":{"loaded":false,"loading":true,"error":null}}
+            """));
+
+        var status = (await client.GetStatusAsync(CancellationToken.None)).Value!;
+
+        Assert.False(status.IsReady);
+        Assert.False(status.Runtime!.Loaded);
+        Assert.True(status.Runtime.Loading);
+        Assert.Null(status.Runtime.Error);
+    }
+
+    [Fact]
+    public async Task 読込に失敗したruntimeのerrorを1行として読む()
+    {
+        // 裁定 105 ⑴＝失敗しても 200 のまま・プロセスは生きている。理由はこの 1 欄。
+        using var client = Client(Respond(HttpStatusCode.OK, """
+            {"engine":"irodori-ywk","pid":4242,
+             "runtime":{"loaded":false,"loading":false,
+                        "error":"FileNotFoundError: Checkpoint not found: <path>"}}
+            """));
+
+        var result = await client.GetStatusAsync(CancellationToken.None);
+
+        Assert.True(result.Ok);
+        var status = result.Value!;
+        Assert.False(status.IsReady);
+        Assert.False(status.Runtime!.Loading);
+        Assert.Equal("FileNotFoundError: Checkpoint not found: <path>", status.Runtime.Error);
+    }
+
+    [Fact]
+    public async Task 見張りはruntimeのerrorを標本へそのまま載せる()
+    {
+        // **production の配線そのもの**（是正・便 G）＝
+        // `HealthPoller.ProbeAsync` が `/ywk/status.runtime.error` を
+        // `ReadinessSample.RuntimeError` へ写す。ここが落ちると
+        // `ServerStateMachine` は理由を受け取れず、読込の失敗が
+        // 「起動が N 秒で終わりませんでした」に化ける（裁定 105 ⑷）。
+        const string Reason = "FileNotFoundError: Checkpoint not found: <path>";
+        var poller = new HealthPoller(_ => Client(Respond(
+            HttpStatusCode.OK,
+            "{\"engine\":\"irodori-ywk\",\"pid\":4242,"
+            + "\"runtime\":{\"loaded\":false,\"loading\":false,\"error\":\"" + Reason + "\"}}")));
+
+        var sample = await poller.ProbeAsync(Base, CancellationToken.None);
+
+        Assert.True(sample.Reachable);
+        Assert.False(sample.Loaded);
+        Assert.Equal(Reason, sample.RuntimeError);
+    }
+
+    [Fact]
+    public async Task 見張りは読込中の標本にはerrorを載せない()
+    {
+        // 20〜70 秒続く読込中の形。ここで理由が入ると起動が即 Failed になる。
+        var poller = new HealthPoller(_ => Client(Respond(HttpStatusCode.OK, """
+            {"engine":"irodori-ywk","pid":4242,
+             "runtime":{"loaded":false,"loading":true,"error":null}}
+            """)));
+
+        var sample = await poller.ProbeAsync(Base, CancellationToken.None);
+
+        Assert.True(sample.Reachable);
+        Assert.False(sample.Loaded);
+        Assert.Null(sample.RuntimeError);
     }
 
     [Fact]

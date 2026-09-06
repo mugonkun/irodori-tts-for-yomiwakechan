@@ -23,7 +23,7 @@
 | 2 | `GET /ywk/status` | `engine == "irodori-ywk"` | **404 なら上流の素の Server（8088 経路の個体）＝配布版として扱わない**（`docs/contract.md` ⑵） |
 | 3 | `GET /params` | 200・**≤ 100 ms**・`schema` を読む | 404 なら同上 |
 | 4 | `GET /v1/audio/voices`（表示名が要るなら `GET /ywk/voices`） | 200・**「デフォルト」が必ず先頭に 1 件** | 配布版は台帳が壊れても **500 を返さない**（⑷・D-8 は消える） |
-| 5 | ready 待ち | **`/ywk/status.runtime.loaded == true`**・待ちは **120 秒** | `loaded=false` の間に合成を撃つと**エラーにならず待たされて 200 が返る** |
+| 5 | ready 待ち | **`/ywk/status.runtime.loaded == true`**・**2 秒間隔**で待ちは **120 秒**（裁定 105 ⑸）。**`runtime.error` が非 null になったら、そこで理由つき除外**（時間切れも同じ）。元栓（一括起動）の完了検知は **`/health` 200 の疎通だけ**でよい | `loaded=false` の間に合成を撃つと**エラーにならず待たされて 200 が返る** |
 | 6 | `POST /v1/audio/speech` | 200＋`RIFF`/`WAVE` の wav | 4xx／5xx は **`error.code`（`ywk_` 接頭辞）で分岐する**（文言依存を捨てる） |
 
 - **`localhost` の名前指定は禁止・必ず `127.0.0.1`**（`localhost` は IPv6 を先に試すので**毎要求 +1.2〜2.0 秒**）。
@@ -81,13 +81,26 @@
 - **`device.actual`**＝**モデル読込後に実測した値**（`next(model.parameters()).device`）。
   **設定値の echo ではない・未読込なら `null`**。`device.configured` の方が echo。
 - **`runtime.loaded`**＝**ready の判定はここ**（`docs/contract.md` ⑵）。
+- **`runtime.loading` / `runtime.error`**＝**ポート先行（裁定 105）の 2 欄**。配布版は
+  `preload=false` を焼いて**bind してから裏でモデルを載せる**ので、bind 直後（exe から約 9 s・実測 8.9 s）から
+  `{loaded:false, loading:true, error:null}` が 20〜70 秒ずっと返るのが**正常形**である。
+  読込に失敗した個体は**死なずに** `{loaded:false, loading:false, error:"<理由 1 行>"}` を返し、
+  `/health` も `/ywk/status` も 200 のままである（＝本体はそこで理由つきに除外できる）。
+  **`error` は「載らなかった」以外を意味しない**（是正・便 G）＝出る三つ組はこの 3 つだけで、
+  **載っている個体の合成が 5xx で落ちても `error` には出ない**（CUDA OOM・上流の「待ち行列が
+  一杯」503）。だから**除外の判定は `error` 単独ではなく `loaded=false` と併せて読む**のが安全で
+  あり、そう読めば 1 回の合成の失敗で健全な個体を落とすことは無い。理由 1 行は
+  **絶対パスを `<path>` に畳んである**（⑹ と同じ規則・裏読込の路も遅延読込の路も同じ整形）。
 - **`pid`**＝**この応答を返した個体の pid**（`os.getpid()`）。
 
 ### 1-3 `pid` の突合＝**`/health` 200 はエンジンの保証にならない**（裁定 83）
 
-**`preload=true`（`decisions.md` 7）はモデルを載せてから bind する**ので、起動の 20〜28 秒
-（gfx1151 の実測）の間は**別の個体が同じポートを握って同じ形で答えられる**
-（`docs/contract.md` ⑹）。ランチャはこれを `pid` で突合している。
+**既にそのポートを握っている個体が居れば、同じ形で答えてくる**（`docs/contract.md` ⑹）。
+〔**裁定 105（ポート先行）で窓は縮んだが閉じていない**＝1 巡目の理由は「`preload=true`
+（`decisions.md` 7）はモデルを載せてから bind するので、起動の 20〜28 秒（gfx1151 の実測）の間は
+別の個体が同じポートを握れる」だった。`preload=false` の今は自分の子が 1 秒以内に bind を
+試みるが、**先客が居れば子は bind に失敗して落ちる**＝その間ずっと先客の応答が返る。〕
+ランチャはこれを `pid` で突合している。
 
 さらに**裁定 83 の実射**＝「起動は健全に見え（`/health` 200 を 50.8 s で・`/params`・`/ywk/status` も
 200・device.actual=cpu）、**最初の合成で `prepare_reference: 0.1 ms` の直後にプロセスが
@@ -110,9 +123,23 @@
 
 ### 1-4 ready 待ち
 
+**ポート先行（裁定 105）で「元栓」と「スキャン」が別の物差しになった。**
+
+| 段 | 何で判るか | 期限 | 外れたら |
+|---|---|---|---|
+| 元栓（一括起動の完了検知） | **`/health` 200 の疎通だけ** | exe から **約 9 s**（ランチャの門 5〜6 s＋wrapper の bind 3〜4 s・実測 8.9 s＝`decisions.md` 106・待ちは 120 s のまま） | 到達不能＝起こせなかった |
+| スキャン（使えるか） | **`/ywk/status.runtime.loaded`** を **2 秒間隔**で見る | **最大 120 秒** | **`runtime.error` が立つか時間切れ**＝**理由つきで除外**（`error` の 1 行をそのまま出せる） |
+
+- **`/health` 200 は「起きている」であって「使える」ではない**＝配布版は `preload=false` を焼き、
+  bind してから裏の糸でモデルを載せる。**200 は exe から約 9 秒で返り**（実測 8.9 s＝`decisions.md` 106）、
+  `runtime.loaded=true` はその 20〜70 秒後に来る（Radeon 実測 34.5 s・3090 20〜28 s）。
 - **待ちは 120 秒**（`docs/contract.md` ⑵。本体の `LaunchCompletionTimeout=120 s` は妥当と正典が書いている）。
+- **読込に失敗した個体はプロセスが生きたまま `runtime.error` に理由を載せる**（裁定 105 ⑴）＝
+  **`/health` 200 のまま**なので、疎通だけを見ていると「起きているのに永久に載らない」個体を
+  掴み続ける。スキャンで `error` を見て除外すること。
 - **`loaded=false` の間に `POST /v1/audio/speech` を撃つと、エラーにならず待たされて 200 が返る**
-  ＝合成期限の設計はこれを飲み込む値にすること（同 ⑵）。
+  ＝合成期限の設計はこれを飲み込む値にすること（同 ⑵）。上流の遅延読込に**合流して待つ**ので
+  二重に載ることはない（裁定 105 ⑶）が、**本体は `loaded` を見てから撃つ**のが正である。
 - `/openapi.json`・`/docs`・`/redoc` は上流のまま 200 で出るが、**本体は使わない**
   （`/docs` は CDN を引くのでオフライン機では白紙）。
 
@@ -642,6 +669,8 @@ HTTP 所要 **4.56 s** ⇒ **RTF_http ≈ 1.44**。
 
 - 「UI 起動→`/health` 200＋`runtime.loaded=true` まで **≤ 120 s**（3090・SSD なら ≤ 60 s）・
   **ready 待ち ≥ 120 s**」＝**本体の待ちも 120 s**。
+  （**改訂・裁定 105**＝この行は 2 つに割れた。**`/health` 200 まで ≤ 10 s**（ポート先行・exe から実測 8.9 s＝`decisions.md` 106）と
+  **`runtime.loaded=true` まで ≤ 120 s**。`docs/acceptance.md` の 起動 行。）
 - 「範囲外 GPU・精度不整合・checkpoint 不在は **≤ 15 s** で理由 1 行に落ちる」
   （改訂＝範囲外 GPU と device 綴り違いは **0 s** で弾く＝上流に渡す前に wrapper が exit 2）。
 - 「`GET /params` **≤ 100 ms**・モデル未読込でも 200・本体が露出する全欄を 100 % 含む」。
@@ -689,8 +718,13 @@ class FakeRuntimeManager:
 2. **音の中身は試験しない**（`torch.zeros`）＝**音質は契約ではない**。
 3. **`used_seed = 1 if req.seed is None else int(req.seed)`**＝**seed の往復**を釘で留めている。
 4. **`is_loaded` / `is_loading` の 2 旗を偽物が持つ**＝**ready 待ちの分岐**が本物のモデル無しで撃てる。
+   **裁定 105 でここが 3 旗になった**＝読込の失敗は `get()` を投げさせて `runtime.error` で読む
+   （`tests/contract/test_runtime_loader.py` の `RecordingManager` は `get()` を**堰き止められる**
+   ので、「載っている最中」＝`{loaded:false, loading:true}` の窓ごと試験できる）。
 5. **`BASELINE` を試験ごとに貼り直す**＝1 つの試験の設定が次に漏れない
    （`IRODORI_PRELOAD=false`・`YWK_DATA_DIR` は tempdir＝**3 GB の checkpoint を落とさない**）。
+   ※ この `false` は**もう試験専用の細工ではない**＝裁定 105 で**配布版が焼く値そのもの**に
+   なった（`test_env_and_devices.py`）。
 
 ### 9-2 本体側（C#）は「runtime」ではなく「HTTP」を偽る
 
@@ -801,10 +835,11 @@ class FakeRuntimeManager:
   `null_normalized_by_wrapper`・`empty_string_means_unset`・`no_ref_voice_aliases`・
   `default_voice`）と `exposed_to_ywk` の 10 件＝`docs/contract.md` ⑸ 5-1 の逐語と実装が一致。
 - `apply_env_defaults()` の焼き込み＝`IRODORI_HOST=127.0.0.1`・`IRODORI_PORT=18088`・
-  `IRODORI_PRELOAD=true`・`IRODORI_EMPTY_CACHE_INTERVAL=0`・`IRODORI_ALLOW_NO_REF_VOICE=false`・
+  **`IRODORI_PRELOAD=false`**（裁定 105 で `true` から変わった＝bind してから裏で載せる）・
+  `IRODORI_EMPTY_CACHE_INTERVAL=0`・`IRODORI_ALLOW_NO_REF_VOICE=false`・
   `IRODORI_DEFAULT_VOICE=デフォルト`・`IRODORI_DEFAULT_NUM_STEPS=40`・
   `IRODORI_DEFAULT_RESPONSE_FORMAT=wav`・`IRODORI_HF_CHECKPOINT=Aratako/Irodori-TTS-v4.1-Small`
-  ＝`decisions.md` 2・7・45 と一致。
+  ＝`decisions.md` 2・7・45・105 と一致。
 
 ---
 

@@ -8,6 +8,12 @@ namespace IrodoriTtsYwk.Launcher.Services.Server;
 
 /// <summary>
 /// ready 判定の 1 標本（契約 ⑵＝<b>ready は <c>runtime.loaded</c> で判る</b>）。
+/// <para>
+/// <b>裁定 105（ポート先行）で「届いた」と「載った」は完全に別の事実になった</b>＝
+/// wrapper は bind してから裏でモデルを載せるので、<c>/health</c> 200 は起動の 1 秒後から
+/// 返り、<c>runtime.loaded=true</c> はその 20〜70 秒後に来る。<see cref="Reachable"/> は
+/// 「読込中」を、<see cref="Loaded"/> は「待機」を立てる。
+/// </para>
 /// </summary>
 /// <param name="Reachable"><c>/health</c> か <c>/ywk/status</c> が返った（listen している）。</param>
 /// <param name="Loaded"><c>runtime.loaded=true</c>（合成できる）。</param>
@@ -19,7 +25,24 @@ public sealed record ReadinessSample(
     bool Loaded,
     bool WarmupRunning,
     StatusResponse? Status,
-    string? FailureReason);
+    string? FailureReason)
+{
+    /// <summary>
+    /// <c>/ywk/status.runtime.error</c>＝<b>モデルの読込が失敗した理由 1 行</b>（裁定 105 ⑴）。
+    /// <para>
+    /// <b>ポート先行</b>になったので、読込の失敗はもう「子が落ちる」ことで伝わらない＝
+    /// wrapper は bind してから裏でモデルを載せ、失敗しても<b>プロセスを生かしたまま</b>
+    /// この 1 欄に理由を載せる（本体とランチャが読めるように）。終了コードの路
+    /// （<see cref="Contracts.ServerExitCodes"/>）はもう通らないので、
+    /// <see cref="ServerStateMachine.ApplyReadiness"/> がこの欄で Failed に落とす。
+    /// </para>
+    /// <para>
+    /// <b>後付けの欄にしてある</b>のは、位置引数に足すと既存の呼び手（<c>new ReadinessSample(
+    /// false, false, false, null, …)</c>）が全部黙って意味を変えるからである。
+    /// </para>
+    /// </summary>
+    public string? RuntimeError { get; init; }
+}
 
 /// <summary>ready 待ちの間、繰り返し叩かれる口（テストは偽物を差す）。</summary>
 public interface IReadinessProbe
@@ -75,7 +98,11 @@ public sealed class HealthPoller : IReadinessProbe, IDisposable
         if (status.Ok && status.Value is StatusResponse value)
         {
             var warming = value.Warmup?.IsRunning == true || value.Precompute?.IsRunning == true;
-            return new ReadinessSample(true, value.IsReady, warming, value, null);
+            return new ReadinessSample(true, value.IsReady, warming, value, null)
+            {
+                // 裁定 105 ⑴＝読込に失敗した個体は生きたまま理由を答える。
+                RuntimeError = value.Runtime?.Error,
+            };
         }
 
         // 404／405＝上流の素の Server（配布版ではない）。到達はしている。

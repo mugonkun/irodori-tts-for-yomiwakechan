@@ -64,8 +64,9 @@ public sealed class ServerStateMachineTests
     [Fact]
     public void runtime_loadedを流してもreachableでない間は待機にしない()
     {
-        // 所見 1 の釘＝上流は uvicorn の lifespan でモデルを載せるので、この 1 行は
-        // **bind より先に出る**（実測＝ログ 30.264 s・socket 30.271 s）。
+        // 所見 1 の釘＝ログ 1 行では Ready にしない。1 巡目の理由は「上流は lifespan で
+        // 載せるのでこの行は bind より先に出る（実測＝ログ 30.264 s・socket 30.271 s）」
+        // で、裁定 105（ポート先行）で順序は逆になったが規律は同じ＝
         // 1 度も listen しない個体を「起動しました」で抜けさせない。
         var machine = Feed(BannerLine, RuntimeLoadedLine);
 
@@ -167,6 +168,95 @@ public sealed class ServerStateMachineTests
         machine.ApplyReadiness(reachable: true, loaded: false, warmupRunning: false);
 
         Assert.Equal(ServerState.Listening, machine.State);
+    }
+
+    // -------------------------------------------------- 裁定 105（便 G＝ポート先行）
+
+    [Fact]
+    public void 読込に失敗した標本はプロセスが生きたまま失敗にする()
+    {
+        // 裁定 105 ⑷＝wrapper は bind してから裏で載せる。失敗しても**死なない**ので、
+        // 終了コードの路（exit 3）は通らない。届くのは /ywk/status.runtime.error だけ。
+        var machine = Feed(BannerLine, UvicornLine);
+        machine.ApplyReadiness(reachable: true, loaded: false, warmupRunning: false);
+        Assert.Equal(ServerState.Listening, machine.State);
+
+        var serving = machine.ApplyReadiness(
+            reachable: true, loaded: false, warmupRunning: false,
+            runtimeError: "FileNotFoundError: Checkpoint not found: <path>");
+
+        Assert.False(serving);
+        Assert.Equal(ServerState.Failed, machine.State);
+        Assert.StartsWith(
+            ServerStateMachine.RuntimeLoadFailedPrefix, machine.FailureReason!, StringComparison.Ordinal);
+        Assert.Contains("Checkpoint not found", machine.FailureReason!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void 読込に失敗した理由は状態が変わった知らせにも載る()
+    {
+        var machine = Feed(BannerLine, UvicornLine);
+        var reasons = new List<string?>();
+        machine.StateChanged += (_, e) => reasons.Add(e.Reason);
+
+        machine.ApplyReadiness(true, false, false, "RuntimeError: CUDA error: invalid device ordinal");
+
+        Assert.Equal(ServerState.Failed, machine.State);
+        Assert.Contains(
+            reasons,
+            reason => reason is not null
+                && reason.Contains("モデルの読込に失敗＝", StringComparison.Ordinal)
+                && reason.Contains("invalid device ordinal", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void 読込中の標本は失敗にせず読込中のままにする()
+    {
+        // ポート先行の 20〜70 秒はこの形の標本が続く（loaded=false・error=null）。
+        var machine = Feed(BannerLine, UvicornLine);
+
+        for (var i = 0; i < 5; i++)
+        {
+            Assert.False(machine.ApplyReadiness(true, false, false, runtimeError: null));
+            Assert.Equal(ServerState.Listening, machine.State);
+            Assert.Null(machine.FailureReason);
+        }
+
+        // 空白だけの error も「理由なし」＝失敗にしない。
+        Assert.False(machine.ApplyReadiness(true, false, false, runtimeError: "   "));
+        Assert.Equal(ServerState.Listening, machine.State);
+
+        Assert.True(machine.ApplyReadiness(true, true, false));
+        Assert.Equal(ServerState.Ready, machine.State);
+    }
+
+    [Fact]
+    public void 載っている個体は理由が付いていても失敗にしない()
+    {
+        // 是正・便 G＝Failed は「サーバ停止」以外に出口の無い終端である。
+        // **載っている個体に「読込の失敗」は有り得ない**ので、loaded と error が
+        // 同時に立つ標本では loaded の方を採る＝合成 1 回の 5xx（CUDA OOM・
+        // 待ち行列一杯の 503）が健全な個体を永久に「モデルの読込に失敗＝」に
+        // 落とすことは無い。
+        var machine = Feed(BannerLine, UvicornLine);
+
+        Assert.True(machine.ApplyReadiness(true, true, false, "RuntimeError: CUDA out of memory"));
+
+        Assert.Equal(ServerState.Ready, machine.State);
+        Assert.Null(machine.FailureReason);
+    }
+
+    [Fact]
+    public void 読込に失敗した個体は待機に上がらない()
+    {
+        // 失敗（loaded=false ＋ 理由）の後は、続く標本が何を言っても終端のまま。
+        var machine = Feed(BannerLine, UvicornLine);
+
+        Assert.False(machine.ApplyReadiness(true, false, false, "RuntimeError: なにか"));
+        Assert.Equal(ServerState.Failed, machine.State);
+
+        Assert.False(machine.ApplyReadiness(true, true, false));
+        Assert.Equal(ServerState.Failed, machine.State);
     }
 
     [Fact]

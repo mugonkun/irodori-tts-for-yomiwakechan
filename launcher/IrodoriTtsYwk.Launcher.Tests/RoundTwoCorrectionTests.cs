@@ -268,8 +268,9 @@ public sealed class RoundTwoCorrectionTests : IDisposable
     [Fact]
     public async Task 死活_他人のpidの応答は自分の物として採らない()
     {
-        // wrapper は preload=true で**モデルを載せてから bind する**ので、その窓の間に
-        // 他人が同じポートを握ると同じ形の応答が返る。pid が違えば採らない（Ready にも上げない）。
+        // 既にそのポートを握っている個体が居ると、同じ形の応答が返る（裁定 105 のポート先行で
+        // 自分の子の bind は 1 秒以内に来るようになったが、その子が bind に失敗して落ちるまでの
+        // 窓は残る）。pid が違えば採らない（Ready にも上げない）。
         await using var server = new ServerProcess(
             new FreePort(), new ForeignStatus(pid: 999999), TimeSpan.FromMilliseconds(20),
             TimeSpan.FromMilliseconds(50), null, _ => LiveChild(3));
@@ -299,6 +300,64 @@ public sealed class RoundTwoCorrectionTests : IDisposable
 
         Assert.True(result.Ok);
         Assert.NotNull(server.LatestStatus);
+    }
+
+    [Fact]
+    public async Task 読込に失敗した個体は生きたまま理由つきで失敗になる()
+    {
+        // 裁定 105 ⑷（便 G＝ポート先行）＝wrapper は bind してから裏でモデルを載せるので、
+        // 読込の失敗はもうプロセスの死（exit 3）として届かない。/ywk/status は 200 のまま
+        // runtime.error に理由 1 行を載せる。ready 待ちは**期限を待たず**そこで終わる。
+        await using var server = new ServerProcess(
+            new FreePort(), new LoadFailedStatus(RuntimeLoadReason), TimeSpan.FromMilliseconds(20),
+            TimeSpan.FromMilliseconds(50), null, _ => LiveChild(3));
+
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        var result = await server.StartAsync(
+            Request(18097, RuntimeVariants.Cpu, TimeSpan.FromSeconds(30)), CancellationToken.None);
+        started.Stop();
+
+        Assert.False(result.Ok);
+        Assert.Equal(ServerState.Failed, result.State);
+        Assert.Contains("モデルの読込に失敗＝", result.FailureReason!, StringComparison.Ordinal);
+        Assert.Contains("Checkpoint not found", result.FailureReason!, StringComparison.Ordinal);
+        // 期限（30 s）を待っていない＝受け入れ条件 D-1 の「≤ 15 s で理由 1 行」。
+        Assert.True(started.Elapsed < TimeSpan.FromSeconds(15), started.Elapsed.ToString());
+        // 理由は**標本**から来た＝終了コードの綴りに化けていない（子は生きたまま答えた）。
+        Assert.DoesNotContain("異常終了", result.FailureReason!, StringComparison.Ordinal);
+        Assert.NotNull(result.ProcessId);
+        // **子は落とさない**（裁定 105 ⑴＝便 G・設計席の是正）。読込に失敗した個体は bind
+        // したまま理由を答えている＝本体の走査がその理由を読める。ポートを閉じるのは
+        // 「サーバ停止」（Failed でも押せる＝是正 2026-09-05）。
+        Assert.NotNull(server.ProcessId);
+        using (var child = System.Diagnostics.Process.GetProcessById(result.ProcessId!.Value))
+        {
+            Assert.False(child.HasExited);
+        }
+        Assert.Contains("モデルの読込に失敗＝", server.FailureReason!, StringComparison.Ordinal);
+
+        await server.StopAsync(CancellationToken.None);
+        Assert.Null(server.ProcessId);
+    }
+
+    [Fact]
+    public async Task 走り出した後に読込が失敗したら子を残したまま失敗にする()
+    {
+        // 裁定 105 ⑷＋是正・2026-09-05＝ready の後の見張りで error を読んだときは子を殺さない。
+        // ここが「Failed でも『サーバ停止』が押せる」（StatusViewModel.CanStop）の効き所である。
+        var machine = new ServerStateMachine();
+        machine.ApplyStarted();
+        machine.ApplyLogLine(
+            "INFO:     Uvicorn running on http://127.0.0.1:18097 (Press CTRL+C to quit)",
+            isStandardError: true, port: 18097);
+        Assert.True(machine.ApplyReadiness(true, true, false));
+        Assert.Equal(ServerState.Ready, machine.State);
+
+        Assert.False(machine.ApplyReadiness(true, false, false, RuntimeLoadReason));
+
+        Assert.Equal(ServerState.Failed, machine.State);
+        Assert.Contains("モデルの読込に失敗＝", machine.FailureReason!, StringComparison.Ordinal);
+        await Task.CompletedTask;
     }
 
     [Fact]
@@ -606,6 +665,24 @@ public sealed class RoundTwoCorrectionTests : IDisposable
             };
 
             return Task.FromResult(new ReadinessSample(true, true, false, status, null));
+        }
+    }
+
+    /// <summary>読込に失敗した個体（裁定 105 ⑴＝200 のまま <c>runtime.error</c> に理由 1 行）。</summary>
+    private const string RuntimeLoadReason = "FileNotFoundError: Checkpoint not found: <path>";
+
+    private sealed class LoadFailedStatus(string reason) : IReadinessProbe
+    {
+        public Task<ReadinessSample> ProbeAsync(Uri baseAddress, CancellationToken cancellationToken)
+        {
+            var status = new StatusResponse
+            {
+                Engine = "irodori-ywk",
+                Runtime = new StatusRuntime { Loaded = false, Loading = false, Error = reason },
+            };
+
+            return Task.FromResult(
+                new ReadinessSample(true, false, false, status, null) { RuntimeError = reason });
         }
     }
 

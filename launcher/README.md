@@ -32,13 +32,13 @@ gradio を依存から外すと配布サイズも 43〜82 MB 減る。
 | 2 | ポート **18088**・bind `127.0.0.1`・**api_key なし** | `decisions.md` 2 |
 | 3 | GPU は **UUID（と PCI bus id）で保存**し、起動時に index へ解決する（列挙 ≤ 5 s）。index は再起動で変わりうる | `docs/acceptance.md`「GPU」行 |
 | 4 | 精度は **device 連動**（GPU→bf16・CPU→fp32）。上級者設定で上書き可（Radeon 版を除く） | `decisions.md` 7・`docs/radeon.md` |
-| 5 | 焼く既定＝`preload=true`・`empty_cache_interval=0`・`allow_no_ref_voice=false`＋alias「デフォルト」・v4.1-Small 決め打ち・`voices_dir` は絶対パス・ready 待ち 120 s | `decisions.md` 7 |
+| 5 | 焼く既定＝**`preload=false`**（裁定 105＝bind してから裏でモデルを載せる。裁定 7 の `preload=true` を覆した）・`empty_cache_interval=0`・`allow_no_ref_voice=false`＋alias「デフォルト」・v4.1-Small 決め打ち・`voices_dir` は絶対パス・ready 待ち 120 s | `decisions.md` 7・105 |
 | 6 | **`voices/` と `voices.json` の所有者はランチャ**（上流の登録 API 4 口は使わない＝日本語名が 400 になる） | `docs/contract.md` ⑷ |
 | 7 | 話者メタ（表示名・caption 既定・既定パラメータ）は**配布版の台帳** `voices/voices.ywk.json`（上流に置き場が無い） | 同 |
 | 8 | 既定 steps は **40**（上流既定）。UI のプリセットで 10 を選べる。**本体の指定が来たら必ず勝つ** | `decisions.md` 10 |
 | 9 | CPU 合成は**UI にだけ**露出し、配信用途では非推奨と明記する | `decisions.md` 13 |
 | 10 | 透かしは**既定 ON**・切る経路を持たない | `decisions.md` 9 |
-| 11 | 状態判定は stderr の **3 行**＝`ywk_server <版> upstream=…`／`Uvicorn running on`／`runtime loaded in` | 設計書 §4-1・`docs/acceptance.md`「ログ」行 |
+| 11 | 状態判定は stderr の **3 行**＝`ywk_server <版> upstream=…`／`Uvicorn running on`／`runtime loaded in`（裁定 105 で 3 行目は**bind の後**に出る＝順序が変わっただけで行は同じ。wrapper は手前に `runtime load started` も出す） | 設計書 §4-1・§25・`docs/acceptance.md`「ログ」行 |
 | 12 | **422 の本文 echo をログに流さない**（1 発 5 KB＋絶対パス） | `docs/acceptance.md`「ログ」行 |
 | 13 | 参照ボイス欄には **Ethical Restrictions 1（No Impersonation）の但し書き**を出す | `README.md` §4 |
 | 14 | Radeon 版は **bf16 固定＋起動時暖機**（段の 3 射＋自然尺 1 射）・`/ywk/status.warmup` で進捗 | `docs/radeon.md` |
@@ -61,7 +61,7 @@ gradio を依存から外すと配布サイズも 43〜82 MB 減る。
 | 1 | **`._pth` があると `PYTHONPATH` は無視される**（`PYTHON*`／`IRODORI_*`／`HF_*` の env は効く） | **パスは `._pth` の専管・設定は env**。混ぜない |
 | 2 | `IRODORI_VOICES_DIR` は**絶対パス必須**（既定は CWD 相対で起動時に `mkdir`） | 読取専用の導入先だと起動で落ちる |
 | 3 | **CPU×bf16 は起動時 `ValueError`**／**fp32×GPU 不在は黙って CPU に落ちて 200**（340 倍遅い） | 精度の device 連動は安全装置。黙った転落を塞ぐ |
-| 4 | 上流は device 文字列を検査せず、`preload=true` なら **6〜11 s 後に落ちる** | ランチャ（と wrapper）が起動前に 0 s で弾く |
+| 4 | 上流は device 文字列を検査せず、モデルを載せてから **6〜11 s 後に落ちる** | ランチャ（と wrapper）が起動前に 0 s で弾く |
 | 5 | `voices.json` が壊れると **一覧だけ 500・`/health` は 200** | 配布版は 500 を返さず「0 件＋理由」を返す |
 | 6 | 同一 stem の `.wav` は `.pt`／`.speaker.safetensors` に**黙って勝つ** | 事前計算潜在は別 stem か `voices.json` 別名で置く |
 | 7 | `voice` と `irodori.no_ref` を同時に送ると**参照が黙って落ちる** | 契約で同時指定を 400 にした（`docs/contract.md` ⑷） |

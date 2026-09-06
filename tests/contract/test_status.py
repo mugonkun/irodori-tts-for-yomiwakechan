@@ -21,7 +21,9 @@ def test_status_is_200_without_a_model(client, unloaded):
     assert response.status_code == 200
     payload = response.json()
     assert payload["engine"] == "irodori-ywk"
-    assert payload["runtime"]["loaded"] is False
+    # 裁定 105（ポート先行）＝bind は読込より先なので、この 3 欄が「まだ載っていない
+    # が生きている」を名乗る唯一の場所である。`error` は失敗したときだけ非 null。
+    assert payload["runtime"] == {"loaded": False, "loading": False, "error": None}
     assert payload["device"]["actual"] is None
 
 
@@ -33,7 +35,7 @@ def test_status_pins_the_upstream_commits(client, ywk):
 
 def test_status_reports_the_real_device_once_loaded(client, baseline):
     payload = client.get("/ywk/status").json()
-    assert payload["runtime"]["loaded"] is True
+    assert payload["runtime"] == {"loaded": True, "loading": False, "error": None}
     assert payload["device"]["configured"] == "cpu"
     assert payload["device"]["actual"] == "cpu"
     assert payload["device"]["precision"] == "fp32"
@@ -77,12 +79,11 @@ def test_bind_and_port_defaults(client):
 def test_status_names_the_process_that_answered(client):
     """便 D（2）: ``pid`` は「この応答は誰の物か」の 1 欄（契約 ⑹）.
 
-    Why it has to be here: ``preload=true`` (裁定 7) loads the model *before*
-    uvicorn binds -- 20-28 s on the Radeon machine -- so during startup another
-    process can be holding the port and answering in this very shape.  Without
-    this field the launcher reads a stranger's numbers into 状態帯 (裁定 67 ⑶)
-    and promotes to 待機 on someone else's readiness; with it, it compares
-    against the pid it started and drops the sample.
+    Why it has to be here: 裁定 105（ポート先行）で bind は 1 秒以内に来るように
+    なったが、**窓は閉じていない**＝既にそのポートを握っている個体が居れば、こちらの
+    子が bind に失敗して落ちるまでの間、同じ形の応答が返る。この欄が無ければランチャ
+    は他人の数字を状態帯（裁定 67 ⑶）に出し、他人の readiness で 待機 に上げる。
+    在れば、起こした子の pid と突合してその標本を落とせる。
     """
     import os
 

@@ -32,6 +32,12 @@ One file.  It imports the upstream FastAPI app unmodified and adds what the
   ``voices/`` (contract ⑷ 4-3) and the port has no api_key.
 * precision follows the device (§4-6), and a bad device string exits 2 before
   the six-to-eleven second model load instead of after it.
+* **port first** (decisions.md 105): ``IRODORI_PRELOAD`` is baked ``false`` and
+  ``ywk_lifespan`` starts one background thread that calls the upstream
+  ``runtime_manager.get()``.  uvicorn therefore binds within a second instead of
+  after the 20-70 s load, ``/health`` answers 200 from that moment, and the mark
+  of "can synthesise" is ``/ywk/status.runtime.loaded``.  A load that fails
+  leaves the process alive with the reason in ``runtime.error`` (§4-9).
 * an error-shaping middleware so no error body carries an absolute path (§4-7),
   including the SSE ``event: error`` frames, which ride inside a 200 and would
   otherwise slip past it.
@@ -103,7 +109,16 @@ def apply_env_defaults() -> None:
         "IRODORI_HOST": "127.0.0.1",
         "IRODORI_PORT": "18088",
         "IRODORI_HF_CHECKPOINT": "Aratako/Irodori-TTS-v4.1-Small",
-        "IRODORI_PRELOAD": "true",
+        # decisions.md 105 (便 G「ポート先行」) overturns the ``preload=true`` of
+        # decisions.md 7.  ``true`` made the upstream ``startup()`` load the model
+        # *inside* the lifespan, i.e. **before uvicorn binds**, so nothing answered
+        # on the port for 20-70 s.  ``false`` lets the lifespan yield at once -- the
+        # port opens in well under 3 s -- and ``ywk_lifespan`` starts one background
+        # thread that calls ``runtime_manager.get()`` itself (§4-9).  The mark of
+        # "can synthesise" moves from "the port answers" to
+        # ``/ywk/status.runtime.loaded``, which is what the 本体 and the launcher
+        # already read (contract ⑵).
+        "IRODORI_PRELOAD": "false",
         "IRODORI_EMPTY_CACHE_INTERVAL": "0",
         "IRODORI_ALLOW_NO_REF_VOICE": "false",
         # decisions.md 45.  ``/params`` reports ``request.voice`` with
@@ -346,8 +361,20 @@ app = upstream.app
 settings = upstream.settings
 
 #: Set when the wrapper itself saw the runtime fail to load.  The upstream
-#: ``RuntimeManager`` keeps no error field, and a *preload* failure aborts the
-#: lifespan (uvicorn exits), so this only ever records a lazy-load failure.
+#: ``RuntimeManager`` keeps no error field.
+#:
+#: Two writers, one meaning (decisions.md 105 ⑴): the background loader
+#: (``_load_runtime_body``) and the lazy path a speech request takes **while the
+#: runtime is still not loaded**.  Under ``preload=false`` a failed load no
+#: longer aborts the lifespan -- **the process stays alive** so that the 本体 and
+#: the launcher can read the reason out of ``/ywk/status.runtime.error`` while
+#: ``/health`` still answers 200.
+#:
+#: 是正・便 G: the meaning is **exactly** "the model did not load".  Since 裁定
+#: 105 ⑷ the launcher turns a non-null ``runtime.error`` into the terminal
+#: ``Failed``, so a synthesis 5xx on a loaded individual must never write here
+#: (see ``_create_speech``), and ``ywk_status`` only exports it when the runtime
+#: is neither loaded nor loading -- the two triples the contract names.
 _runtime_error: str | None = None
 
 
@@ -1164,8 +1191,26 @@ async def _create_speech(request: Request):  # noqa: ANN202
     try:
         response = await _upstream_create_speech(payload)
     except Exception as exc:  # noqa: BLE001 -- record, then re-raise
-        if int(getattr(exc, "status_code", 500)) >= 500:
-            _runtime_error = f"{type(exc).__name__}: {exc}"
+        # **``_runtime_error`` means "the model did not load", nothing else**
+        # (是正・便 G＝裁定 105 ⑷ で此の欄は launcher の終端状態 Failed の材料に
+        # なった).  Two narrowings, both load-bearing:
+        #
+        # ⑴ ``not is_loaded`` -- the lazy road through ``runtime_manager.get()``
+        #    is the only 5xx that is a load failure.  A synthesis 500 on a
+        #    *loaded* individual (CUDA OOM out of ``_synthesize_chunks``, the
+        #    upstream's queue-full 503) used to land here too, and because the
+        #    exception is re-raised the reset below was skipped -- one transient
+        #    failure pinned a healthy server to 「モデルの読込に失敗＝…」 for good.
+        # ⑵ ``_one_line_reason`` -- the same scrub the loader uses.  The raw
+        #    ``str(exc)`` carries ``C:\\Users\\...`` (upstream runtime.py:84) and
+        #    ``/ywk/status`` is a 200, so ``ywk_scrub_errors`` never sees it:
+        #    without this the launcher's state band would print a user path
+        #    (contract ⑶ 3-3・⑹).
+        if (
+            int(getattr(exc, "status_code", 500)) >= 500
+            and not getattr(upstream.runtime_manager, "is_loaded", False)
+        ):
+            _runtime_error = _one_line_reason(exc)
         raise
     if upstream.runtime_manager.is_loaded:
         _runtime_error = None
@@ -1212,6 +1257,11 @@ def _live_runtime() -> Any:
 
 
 _device_logged = False
+#: Guards the check-and-set of ``_device_logged``.  Under decisions.md 105 the
+#: two callers are on **different threads** -- the background loader and the
+#: speech route on the event loop -- so an unguarded "once" could emit twice
+#: when a first request lands inside the loader's own window.
+_device_log_lock = threading.Lock()
 
 
 def note_device_once() -> str | None:
@@ -1222,12 +1272,13 @@ def note_device_once() -> str | None:
     silent CPU fallback, so the launcher can show it and the log can carry it.
     """
     global _device_logged
-    if _device_logged:
-        return None
     runtime = _live_runtime()
     if runtime is None:
         return None
-    _device_logged = True
+    with _device_log_lock:
+        if _device_logged:
+            return None
+        _device_logged = True
     device_obj = getattr(runtime, "model_device", None)
     model = getattr(runtime, "model", None)
     dtype = None
@@ -1248,6 +1299,209 @@ def note_device_once() -> str | None:
     return line
 
 
+# --------------------------------------------------------------------------
+# 6-0. the background loader (design §4-9 -- decisions.md 105「ポート先行」)
+# --------------------------------------------------------------------------
+#
+# ``IRODORI_PRELOAD=false`` means the upstream ``startup()`` returns without a
+# model, so the lifespan yields and **uvicorn binds within a second**.  The load
+# itself moves here: one thread, started right after the upstream startup and
+# before the yield, calling the very same ``runtime_manager.get()`` the upstream
+# uses for preload and for the first speech request.  That matters -- the
+# manager holds a ``threading.Lock`` around the load (runtime.py:31-66), so a
+# speech request that arrives mid-load **joins this load** instead of starting a
+# second one, and ``is_loading`` (``_runtime is None and lock.locked()``) is true
+# for exactly the window this thread is inside ``get()``.
+
+#: The loader thread, and the guards that keep there being only one of it.
+_loader_thread: threading.Thread | None = None
+_loader_lock = threading.Lock()
+_loader_started = False
+#: Set when the loader has finished, whichever way it went (tests wait on it).
+#: 是正・便 G: **これは「今の走行の」事象への別名**である。合図は
+#: ``start_runtime_loader`` が走行ごとに作り、糸には引数で渡す＝停止の join
+#: (2 s) を超えて生き残った前の走行の糸が、次の走行の合図を触ることはない。
+_loader_done = threading.Event()
+#: Set at shutdown: the loader must not start precompute/warmup on the way out.
+#: 同じく走行ごとの物への別名（前の走行の旗を次の走行が消してしまわない）。
+_loader_stop = threading.Event()
+
+#: How long the shutdown path waits for the loader before walking away.  A real
+#: load is 20-70 s and shutdown must not hang on it; the thread is a daemon and
+#: checks ``_loader_stop`` before it touches anything else.
+LOADER_JOIN_TIMEOUT_S = 2.0
+
+
+def _one_line_reason(exc: BaseException) -> str:
+    """The failure as one scrubbed line (contract ⑹「絶対パスは出さない」).
+
+    ``FileNotFoundError: Checkpoint not found: C:\\Users\\...`` is the shape the
+    upstream raises, so the reason has to go through ``replace_paths`` before it
+    reaches ``/ywk/status`` -- the same rule every other error body obeys (⑶ 3-3).
+    """
+    text = f"{type(exc).__name__}: {exc}".replace("\r", " ").replace("\n", " ")
+    return scrub_text(" ".join(text.split()))
+
+
+def _loader_note(message: str) -> None:
+    """One stderr line in the wrapper's own voice (the ``ywk_server: `` prefix)."""
+    sys.stderr.write(f"ywk_server: {message}\n")
+    sys.stderr.flush()
+
+
+def _start_on_start_jobs() -> None:
+    """Precompute and warmup on start -- **only after a successful load**.
+
+    Both used to run straight after the upstream startup, which under
+    ``preload=true`` meant "the model is in".  Under decisions.md 105 ⑵ that is
+    no longer true at that point, so they moved into the loader's success path:
+    a failed load must not fire either of them (both would only queue behind a
+    ``get()`` that raises again).
+    """
+    # Precompute first: its items cost 0.37..0.90 s each (research 40 §6-2)
+    # against several seconds per warmup shot, so starting it ahead makes it
+    # likely that the warmup's speaker shots already go down the latent path.
+    # Both threads yield to real requests and both queue on the upstream
+    # semaphore, so overlapping is safe -- it is only the ordering that is a
+    # preference, not a guarantee.
+    if precompute_on_start_enabled():
+        try:
+            started_pc = start_precompute(ids=None)
+        except PrecomputeBusy:  # pragma: no cover -- nothing else can be running yet
+            logger.warning("precompute on start: a run is already going")
+        else:
+            logger.info(
+                "precompute on start: id=%s total=%d",
+                started_pc["id"],
+                started_pc["total"],
+            )
+    options = warmup_on_start_options()
+    if options is not None:
+        try:
+            started = start_warmup(**options)
+        except WarmupBusy:  # pragma: no cover -- nothing else can be running yet
+            logger.warning("warmup on start: a run is already going")
+        else:
+            logger.info(
+                "warmup on start: id=%s shots_total=%d",
+                started["id"],
+                started["shots_total"],
+            )
+
+
+def _loader_is_current() -> bool:
+    """Am I still **this** server run's loader?
+
+    是正・便 G: the shutdown path joins for ``LOADER_JOIN_TIMEOUT_S`` (2 s) only,
+    and a real load is 20-70 s, so a loader routinely outlives its own run.  Such
+    a straggler must not write ``_runtime_error``, must not start precompute or
+    warmup, and must not probe the device -- all of those would land on the run
+    that came *after* it.  Its own ``stop``/``done`` events are already private
+    to it; this is the guard for the module-level state it would otherwise share.
+    """
+    return _loader_thread is threading.current_thread()
+
+
+def _load_runtime_body(
+    manager: Any, done: threading.Event, stop: threading.Event
+) -> None:
+    """The loader thread.  Three stderr lines, one of them the upstream's.
+
+    ⑴ ``runtime load started`` -- ours, the moment the port is open.
+    ⑵ ``runtime loaded in %.2fs`` -- **the upstream's own** (runtime.py:63), and
+       the line the launcher's ``ServerLogParser`` keys ``RuntimeLoaded`` off.
+       ``main()`` calls ``logging.basicConfig(level=INFO)`` and uvicorn's
+       ``LOGGING_CONFIG`` leaves the root logger alone (``disable_existing_loggers``
+       is false), so it still reaches stderr from this thread.
+    ⑶ ``runtime load failed: <reason>`` -- ours, and the same one line that goes
+       into ``/ywk/status.runtime.error``.  **The process stays alive** (105 ⑴).
+
+    ``done`` and ``stop`` are **this run's** events, handed in as arguments -- see
+    ``_loader_is_current``.
+    """
+    global _runtime_error
+    try:
+        _loader_note("runtime load started in the background (decisions.md 105)")
+        try:
+            manager.get()
+        except BaseException as exc:  # noqa: BLE001 -- the reason is the product here
+            reason = _one_line_reason(exc)
+            if stop.is_set() or not _loader_is_current():
+                return
+            _runtime_error = reason
+            _loader_note(f"runtime load failed: {reason}")
+            return
+        # **Everything after the load is guarded by the stop flag** (105 ⑵ の
+        # 「成功の後にしか走らない」三つは device の 1 行も含む)：停止の後に
+        # 載り終えた糸が、死にかけの process で GPU を叩いて stderr に書くのを防ぐ。
+        if stop.is_set() or not _loader_is_current():
+            return
+        note_device_once()
+        _start_on_start_jobs()
+    finally:
+        done.set()
+
+
+def start_runtime_loader() -> threading.Thread | None:
+    """Start the one loader thread.  **Idempotent** -- never two loads.
+
+    Called from ``ywk_lifespan`` before the yield.  Returns the thread (the same
+    one on every later call) so a test can join it.
+
+    The manager is read **here**, not inside the thread: the loader loads the
+    runtime of the server that started it, and nothing that happens after the
+    port opens can point it at a different one.  The two events are made here for
+    the same reason -- one run, one pair (是正・便 G).
+    """
+    global _loader_thread, _loader_started, _loader_done, _loader_stop, _runtime_error
+    manager = upstream.runtime_manager
+    with _loader_lock:
+        if _loader_started:
+            return _loader_thread
+        _loader_started = True
+        done = threading.Event()
+        stop = threading.Event()
+        _loader_done = done
+        _loader_stop = stop
+        # **Cleared before the thread runs**, not inside it: between ``start()``
+        # and the thread's first statement a ``/ywk/status`` sample would
+        # otherwise read the *previous* run's reason next to ``loading=true``
+        # (契約に無い三つ組＝裁定 105 ⑵).
+        _runtime_error = None
+        thread = threading.Thread(
+            target=_load_runtime_body,
+            args=(manager, done, stop),
+            name="ywk-runtime-loader",
+            daemon=True,
+        )
+        _loader_thread = thread
+    thread.start()
+    return thread
+
+
+def reset_runtime_loader(timeout: float = LOADER_JOIN_TIMEOUT_S) -> None:
+    """Put the loader back to "never started" (one server run = one loader).
+
+    ``ywk_lifespan`` calls this on the way in, so a second run in the same
+    interpreter -- which is what every ``TestClient`` in the contract tests is --
+    gets its own loader instead of inheriting the previous run's flag.
+
+    The events are **not** cleared here: they belong to the run that is ending.
+    ``done`` is set so that nothing is left waiting on a run that is over, and
+    ``stop`` stays set so a straggler still reads "stop" after it wakes up.  The
+    next ``start_runtime_loader`` makes a fresh pair.
+    """
+    global _loader_thread, _loader_started
+    _loader_stop.set()
+    thread = _loader_thread
+    if thread is not None and thread.is_alive() and thread is not threading.current_thread():
+        thread.join(timeout=timeout)
+    with _loader_lock:
+        _loader_thread = None
+        _loader_started = False
+    _loader_done.set()
+
+
 _upstream_lifespan = getattr(app.router, "lifespan_context", None)
 
 if _upstream_lifespan is not None:
@@ -1256,46 +1510,28 @@ if _upstream_lifespan is not None:
     async def ywk_lifespan(scoped_app: Any):  # noqa: ANN201
         global _warmup_loop
         async with _upstream_lifespan(scoped_app):
-            # Runs straight after the upstream startup(), i.e. after the
-            # IRODORI_PRELOAD load has finished.
-            note_device_once()
+            # Runs straight after the upstream startup() -- which under
+            # ``preload=false`` (decisions.md 105 ⑴) loaded nothing -- and
+            # **before uvicorn binds**: the port opens as soon as this yields.
+            #
             # The warmup thread queues on the upstream's asyncio semaphore, so
             # it needs the loop the server actually runs on (§7).  The
             # precompute worker (§8) borrows the same handle for the same
-            # reason.
+            # reason.  Both are started by the loader, so the handle has to be
+            # in place before the loader is.
             _warmup_loop = asyncio.get_running_loop()
-            # Precompute first: its items cost 0.37..0.90 s each (research 40
-            # §6-2) against several seconds per warmup shot, so starting it
-            # ahead makes it likely that the warmup's speaker shots already go
-            # down the latent path.  Both threads yield to real requests and
-            # both queue on the upstream semaphore, so overlapping is safe --
-            # it is only the ordering that is a preference, not a guarantee.
-            if precompute_on_start_enabled():
-                try:
-                    started_pc = start_precompute(ids=None)
-                except PrecomputeBusy:  # pragma: no cover -- nothing else can be running yet
-                    logger.warning("precompute on start: a run is already going")
-                else:
-                    logger.info(
-                        "precompute on start: id=%s total=%d",
-                        started_pc["id"],
-                        started_pc["total"],
-                    )
-            options = warmup_on_start_options()
-            if options is not None:
-                try:
-                    started = start_warmup(**options)
-                except WarmupBusy:  # pragma: no cover -- nothing else can be running yet
-                    logger.warning("warmup on start: a run is already going")
-                else:
-                    logger.info(
-                        "warmup on start: id=%s shots_total=%d",
-                        started["id"],
-                        started["shots_total"],
-                    )
+            reset_runtime_loader()
+            start_runtime_loader()
             try:
                 yield
             finally:
+                # Stop first, then join briefly: the loader checks the flag
+                # before it starts precompute/warmup, so a load still running at
+                # shutdown cannot revive either of them behind us.
+                _loader_stop.set()
+                thread = _loader_thread
+                if thread is not None and thread.is_alive():
+                    thread.join(timeout=LOADER_JOIN_TIMEOUT_S)
                 _warmup_cancel.set()
                 _precompute_cancel.set()
                 with _pending_cond:
@@ -1489,6 +1725,10 @@ def ywk_status() -> dict[str, Any]:
     live = upstream.settings
     manager = upstream.runtime_manager
     runtime = _live_runtime()
+    #: Read once: the two flags have to describe the *same* instant, or a load
+    #: that finishes between the reads would answer ``{loaded:false, loading:false}``.
+    _runtime_loaded = bool(getattr(manager, "is_loaded", False))
+    _runtime_loading = bool(getattr(manager, "is_loading", False))
 
     actual: str | None = None
     precision = live.model_precision
@@ -1520,18 +1760,27 @@ def ywk_status() -> dict[str, Any]:
         "upstream": {"irodori_tts": UPSTREAM_IRODORI_TTS, "server": UPSTREAM_SERVER},
         "host": live.host,
         "port": live.port,
-        # Whose answer this is.  preload=true means the model is loaded *before*
-        # uvicorn binds (20-28 s on this machine), so during that window another
-        # process can be holding the port and answering in this exact shape --
-        # and the launcher would read a stranger's numbers as its own child's
-        # (裁定 67 ⑶ の状態帯).  One integer lets it compare against the pid it
-        # started.  Not a path and not a secret: it is the same number the OS
-        # already shows in the task list.
+        # Whose answer this is.  Under decisions.md 105 the port opens in under
+        # a second, so the "someone else is holding it" window is small -- but it
+        # did not close: a stranger that already owns the port answers while our
+        # child is still starting, and our child then dies on bind.  Without this
+        # field the launcher reads the stranger's numbers as its own child's
+        # (裁定 67 ⑶ の状態帯) and promotes on someone else's readiness.  One
+        # integer lets it compare against the pid it started.  Not a path and not
+        # a secret: it is the same number the OS already shows in the task list.
         "pid": os.getpid(),
+        # 裁定 105 ⑵ の三つ組はこの 3 行が全部＝**読込中は error が null**・
+        # **載っている個体に error は無い**・失敗だけが
+        # ``{loaded:false, loading:false, error:<理由 1 行>}``。
+        # 是正・便 G: 上流の ``RuntimeManager.get()`` は失敗の後も要求ごとに
+        # 遣り直す（runtime.py:31-66）ので、遣り直しの最中は ``is_loading`` が真の
+        # まま ``_runtime_error`` に前回の理由が残る。それを其のまま出すと
+        # ``{false, true, <理由>}`` という契約に無い三つ組になり、ランチャは
+        # 読込中の個体を Failed へ落とす。ここで畳む。
         "runtime": {
-            "loaded": bool(getattr(manager, "is_loaded", False)),
-            "loading": bool(getattr(manager, "is_loading", False)),
-            "error": _runtime_error,
+            "loaded": _runtime_loaded,
+            "loading": _runtime_loading,
+            "error": None if (_runtime_loaded or _runtime_loading) else _runtime_error,
         },
         "device": dict(
             configured=live.model_device,

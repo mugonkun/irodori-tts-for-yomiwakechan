@@ -48,13 +48,29 @@ public sealed record StatusUpstream
     [JsonPropertyName("server")] public string? Server { get; init; }
 }
 
-/// <summary><c>/ywk/status.runtime</c>。<b>ready の判定はここ</b>（契約 ⑵）。</summary>
+/// <summary>
+/// <c>/ywk/status.runtime</c>。<b>ready の判定はここ</b>（契約 ⑵）。
+/// <para>
+/// 裁定 105（ポート先行）で 3 欄が起動そのものを語る＝bind の直後は
+/// <c>{loaded:false, loading:true, error:null}</c>・載ったら <c>loaded:true</c>・
+/// <b>読込に失敗したら <c>{loaded:false, loading:false, error:"&lt;理由 1 行&gt;"}</c> のまま
+/// プロセスは生き続ける</b>（本体とランチャが理由を読めるように）。
+/// </para>
+/// </summary>
 public sealed record StatusRuntime
 {
     [JsonPropertyName("loaded")] public bool? Loaded { get; init; }
 
     [JsonPropertyName("loading")] public bool? Loading { get; init; }
 
+    /// <summary>
+    /// 読込が失敗した理由 1 行（成功・読込中は null）。絶対パスは wrapper が
+    /// <c>&lt;path&gt;</c> に畳んである（契約 ⑹）＝<b>裏読込の路も遅延読込の路も同じ
+    /// 1 行整形を通る</b>（是正・便 G）。<b>この欄は「載らなかった」だけを意味する</b>＝
+    /// 載っている個体の合成 1 回の 5xx は此処に出ない。
+    /// <b><see cref="Loaded"/> が偽で此の欄が非 null の標本は <c>Failed</c>（理由つき）へ
+    /// 落とす</b>＝<see cref="Services.Server.ServerStateMachine"/>。
+    /// </summary>
     [JsonPropertyName("error")] public string? Error { get; init; }
 }
 
@@ -325,8 +341,9 @@ public sealed record StatusResponse
     /// 答えた個体の pid（契約 ⑹・便 D（2） で足した欄）。<b>古い wrapper では null</b>＝
     /// 欄が無いことを「別人だ」と読まない。
     /// <para>
-    /// 何のためか＝wrapper は <c>preload=true</c> でモデルを載せてから bind するので、
-    /// 起動の 20〜28 秒の窓の間に<b>他人が同じポートを握って同じ形で答える</b>ことがある。
+    /// 何のためか＝<b>既にそのポートを握っている個体が居ると、同じ形で答えてくる</b>。
+    /// （裁定 105 のポート先行で自分の子の bind は 1 秒以内に来るようになったが、
+    /// その子が bind に失敗して落ちるまでの窓は残る。）
     /// ランチャは自分が起こした子の pid と突合し、違えば<b>その標本を自分の物として採らない</b>
     /// （状態帯に他人の GPU メモリを出さない＝裁定 67 ⑶）。
     /// </para>

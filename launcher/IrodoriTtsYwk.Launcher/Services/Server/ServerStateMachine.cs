@@ -107,13 +107,21 @@ public static class ServerBindFailure
 /// <c>Warming → Ready</c> だけは戻る（暖機は終わる）＝<see cref="ApplyReadiness"/> が扱う。
 /// </para>
 /// <para>
-/// <b>Ready は HTTP の標本だけが立てる</b>（是正・2026-09-05）。上流は uvicorn の lifespan で
-/// モデルを載せるので <c>runtime loaded in</c> は <b>bind より先に出る</b>（実測＝ログの
-/// 30.264 s に対し socket が 30.271 s）。ログ 1 行で Ready にすると「誰も listen していない
-/// 瞬間の待機」を publish することになり、1 度も bind しない個体・直後に exit 3 する個体まで
-/// 「起動しました」と記帳される。⇒ <c>runtime loaded in</c> は
+/// <b>Ready は HTTP の標本だけが立てる</b>（是正・2026-09-05）。ログ 1 行で Ready にすると
+/// 「誰も listen していない瞬間の待機」を publish することになり、1 度も bind しない個体・
+/// 直後に exit 3 する個体まで「起動しました」と記帳される。⇒ <c>runtime loaded in</c> は
 /// <see cref="RuntimeLoadedSeen"/> の印を立てるだけにし、Ready への昇格は
 /// <c>/health</c>・<c>/ywk/status</c> の <c>runtime.loaded=true</c> が来た標本にだけ許す（契約 ⑵）。
+/// 〔<b>裁定 105（ポート先行）後の註</b>＝この 1 行はもう bind より先には出ない（wrapper が
+/// bind してから裏で載せる）。だが規律は変えない＝順序が変わっただけで、
+/// 「listen しているか」を告げるのはログではなく標本である、という理由は同じである。〕
+/// </para>
+/// <para>
+/// <b>読込の失敗も標本で来る</b>（裁定 105 ⑷）。<c>preload=true</c> のころは読込の失敗が
+/// プロセスの死（exit 3）として届いたが、ポート先行では wrapper は<b>生きたまま</b>
+/// <c>/ywk/status.runtime.error</c> に理由 1 行を載せる。⇒
+/// <see cref="ApplyReadiness"/> がその欄を見て <c>Failed</c>（理由つき）へ落とす。
+/// プロセスは生きているので「サーバ停止」は押せるまま（<c>StatusViewModel.CanStop</c>）。
 /// </para>
 /// </summary>
 public sealed class ServerStateMachine
@@ -138,6 +146,19 @@ public sealed class ServerStateMachine
     public const string UnreachableReason =
         "サーバが応答しなくなりました（プロセスは生きています）。停止してから起こし直してください。";
 
+    /// <summary>
+    /// <c>/ywk/status.runtime.error</c> を状態帯に出すときの前置き（裁定 105 ⑷）。
+    /// <b>「落ちた」ではなく「載らなかった」</b>と読めることが眼目＝wrapper のプロセスは
+    /// 生きていて、ポートも開いている。<b>それを利用者が見るのは待機に上がった後の見張りで
+    /// 届いた場合だけ</b>で、起動の待ちの最中に届いたときはランチャが子を落とす
+    /// （是正・便 G＝<see cref="ApplyReadiness"/> の註）。
+    /// </summary>
+    public const string RuntimeLoadFailedPrefix = "モデルの読込に失敗＝";
+
+    /// <summary>その理由 1 行を状態帯の文へ（<b>純関数</b>＝テストが同じ物を組める）。</summary>
+    public static string RuntimeLoadFailedReason(string runtimeError) =>
+        RuntimeLoadFailedPrefix + ServerLogParser.ForLog((runtimeError ?? string.Empty).Trim());
+
     private readonly object _gate = new();
 
     private int _unreachable;
@@ -148,9 +169,11 @@ public sealed class ServerStateMachine
     /// <b>自分の子が <c>Uvicorn running on …</c> を吐いたか</b>（是正・便 D（2））。
     /// <para>
     /// bind 失敗の検知を切る条件は「listen した」ではなく<b>「自分の子が listen した」</b>である。
-    /// wrapper は <c>preload=true</c> でモデルを載せてから bind する（この機体で 20〜28 s）ので、
-    /// その窓の間に<b>他人が同じポートを握る</b>と、ランチャは他人の <c>/ywk/status</c> を読んで
-    /// <c>Listening</c>／<c>Ready</c> へ上がってしまう。1 巡目はそこで検知を切っていたため、
+    /// <b>他人が同じポートを握っている</b>と、ランチャは他人の <c>/ywk/status</c> を読んで
+    /// <c>Listening</c>／<c>Ready</c> へ上がってしまう（1 巡目の実射では、wrapper が
+    /// <c>preload=true</c> でモデルを載せてから bind していた 20〜28 s の窓がその舞台だった。
+    /// <b>裁定 105 のポート先行で窓は縮んだが閉じてはいない</b>＝先客が居れば自分の子は
+    /// bind に失敗して落ちるまでの間ずっと他人の応答を読む）。1 巡目はそこで検知を切っていたため、
     /// 後から流れてくる<b>自分の子の bind 失敗の行を無視した</b>（実射＝他席の HttpListener が
     /// 18098 を握った走行で「10.1 s で待機」＝清浄な走行の 27.5〜27.8 s の 3 分の 1）。
     /// この印は<b>子の口（pipe）から来た行でしか立たない</b>ので、他人の応答では立たない。
@@ -269,8 +292,22 @@ public sealed class ServerStateMachine
     /// 到達不能なら Ready／Warming から <c>Listening</c> へ落とし、理由 1 行を添える。
     /// <b>殺しはしない</b>（プロセスが生きている間は告知だけ＝本体の流儀）。
     /// </para>
+    /// <para>
+    /// <b><paramref name="loaded"/> が偽で <paramref name="runtimeError"/> が非 null なら
+    /// Failed（理由つき）</b>（裁定 105 ⑷）。
+    /// ポート先行では読込の失敗がプロセスの死として届かない＝<c>/ywk/status</c> は 200 のまま
+    /// <c>runtime.error</c> に理由を載せる。この状態機械は<b>殺さない</b>のは上と同じ。
+    /// <b>ただし「ポートが開いたまま」なのは<see cref="ServerState.Ready"/> に上がった後の
+    /// 見張りで届いた場合だけ</b>（是正・便 G）＝起動の待ちの最中に此処が Failed を返すと、
+    /// <see cref="ServerProcess.StartAsync"/> は「止めろと言われる前に止める」
+    /// （是正・2026-09-05）に従って子を落とす。理由 1 行は
+    /// <see cref="FailureReason"/> に残るので、子が居なくなっても状態帯は理由を出し続ける。
+    /// <b><paramref name="loaded"/> が真の標本では落とさない</b>＝載っている個体に
+    /// 「読込の失敗」は有り得ず、Failed は「サーバ停止」以外に出口の無い終端だからである。
+    /// </para>
     /// </summary>
-    public bool ApplyReadiness(bool reachable, bool loaded, bool warmupRunning)
+    public bool ApplyReadiness(
+        bool reachable, bool loaded, bool warmupRunning, string? runtimeError = null)
     {
         ServerStateChangedEventArgs? changed = null;
         bool serving;
@@ -290,7 +327,21 @@ public sealed class ServerStateMachine
                     changed = MoveToUnlocked(ServerState.Listening, null);
                 }
 
-                if (loaded)
+                if (!loaded && !string.IsNullOrWhiteSpace(runtimeError))
+                {
+                    // 裁定 105 ⑷＝読込が失敗した。プロセスは生きているので殺さず、
+                    // 理由 1 行を状態帯に出して終端状態へ落とす。
+                    //
+                    // **<paramref name="loaded"/> が真の標本では絶対に落とさない**
+                    // （是正・便 G）＝Failed は終端で、「サーバ停止」以外に出口が無い。
+                    // wrapper 側でも `runtime.error` は「載らなかった」だけを意味する
+                    // ように狭めたが、載っている個体を此処で降格させない二重の閂を掛ける
+                    // ＝合成 1 回の 5xx（CUDA OOM・待ち行列一杯の 503）で健全な個体が
+                    // 永久に「モデルの読込に失敗＝」と名乗ることは有り得ない。
+                    changed = MoveToUnlocked(
+                        ServerState.Failed, RuntimeLoadFailedReason(runtimeError!));
+                }
+                else if (loaded)
                 {
                     var want = warmupRunning ? ServerState.Warming : ServerState.Ready;
                     if (State != want && State is ServerState.Listening or ServerState.Ready

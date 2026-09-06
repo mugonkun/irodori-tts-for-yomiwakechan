@@ -44,7 +44,7 @@
 | 2 | ランチャを起動する | **完了頁の「実行する」チェック（既定 ON）が起こすので、追加の操作は要らない。** | — |
 | 3 | 通知に同意する | 初回セットアップの 1 段目に**ライセンス通知**（初回取得で入る第三者物の一覧＝`licenses/first-run-notices.md`。**手順 1 で一緒に入る**＝`decisions.md` 46）が出る。 | — |
 | 4 | 実行系の種類を選んで「取得を始める」を押す | 検出した GPU を UUID つきで一覧表示。CUDA 版の既定は cu130、ドライバが 580 未満なら cu126 を**勧める**（自動では切り替えない＝`decisions.md` 4・80）。実行系とモデル＝**cu130 で 5.26 GiB**を取得して `%LOCALAPPDATA%\irodori-tts-ywk\` に展開する。`vc_redist.x64.exe`（≈24.4 MiB）もここで通す（**UAC が 1 回出る**）。 | 100 Mbps 級で **≤ 10 分** |
-| 5 | 「起動」を押す | `127.0.0.1:18088` で常駐する。準備完了（`runtime.loaded=true`）まで待つ。 | **≤ 120 s**（3090・SSD なら ≤ 60 s） |
+| 5 | 「起動」を押す | `127.0.0.1:18088` で常駐する。**ポートは数秒で開き（`/health` 200）、モデルはその裏で載る**（裁定 105）＝状態帯は「起動中」→**「読込中」**→「待機」と進む。合成が撃てるのは「待機」（`runtime.loaded=true`）から。 | `/health` 200 まで **≤ 10 s**（実測 8.9 s＝`decisions.md` 106）・「待機」まで **≤ 120 s**（3090・SSD なら ≤ 60 s） |
 | 6 | 読み分けちゃん2 側で配布版エンジンを有効にする | 本体が `/health` で見つける。 | — |
 
 **手数の根拠**＝上流の導入手引き 21 操作のうち **16 が同梱と初回取得で消え、残り 6**
@@ -118,7 +118,8 @@
   `research/lab/notes/30-embed-and-gpu-control-facts.md` §0-3 の実射。
 - 既定 env はランチャが載せ、wrapper が `os.environ.setdefault` で焼く（ランチャが上書きできる）。
   主なもの＝`IRODORI_HOST=127.0.0.1`・`IRODORI_PORT=18088`・
-  `IRODORI_HF_CHECKPOINT=Aratako/Irodori-TTS-v4.1-Small`・`IRODORI_PRELOAD=true`・
+  `IRODORI_HF_CHECKPOINT=Aratako/Irodori-TTS-v4.1-Small`・**`IRODORI_PRELOAD=false`**（裁定 105
+  ＝bind してから裏の糸でモデルを載せる。`true` にすると読込が終わるまでポートが開かない）・
   `IRODORI_EMPTY_CACHE_INTERVAL=0`・`IRODORI_ALLOW_NO_REF_VOICE=false`・
   `IRODORI_DEFAULT_VOICE=デフォルト`（`decisions.md` 45＝`voice` を省いた要求が参照なし合成になる）・
   `IRODORI_VOICES_DIR=<絶対パス>`・`IRODORI_MODEL_DEVICE`／`IRODORI_CODEC_DEVICE`・
@@ -156,6 +157,7 @@
 | 症状 | 原因 | どうする |
 |---|---|---|
 | 起動直後に落ちて「`msvcp140.dll` が見つかりません」 | vc_redist 未導入 | ランチャの「VC++ 再頒布を導入」を押す。※ **欠落機での実挙動は未確認**（`30` V-5）＝便 E の検分項目 E-1 |
+| 状態帯が「**読込中**」から進まない／「**モデルの読込に失敗＝…**」と出る | ポート先行（裁定 105）なのでプロセスは死なず、モデルの読込だけが失敗している | 帯に出ている**理由 1 行**がそのまま原因である（checkpoint 不在・GPU が掴めない等）。**起動の途中で失敗したときはランチャが子を落とす**ので、帯の理由だけが残る＝そのままモデルを取り直すか変種を選び直して「サーバ起動」を押し直す。**待機に上がった後で失敗が出たとき**はサーバが生きたままなので、**先に「サーバ停止」で止めてから**やり直す（どちらでも「サーバ停止」は押せる）。※ `/health` は 200 のままなので、**「200 が返る＝使える」ではない**＝合否は `/ywk/status` の `runtime.loaded`／`runtime.error` で見る |
 | GPU を選んだのに合成が異常に遅い | GPU が掴めず CPU に落ちている | 配布版はこれを**塞ぐ**設計（`cuda` 指定で `torch.cuda.is_available()` が偽なら起動前に exit 2）。それでも遅いときは `/ywk/status` の `device.actual` を見る |
 | 「CUDA device requested but torch.cuda.is_available() is False.」 | ドライバ不足か CUDA 版の不一致 | ドライバを更新するか、**cu126 版を選び直す**（cu130 は ≥ 580／cu126 は ≥ 528.33。**cu126 は 537.58 で実測済み**＝`decisions.md` 80） |
 | 起動して `/health` が 200 になるのに、最初の合成でランチャが「サーバが落ちました（exit −1073741819）」と出す | cu130 の実行系が GPU を見られない機体で走った | **cu126 か CPU の変種に切り替える**（`decisions.md` 83。cu130 の CPU 転落は配布版が禁じている） |

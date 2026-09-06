@@ -261,9 +261,11 @@ public sealed class ServerLogParserTests
         Assert.Equal(ServerState.Starting, ServerLogParser.NextState(ServerState.Stopped, ServerLogSignal.Banner));
         Assert.Equal(ServerState.Listening, ServerLogParser.NextState(ServerState.Starting, ServerLogSignal.Listening));
 
-        // **`runtime loaded in` は状態を動かさない**（是正・2026-09-05）＝上流は uvicorn の
-        // lifespan で載せるのでこの 1 行は bind より先に出る。Ready は /health・/ywk/status の
-        // runtime.loaded=true だけが立てる（契約 ⑵）。
+        // **`runtime loaded in` は状態を動かさない**（是正・2026-09-05）。Ready は
+        // /health・/ywk/status の runtime.loaded=true だけが立てる（契約 ⑵）。
+        // 〔裁定 105（ポート先行）後の註＝1 巡目の理由は「上流は lifespan で載せるので
+        // この 1 行は bind より先に出る」だった。preload=false の今は bind の後に出るが、
+        // ログは「いま listen しているか」も「誰の応答か」も告げないので規律は同じ。〕
         Assert.Null(ServerLogParser.NextState(ServerState.Starting, ServerLogSignal.RuntimeLoaded));
         Assert.Null(ServerLogParser.NextState(ServerState.Listening, ServerLogSignal.RuntimeLoaded));
         Assert.Null(ServerLogParser.NextState(ServerState.Warming, ServerLogSignal.RuntimeLoaded));

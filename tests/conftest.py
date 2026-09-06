@@ -231,6 +231,9 @@ def baseline() -> Any:
     upstream._synthesis_semaphore_limit = None
     ywk_server._runtime_error = None
     ywk_server._device_logged = False
+    # 裁定 105: the lifespan starts a background loader thread.  One test's
+    # thread must not be alive while the next one reads ``runtime.error``.
+    ywk_server.reset_runtime_loader()
     reset_warmup()
     reset_precompute()
     os.environ.pop("YWK_PRECOMPUTE_ON_START", None)
@@ -238,19 +241,36 @@ def baseline() -> Any:
     fake = FakeRuntime()
     upstream.runtime_manager = FakeRuntimeManager(fake)
     yield fake
+    ywk_server.reset_runtime_loader()
     reset_warmup()
     reset_precompute()
 
 
 @pytest.fixture()
 def unloaded() -> Any:
-    """A runtime manager that reports "not loaded" (design §4-2 / §4-3)."""
+    """A runtime manager that reports "not loaded" (design §4-2 / §4-3).
+
+    **Ask for it *after* ``client``** -- ``def test_x(client, unloaded)`` -- when
+    both are wanted.  裁定 105 の裏読込は ``TestClient`` に入った瞬間の
+    ``upstream.runtime_manager`` を掴む（``client`` の註）ので、逆順に書くと
+    その糸がこの偽物の ``get()``（"runtime is not loaded" を投げる）を掴み、
+    ``runtime.error`` に理由が載って ``error is None`` の釘が外れる。
+    """
     upstream.runtime_manager = FakeRuntimeManager(None)
     return upstream.runtime_manager
 
 
 @pytest.fixture()
 def client() -> Any:
+    """The server, started for real -- **lifespan included**.
+
+    裁定 105: entering the ``TestClient`` runs ``ywk_lifespan``, which starts the
+    background loader, and the loader binds to whatever ``upstream.runtime_manager``
+    is installed **at that moment** (``ywk_server.start_runtime_loader``).  That is
+    the one ``baseline`` put there, so every ``client`` test loads the healthy
+    fake; a fixture that swaps the manager must therefore run *after* this one
+    (see ``unloaded``), or swap it inside the test body.
+    """
     with TestClient(ywk_server.app, raise_server_exceptions=False) as test_client:
         yield test_client
 

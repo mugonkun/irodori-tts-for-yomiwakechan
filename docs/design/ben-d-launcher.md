@@ -1292,7 +1292,7 @@ git の commit／push はしていない。第三者バイナリは 1 檔も足�
 | ⑸ | medium | **`FirstRunViewModel.TryPlan`／`EstimateSizeText` が `LedgerException` を素通しした**＝low 6 の直しが投げるようになったのに檔頭の約束（「読めなければ null」「不明と名乗る」）のまま。呼ばれるのは**構築時と `Variant` の setter＝UI スレッドの束縛経路**で、`App.xaml.cs` に受け口は無く `AsyncRelayCommand` も捕らない＝**台帳が 1 件でも欠けた日に窓ごと落ちる** | `TryPlan` が `LedgerException` を捕って `null`＋理由 1 行を返す（`out string? failureReason` の版を足した）。見積りは「不明（取得台帳が読めません：…）」 | `初回_sha256の無い台帳でも計画は投げずに理由を返す`／`初回_sha256の無い台帳でも見積りは投げずに不明と名乗る` |
 | ⑹ | medium | **取得の本文の読みに期限が 1 つも無い**＝`HttpClient.Timeout=InfiniteTimeSpan` で読み回しは呼び手の token だけを見る。呼び手の CTS にも期限が無い＝**返さない相手に当たると利用者が「中止」を押すまで永久に止まる**（実射＝45 秒待っても返らない） | `HttpDownloader.IdleTimeout`（既定 **60 s**）＝**進むたびに押し直す無通信の期限**。打ち切りは `IOException` に落とすので `.part` は残り、次の試行が `Range` で続きから取る | `取得_本文が進まなければ無通信の期限で打ち切る`（`IdleTimeout=1 s` で 1 s 台・`.part` が残ることまで） |
 | ⑺ | medium | **裁定 87 ⑷ の「Unknown は利用者に問う」に答える口が無かった**＝`VcRedistResult.NeedsUserDecision` は launcher/ の中で**どこからも読まれておらず**、System32 が読めない機体では初回取得が**先へ進めなかった**（飛ばす口も入れる口も無い） | `FirstRunViewModel.AskVcRedist`（窓が差す 2 択）＋`VcRedistInstaller.AssumeInstallWhenUnknown`。**「飛ばす」で先へ進み**、**「入れる」と答えたときだけ**入れ直す。窓は `FirstRunWizard` の「はい＝入れる／いいえ＝飛ばす／キャンセル＝答えない」 | `vc_redist_判らないときは飛ばす選択で先へ進める`／`vc_redist_入れると答えたときだけ入れ直す`／`vc_redist_問う口が無ければ勝手に入れない`／`vc_redist_入れると答えたら判らなくても導入まで行く` |
-| ⑻ | medium | **見張りが「自分の子か」を確かめない**＝wrapper は `preload=true` で**モデルを載せてから bind する**（20〜28 s）ので、その窓の間に他人が同じポートを握るとランチャは**他人の `/ywk/status` を読んで「待機」**を出し、状態帯（裁定 67 ⑶）に他人の数字を出す。第 2 の網（uvicorn の bind 失敗行）も `State < Listening` で切っていたので**子の bind 失敗を無視**した | ⒜ wrapper の `/ywk/status` に **`pid`** を 1 欄足し（契約 ⑹）、ランチャは自分の子の pid と突合して**違う標本を採らない**（`Ready` にも上げない・ログは pid 1 つにつき 1 行） ⒝ bind 失敗の検知を切る条件を「状態」から**「自分の子の `Uvicorn running on` を見たか」**に変えた | `死活_他人のpidの応答は自分の物として採らない`／`死活_pidの無い応答は別人と読まない`／`死活_自分の子のuvicornの行を見るまでbind失敗を拾い続ける`／`死活_自分の子がlistenした後は走行中の行で落とさない` |
+| ⑻ | medium | **見張りが「自分の子か」を確かめない**＝wrapper は `preload=true` で**モデルを載せてから bind する**（20〜28 s）ので〔**裁定 105 のポート先行で窓は縮んだが閉じていない**＝当時の記述をそのまま残す〕、その窓の間に他人が同じポートを握るとランチャは**他人の `/ywk/status` を読んで「待機」**を出し、状態帯（裁定 67 ⑶）に他人の数字を出す。第 2 の網（uvicorn の bind 失敗行）も `State < Listening` で切っていたので**子の bind 失敗を無視**した | ⒜ wrapper の `/ywk/status` に **`pid`** を 1 欄足し（契約 ⑹）、ランチャは自分の子の pid と突合して**違う標本を採らない**（`Ready` にも上げない・ログは pid 1 つにつき 1 行） ⒝ bind 失敗の検知を切る条件を「状態」から**「自分の子の `Uvicorn running on` を見たか」**に変えた | `死活_他人のpidの応答は自分の物として採らない`／`死活_pidの無い応答は別人と読まない`／`死活_自分の子のuvicornの行を見るまでbind失敗を拾い続ける`／`死活_自分の子がlistenした後は走行中の行で落とさない` |
 | ⑼ | medium | **契約 ⑹ の「torch が返す型は機体で違う＝CUDA 側は文字列」が事実に反する**（裁定 87 ⑵ 自身は「ROCm は int」としか言っていない＝席が足した推測が正典に入っていた） | `docs/contract.md` ⑹ を実測に直した＝**CUDA でも ROCm でも `int`**（gfx1151 実射 `197`・RTX 実射 `1`＝裁定 75 ⑷・同じ C++ binding 1 つ・型 stub は属性を宣言していない・torch 自身が `f"{bus:02x}"` で整数として扱う）。`tests/contract/test_memory.py` の檔頭も直した。**`str()` を掛ける実装は正しいので触っていない** | 既存の `test_pci_bus_id_is_a_string`（模擬 `FakeProps.pci_bus_id = 1` は正しいので不変） |
 
 **ついでに直した low（同じ檔を触ったもの）**
@@ -2208,3 +2208,162 @@ CUDA 版で落とした原檔が残っていると、その檔はどの台帳も
 `dotnet build --no-incremental`（0 警告 0 エラー）と `dotnet test`（581 合格）に戻してある。
 `build/out` 以外へは 1 檔も足していない（`git status` の未追跡は新設の釘 1 檔
 `launcher/IrodoriTtsYwk.Launcher.Tests/RoundThreeCorrectionTests.cs` だけ）。commit・push はしていない。
+
+---
+
+## 25. ポート先行（裁定 105・便 G）の記帳（2026-09-07・opus サブ席）
+
+**司令官裁定 105** が、裁定 7 の「`preload=true`＝**モデルを載せてから bind する**」を覆した。
+由来＝本体席経由の意向「まだ新しい TTS は実績がないし、**先にポートを開かせて疎通を確認**した方が
+いい。モデルを載せるのを待つ段はスキャンで良い。そこで失敗を知れば本体は通過」。
+
+### 25-1 何が変わったか（1 行で）
+
+**`/health` 200 は「起きている」であって「使える」ではなくなった。**
+「使える」の唯一の印は **`/ywk/status.runtime.loaded`** である（契約 ⑵＝そこは元から変わっていない）。
+
+| | 裁定 7（〜2026-09-06） | 裁定 105（本席以降） |
+|---|---|---|
+| `IRODORI_PRELOAD` | `true` | **`false`** |
+| bind までの時間 | 20〜70 s（読込が終わってから） | **≤ 3 s** |
+| `/health` 200 の意味 | 「載っている」とほぼ同義 | **「ポートが開いた」だけ** |
+| 読込中の `/ywk/status` | **ほぼ観測されない**窓 | **20〜70 s ずっと**返る正常形 |
+| 読込の失敗 | プロセスが死ぬ（exit 3）＝終了コードで判る | **死なない**＝`runtime.error` の 1 行で判る |
+| `Listening`（画面の**読込中**） | 一瞬 | **起動時間のほぼ全部** |
+
+### 25-2 wrapper 側＝読込の糸 1 本（`server/ywk_server.py` §4-9）
+
+- `apply_env_defaults()` が焼く `IRODORI_PRELOAD` を **`false`** にした。上流 `startup()` は
+  何も載せずに返り、**lifespan が yield した瞬間に uvicorn が bind する**。
+- `ywk_lifespan` は、上流 startup の直後（＝**bind の前**）に `start_runtime_loader()` を呼ぶ。
+  これが **daemon の糸を 1 本**起こし、糸が上流の **`runtime_manager.get()` をそのまま呼ぶ**。
+  同じ呼び口なので、**読込中に来た合成要求は上流の遅延読込に合流して待つ**（裁定 105 ⑶）＝
+  上流の `RuntimeManager` は `get()` の中で `threading.Lock` を掴んでいる（`runtime.py`）ので、
+  **二重に載ることはない**し、`is_loading`（`_runtime is None and lock.locked()`）が
+  ちょうどその窓の間だけ真になる。
+- **冪等**＝`start_runtime_loader()` は何度呼んでも同じ糸を返す（`_loader_started` の旗）。
+  1 走行に 1 本＝`ywk_lifespan` が入り口で `reset_runtime_loader()` を撃つので、
+  同じ interpreter で 2 度起こす契約テストでも糸は走行ごとに 1 本である。
+- **`yield` を塞がない**＝糸を起こすだけで待たない。停止時は `_loader_stop` を立ててから
+  **2 秒だけ** join する（本物の読込は 20〜70 s ある＝終了で固まらせない）。糸は
+  事前計算・暖機に手を出す前にこの旗を見る。
+- **stderr は 3 行**＝⑴ `ywk_server: runtime load started …`（本席が足した）
+  ⑵ **`runtime loaded in <X>s`（上流自身の行）** ⑶ `ywk_server: runtime load failed: <理由>`。
+  ⑵ は `main()` の `logging.basicConfig(level=INFO)` で stderr に出る（uvicorn の `LOGGING_CONFIG` は
+  `disable_existing_loggers: false` で root を触らない）＝**ランチャの `ServerLogParser` の
+  `RuntimeLoaded` は今までどおり拾える**。順序だけが「bind の後」に変わった。
+- **事前計算（rocm 既定 ON）・暖機・`note_device_once()` は読込の成功後にだけ走る**（105 ⑵）。
+  今までは「startup の直後＝載った前提」で撃っていた。失敗したときは 1 つも起きない。
+- **失敗しても死なない**（105 ⑴）＝理由 1 行を `_runtime_error` に入れ、`/ywk/status.runtime` が
+  `{loaded:false, loading:false, error:"<理由>"}` を返す。理由は `scrub_text()` を通すので
+  **絶対パスは `<path>` に畳む**（契約 ⑹）。合成要求が来たときの形は**既存のまま**＝
+  上流の遅延読込がもう一度落ちて 500（`server_error`）になる＝**新しい error code は足していない**。
+
+#### 25-2b 是正（本席・2026-09-07）＝`runtime.error` の意味を締める
+
+裁定 105 ⑷ でこの 1 欄はランチャの**終端状態** `Failed` の材料になった＝**書く条件を狭めないと
+危ない欄**に変わったのに、初稿は書き手を狭めていなかった。4 点を直した。
+
+- **`_runtime_error` は「載らなかった」だけを意味する**。`_create_speech` の遅延読込の路は
+  `status_code >= 500` の**全部**を書いていたので、載っている個体の合成が 1 回 CUDA OOM や
+  上流の「待ち行列が一杯」503 で落ちるだけで、健全な個体が永久に
+  「モデルの読込に失敗＝…」を名乗った（例外は再送出されるので直後の消去も飛ぶ）。
+  **`not runtime_manager.is_loaded` を条件に足した**。
+- **遅延読込の路も 1 行整形を通す**。`f"{type(exc).__name__}: {exc}"` を生で入れていたので、
+  上流が投げる `Checkpoint not found: C:\Users\…` が `/ywk/status`（**200 なので
+  `ywk_scrub_errors` は本文を見ない**）を通って**ランチャの状態帯に利用者の名前を出した**。
+  裏読込と同じ `_one_line_reason()`（＝`scrub_text`）に通す。
+- **出す三つ組を契約の 3 つに畳む**。上流の `RuntimeManager.get()` は失敗の後も要求ごとに
+  遣り直すので、遣り直しの最中は `{loaded:false, loading:true, error:"<前回の理由>"}` という
+  契約に無い形が出た。`ywk_status` は `loaded` か `loading` が真なら `error` を `null` にする。
+  併せて `_runtime_error = None` を**糸の中ではなく `start_runtime_loader()` の中**（`thread.start()`
+  の前）へ移した＝糸が走り出すまでの隙に前の走行の理由が読まれない。
+- **はぐれた糸が次の走行を汚さない**。停止の join は 2 秒しか待たない（本物の読込は 20〜70 s）ので
+  **糸は普通に走行を生き延びる**。`_loader_stop`／`_loader_done` は module の 1 組で、
+  `reset_runtime_loader` が join の後に**旗を消していた**＝生き延びた糸が「停止していない」顔で
+  目を覚まし、次の走行の `_loader_done` を立て、次の走行の `_runtime_error` を書いた。
+  **合図は走行ごとに作って糸へ引数で渡す**（module の 2 つは「今の走行の物への別名」）＋
+  書く前に `_loader_is_current()`（＝`_loader_thread is current_thread()`）で名乗りを確かめる。
+  `note_device_once()` も停止の検査の**後ろ**へ移した（105 ⑵ の「成功後にしか走らない」三つは
+  device の 1 行も含む＝死にかけの process で GPU を叩かない）。`_device_logged` の
+  check-and-set は糸と event loop の 2 者から来るようになったので `threading.Lock` で括った。
+
+### 25-3 ランチャ側＝`runtime.error` の標本で Failed（理由つき）
+
+- `ReadinessSample` に **`RuntimeError`**（`= /ywk/status.runtime.error`）を足した。
+  位置引数ではなく後付けの `init` 欄にしてある＝既存の呼び手の意味を黙って変えないため。
+- `ServerStateMachine.ApplyReadiness(reachable, loaded, warmupRunning, runtimeError)` が、
+  **`loaded` が偽で `runtimeError` が非 null なら `Failed` へ落とす**。理由 1 行は
+  **`ServerStateMachine.RuntimeLoadFailedPrefix`＝「モデルの読込に失敗＝」**＋その 1 行。
+  「落ちた」ではなく「載らなかった」と読めることが眼目である（プロセスは生きている）。
+  **是正（本席）**＝初稿は `loaded` より**先**に `runtimeError` だけを見ていた。`Failed` は
+  「サーバ停止」以外に出口の無い終端なので、`{loaded:true, error:"…"}` の標本 1 つで
+  健全な個体が永久に失敗を名乗りうる。**載っている個体に「読込の失敗」は有り得ない**＝
+  wrapper 側（25-2b）と合わせて**二重の閂**にした。
+- **`Listening → Ready` の昇格は今までどおり `runtime.loaded=true` の標本だけ**（契約 ⑵）。
+  `runtime loaded in` のログ 1 行は相変わらず印（`RuntimeLoadedSeen`）を立てるだけである。
+  1 巡目の理由（「この行は bind より先に出る」）は裁定 105 で逆になったが、**規律は変えない**＝
+  ログは「いま listen しているか」も「誰の応答か」（`pid`）も告げないからである。
+- **状態帯の綴りは足していない**＝`Listening` は元から **「読込中」**（`StatusViewModel.StateLabel`・
+  トレイと共用）で、ポート先行の意味とちょうど一致する。`起動中`（Starting）／`待機`（Ready）も
+  そのままである。
+- **「サーバ停止」は Failed でも押せる**（`CanStop = IsRunning || HasProcess`・是正 2026-09-05）＝
+  **確認した**。効き所は 2 つ＝⒜ ready の後の見張りで `error` を読んだとき ⒝ 起動の待ちの最中に
+  `error` を読んだとき。**どちらも子は殺さない**（裁定 105 ⑴＝読込に失敗した個体は bind したまま
+  理由を答えて生きている＝本体の走査がその理由を読める）。**設計席の是正**＝是正席の初稿は ⒝ で
+  「止めろと言われる前に止める」（是正 2026-09-05）を掛けて子を落とし、ポートを閉じていた＝本体には
+  接続拒否しか届かず、裁定 105 の眼目（失敗の理由を本体が読む）が消えていた。`ServerProcess.StartAsync`
+  は `IsAliveLoadFailure`（理由の接頭辞・終了コード無し・生存の 3 つ）で見分け、この結末だけ子を
+  残す。「止めろと言われる前に止める」は期限切れ・ログからの bind 失敗＝**答えない個体**にだけ効く。
+  釘＝`RoundTwoCorrectionTests.読込に失敗した個体は生きたまま理由つきで失敗になる`（子の生存と
+  `StopAsync` での後始末まで見る）。
+- **ready 待ちは期限を待たずに終わる**＝`ServerProcess.WaitForReadyAsync` は `ApplyReadiness` の
+  直後に `Failed` を見て返す。見張り 1 巡（2 秒）ぶん遅れていたのを詰めた＝受け入れ条件 D-1 の
+  「≤ 15 s で理由 1 行」。
+- **`pid` の突合は据え置き**＝窓は縮んだが閉じていない。**先客が居れば**自分の子が bind に
+  失敗して落ちるまでの間、先客の応答が返る（契約 ⑹ の `pid` の註）。
+
+### 25-4 無人検分（`probe/d-launch-probe.ps1`）
+
+- 起動の段に **3 つ足した**＝「the port answers /health 200 within 3 s of the press」
+  「the model was still loading when the port first answered」「runtime.loaded turns true later」。
+  同じ 400 ms の巡回の中で測る（粗いのは承知＝「読込の間ずっとポートが閉じていた」を捕まえる段で、
+  ms を測る段ではない）。
+- ログの段に **`runtime load started` の 1 行**を足した。`Uvicorn running on` と
+  `runtime loaded in` の 2 段はそのまま（後者は上流の行で、順序が後ろに動いただけ）。
+- **D-1（範囲外 GPU＝`cuda:9`）は 2 つの結末を受ける**ようにした。
+  ⒜ **事前検査**＝`exit 2`・stderr 1 行・ポートは開かない（`cuda:9` はこちらを通る＝device の
+  検査は上流を import する前に走るので**裁定 105 でも動いていない**）。
+  ⒝ **読込時**＝生きたまま bind していて、理由は `/ywk/status.runtime.error` に在る。
+  どちらでも **「理由 1 行が 15 秒以内に在る」**ことは要る。
+  **是正（本席）**＝初稿は `WaitForExit(15000)` で**塞いで**から `/ywk/status` に訊いていた。
+  ⒝ の個体は永久に exit しないので、この待ちは**必ず 15.0 s を使い切ってから**返る＝
+  同じ段が掛ける `-le 15` が**構造的に成立しない**（⒝ は絶対に合格しない段だった）。
+  **500 ms の巡回**に直した＝毎周 `HasExited` と `/ywk/status.runtime.error` の両方を見て、
+  **先に来た方で秒時計を止める**。これで `-le 15` は「理由が出るまでの時間」を測る。
+- **`the model was still loading when the port first answered` は 1 回の標本で決めない**（是正・本席）。
+  初稿は `/health` の初 200 と同じ周に `/ywk/status` を 1 回だけ読み、その 1 回が時間切れになると
+  **回復不能な偽**が焼き付いた（正しい走行でも段が落ちる）。**`loaded` が判るまで訊き続ける**＝
+  `loadedAt` が決まる前に `loaded=false` を 1 度でも見れば真、または `loadedAt > healthAt` でも真
+  （読込が 1 周 400 ms の内に終わった機体の逃げ道）。
+- 「the gate never opened the port」「the failed start never opened the port」の 2 段は**そのまま**＝
+  どちらも**子を 1 つも起こさない**筋（変種の門・python.exe が起きない）なので、
+  ポート先行とは無関係である。
+
+### 25-5 釘（テスト）
+
+| 何 | どこ |
+|---|---|
+| 焼く `IRODORI_PRELOAD` が `false` | `tests/contract/test_env_and_devices.py` |
+| 起動後に糸が走って `loaded` が真になる／`/health` 200 と `loading=true` の窓／失敗しても 200＋`error`／`error` に絶対パスが出ない／stderr の 3 行／失敗時は事前計算・暖機・device 行が 1 つも走らない／冪等（`get()` は 1 回）／走行ごとに糸は 1 本 | `tests/contract/test_runtime_loader.py`（9 段） |
+| **是正（本席）**＝読込中の合成が同じ読込へ**合流**する（上流と同じ鍵で書いた `LockingManager`・載せに行った回数が 1）／失敗の後の合成は既存の形（`ywk_server_error`）で断る／**載っている個体の 5xx は `error` を汚さない**／遅延読込の路の理由も `<path>` に畳む／はぐれた糸は次の走行の欄を触らない | `tests/contract/test_runtime_loader.py`（＋5 段） |
+| `runtime` の 3 欄の形 | `tests/contract/test_status.py` |
+| `runtime.error` の標本で Failed（理由つき）・読込中は Failed にしない・**載っている個体は理由が付いていても Failed にしない**・失敗した個体は待機に上がらない・理由が `StateChanged` にも載る | `ServerStateMachineTests.cs`（5 段） |
+| `ServerProcess` が期限を待たずに理由つきで返す／ready の後の `error` は子を残したまま Failed | `RoundTwoCorrectionTests.cs`（2 段） |
+| `runtime` の 3 欄を `WrapperClient` が読む（読込中・失敗の 2 形） | `WrapperClientTests.cs`（2 段） |
+| **是正（本席）**＝`HealthPoller.ProbeAsync` が `runtime.error` を `ReadinessSample.RuntimeError` へ写す配線そのもの（失敗の形・読込中の形） | `WrapperClientTests.cs`（＋2 段） |
+
+**実測**＝契約テスト **354 合格**（従前 340＋9＋是正 5）・`dotnet build -c Release` **0 警告 0 エラー**・
+`dotnet test` **592 合格**（従前 581＋8＋是正 3）・`probe/d-launch-probe.ps1` は
+`[System.Management.Automation.Language.Parser]::ParseFile` で **parse OK**、`-DryRun` も通した
+（**全段は撃っていない**＝本物のモデルと機体の GPU が要る＝25-4 の 2 段と D-1 は**未実測**である）。

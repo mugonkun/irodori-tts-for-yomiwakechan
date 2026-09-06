@@ -315,6 +315,14 @@ public sealed class ServerProcess : IServerProcess
         {
             StartWatch(request);
         }
+        else if (IsAliveLoadFailure(result, process))
+        {
+            // **読込に失敗した個体は殺さない**（裁定 105 ⑴＝便 G・設計席の是正）。wrapper は
+            // bind したまま /ywk/status.runtime.error に理由を載せて生きている＝本体の走査も
+            // この窓もその理由を読める。ポートを閉じるのは「サーバ停止」（Failed でも押せる＝
+            // 是正 2026-09-05）。下の「止めろと言われる前に止める」は期限切れ・ログからの
+            // bind 失敗＝**答えない個体**にだけ効く。
+        }
         else
         {
             // **止めろと言われる前に止める**（是正・2026-09-05）。
@@ -326,6 +334,17 @@ public sealed class ServerProcess : IServerProcess
 
         return result;
     }
+
+    /// <summary>
+    /// 起動の結末が「読込の失敗」（裁定 105）で、子がまだ答えているか＝理由の接頭辞
+    /// （<see cref="ServerStateMachine.RuntimeLoadFailedPrefix"/>）・終了コード無し・生存の 3 つで判る。
+    /// </summary>
+    private static bool IsAliveLoadFailure(ServerStartResult result, Process process) =>
+        result.ExitCode is null
+        && result.FailureReason is not null
+        && result.FailureReason.StartsWith(
+            ServerStateMachine.RuntimeLoadFailedPrefix, StringComparison.Ordinal)
+        && !HasExited(process);
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
@@ -535,10 +554,22 @@ public sealed class ServerProcess : IServerProcess
             }
 
             var sample = await SampleAsync(request.BaseAddress, cancellationToken).ConfigureAwait(false);
-            if (_machine.ApplyReadiness(sample.Reachable, sample.Loaded, sample.WarmupRunning))
+            if (_machine.ApplyReadiness(
+                sample.Reachable, sample.Loaded, sample.WarmupRunning, sample.RuntimeError))
             {
                 return new ServerStartResult(
                     true, _machine.State, ProcessId, null, Stopwatch.GetElapsedTime(started), null);
+            }
+
+            // **読込の失敗は次の巡回を待たずに返す**（裁定 105 ⑷）。ポート先行では子が
+            // 死なない＝プロセスは生きたままなので、上の HasExited もループ頭の Failed も
+            // 掛からず、理由が出るのが見張り 1 巡ぶん（2 秒）遅れていた。受け入れ条件は
+            // 「理由 1 行が ≤ 15 s」（D-1）である。
+            if (_machine.State == ServerState.Failed)
+            {
+                return new ServerStartResult(
+                    false, ServerState.Failed, ProcessId, null, Stopwatch.GetElapsedTime(started),
+                    _machine.FailureReason);
             }
 
             if (Stopwatch.GetTimestamp() >= deadline)
@@ -573,8 +604,9 @@ public sealed class ServerProcess : IServerProcess
         }
 
         // **その応答が自分の子の物か確かめる**（是正・便 D（2））。
-        // wrapper は preload=true でモデルを載せてから bind する（この機体で 20〜28 s）ので、
-        // その窓の間に他人が同じポートを握っていると、同じ形の応答が返ってくる。
+        // 裁定 105（ポート先行）で bind は 1 秒以内に来るようになったが、窓は閉じていない＝
+        // 既にそのポートを握っている個体が居れば、こちらの子が bind に失敗して落ちるまでの間、
+        // 同じ形の応答が返ってくる。
         // pid が食い違う標本は**自分の物として採らない**＝状態帯（裁定 67 ⑶）に他人の
         // GPU メモリを出さず、Ready にも上げない。子はこの後 bind に失敗して落ち、
         // その行を ServerBindFailure が拾う（裁定 52 の 1 行）。
@@ -775,7 +807,8 @@ public sealed class ServerProcess : IServerProcess
                     }
 
                     var sample = await SampleAsync(request.BaseAddress, token).ConfigureAwait(false);
-                    _machine.ApplyReadiness(sample.Reachable, sample.Loaded, sample.WarmupRunning);
+                    _machine.ApplyReadiness(
+                        sample.Reachable, sample.Loaded, sample.WarmupRunning, sample.RuntimeError);
                 }
             },
             token);

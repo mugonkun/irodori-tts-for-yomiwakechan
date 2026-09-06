@@ -6,10 +6,23 @@ using System.Threading.Tasks;
 namespace IrodoriTtsYwk.Launcher.Contracts;
 
 /// <summary>
-/// wrapper の状態機械（設計書 §2）。
+/// wrapper の状態機械（設計書 §2・§25）。
 /// <c>Stopped → Starting（stderr 1 行目 <c>ywk_server &lt;版&gt;</c>）→ Listening（<c>Uvicorn running on</c>）
-/// → Ready（<c>runtime loaded in</c> ＋ <c>/health.runtime.loaded=true</c>）→ Warming
+/// → Ready（<c>/ywk/status.runtime.loaded=true</c>）→ Warming
 /// （<c>/ywk/status.warmup.state=running</c>）→ Ready</c>。
+/// <para>
+/// <b>裁定 105（ポート先行）＝<c>Listening</c> がモデルの読込そのものになった。</b>
+/// wrapper は <c>preload=false</c> で bind してから裏でモデルを載せるので、<c>Listening</c>
+/// （画面の<b>読込中</b>）は起動の 1 秒後から始まり、20〜70 秒続く。読込が<b>失敗</b>したときは
+/// プロセスが死ぬのではなく <c>/ywk/status.runtime.error</c> に理由 1 行が載り、
+/// <see cref="Services.Server.ServerStateMachine.ApplyReadiness"/> がそれを見て
+/// <c>Failed</c>（理由つき）へ落とす。
+/// <b>読込に失敗した個体は殺さない</b>（裁定 105 ⑴・是正・便 G）＝起動の待ちの最中でも、
+/// 待機に上がった後の見張りでも、子は bind したまま理由を答えて生きている＝本体の走査も
+/// この窓もその理由を読める。ポートを閉じるのは「サーバ停止」（Failed でも押せる＝
+/// 是正 2026-09-05）。「止めろと言われる前に止める」（<see cref="Services.Server.ServerProcess.StartAsync"/>）
+/// は期限切れ・ログからの bind 失敗＝<b>答えない個体</b>にだけ効く。
+/// </para>
 /// </summary>
 public enum ServerState
 {
@@ -19,7 +32,10 @@ public enum ServerState
     /// <summary>起こした。まだ listen していない。</summary>
     Starting,
 
-    /// <summary>listen した。モデルはまだ読み込み中（<c>/health</c> は 200・<c>runtime.loaded=false</c>）。</summary>
+    /// <summary>
+    /// listen した。モデルはまだ読み込み中（<c>/health</c> は 200・<c>runtime.loaded=false</c>）。
+    /// <b>裁定 105 でここが起動時間のほぼ全部になった</b>（画面の綴りは<b>読込中</b>）。
+    /// </summary>
     Listening,
 
     /// <summary>合成できる（<c>runtime.loaded=true</c>）。</summary>
@@ -50,7 +66,13 @@ public enum ServerLogSignal
     /// <summary><c>ywk_server: device actual=…</c>（実測した device）。</summary>
     DeviceActual,
 
-    /// <summary><c>ywk_server: &lt;理由&gt;</c>（事前検査の告知＝この直後に exit 2 が来る）。</summary>
+    /// <summary>
+    /// <c>ywk_server: &lt;理由&gt;</c>（wrapper 自身の 1 行）。
+    /// <b>「この直後に exit 2 が来る」とは限らない</b>＝事前検査の告知のほかに、
+    /// <c>runtime load started</c>／<c>runtime load failed:</c>（裁定 105 の読込の糸）・
+    /// <c>openapi drift:</c> などもこの綴りで来る。状態は動かさず、
+    /// <see cref="Services.Server.ServerStateMachine.LastStderrLine"/> に残るだけである。
+    /// </summary>
     WrapperNotice,
 }
 
@@ -152,12 +174,15 @@ public static class ServerLogParser
     /// 行が流れても <c>Listening</c> に戻さない）。効かない行なら null。
     /// <para>
     /// <b><see cref="ServerLogSignal.RuntimeLoaded"/> は状態を動かさない</b>（是正・2026-09-05）。
-    /// 上流は uvicorn の lifespan でモデルを載せるので <c>runtime loaded in</c> は
-    /// <b>bind より先に出る</b>（実測＝ログ 30.264 s・socket 30.271 s）。この 1 行で Ready にすると
-    /// 「誰も listen していない瞬間の待機」を publish することになり、1 度も bind しない個体まで
-    /// 起動成功と見なされる。Ready は <c>/health</c>・<c>/ywk/status</c> の
-    /// <c>runtime.loaded=true</c>（契約 ⑵）だけが立てる＝
+    /// この 1 行で Ready にすると「誰も listen していない瞬間の待機」を publish することになり、
+    /// 1 度も bind しない個体まで起動成功と見なされる。Ready は <c>/health</c>・<c>/ywk/status</c>
+    /// の <c>runtime.loaded=true</c>（契約 ⑵）だけが立てる＝
     /// <see cref="Services.Server.ServerStateMachine.ApplyReadiness"/>。
+    /// 〔<b>裁定 105（ポート先行）後の註</b>＝1 巡目の理由は「上流は lifespan で載せるので
+    /// <c>runtime loaded in</c> は bind より先に出る（実測＝ログ 30.264 s・socket 30.271 s）」
+    /// だった。<c>preload=false</c> になった今この 1 行は bind の<b>後</b>に出るが、
+    /// <b>規律は変えない</b>＝ログは「載った」を告げても「いま listen しているか」も
+    /// 「この応答が自分の子の物か」（<c>pid</c>）も告げないからである。〕
     /// </para>
     /// </summary>
     public static ServerState? NextState(ServerState current, ServerLogSignal signal)

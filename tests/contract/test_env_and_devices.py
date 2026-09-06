@@ -37,7 +37,10 @@ def test_env_defaults_fill_in_the_baked_values(ywk, monkeypatch):
     assert os.environ["IRODORI_HOST"] == "127.0.0.1"
     assert os.environ["IRODORI_PORT"] == "18088"
     assert os.environ["IRODORI_HF_CHECKPOINT"] == "Aratako/Irodori-TTS-v4.1-Small"
-    assert os.environ["IRODORI_PRELOAD"] == "true"
+    # 裁定 105（便 G＝ポート先行）＝裁定 7 の `preload=true` を覆した。上流の
+    # startup がモデルを載せると bind が 20〜70 s 遅れるので、焼くのは `false` で、
+    # 読込は `ywk_lifespan` が起こす裏の糸が担う（`tests/contract/test_runtime_loader.py`）。
+    assert os.environ["IRODORI_PRELOAD"] == "false"
     assert os.environ["IRODORI_EMPTY_CACHE_INTERVAL"] == "0"
     assert os.environ["IRODORI_ALLOW_NO_REF_VOICE"] == "false"
     assert os.environ["IRODORI_DEFAULT_NUM_STEPS"] == "40"

@@ -6,6 +6,9 @@
 #   1  start the launcher in developer mode with a private data directory and a private port
 #   2  settings tab: enumerate GPUs, pick one, apply     (D-2: the UUID is what gets saved)
 #   3  start the server and wait for Ready               (D-6: <= 120 s)
+#      PORT FIRST (decisions 105): the wrapper binds and loads the model in the BACKGROUND, so
+#      /health must answer 200 within 10 s of the press while /ywk/status.runtime.loaded is still
+#      false, and loaded turns true later (Radeon 35-70 s, 3090 20-28 s). Both are measured.
 #   4  read the log band                                 (D-4: banner / uvicorn / runtime loaded / device actual)
 #   5  try tab: synthesize one short line and play it
 #   6  voices tab: add one reference wav under a Japanese name, then synthesize with it (D-3)
@@ -46,7 +49,7 @@
 # Usage:
 #   pwsh -NoProfile -ExecutionPolicy Bypass -File probe/d-launch-probe.ps1
 #   pwsh ... -File probe/d-launch-probe.ps1 -Port 18096 -Variant cpu -ReadyTimeoutSeconds 300
-#   pwsh ... -File probe/d-launch-probe.ps1 -BadDeviceOnly     (D-1 only: cuda:9 must fail in <= 15 s)
+#   pwsh ... -File probe/d-launch-probe.ps1 -BadDeviceOnly     (D-1 only: cuda:9 must be told in <= 15 s)
 #   pwsh ... -File probe/d-launch-probe.ps1 -GateOnly          (the variant gate only, no model load)
 #   pwsh ... -File probe/d-launch-probe.ps1 -RoundThreeOnly    (h/j/k/l only: no model, no server)
 #   pwsh ... -File probe/d-launch-probe.ps1 -DryRun            (print the plan, touch nothing)
@@ -214,6 +217,21 @@ function Add-Step {
 # The UI cannot produce cuda:9 (the settings screen only offers GPUs that were enumerated), so this
 # step talks to the wrapper the way ServerProcess does -- same exe, same module, same env -- and
 # checks the wrapper's own pre-flight: exit code 2 and one line on stderr.
+#
+# PORT FIRST (decisions 105) does NOT move this one: the device check runs before the upstream
+# package is even imported (ywk_server.resolve_devices_and_precision), i.e. before uvicorn binds,
+# so cuda:9 still exits 2 in milliseconds and the port is never opened. What DID change is the
+# other half of the acceptance row: a failure the pre-flight cannot see (a missing checkpoint, a
+# device the driver refuses only at load time) no longer kills the process. It binds, answers
+# /health 200, and puts the reason in /ywk/status.runtime.error, where the launcher reads it into
+# the state band. The launcher does NOT kill such a child (decisions 105 (1), design seat's
+# correction of convoy G): whether the error arrives while StartAsync is still waiting for ready
+# or on the post-Ready watch, the child stays bound and answering so the main app's scan can read
+# the reason; only the stop button (enabled in Failed) closes the port. "Stop it before you are
+# told to" (correction 2026-09-05) is now limited to children that do not answer (timeout, bind
+# failure read from the log). This step starts the wrapper DIRECTLY (no launcher), so nobody
+# kills it here either: it stays up until this function does. Both endings are accepted here,
+# and the one line reason is required either way.
 function Invoke-BadDeviceProbe {
     param([string]$Variant, [int]$Port, [string]$DataDir)
 
@@ -256,25 +274,62 @@ function Invoke-BadDeviceProbe {
     $proc = [System.Diagnostics.Process]::Start($psi)
     $stderrTask = $proc.StandardError.ReadToEndAsync()
     $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
-    $exited = $proc.WaitForExit(20000)
-    $sw.Stop()
-    if (-not $exited) {
-        try { $proc.Kill($true) } catch { }
-        Add-Step 'D-1 out-of-range GPU' $false 'the wrapper did not exit within 20 s'
-        return
+
+    # POLL, do not block (correction seat, convoy G). The acceptance row is "the reason is told
+    # inside 15 s", and the clock has to stop AT the reason -- a blocking WaitForExit(15000) on the
+    # still-alive branch only returns after the whole 15 000 ms, so the <= 15 s check could never
+    # pass for the ending decisions 105 introduced. Ask both questions every 500 ms and break on
+    # whichever comes first: the pre-flight's exit, or a non-empty /ywk/status.runtime.error.
+    $exited = $false
+    $statusError = ''
+    $portOpen = $false
+    while ($sw.Elapsed.TotalSeconds -le 15) {
+        if ($proc.HasExited) { $exited = $true; break }
+        if (Test-PortListening -Port $Port) {
+            $portOpen = $true
+            try {
+                $statusError = [string](Invoke-RestMethod `
+                        -Uri ('http://127.0.0.1:' + $Port + '/ywk/status') -TimeoutSec 2).runtime.error
+            } catch {
+                $statusError = ''
+            }
+            if (-not [string]::IsNullOrWhiteSpace($statusError)) { break }
+        }
+        Start-Sleep -Milliseconds 500
     }
+    if (-not $exited) { $exited = $proc.HasExited }
+    $sw.Stop()
+
+    if (-not $exited) {
+        $portOpen = Test-PortListening -Port $Port
+        Write-Host ('[D-1] still running: port open = ' + $portOpen +
+            ' runtime.error = ' + $statusError)
+        try { $proc.Kill($true) } catch { }
+        $null = $proc.WaitForExit(5000)
+    }
+
     $stderr = $stderrTask.Result
     $stdout = $stdoutTask.Result
-    $code = $proc.ExitCode
+    $code = $null
+    try { $code = $proc.ExitCode } catch { $code = $null }
     $lines = @($stderr -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
     $reason = ''
-    if ($lines.Count -gt 0) { $reason = $lines[-1] }
+    if (-not [string]::IsNullOrWhiteSpace($statusError)) { $reason = $statusError }
+    elseif ($lines.Count -gt 0) { $reason = $lines[-1] }
     Write-Host ('[D-1] exit=' + $code + ' seconds=' + [math]::Round($sw.Elapsed.TotalSeconds, 2))
     foreach ($l in $lines) { Write-Host ('[D-1] stderr: ' + $l) }
     if (-not [string]::IsNullOrWhiteSpace($stdout)) { Write-Host ('[D-1] stdout: ' + $stdout.Trim()) }
 
-    $ok = ($code -eq 2) -and ($sw.Elapsed.TotalSeconds -le 15) -and ($lines.Count -ge 1)
-    Add-Step 'D-1 out-of-range GPU' $ok ('exit=' + $code + ' in ' + [math]::Round($sw.Elapsed.TotalSeconds, 2) + ' s :: ' + $reason)
+    # Two endings are acceptable (decisions 105):
+    #   pre-flight  -- exit 2, one line on stderr, the port never opened (this is cuda:9's path);
+    #   load time   -- still alive and bound, with the reason in /ywk/status.runtime.error.
+    # Either way the reason has to be there inside 15 s, and $sw was stopped AT the reason (the
+    # poll above breaks on it), not at the end of the budget.
+    $told = (-not [string]::IsNullOrWhiteSpace($reason)) -and ($sw.Elapsed.TotalSeconds -le 15)
+    $ok = $told -and (($exited -and ($code -eq 2)) -or ((-not $exited) -and ($statusError -ne '')))
+    Add-Step 'D-1 out-of-range GPU' $ok (
+        'exit=' + $code + ' alive=' + (-not $exited) + ' port=' + $portOpen +
+        ' in ' + [math]::Round($sw.Elapsed.TotalSeconds, 2) + ' s :: ' + $reason)
 }
 
 # ================================================================= round two helpers
@@ -1802,10 +1857,44 @@ try {
     # window, not a transcript: on this machine the upstream emits about 20 lines of MIOpen / pydub /
     # torch warnings after the banner, so by the time Ready is reached the banner has scrolled out.
     # A probe that read the tail once would call the banner missing when the operator did see it.
+    # PORT FIRST (decisions 105): the same loop also records the FIRST /health 200 and whether the
+    # runtime was still loading at that moment. Before 105 the port stayed shut for the whole load
+    # (20-70 s) and this measurement did not exist; now it is the acceptance row (<= 3 s).
     $seenLog = New-Object System.Collections.Generic.HashSet[string]
     $startWait = Get-Date
+    $healthAt = $null
+    $healthWhileLoading = $false
+    $loadedAt = $null
     $ready = $null
     while ($true) {
+        if ($null -eq $healthAt) {
+            try {
+                $h = Invoke-WebRequest -Uri ('http://127.0.0.1:' + $Port + '/health') `
+                    -TimeoutSec 2 -UseBasicParsing
+                if ($h.StatusCode -eq 200) { $healthAt = ((Get-Date) - $startWait).TotalSeconds }
+            } catch {
+                $healthAt = $null
+            }
+        }
+        if (($null -ne $healthAt) -and ($null -eq $loadedAt)) {
+            # KEEP ASKING until the answer is known (correction seat, convoy G). Reading
+            # runtime.loaded once, in the same turn that first saw /health 200, latched an
+            # unrecoverable $false whenever that single call timed out. The window is a state, not
+            # an instant: any turn that answers loaded=false BEFORE $loadedAt is set is proof the
+            # port was open while the model was still loading.
+            try {
+                $rt = (Invoke-RestMethod `
+                        -Uri ('http://127.0.0.1:' + $Port + '/ywk/status') -TimeoutSec 5).runtime
+                if ([bool]$rt.loaded) {
+                    $loadedAt = ((Get-Date) - $startWait).TotalSeconds
+                } else {
+                    $healthWhileLoading = $true
+                }
+            } catch {
+                $loadedAt = $null
+            }
+        }
+
         $tail = Get-TextById -Root $win -Id 'StatusLogBox' -TimeoutSeconds 2
         if ($null -ne $tail) {
             foreach ($line in @($tail -split "`r?`n")) {
@@ -1837,13 +1926,39 @@ try {
         'ready in ' + [math]::Round($ready.elapsed, 1) + ' s (limit ' + $ReadyTimeoutSeconds + ' s), state=' + $ready.text)
     Add-Step 'the private port is listening' (Test-PortListening -Port $Port) ('port ' + $Port)
 
+    # ------------------------------------------------- port first (decisions 105)
+    #
+    # The acceptance row: /health 200 within 10 s of the press (measured 8.9 s from the exe, decisions 106; the wrapper binds and loads in the
+    # background), and runtime.loaded true later. The polling loop above is a 400 ms one that also
+    # reads two UI Automation properties per turn, so the measurement is coarse by design -- it is
+    # here to catch "the port stayed shut for the whole load", not to time anything to the ms.
+    Write-Host ('[105] /health 200 after ' +
+        (& { if ($null -eq $healthAt) { 'never' } else { [math]::Round($healthAt, 1).ToString() + ' s' } }) +
+        '  (loading at that moment = ' + $healthWhileLoading + ')  runtime.loaded after ' +
+        (& { if ($null -eq $loadedAt) { 'never' } else { [math]::Round($loadedAt, 1).ToString() + ' s' } }))
+    Add-Step 'the port answers /health 200 within 10 s of the press' (
+        ($null -ne $healthAt) -and ($healthAt -le 10.0)) (
+        'first 200 at ' + (& { if ($null -eq $healthAt) { 'never' } else { [math]::Round($healthAt, 2).ToString() + ' s' } }))
+    # Two ways to see the same thing, and either is enough: a turn that answered loaded=false while
+    # the port was already up, or a $loadedAt that is later than $healthAt. The second is the escape
+    # hatch for a load that finished inside one 400 ms turn (correction seat, convoy G).
+    $loadedAfterHealth = ($null -ne $healthAt) -and ($null -ne $loadedAt) -and ($loadedAt -gt $healthAt)
+    Add-Step 'the model was still loading when the port first answered' (
+        $healthWhileLoading -or $loadedAfterHealth) (
+        'saw loaded=false with the port up = ' + $healthWhileLoading +
+        ', loaded after the first 200 = ' + $loadedAfterHealth)
+    Add-Step 'runtime.loaded turns true later' ($null -ne $loadedAt) (
+        'loaded at ' + (& { if ($null -eq $loadedAt) { 'never' } else { [math]::Round($loadedAt, 1).ToString() + ' s' } }) +
+        ' (limit ' + $ReadyTimeoutSeconds + ' s)')
+
     # ------------------------------------------------- the answer names the child that gave it
     #
-    # Correction seat, convoy D (2): preload=true loads the model BEFORE uvicorn binds (20-28 s on
-    # this machine), so during startup a stranger can hold the port and answer in this very shape.
-    # /ywk/status therefore carries pid, and the launcher drops any sample whose pid is not the
-    # child it started. Here the two must agree -- if they ever do not, the band is showing someone
-    # else's GPU memory.
+    # Correction seat, convoy D (2): a stranger that already holds the port answers in this very
+    # shape. (Decisions 105 shortened the window -- our own child now binds within a second instead
+    # of after the 20-28 s load -- but it did not close it: the stranger keeps the port and our
+    # child dies on bind.) /ywk/status therefore carries pid, and the launcher drops any sample
+    # whose pid is not the child it started. Here the two must agree -- if they ever do not, the
+    # band is showing someone else's GPU memory.
     $statusPid = $null
     try {
         $statusPid = (Invoke-RestMethod -Uri ('http://127.0.0.1:' + $Port + '/ywk/status') -TimeoutSec 10).pid
@@ -1906,6 +2021,9 @@ try {
     Add-Step 'the status watch does not flood the log' ($noise.Count -eq 0) ('access log lines = ' + $noise.Count)
     Add-Step 'log has the wrapper banner'    ($log -match 'ywk_server \d') 'ywk_server <version> upstream=...'
     Add-Step 'log has the uvicorn line'      ($log -match 'Uvicorn running on') 'Uvicorn running on ...'
+    # Still the upstream's own line (runtime.py) -- decisions 105 only moved it AFTER the uvicorn
+    # line, it did not remove it. The wrapper adds its own "runtime load started" ahead of both.
+    Add-Step 'log has the runtime load started line' ($log -match 'runtime load started') 'ywk_server: runtime load started ...'
     Add-Step 'log has the runtime loaded line' ($log -match 'runtime loaded in') 'runtime loaded in ...'
     Add-Step 'log has the device actual line'  ($log -match 'device actual=') 'ywk_server: device actual=...'
 
