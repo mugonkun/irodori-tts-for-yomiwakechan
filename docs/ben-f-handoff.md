@@ -506,8 +506,8 @@ VOICEROID2 参照で **14.8 s**＝`decisions.md` 40）。**CUDA では同じ罰�
 
 **原則**＝**`/params` を読んで組む**（固定表を持たない＝§2-1）。そのうえで**画面に出すのはこれだけ**：
 
-> ※ **2026-09-06 時点の `build/out` の組み上げ済み樹と、設計席の機体に導入済みの Radeon 版（`decisions.md` 98）は旧 label「CFG 強度（本文）」を返す**
-> ＝組み直し前の樹を叩いて `label` を確かめないこと（`decisions.md` 99 の注意・次の `assemble-app.ps1`→組みで変わる）。
+> ※ `build/out` の組み上げ済み樹とインストーラ（2026-09-06 22:10 の組み＝cuda 85,005,985 B sha256 `ffd35375…`・radeon 85,020,453 B sha256 `6a1d95f4…`）と、
+> 設計席の機体に入れ直した Radeon 版（18088）は、この label「感情表現の強さ」と裁定 100 の `note` を返す（`decisions.md` 101）。それより古い組みは旧 label「CFG 強度（本文）」を返す。
 
 | 欄 | 出所 | 備考 |
 |---|---|---|
@@ -517,7 +517,7 @@ VOICEROID2 参照で **14.8 s**＝`decisions.md` 40）。**CUDA では同じ罰�
 | **num_steps** | `/params.irodori[key=num_steps]` | Number・1〜120・既定 40・**プリセット 10／40**（`presets` 欄がそのまま来る） |
 | **seed** | `/params.irodori[key=seed]` | Text・**空欄＝毎回の乱数**（`""` を送っても 400 にならない） |
 | **caption（演技指示）** | `/params.irodori[key=caption]` | Text・**空欄＝未指定** |
-| **感情表現の強さ（`cfg_scale_text`）** | `/params.irodori[key=cfg_scale_text]` | Number・0.0〜10.0・step 0.1・**既定は `/params` の `default` を読む**（現在 3.0・`IRODORI_DEFAULT_CFG_SCALE_TEXT` で動く＝焼かない）。**本体の「感情表現の強さ」＝この欄**（`decisions.md` 99）＝表示名は `/params` の `label` をそのまま `DisplayName` に・この欄を「CFG 強度」の名では出さない。**`IsEmotion` を立てる＝本体の「感情」見出しの帯に出す**（`decisions.md` 100）。9 番目（8088）の `IrodoriCapabilityBuilderTests.cs:222`（全欄 `IsEmotion=false`）は 9 番目の釘＝10 番目が別 builder なら触らない・共有するなら差し替える。**表示名だけが同じで目盛りは互換でない**（Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0・本体にマスター感情の写像は無い）。**0 は本文 CFG を切る**（表情が薄くなるのではなく本文への追従が弱る＝上流 `rf.py:264`・実用下限 1.0 付近）。**本体の裁定 6（露出 5 本・`cfg_scale_*` 非露出＝`Engines/Irodori/IrodoriConstants.cs:343`）はこの欄・`num_steps`、および次の「余力があれば」行の `cfg_scale_caption`・`cfg_scale_speaker`・`t_schedule_mode` について改訂が要る**（`sway_coeff` は 343 行の列挙に無い・10 番目のエンジンの話・9 番目の 8088 アダプタは変えない）。この名の規則は本体の面だけ＝ランチャの「試す」は生の欄名 `cfg_scale_text` のまま |
+| **感情表現の強さ（`cfg_scale_text`）** | `/params.irodori[key=cfg_scale_text]` | Number・0.0〜10.0・step 0.1・**既定は `/params` の `default` を読む**（現在 3.0・`IRODORI_DEFAULT_CFG_SCALE_TEXT` で動く＝焼かない）。**本体の「感情表現の強さ」＝この欄**（`decisions.md` 99）＝表示名は `/params` の `label` をそのまま `DisplayName` に・この欄を「CFG 強度」の名では出さない。**`IsEmotion` を立てる＝本体の「感情」見出しの帯に出す**（`decisions.md` 100）。**10 番目は 9 番目（8088）とあくまで別物として扱う**（`decisions.md` 101＝別 builder・別テスト）＝9 番目の `IrodoriCapabilityBuilderTests.cs:222`（全欄 `IsEmotion=false`）には触らない。**表示名だけが同じで目盛りは互換でない**（Aivis 0〜2 中立 1.0／Irodori 0〜10 中立 3.0・本体にマスター感情の写像は無い）。**0 は本文 CFG を切る**（表情が薄くなるのではなく本文への追従が弱る＝上流 `rf.py:264`・実用下限 1.0 付近）。**本体の裁定 6（露出 5 本・`cfg_scale_*` 非露出＝`Engines/Irodori/IrodoriConstants.cs:343`）はこの欄・`num_steps`、および次の「余力があれば」行の `cfg_scale_caption`・`cfg_scale_speaker`・`t_schedule_mode` について改訂が要る**（`sway_coeff` は 343 行の列挙に無い・10 番目のエンジンの話・9 番目の 8088 アダプタは変えない）。この名の規則は本体の面だけ＝ランチャの「試す」は生の欄名 `cfg_scale_text` のまま |
 | （余力があれば）`cfg_scale_caption`・`cfg_scale_speaker`・`sway_coeff`・`t_schedule_mode` | `/params.irodori` | `exposed_to_ywk: true` の残り 4 欄 |
 
 **出さない欄**（理由つき）：
