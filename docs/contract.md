@@ -23,7 +23,7 @@
   **毎要求 +1.2〜2.0 秒**の実測がある（本体 §9 の既知事実）。**必ず `127.0.0.1`**。
 - **bind は `127.0.0.1` 固定**（ループバック限定）。外から触れないので **api_key を持たない**
   （`decisions.md` 2）。本体は `Authorization` ヘッダを付けない。**付けても無視される**。
-- 起動主体は**配布版**（`decisions.md` 6）＝本体はサーバを起こさない。見つからなければ理由つき失敗で、
+- 常駐と後始末は**配布版のランチャ**（`decisions.md` 6）。**本体の一括起動は引数なしで `IrodoriTtsYwk.Launcher.exe` を起こしてよい**（`decisions.md` 103＝従来型 TTS と同じ扱い・`LaunchKind.ExePath`）。本体はサーバのプロセスを持たない。見つからなければ理由つき失敗で、
   他エンジンの読み上げは無傷（本体 §0-3 の掟 1・掟 2）。
 
 題目＝`接続先は127_0_0_1の18088でありlocalhost名は使わない`／`Authorizationヘッダを付けない`。
@@ -32,7 +32,7 @@
 
 ## ⑵ 発見
 
-**`GET /health` 200 → `GET /ywk/status` → `GET /params` → `GET /v1/audio/voices` の 4 段。
+**`GET /health` 200 → `GET /ywk/status` → `GET /params` → `GET /v1/audio/voices`（表示名と理由が要るなら `GET /ywk/voices`）の 4 段。
 タイムアウト 5 秒・ready 待ち 120 秒・合成の可否は `runtime.loaded` で判る。**
 
 | 段 | 口 | 何を得るか | 失敗時 |
@@ -40,7 +40,7 @@
 | 1 | `GET /health` | 生きているか。**モデル未読込でも 200**（遅延ロードが正常形） | 到達不能＝エンジン未起動として理由つき失敗 |
 | 2 | `GET /ywk/status` | 配布版か否か・版・上流 pin・**実 device**・話者件数（⑹） | 404 なら**上流の素の Server**（＝8088 経路の個体）＝配布版として扱わない |
 | 3 | `GET /params` | パラメータ一覧（⑸）。**モデル未読込でも 200・≤ 100 ms** | 404 なら同上 |
-| 4 | `GET /v1/audio/voices` | 話者一覧（⑷） | 500 は「台帳が壊れている」＝配布版では**返さない**（⑷ の約束） |
+| 4 | `GET /v1/audio/voices`（表示名と理由が要るなら **`GET /ywk/voices` でもよい**＝本体はこちらを叩く・裁定 104） | 話者一覧（⑷） | 500 は「台帳が壊れている」＝配布版では**返さない**（⑷ の約束） |
 
 - **`/health` の body は上流のままで、解釈しない**（欄は上流のまま）。ただし配布版は
   **`/health` の絶対パスも `<path>` に畳む**＝上流はここに `settings.voices_dir` と
@@ -148,6 +148,7 @@
   | `voice` 省略（`No voice was provided`）＝**ランチャが `IRODORI_DEFAULT_VOICE` を空にした場合のみ**（3-1） | `ywk_missing_voice` |
   | `model` 違い | `ywk_unknown_model` |
   | `input` が空白のみ | `ywk_empty_input` |
+  | 話者 id に許されない文字（上流の登録 API の検査に被せる札＝配布版は登録の 3 口を外しているので本体には届かないはず。網羅表に載せるのは `default` 分岐に落とさないため・裁定 104） | `ywk_invalid_voice_id` |
   | 読込中・読込失敗（503） | `ywk_runtime_unavailable` |
   | 配布版の前段検査（3-2） | `ywk_unknown_field`・`ywk_out_of_range`・`ywk_type_error`・`ywk_invalid_enum`・`ywk_literal_top_level`・`ywk_voice_and_no_ref`・`ywk_voice_and_reference`・`ywk_unsupported_response_format`・`ywk_invalid_body`・`ywk_validation_error` |
   | 暖機の口（⑺ 7-2・**本体は叩かない**） | `ywk_warmup_running`（409）・`ywk_warmup_unknown_id`（404） |
@@ -750,7 +751,7 @@
 
 ## ⑻ 版と互換
 
-- **`schema` 番号**＝`/params` と `/ywk/status` の応答に載る。**欄を消す・意味を変えるときだけ**上げる。
+- **`schema` 番号**＝`/params` の応答に載る（`/ywk/status` には載らない＝本体は `/params` から読む・裁定 104）。**欄を消す・意味を変えるときだけ**上げる。
   欄を足すのは上げない（本体は知らない欄を無視する）。
 - **配布版のランチャが `settings.json` に焼く 2 つの表（HTTP の口ではない・本体は読まない・裁定 91・95・97）**＝`runtimeLedgers`（鍵＝変種名・値＝展開に使った台帳 `ledger/runtime-<変種>.json` の sha256・小文字 hex 64 字）と `installedAppVersions`（鍵＝変種名・値＝`v0.1.0` の形）。組んだ変種の欄だけが焼かれる（組んでいない変種の欄は無い）。起動時にいまの変種の欄が配布樹の台帳と食い違えば状態帯に「実行系を組み直す」1 手が出る。`schema` は動かない。
 - **上流の pin**＝`/ywk/status.upstream` に `irodori_tts`・`server` の短い commit を載せる。

@@ -19,7 +19,7 @@
 
 | 段 | 口 | 判定 | 失敗したら |
 |---|---|---|---|
-| 1 | `GET http://127.0.0.1:18088/health` | **200**（モデル未読込でも 200） | 到達不能＝エンジン未起動として理由つき失敗。**本体はサーバを起こさない**（`decisions.md` 6） |
+| 1 | `GET http://127.0.0.1:18088/health` | **200**（モデル未読込でも 200） | 到達不能＝エンジン未起動として理由つき失敗。**本体の一括起動が引数なしでランチャの exe を起こしてよい**（`decisions.md` 103＝従来型 TTS と同じ扱い・裁定 6 の「見つけるだけ」を覆す） |
 | 2 | `GET /ywk/status` | `engine == "irodori-ywk"` | **404 なら上流の素の Server（8088 経路の個体）＝配布版として扱わない**（`docs/contract.md` ⑵） |
 | 3 | `GET /params` | 200・**≤ 100 ms**・`schema` を読む | 404 なら同上 |
 | 4 | `GET /v1/audio/voices`（表示名が要るなら `GET /ywk/voices`） | 200・**「デフォルト」が必ず先頭に 1 件** | 配布版は台帳が壊れても **500 を返さない**（⑷・D-8 は消える） |
@@ -105,7 +105,7 @@
 3. **`pid` が変わったら「別個体になった」と読む**＝`pid` は毎回の `/ywk/status` に載る。
    **欄が無い個体（古い wrapper・上流の素の Server）とは突合しない**
    （`docs/design/ben-d-launcher.md` §20-5 ⑵「`pid` の突合は『欄が在るときだけ』」）。
-   本体は**プロセスの所有者ではない**（起動主体は配布版＝`decisions.md` 6）ので、
+   本体は**プロセスの所有者ではない**（常駐と後始末はランチャ＝`decisions.md` 6・一括起動で起こすのは可＝103）ので、
    exit code は取れない＝**pid の変化と接続断が本体に見える全部**である。
 
 ### 1-4 ready 待ち
@@ -557,7 +557,7 @@ VOICEROID2 参照で **14.8 s**＝`decisions.md` 40）。**CUDA では同じ罰�
    **同時に動かしてよい**（`decisions.md` 2・`docs/acceptance.md` の追加行＝
    「配布版を起こした状態で 8088 の既存個体を起こし、両方の `/health` が 200 になること」）。
    **本体の 9 番目のアダプタ（`irodori`・8088 固定）はそのまま**で、配布版は**10 番目のエンジン**として別に建つ。
-5. **起動主体は配布版**（`decisions.md` 6）＝**本体はサーバを起こさない**。
+5. **常駐と後始末はランチャ**（`decisions.md` 6）＝**本体の一括起動は引数なしで `IrodoriTtsYwk.Launcher.exe` を起こしてよい**（`decisions.md` 103・従来型 TTS と同じ扱い・`LaunchKind.ExePath`・終了時は放置）。本体はサーバのプロセスを持たない。
    見つからなければ理由つき失敗で、**他エンジンの読み上げは無傷**（本体 §0-3 の掟 1・掟 2）。
 6. **上流の書き込み 3 口は外してある**＝本体が叩けば 404／405（§3-6）。
 7. **上流の機能は殺さない**（`decisions.md` 47）＝SSE の枠はそのまま通す。**本体は使わない**。
@@ -740,7 +740,7 @@ class FakeRuntimeManager:
 ## §10 突合の記録（正典 対 実装・**本檔の JSON はすべてこれで直した**）
 
 `docs/contract.md` の逐語と `server/ywk_server.py`／`server/ywk_params.py` の実装を突き合わせた。
-**本檔の JSON は実装側の実物に合わせてある。**下の 6 件（うち ⑵ は `decisions.md` 99 で解消＝卓への票は 5 件）は**正典の内部で食い違っている／
+**本檔の JSON は実装側の実物に合わせてある。**下の 6 件（うち ⑴⑵⑸ は `decisions.md` 99・104 で解消＝卓への票は 3 件）は**正典の内部で食い違っている／
 正典の抜粋の外に在る**もので、**本檔では正典側の逐語（⑸ 5-1・⑹ の JSON）を正とし、
 散文の側を採らなかった**。卓（設計席）への票として置く。
 
@@ -749,7 +749,7 @@ class FakeRuntimeManager:
    同 ⑹ の逐語（`{"engine":…,"version":…,"upstream":…}`）に `schema` は無く、
    実装の `ywk_status()` も返していない（返す 14 鍵は §1-2 のとおり）。
    ⇒ **本檔は「`schema` は `/params` から読む」と書いた。**
-   卓への票＝⑻ の 1 行を「`/params` の応答に載る」に直すか、`/ywk/status` に足すか。
+   卓への票＝⑻ の 1 行を「`/params` の応答に載る」に直すか、`/ywk/status` に足すか。**直った**（`decisions.md` 104＝⑻ を「`/params` の応答に載る」に）。
 2. **`exposed_to_ywk` は「9 欄＋voice・speed」ではなく「8 欄＋voice・speed＝10」。**
    `docs/contract.md` ⑸ 5-2 の散文と `docs/acceptance.md` API 行の散文が「9 欄」と書くが、
    同 ⑸ 5-1 の逐語 `rules.exposed_to_ywk` は **10 件**で、実装の
@@ -772,7 +772,7 @@ class FakeRuntimeManager:
    `voice_id must contain only …` に被せる）が、`docs/contract.md` ⑶ 3-3 の表には無い。
    実際に出る路は上流の登録 API だけで、**配布版はその 3 口を外している**（⑷ 4-3）ので
    **本体には届かないはず**だが、**`code` の網羅表に載せておかないと `default` 分岐に落ちる**。
-   ⇒ **本檔の表には載せた**（§4-4）。卓への票＝⑶ 3-3 の表に 1 行足す。
+   ⇒ **本檔の表には載せた**（§4-4）。卓への票＝⑶ 3-3 の表に 1 行足す。**直った**（`decisions.md` 104）。
 6. **走行中の `DELETE /ywk/warmup/{id}`／`DELETE /ywk/voices/precompute/{id}` の応答の
    `state` は `"cancelling"`**（実装）。`/ywk/status` の state の enum
    （`idle|running|done|failed|cancelled`）には `cancelling` は**無い**（`docs/contract.md` ⑺ の表は

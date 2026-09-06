@@ -15,8 +15,8 @@ namespace IrodoriTtsYwk.Launcher;
 /// ⑴ 単一起動（Mutex）⑵ トレイ常駐（NotifyIcon）⑶ 終了時に wrapper をツリー kill。
 /// 画面の中身は <see cref="MainWindow"/> と 3 席の View が持つ。
 /// <para>
-/// <b>なぜ常駐か</b>＝起動主体は配布版で（裁定 6・G-2）、本体（読み分けちゃん2）は <c>/health</c> で
-/// 見つけるだけだから。窓を閉じても wrapper は走り続けねばならない。
+/// <b>なぜ常駐か</b>＝常駐と後始末は配布版で（裁定 6・G-2）、本体（読み分けちゃん2）は <c>/health</c> で
+/// 見つける（裁定 103＝本体の一括起動が引数なしでこの exe を起こしてよい・プロセスは持たない）から。窓を閉じても wrapper は走り続けねばならない。
 /// </para>
 /// <para>
 /// <b>なぜ終了時にツリー kill か</b>＝上流に shutdown の路が無く（設計書 §2）、wrapper は窓を持たない
