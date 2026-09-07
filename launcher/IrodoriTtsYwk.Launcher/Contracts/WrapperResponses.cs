@@ -211,7 +211,12 @@ public sealed record PrecomputeStatus
 /// <c>max_memory_allocated</c>）。<b>画面では 使用量＝allocated・占有量＝reserved</b>。</item>
 /// <item><see cref="GpuTotalBytes"/>／<see cref="GpuFreeBytes"/>＝<c>torch.cuda.mem_get_info</c>
 /// （ROCm も同じ口）。<see cref="GpuUsedBytes"/>＝<c>total − free</c>＝
-/// <b>カード全体の占有（他プロセス込み）</b>。</item>
+/// <b>カード全体の占有（他プロセス込み）</b>
+/// 〔<b>裁定 110（2026-09-08）で読み替え</b>＝Windows の ROCm では<b>自プロセス相当</b>で、
+/// 他プロセスを含まない（実測＝同じ瞬間に <c>gpu_used</c> 3.66 GiB・OS の計数は自プロセス
+/// 10.84 GiB／カード全体 29.79 GiB）。<b>カード全体は Windows の計数から採る</b>
+/// （<c>Services/Gpu</c>＝PDH の <c>GPU Adapter Memory\Dedicated Usage</c> と DXGI の
+/// <c>DedicatedVideoMemory</c>）。欄も算術も変えない＝<b>状態帯にこの 3 欄はもう出ない</b>〕。</item>
 /// <item><see cref="Latents"/>＝<c>latents/&lt;stem&gt;.pt</c> の実サイズを話者 id で引く表
 /// （<b>焼いていない話者は載らない</b>）。<see cref="LatentsTotalBytes"/> はその合計。</item>
 /// </list>
@@ -235,13 +240,21 @@ public sealed record MemoryStatus
     /// <summary>torch の <c>max_memory_allocated</c>。</summary>
     [JsonPropertyName("max")] public long? MaxAllocatedBytes { get; init; }
 
-    /// <summary><c>mem_get_info</c> の total（カード全体）。</summary>
+    /// <summary>
+    /// <c>mem_get_info</c> の total（カード全体）〔<b>裁定 110 で読み替え</b>＝gfx1151 では
+    /// <b>共有プールの総量</b>（実測 99.74 GiB）。帯の「GPU 全体」の分母は DXGI の
+    /// <c>DedicatedVideoMemory</c>（同機体 63.83 GiB）に替わった〕。
+    /// </summary>
     [JsonPropertyName("gpu_total")] public long? GpuTotalBytes { get; init; }
 
     /// <summary><c>mem_get_info</c> の free。</summary>
     [JsonPropertyName("gpu_free")] public long? GpuFreeBytes { get; init; }
 
-    /// <summary><c>total − free</c>＝カード全体の占有（<b>他プロセス込み</b>）。</summary>
+    /// <summary>
+    /// <c>total − free</c>＝カード全体の占有（<b>他プロセス込み</b>）
+    /// 〔<b>裁定 110（2026-09-08）で読み替え</b>＝Windows の ROCm では<b>自プロセス相当で、
+    /// 他プロセスを含まない</b>。<b>状態帯には出さない</b>（カード全体は Windows の計数から採る）〕。
+    /// </summary>
     [JsonPropertyName("gpu_used")] public long? GpuUsedBytes { get; init; }
 
     /// <summary>
@@ -283,6 +296,12 @@ public sealed record MemoryStatus
 
     /// <summary>
     /// カード全体の占有（<c>gpu_used</c>。欄が無ければ <c>total − free</c> から起こす）。
+    /// <para>
+    /// 〔<b>裁定 110（2026-09-08）で読み替え</b>＝「カード全体」ではない（Windows の ROCm では
+    /// 自プロセス相当）。<b>状態帯からは外れた</b>ので、いまこれを読んでいるのは
+    /// <c>RoundTwoUiTests</c> の<b>算術の釘</b>（欄が無いときに <c>total − free</c> から起こす）
+    /// だけである。欄も算術も変えていない。〕
+    /// </para>
     /// </summary>
     public long? EffectiveGpuUsed => GpuUsedBytes
         ?? (GpuTotalBytes is long total && GpuFreeBytes is long free ? total - free : null);

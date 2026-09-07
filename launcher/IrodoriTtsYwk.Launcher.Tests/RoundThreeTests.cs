@@ -739,7 +739,11 @@ public sealed class RoundThreeLowSixTests
         Assert.Contains("使用量 1.00 GiB（最大 3.00 GiB）", text, StringComparison.Ordinal);
         Assert.True(text.IndexOf("（最大", StringComparison.Ordinal)
             < text.IndexOf("占有量", StringComparison.Ordinal));
-        Assert.EndsWith("GPU 全体 3.00 GiB / 4.00 GiB", text, StringComparison.Ordinal);
+
+        // 裁定 110（2026-09-08）＝torch の gpu_used／gpu_total はもう帯に出さない＝
+        // 行の末尾は占有量になり、「GPU 全体」は Windows の計数の組にだけ出る。
+        Assert.EndsWith("占有量 2.00 GiB", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("GPU 全体", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1126,6 +1130,9 @@ public sealed class RoundThreeMainViewModelTests : IDisposable
         public Uri? BaseAddress => null;
 
         public StatusResponse? LatestStatus => null;
+
+        /// <summary>OS の GPU 計数も無い（裁定 110）。</summary>
+        public IReadOnlyList<IrodoriTtsYwk.Launcher.Services.Gpu.OsGpuMemoryRow> LatestOsGpuMemory => [];
 
 #pragma warning disable CS0067 // 偽物なので誰も上げない
         public event EventHandler<ServerStateChangedEventArgs>? StateChanged;

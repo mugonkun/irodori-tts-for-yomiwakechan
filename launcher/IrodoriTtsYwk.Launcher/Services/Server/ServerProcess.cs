@@ -30,6 +30,12 @@ namespace IrodoriTtsYwk.Launcher.Services.Server;
 /// <see cref="StatusSampled"/> で公開する（low 3）。窓は別に叩かない。
 /// </para>
 /// <para>
+/// <b>同じ回に Windows の GPU 計数も採る</b>（裁定 110・2026-09-08）＝
+/// <see cref="OsGpuMemorySampler"/> が PDH（<c>GPU Process Memory</c>／<c>GPU Adapter Memory</c>）と
+/// DXGI を読み、<see cref="LatestOsGpuMemory"/> に置いてから <see cref="StatusSampled"/> を上げる。
+/// 読めない機体では<b>空</b>になるだけで、標本も状態も止まらない。
+/// </para>
+/// <para>
 /// <b>即死を捕まえる</b>＝exit 2（wrapper の事前検査）／3（上流の startup 失敗）は待ちの中で結末になり、
 /// 理由 1 行は stderr の最終行から作る（受け入れ条件 D-1＝≤ 15 s で UI に 1 行）。
 /// </para>
@@ -92,6 +98,9 @@ public sealed class ServerProcess : IServerProcess
     private readonly TimeSpan _watchInterval;
     private readonly object _gate = new();
 
+    /// <summary>OS の GPU 計数（裁定 110）。null＝この個体では数えない（テスト）。</summary>
+    private readonly OsGpuMemorySampler? _osGpuMemory;
+
     private LaunchedProcessRegistry? _registry;
     private Process? _process;
     private CancellationTokenSource? _watch;
@@ -105,10 +114,21 @@ public sealed class ServerProcess : IServerProcess
     /// <summary>いまの起動の世代（<see cref="Process.Exited"/> が前回の個体を告げないため）。</summary>
     private object _generation = new();
 
-    /// <summary>実機用（TCP 検査＋<c>/ywk/status</c> の polling＋変種の門）。</summary>
+    /// <summary>
+    /// 実機用（TCP 検査＋<c>/ywk/status</c> の polling＋変種の門＋OS の GPU 計数）。
+    /// </summary>
     public ServerProcess()
         : this(new TcpPortProbe(), new HealthPoller(), null, null, new TorchProbeRunner())
     {
+        // **計数を数えるのはここで作った個体だけ**（裁定 110 D5）＝テスト用の口から作った個体は
+        // 差されない限り数えない。**ここでは `pdh.dll` を 1 度も叩かない**（是正・2026-09-08）＝
+        // このコンストラクタは `LauncherComposition.Compose()`＝`App.OnStartup`＝**UI の糸**から
+        // 呼ばれ、しかも窓を作る前である。query の開設は実測で 0.23 s 掛かる（perflib の初期化）ので、
+        // 開くのは最初の標本＝**見張りの糸**に遅らせてある（`OsGpuMemorySampler.CreateForMachine`）。
+        // 開けなかった機体は理由 1 行をログ帯へ 1 度だけ流し、以後は黙って空を返す。
+        _osGpuMemory = OsGpuMemorySampler.CreateForMachine(line =>
+            LogLine?.Invoke(this, new ServerLogLineEventArgs(
+                new ServerLogEvent(ServerLogSignal.Other, line))));
     }
 
     /// <summary>テスト用（<b>public コンストラクタが継ぎ目</b>）。</summary>
@@ -124,19 +144,27 @@ public sealed class ServerProcess : IServerProcess
     /// 子の起こし方（既定＝<see cref="BuildStartInfo"/>）。<b>死活の釘</b>が偽の子プロセス
     /// （すぐ消える <c>cmd.exe</c>）を差すための継ぎ目。
     /// </param>
+    /// <param name="osGpuMemory">
+    /// OS の GPU 計数（裁定 110）。null＝この個体では数えない（<b>既定</b>＝実機の PDH も DXGI も
+    /// テストでは 1 度も開かない）。偽の口を差せば<b>配線そのもの</b>
+    /// （<see cref="LatestOsGpuMemory"/> が <see cref="StatusSampled"/> の前に置かれる・
+    /// Stopped／Failed と <see cref="StartAsync"/> の頭で空へ戻る）を釘付けできる。
+    /// </param>
     public ServerProcess(
         IPortProbe portProbe,
         IReadinessProbe readinessProbe,
         TimeSpan? pollInterval = null,
         TimeSpan? watchInterval = null,
         ITorchProbe? torchProbe = null,
-        Func<ServerStartRequest, ProcessStartInfo>? startInfoFactory = null)
+        Func<ServerStartRequest, ProcessStartInfo>? startInfoFactory = null,
+        OsGpuMemorySampler? osGpuMemory = null)
     {
         ArgumentNullException.ThrowIfNull(portProbe);
         ArgumentNullException.ThrowIfNull(readinessProbe);
         _portProbe = portProbe;
         _readinessProbe = readinessProbe;
         _torchProbe = torchProbe;
+        _osGpuMemory = osGpuMemory;
         _startInfo = startInfoFactory ?? BuildStartInfo;
         _pollInterval = pollInterval ?? PollInterval;
         _watchInterval = watchInterval ?? WatchInterval;
@@ -149,6 +177,7 @@ public sealed class ServerProcess : IServerProcess
             if (e.Current is ServerState.Failed or ServerState.Stopped)
             {
                 LatestStatus = null;
+                LatestOsGpuMemory = [];
             }
 
             StateChanged?.Invoke(this, e);
@@ -172,6 +201,11 @@ public sealed class ServerProcess : IServerProcess
     /// 見張り 1 本が採った最新の <c>/ywk/status</c>（low 3）。窓はこれを読むだけにする。
     /// </summary>
     public StatusResponse? LatestStatus { get; private set; }
+
+    /// <summary>
+    /// 見張り 1 本が同じ回に採った OS の GPU 計数（裁定 110）。数えられなければ空。
+    /// </summary>
+    public IReadOnlyList<OsGpuMemoryRow> LatestOsGpuMemory { get; private set; } = [];
 
     /// <summary>実測した device（<c>ywk_server: device actual=</c>）。表示にだけ使う。</summary>
     public string? DeviceActual => _machine.DeviceActual;
@@ -205,6 +239,7 @@ public sealed class ServerProcess : IServerProcess
         ProcessId = null;
         ExitCode = null;
         LatestStatus = null;
+        LatestOsGpuMemory = [];
         BaseAddress = request.BaseAddress;
         _port = request.Port;
 
@@ -473,6 +508,9 @@ public sealed class ServerProcess : IServerProcess
         {
             disposable.Dispose();
         }
+
+        // PDH の query は 1 本を開きっぱなしにしてある（裁定 110 D1）＝ここで閉じる。
+        _osGpuMemory?.Dispose();
     }
 
     /// <summary>
@@ -628,6 +666,11 @@ public sealed class ServerProcess : IServerProcess
         if (sample.Status is StatusResponse mine)
         {
             LatestStatus = mine;
+
+            // **OS の GPU 計数も同じ回に採る**（裁定 110 D5）＝数える相手は自分の子の pid
+            // （欄の無い古い個体は ProcessId で代用する）。読めなければ空になるだけ。
+            LatestOsGpuMemory = _osGpuMemory?.Sample(ProcessId ?? mine.Pid) ?? [];
+
             StatusSampled?.Invoke(this, mine);
         }
 

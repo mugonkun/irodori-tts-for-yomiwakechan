@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Mvvm;
+using IrodoriTtsYwk.Launcher.Services.Gpu;
 
 namespace IrodoriTtsYwk.Launcher.ViewModels;
 
@@ -53,6 +54,10 @@ public sealed class StatusViewModel : ObservableObject
     private LauncherSettings? _desired;
     private RunningSettings? _running;
     private MemoryStatus? _memory;
+
+    /// <summary>OS の GPU 計数の行（裁定 110＝見張りが同じ回に採った物）。</summary>
+    private IReadOnlyList<OsGpuMemoryRow> _osGpuRows = [];
+
     private IReadOnlyList<VoiceRow>? _rows;
     private VoiceRow? _selectedVoice;
 
@@ -482,7 +487,7 @@ public sealed class StatusViewModel : ObservableObject
     private void RepaintMemory()
     {
         MemorySupported = _memory is not null;
-        MemoryText = DescribeMemory(_memory, _serverAnswered);
+        MemoryText = DescribeMemory(_memory, _serverAnswered, _osGpuRows);
 
         var on = _running?.PrecomputeOnStart
             ?? _desired?.EffectivePrecomputeOnStart()
@@ -541,6 +546,7 @@ public sealed class StatusViewModel : ObservableObject
             PrecomputeText = "—";
             NoticesText = null;
             _memory = null;
+            _osGpuRows = [];
             _serverAnswered = false;
             RepaintMemory();
         }
@@ -621,11 +627,18 @@ public sealed class StatusViewModel : ObservableObject
     /// <c>/ywk/status</c> を反映する。<b>欄が無い応答にも耐える</b>＝
     /// <c>memory</c> が無ければ「未対応」（便 C（2）が入れば勝手に効き始める）。
     /// </summary>
-    public void ApplyStatus(StatusResponse? status)
+    /// <param name="status">見張りが採った標本（null＝口が閉じた）。</param>
+    /// <param name="osGpuMemory">
+    /// <b>同じ回に採った OS の GPU 計数</b>（裁定 110＝<c>IServerProcess.LatestOsGpuMemory</c>）。
+    /// null／空＝計数が読めない機体・止まっている＝OS の組は帯に出ない。
+    /// </param>
+    public void ApplyStatus(
+        StatusResponse? status, IReadOnlyList<OsGpuMemoryRow>? osGpuMemory = null)
     {
         if (status is null)
         {
             _memory = null;
+            _osGpuRows = [];
             _serverAnswered = false;
             RepaintMemory();
             GpuMismatch = null;
@@ -637,6 +650,7 @@ public sealed class StatusViewModel : ObservableObject
         WarmupText = Compose(status.Warmup);
         PrecomputeText = Compose(status.Precompute);
         _memory = status.Memory;
+        _osGpuRows = osGpuMemory ?? [];
         RepaintMemory();
         UpstreamMismatch = DescribeUpstreamMismatch(status.Upstream);
         GpuMismatch = DescribeGpuMismatch(_running?.GpuUuid ?? _desired?.GpuUuid, status.Device);
@@ -703,14 +717,21 @@ public sealed class StatusViewModel : ObservableObject
     }
 
     /// <summary>
-    /// GPU メモリの 1 行（<b>純関数</b>・裁定 67 ⑶・87 ⑴）＝
-    /// <b>使用量＝allocated（最大 …）・占有量＝reserved・GPU 全体＝gpu_used／gpu_total</b>。
+    /// GPU メモリの 1 行（<b>純関数</b>・裁定 67 ⑶・87 ⑴・<b>110</b>）＝
+    /// <b>torch 使用量＝allocated（最大 …）・占有量＝reserved</b> と、
+    /// <b>このプロセス／GPU 全体＝Windows の GPU 計数</b>（<paramref name="osRows"/>）。
     /// null は「—」・<c>cpu</c> は「CPU（GPU メモリなし）」。
     /// <para>
+    /// <b>wrapper の <c>gpu_used</c>／<c>gpu_total</c> はもう帯に出さない</b>（裁定 110・2026-09-08）＝
+    /// あれは <c>torch.cuda.mem_get_info</c> の値で、Windows の ROCm では<b>カード全体でも
+    /// 自プロセスの OS 上の占有でもない</b>（実測＝同じ瞬間に <c>gpu_used</c> 3.66 GiB・
+    /// OS の計数は自プロセス 10.84 GiB／カード全体 29.79 GiB）。「GPU 全体」を名乗れるのは
+    /// OS の計数のほうだけなので、名前は OS の行へ渡し、torch の 2 つは
+    /// <b>torch の見た値</b>と明記して残す（契約 ⑹ の JSON は据え置き）。
+    /// </para>
+    /// <para>
     /// <b>「（最大 …）」は使用量の隣に置く</b>（是正・便 D（3）・low 6 の ⑵）＝
-    /// <c>max</c> は <c>max_memory_allocated</c>＝<b>使用量の山</b>であって「GPU 全体」の山ではない。
-    /// 行の末尾に置いていたころは <c>GPU 全体 3.46 GB / 99.74 GB（最大 3.64 GB）</c> と並び、
-    /// 直前の分数に掛かる数に見えた（実射の帯＝§20-2）。
+    /// <c>max</c> は <c>max_memory_allocated</c>＝<b>使用量の山</b>である。
     /// </para>
     /// <para>
     /// <b>数字が無い理由を 2 つに分ける</b>（同上）＝<paramref name="serverAnswered"/> が偽＝
@@ -720,7 +741,14 @@ public sealed class StatusViewModel : ObservableObject
     /// </summary>
     /// <param name="memory"><c>/ywk/status.memory</c>（欄ごと無ければ null）。</param>
     /// <param name="serverAnswered"><c>/ywk/status</c> そのものが返ってきているか。</param>
-    public static string DescribeMemory(MemoryStatus? memory, bool serverAnswered = true)
+    /// <param name="osRows">
+    /// OS の計数の行（裁定 110＝<see cref="OsGpuMemory.Aggregate"/> の返り）。
+    /// 空＝計数が読めない・その pid がどの GPU も触っていない＝<b>OS の組は出さない</b>。
+    /// </param>
+    public static string DescribeMemory(
+        MemoryStatus? memory,
+        bool serverAnswered = true,
+        IReadOnlyList<OsGpuMemoryRow>? osRows = null)
     {
         if (memory is null)
         {
@@ -732,24 +760,105 @@ public sealed class StatusViewModel : ObservableObject
             return "CPU（GPU メモリなし）" + ErrorSuffix(memory.Error);
         }
 
+        var os = DescribeOsGpuRows(osRows);
+
         if (!memory.HasNumbers)
         {
-            // device が null＝モデル未読込（裁定 87 ⑴＝数値欄は null で latents だけ来る）
-            return UiText.Missing + "（モデル未読込）" + ErrorSuffix(memory.Error);
+            // device が null＝モデル未読込（裁定 87 ⑴＝数値欄は null で latents だけ来る）。
+            // OS の計数は torch の外から見た値なので、読めていればここでも出す。
+            return UiText.Missing + "（モデル未読込）" + os + ErrorSuffix(memory.Error);
         }
 
-        var used = "使用量 " + UiText.Bytes(memory.AllocatedBytes);
+        var used = "torch 使用量 " + UiText.Bytes(memory.AllocatedBytes);
         if (memory.MaxAllocatedBytes is not null)
         {
             used += "（最大 " + UiText.Bytes(memory.MaxAllocatedBytes) + "）";
         }
 
-        var text = used
-            + "／占有量 " + UiText.Bytes(memory.ReservedBytes)
-            + "／GPU 全体 " + UiText.Bytes(memory.EffectiveGpuUsed)
-            + " / " + UiText.Bytes(memory.GpuTotalBytes);
+        var text = used + "／占有量 " + UiText.Bytes(memory.ReservedBytes) + os;
 
         return text + ErrorSuffix(memory.Error);
+    }
+
+    /// <summary>
+    /// OS の計数の組（<b>純関数</b>・裁定 110 D4）＝
+    /// <c>／このプロセス x／GPU 全体 y / z（名前）</c>。
+    /// <para>
+    /// <b>GPU 1 枚なら名前は行末の括弧</b>・<b>2 枚以上なら組ごとに名前を頭に立てる</b>
+    /// （<c>／&lt;名前&gt;＝このプロセス x／GPU 全体 y / z</c>）＝模型と codec を別の GPU に
+    /// 載せた個体は 2 組出る（司令官の指示 1＝複数 GPU も想定する）。
+    /// </para>
+    /// <para>
+    /// 「GPU 全体」は<b>その GPU の専用メモリの占有（他のプログラム込み）／専用メモリの総量</b>で、
+    /// <b>共有メモリは入らない</b>（司令官の指示 2）。読めない数は「—」（0 と混ぜない）。
+    /// </para>
+    /// <para>
+    /// <b>同じ名前の GPU が並んだら LUID を添える</b>（是正・2026-09-08）＝この機体の DXGI は
+    /// <c>AMD Radeon(TM) 8060S Graphics</c> を<b>4 つ</b>名乗る（総量も同じ）。python が 2 つ目の
+    /// LUID にも載った瞬間、名前だけでは<b>どちらがどれか読めない</b>ので、重なった名前にだけ
+    /// <c>（0x000137d0）</c> のように LUID の下位を付ける（重ならない名前はそのまま）。
+    /// </para>
+    /// </summary>
+    public static string DescribeOsGpuRows(IReadOnlyList<OsGpuMemoryRow>? rows)
+    {
+        if (rows is null || rows.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var single = rows.Count == 1;
+        var text = new System.Text.StringBuilder();
+        foreach (var row in rows)
+        {
+            if (row is null)
+            {
+                continue;
+            }
+
+            var label = Label(row, rows);
+            text.Append('／');
+            if (!single)
+            {
+                text.Append(label).Append('＝');
+            }
+
+            text.Append("このプロセス ").Append(UiText.Bytes(row.ProcessBytes))
+                .Append("／GPU 全体 ").Append(UiText.Bytes(row.AdapterBytes))
+                .Append(" / ").Append(UiText.Bytes(row.TotalBytes));
+
+            if (single)
+            {
+                text.Append('（').Append(label).Append('）');
+            }
+        }
+
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// その行の見出し（<b>純関数</b>）＝名前が重なっていなければ名前そのもの、
+    /// 重なっていれば <c>名前（0x&lt;LowPart&gt;）</c>。
+    /// </summary>
+    private static string Label(OsGpuMemoryRow row, IReadOnlyList<OsGpuMemoryRow> rows)
+    {
+        var same = 0;
+        foreach (var other in rows)
+        {
+            if (other is not null
+                && string.Equals(other.Name, row.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                same++;
+            }
+        }
+
+        if (same <= 1)
+        {
+            return row.Name;
+        }
+
+        var at = row.Luid.LastIndexOf("_0x", StringComparison.OrdinalIgnoreCase);
+        var tail = at >= 0 ? row.Luid[(at + 1)..] : row.Luid;
+        return row.Name + "（" + tail + "）";
     }
 
     /// <summary>

@@ -1,9 +1,11 @@
 """裁定 87 ⑴・⑵: ``/ywk/status.memory`` と ``device.pci_bus_id`` の型.
 
 Why it exists (裁定 67 ⑵⑶): the launcher polls ``/ywk/status`` every two seconds
-and draws 使用量 (``allocated``), 占有量 (``reserved``), the whole card
-(``gpu_used``/``gpu_total``) and 話者ごとの潜在の大きさ (``latents``) from this one
-field.  Nothing here loads a model -- ``FakeRuntime`` names the device and the
+and draws 使用量 (``allocated``), 占有量 (``reserved``) and 話者ごとの潜在の大きさ
+(``latents``) from this one field.  ``gpu_used``/``gpu_total`` are still served
+here unchanged, but since 裁定 110 the launcher no longer shows them as "the
+whole card" -- it reads the Windows GPU counters for that instead.
+Nothing here loads a model -- ``FakeRuntime`` names the device and the
 four torch entry points are stood in for, because what has to be proved is the
 *shape and the failure behaviour*, not the driver: that CPU and 未読込 answer
 ``null`` rather than a wrong number, that a speaker who was never baked is
@@ -156,7 +158,13 @@ def test_memory_reports_numbers_on_a_gpu(client, baseline, monkeypatch):
 
 
 def test_gpu_used_is_the_whole_card(client, baseline, monkeypatch):
-    """``gpu_used`` はカード全体（他プロセス込み）＝allocator の値とは別物."""
+    """``gpu_used == gpu_total - gpu_free``＝allocator の値とは別物.
+
+    裁定 110（2026-09-08）＝**「カード全体（他プロセス込み）」という読みは撤回された**
+    （Windows の ROCm では自プロセス相当で、他プロセスを含まない＝実測は
+    ``docs/design/ben-d-launcher.md`` §27）。ここで釘付けするのは **JSON の算術**だけで、
+    wrapper の側は何も変わっていない（欄も出所も据え置き）。名前は台帳の履歴として残す。
+    """
     fake_gpu(monkeypatch, baseline)
     memory = memory_of(client)
     assert memory["gpu_used"] == GPU_TOTAL - GPU_FREE

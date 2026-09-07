@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Audio;
 using IrodoriTtsYwk.Launcher.Contracts;
+using IrodoriTtsYwk.Launcher.Services.Gpu;
 using IrodoriTtsYwk.Launcher.Services.Voices;
 using IrodoriTtsYwk.Launcher.ViewModels;
 using Xunit;
@@ -17,7 +18,8 @@ namespace IrodoriTtsYwk.Launcher.Tests;
 /// <list type="number">
 /// <item>裁定 87 ⑴＝<c>/ywk/status.memory</c> の欄（device／allocated／reserved／max／
 /// gpu_total／gpu_free／gpu_used／latents／latents_total／sampled_at／error）。</item>
-/// <item>裁定 67 ⑶＝<b>使用量＝allocated・占有量＝reserved・GPU 全体＝gpu_used／gpu_total</b>。</item>
+/// <item>裁定 67 ⑶＝<b>使用量＝allocated・占有量＝reserved</b>（<b>GPU 全体</b>は裁定 110 で
+/// torch の <c>gpu_used</c>／<c>gpu_total</c> から <b>Windows の計数</b>へ移った）。</item>
 /// <item>裁定 67 ⑵・low 13＝概算の<b>主役は 1 名あたり</b>（全員分は「同時に載せたときの上限」）。</item>
 /// <item>裁定 67 ⑴＝潜在キャッシュの ON／OFF と「焼いた話者 n 名・合計 m MB」。</item>
 /// <item>low 3＝状態の書き手は状態機械 1 つ（<c>/ywk/status</c> の標本は状態を動かさない）。</item>
@@ -111,27 +113,43 @@ public sealed class RoundTwoStatusBandTests
     [Fact]
     public void 使用量と占有量とGPU全体をこの順で出す()
     {
-        // 裁定 67 ⑶＝使用量＝allocated・占有量＝reserved・GPU 全体＝gpu_used／gpu_total
-        var text = StatusViewModel.DescribeMemory(new MemoryStatus
+        // 裁定 67 ⑶＝使用量＝allocated・占有量＝reserved。
+        // **GPU 全体は torch の gpu_used／gpu_total ではなくなった**（裁定 110・2026-09-08）＝
+        // Windows の計数（OS の行）から出す。torch の 2 欄の順はそのまま。
+        var rows = new[]
         {
-            Device = "cuda:0",
-            AllocatedBytes = 1073741824,
-            ReservedBytes = 2147483648,
-            GpuTotalBytes = 4294967296,
-            GpuUsedBytes = 3221225472,
-        });
+            new OsGpuMemoryRow("luid_0x00000000_0x000137d0", "GPU A",
+                3221225472, 3221225472, 4294967296),
+        };
+
+        var text = StatusViewModel.DescribeMemory(
+            new MemoryStatus
+            {
+                Device = "cuda:0",
+                AllocatedBytes = 1073741824,
+                ReservedBytes = 2147483648,
+                GpuTotalBytes = 4294967296,
+                GpuUsedBytes = 3221225472,
+            },
+            true,
+            rows);
 
         Assert.Contains("使用量 1.00 GiB", text, StringComparison.Ordinal);
         Assert.Contains("占有量 2.00 GiB", text, StringComparison.Ordinal);
         Assert.Contains("GPU 全体 3.00 GiB / 4.00 GiB", text, StringComparison.Ordinal);
         Assert.True(text.IndexOf("使用量", StringComparison.Ordinal)
             < text.IndexOf("占有量", StringComparison.Ordinal));
+        Assert.True(text.IndexOf("占有量", StringComparison.Ordinal)
+            < text.IndexOf("GPU 全体", StringComparison.Ordinal));
     }
 
     [Fact]
     public void 読めない欄は0ではなく棒で出す()
     {
-        var text = StatusViewModel.DescribeMemory(new MemoryStatus { AllocatedBytes = 1024 });
+        var text = StatusViewModel.DescribeMemory(
+            new MemoryStatus { AllocatedBytes = 1024 },
+            true,
+            [new OsGpuMemoryRow("luid_0x00000000_0x000137d0", "GPU A", 1024, null, null)]);
 
         Assert.Contains("占有量 " + UiText.Missing, text, StringComparison.Ordinal);
         Assert.Contains("GPU 全体 " + UiText.Missing + " / " + UiText.Missing, text, StringComparison.Ordinal);

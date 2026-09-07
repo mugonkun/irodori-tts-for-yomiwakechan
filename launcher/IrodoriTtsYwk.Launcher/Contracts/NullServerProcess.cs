@@ -31,6 +31,9 @@ public sealed class NullServerProcess : IServerProcess
     /// <summary>何も起こさないので標本も無い。</summary>
     public StatusResponse? LatestStatus => null;
 
+    /// <summary>同じく、数える相手（pid）が無いので OS の行も無い（裁定 110）。</summary>
+    public System.Collections.Generic.IReadOnlyList<Services.Gpu.OsGpuMemoryRow> LatestOsGpuMemory => [];
+
     public event EventHandler<ServerStateChangedEventArgs>? StateChanged;
 
     public event EventHandler<ServerLogLineEventArgs>? LogLine;

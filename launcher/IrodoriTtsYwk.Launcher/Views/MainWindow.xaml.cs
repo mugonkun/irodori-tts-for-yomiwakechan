@@ -65,7 +65,8 @@ public partial class MainWindow : Window
         AppServices.Server.LogLine += OnServerLogLine;
         AppServices.Server.StatusSampled += OnStatusSampled;
         _model.ApplyServerState(AppServices.Server.State, AppServices.Server.FailureReason);
-        _model.ApplyStatusSample(AppServices.Server.LatestStatus);
+        _model.ApplyStatusSample(
+            AppServices.Server.LatestStatus, AppServices.Server.LatestOsGpuMemory);
 
         Loaded += OnLoaded;
     }
@@ -128,7 +129,15 @@ public partial class MainWindow : Window
     private void OnServerLogLine(object? sender, ServerLogLineEventArgs e) =>
         Dispatcher.BeginInvoke(() => _model.AppendLog(e.Event.Line));
 
-    /// <summary>見張りが採った <c>/ywk/status</c> の標本（窓は読むだけ＝low 3）。</summary>
-    private void OnStatusSampled(object? sender, StatusResponse e) =>
-        Dispatcher.BeginInvoke(() => _model.ApplyStatusSample(e));
+    /// <summary>
+    /// 見張りが採った <c>/ywk/status</c> の標本（窓は読むだけ＝low 3）。
+    /// <b>OS の GPU 計数も同じ回の物を読む</b>（裁定 110）＝見張りが標本の直後に置いた
+    /// <see cref="IServerProcess.LatestOsGpuMemory"/> をそのまま配る。PDH を叩くのは
+    /// <b>開設も collect も</b>見張りの糸で、UI の糸（ここ）では 1 度も走らない。
+    /// </summary>
+    private void OnStatusSampled(object? sender, StatusResponse e)
+    {
+        var osGpuMemory = AppServices.Server.LatestOsGpuMemory;
+        Dispatcher.BeginInvoke(() => _model.ApplyStatusSample(e, osGpuMemory));
+    }
 }

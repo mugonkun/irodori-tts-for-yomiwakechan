@@ -584,17 +584,26 @@
 | `allocated` | **このプロセスが今つかんでいる量**（ランチャの表示＝**使用量**） | `torch.cuda.memory_allocated` |
 | `reserved` | **このプロセスが OS から取り上げてある量**（同＝**占有量**）。`allocated` **以上**（等しくもなる＝読込前はどちらも 0） | `torch.cuda.memory_reserved` |
 | `max` | このプロセスの `allocated` の**累積ピーク**（プロセス起動以来） | `torch.cuda.max_memory_allocated` |
-| `gpu_total` | **カード全体**の容量 | `torch.cuda.mem_get_info`（**ROCm も同じ口**） |
-| `gpu_free` | **カード全体**の空き | 同上 |
-| `gpu_used` | **`gpu_total − gpu_free`＝カード全体の占有＝他プロセス込み** | 同上 |
+| `gpu_total` | **wrapper の torch／HIP から見た値**（裁定 110＝下の註） | `torch.cuda.mem_get_info`（**ROCm も同じ口**） |
+| `gpu_free` | 同上（空き） | 同上 |
+| `gpu_used` | `gpu_total − gpu_free`。〔**裁定 110（2026-09-08）で読み替え**＝**「カード全体（他プロセス込み）」ではない**。Windows の ROCm では**自プロセス相当**で、他プロセスを含まない〕 | 同上 |
 | `latents` | 焼いてある話者の `latents/<stem>.pt` の**実サイズ**を**話者 id で引いた表** | `stat` |
 | `latents_total` | `latents` の合計 | 同上 |
 | `sampled_at` | 測った時刻（ISO 8601・UTC・`…Z`） | — |
 
 - **`gpu_used` と `allocated`／`reserved` は測っている物が違う**。前 3 つは torch の allocator が見た
-  **このプロセス**、`gpu_*` は HIP／CUDA のドライバが見た**カード全体（他プロセス込み）**である。
+  **このプロセス**、`gpu_*` は HIP／CUDA のドライバが見た値である。
   Radeon 機では両者が大きく食い違うことがある（`docs/radeon.md` §3 と §7-7＝in-process 対 OS 側）。
   **片方の数字でもう片方を否定しない。**
+- 〔**裁定 110（2026-09-08）＝`gpu_*` を「カード全体」と読むのをやめた**。JSON の形は**据え置き**
+  （欄も出所も変えない）。読み替えるのは**意味**だけである＝`gpu_used` は **wrapper の torch／HIP から
+  見た値**で、Windows の ROCm では**自プロセス相当・他プロセスを含まない**。実測（Radeon 8060S
+  gfx1151・2026-09-08・wrapper pid 31556）＝同じ瞬間に `gpu_used` **3.66 GiB** に対し、Windows の
+  計数は `GPU Process Memory\Dedicated Usage`（同じ pid）**10.84 GiB**・
+  `GPU Adapter Memory\Dedicated Usage`（カード全体）**29.79 GiB**（タスク マネージャーの「専用」
+  29.8 GB と一致）。**ランチャは Windows の計数（専用メモリ）を別に読んで出す**（設計は
+  `docs/design/ben-d-launcher.md` §27）ので、状態帯に `gpu_used`／`gpu_total` は出さなくなった。
+  **wrapper 側は何も変えない**＝この 3 欄は互換のためそのまま出し続ける。〕
 - **`max` はピーク・`reserved` は現在**＝`allocated ≤ reserved ≤ max` は**不変条件ではない**
   （gfx1151 の実射で `max` 4,002,721,792 ＞ `reserved` 2,212,495,360）。
 - **`gpu_total` が何の全体かは機体で違う**＝離散 GPU なら VRAM だが、**gfx1151 は共有メモリ**なので
@@ -623,7 +632,10 @@
 `ywkstatusが変種を名乗る`／`ywkstatusのdeviceにhipとgcnarchが載る`／`rocm変種はfp32指定でexit2`／
 `rocm変種はMIOpenのdbを利用者データ配下に置く`／`ywkstatusにprecomputeの欄が在る`／
 `memoryは裁定87の10欄を名乗る`／`cpuではmemoryの数値6欄がnull`／`未読込でもmemoryの数値6欄がnull`／
-`GPUではmemoryに数値が載る`／`gpuusedはカード全体`／`latentsは話者idで引ける`／
+`GPUではmemoryに数値が載る`／`gpuusedはカード全体`〔**題目は台帳の履歴**＝この読みは
+**裁定 110（2026-09-08）で撤回**した（上の註）。釘そのものは
+`gpu_used == gpu_total − gpu_free` の**算術だけ**で、いまも同じことを検めている＝
+`tests/contract/test_memory.py::test_gpu_used_is_the_whole_card`〕／`latentsは話者idで引ける`／
 `焼いていない話者はlatentsに載らない`／`latentsはcpuでも読める`／`pcibusidは文字列`／
 `memoryの取得に失敗しても200でerrorが1行`／`memoryのerrorに絶対パスが0件`。
 

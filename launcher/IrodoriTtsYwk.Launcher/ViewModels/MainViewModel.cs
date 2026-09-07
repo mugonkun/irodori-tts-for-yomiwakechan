@@ -437,9 +437,15 @@ public sealed class MainViewModel : ObservableObject
     /// null＝口が無い・止まっている＝画面は「未対応」に落ちる。
     /// </para>
     /// </summary>
-    public void ApplyStatusSample(StatusResponse? status)
+    /// <param name="status">見張りが採った <c>/ywk/status</c>（null＝止まっている・口が無い）。</param>
+    /// <param name="osGpuMemory">
+    /// 同じ回に見張りが採った OS の GPU 計数（裁定 110）。窓は
+    /// <c>IServerProcess.LatestOsGpuMemory</c> を読んで渡すだけ＝<b>ここも叩かない</b>。
+    /// </param>
+    public void ApplyStatusSample(
+        StatusResponse? status, IReadOnlyList<OsGpuMemoryRow>? osGpuMemory = null)
     {
-        Status.ApplyStatus(status);
+        Status.ApplyStatus(status, osGpuMemory);
         Voices.ApplyMemory(status?.Memory);
 
         // 走行中で断られた焼きを、口が空いたところで出し直す（統合席 §19）。

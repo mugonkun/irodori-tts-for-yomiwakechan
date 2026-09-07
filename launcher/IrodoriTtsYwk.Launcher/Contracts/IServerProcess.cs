@@ -442,6 +442,17 @@ public interface IServerProcess : IAsyncDisposable
     /// </summary>
     StatusResponse? LatestStatus { get; }
 
+    /// <summary>
+    /// <b>見張り 1 本が同じ回に採った OS の GPU 計数</b>（裁定 110・2026-09-08）。
+    /// 起こしていない・計数が読めない・その pid がどの GPU も触っていなければ<b>空</b>。
+    /// <para>
+    /// <b>窓はこれも読むだけ</b>（low 3）＝<see cref="StatusSampled"/> が上がった回に
+    /// この欄を読み、同じ標本として画面へ配る。PDH は<b>開設も collect も</b>見張りの糸で回っており
+    /// （query を開くのは最初の標本の回＝是正 2026-09-08）、UI の糸では 1 度も走らない。
+    /// </para>
+    /// </summary>
+    IReadOnlyList<Services.Gpu.OsGpuMemoryRow> LatestOsGpuMemory { get; }
+
     event EventHandler<ServerStateChangedEventArgs>? StateChanged;
 
     /// <summary>

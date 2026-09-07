@@ -131,8 +131,9 @@
 
 **この 3 つは走らせながら `GET /ywk/status.memory` で見える**（`decisions.md` 87 ⑴・67 ⑵⑶＝ランチャが
 2 秒ごとに読んで常時表示する）。allocator の値が `allocated`（使用量）・`reserved`（占有量）・`max`
-（累積ピーク）、**カード全体（他プロセス込み）**が `gpu_used`／`gpu_total`（`torch.cuda.mem_get_info`＝
-**ROCm も同じ口**）。**潜在キャッシュの大きさは `memory.latents`**＝焼いてある話者の
+（累積ピーク）、`gpu_used`／`gpu_total` が `torch.cuda.mem_get_info`（**ROCm も同じ口**）＝
+~~カード全体（他プロセス込み）~~〔**裁定 110（2026-09-08）で撤回**＝Windows の ROCm では自プロセス
+相当で他プロセスを含まない。カード全体は §7-7 の追記のとおり Windows の計数で採る〕。**潜在キャッシュの大きさは `memory.latents`**＝焼いてある話者の
 `latents/<stem>.pt` の実サイズを**話者 id で引いた表**（＋合計 `latents_total`・単位はバイト）で、
 この機体の実測は **11 名で 1,105,836 B**（§8-3）＝**VRAM ではなくディスク**の話である
 （潜在は射ごとのピークを増やさない＝`research/lab/notes/40` §6-2）。焼いていない話者は行ごと出ない。
@@ -377,6 +378,11 @@ wrapper の env が効いていることの証明）。
   VRAM の少ない dGPU で同じ設定を使うと危ない**＝`empty_cache_interval` の既定は ROCm 版で
   別途考える価値がある（**当席は裁定しない**）。**`interval=0` と `=10` を並べて撃った材料は §7-8 ⑶**。
 - `Non Local Usage` は全標本 0・`Shared Usage` は 124〜142 MB。
+- **〔裁定 110（2026-09-08）＝ここで使った計数がランチャの正本になった〕**＝状態帯の「このプロセス」は
+  この `GPU Process Memory`（`Dedicated Usage`）、「GPU 全体」は同じ LUID の
+  `GPU Adapter Memory\Dedicated Usage`（＝タスク マネージャーの「専用」）である。**共有は数えない**
+  （司令官の指示）。総量は DXGI の `DedicatedVideoMemory`（この機体 63.83 GiB）。実測と設計は
+  `docs/design/ben-d-launcher.md` §27。
 - **`docs/acceptance.md` の「bf16 常駐 ≤ 3.2 GiB」は "読込直後" なら 3.37 GiB でほぼ境界、
   "セッション累積" では桁が違う**。研究段の 3.03 GB（`40` §1）は torch 側の射ごとのピークで、
   上の値とは**測っている物が違う**。両方を並べて読むこと。

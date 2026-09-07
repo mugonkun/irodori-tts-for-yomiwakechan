@@ -224,7 +224,15 @@ dotnet test  launcher\IrodoriTtsYwk.sln --nologo   # 356 本（うち L3 が 130
 |---|---|---|
 | **使用量** | `allocated` | torch の allocator（**このプロセス**） |
 | **占有量** | `reserved` | 同上 |
-| **GPU 全体** | `gpu_used` / `gpu_total` | `mem_get_info`（**カード全体・他プロセス込み**） |
+| **GPU 全体** | ~~`gpu_used` / `gpu_total`~~ | ~~`mem_get_info`（**カード全体・他プロセス込み**）~~ |
+
+〔**裁定 110（2026-09-08）で撤回**＝⑴ 状態帯は `gpu_used`／`gpu_total` を**出さなくなった**・
+⑵「カード全体（他プロセス込み）」という読み自体が撤回された（Windows の ROCm では
+**自プロセス相当**で、他プロセスを含まない）。いまの帯は
+**使用量／占有量＝torch の allocator の中**（頭に `torch ` と名乗る）＋
+**このプロセス／GPU 全体＝Windows の GPU 計数（PDH）と DXGI の専用メモリ**（共有メモリは含まない・
+TTS が使っている GPU ごとに 1 組）である。設計は `docs/design/ben-d-launcher.md` §27、
+JSON の欄そのものは互換のため据え置き（`docs/contract.md` ⑹ 6-1）。〕
 
 `null` は `—`（0 と混ぜない）・`device` が `cpu` なら「CPU（GPU メモリなし）」・欄ごと無ければ
 「未対応」。`sampled_at` は**文字列のまま**持つ（地域設定で揺らさない）。

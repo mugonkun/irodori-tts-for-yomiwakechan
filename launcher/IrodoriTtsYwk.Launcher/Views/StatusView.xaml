@@ -122,8 +122,11 @@
     </WrapPanel>
 
     <!--
-      4 行目＝GPU メモリ（裁定 67 ⑵⑶・87 ⑴）。
-      使用量＝allocated・占有量＝reserved・GPU 全体＝gpu_used／gpu_total。
+      4 行目＝GPU メモリ（裁定 67 ⑵⑶・87 ⑴・110）。
+      torch 使用量＝allocated・占有量＝reserved（torch の allocator の中）。
+      このプロセス／GPU 全体＝Windows の GPU 計数（PDH）＝TTS が使っている GPU ごとに 1 組。
+      wrapper の gpu_used／gpu_total（torch/HIP）はもう帯に出さない（裁定 110＝Windows の ROCm では
+      カード全体でも自プロセスの OS 上の占有でもない）。JSON と契約 ⑹ は据え置き。
       /ywk/status.memory が無ければ「未対応」・cpu なら「CPU（GPU メモリなし）」。
     -->
     <Border x:Name="MemoryPanel" Grid.Row="3" Margin="0,10,0,0" Padding="10,8"
@@ -147,7 +150,7 @@
                      Style="{StaticResource ValueText}" Text="{Binding VoiceMemoryText, Mode=OneWay}" />
         </StackPanel>
         <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#666666" FontSize="11"
-                   Text="使用量＝torch が使っている分・占有量＝torch が確保している分・GPU 全体＝他のプログラムを含めたカード全体の占有です。wav 参照の話者は載せるたびに 0.7 GB 級を使い、焼いた参照潜在（.pt）は増えません。" />
+                   Text="使用量・占有量＝torch の allocator の中の値です。このプロセス＝OS（Windows の GPU 計数）が見た TTS のプロセスの専用 GPU メモリ、GPU 全体＝TTS が使っている GPU の専用メモリの占有（他のプログラム込み・共有メモリは含めません）／その GPU の専用メモリの総量です。複数の GPU を使っているときは GPU ごとに出ます。wav 参照の話者は載せるたびに 0.7 GB 級を使い、焼いた参照潜在（.pt）は増えません。" />
       </StackPanel>
     </Border>
 

@@ -66,6 +66,9 @@ public sealed class RoundTwoIntegrationTests : IDisposable
 
         public StatusResponse? LatestStatus => null;
 
+        /// <summary>OS の GPU 計数も無い（裁定 110）。</summary>
+        public IReadOnlyList<IrodoriTtsYwk.Launcher.Services.Gpu.OsGpuMemoryRow> LatestOsGpuMemory => [];
+
 #pragma warning disable CS0067 // 偽物なので誰も上げない
         public event EventHandler<ServerStateChangedEventArgs>? StateChanged;
 

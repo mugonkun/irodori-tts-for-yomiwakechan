@@ -375,7 +375,7 @@ D-1〜D-6 を撃った。`probe/common.ps1`・`probe/d-launch-probe.ps1`・`buil
 | 檔 | 役 |
 |---|---|
 | `probe/common.ps1` | UIA の共通ドライバ（本体 `probe/ai-multi-p7/common.ps1` の型・**檔は写していない**）。ASCII 限定なので日本語は `New-JpText 0x5F85,0x6A5F` のように**符号位置から組む** |
-| `probe/d-launch-probe.ps1` | 無人検分の本体（受け入れ条件 D-7）。**27 段**を撃って 1 段でも落ちたら非ゼロ終了。`-BadDeviceOnly` で D-1 だけを 3 秒で撃てる |
+| `probe/d-launch-probe.ps1` | 無人検分の本体（受け入れ条件 D-7）。**27 段**を撃って 1 段でも落ちたら非ゼロ終了。`-BadDeviceOnly` で D-1 だけを 3 秒で撃てる〔**この「27 段」は 2026-09-05 のこの席の記帳**＝段はその後も増えており、いまの総数は §24 の実走 `=== 0 failure(s) of 89 ===` と §27-5（裁定 110 で **89 → 90**）を見ること。「1 段でも落ちたら非ゼロ終了」の決めだけは変わっていない〕 |
 | `build/release-build.ps1` | publish（SelfContained 1 exe）→ 混入検分 6 項 → pdb 退避 → 版刻印 zip |
 | `launcher/…Tests/IntegrationSeatTests.cs` | 実機で見つけた穴を釘付けする 8 本（合計 **370 本**が緑） |
 
@@ -480,7 +480,7 @@ IMPORT   exit=0  python 3.12.10 / torch 2.10.0+cpu cuda None / torchaudio 2.10.0
    いまは `WrapperClient.JsonOptions` の `SnakeCaseLower` が救っているが、snake_case にならない綴りを
    足した日に黙って null になる。**契約側に属性を書くのが筋**（骨組み席の檔なので統合席も触っていない）。
 4. **UIA 検分は RTX 移行後にもう一度**（裁定 69 ⑶）。台本は変種とポートを引数で受けるので
-   `-Variant cu130 -Port 18094 -ReadyTimeoutSeconds 120` で同じ 27 段が撃てる。CUDA 機では
+   `-Variant cu130 -Port 18094 -ReadyTimeoutSeconds 120` で同じ 27 段が撃てる〔**段数はこの日（2026-09-05）の値**＝いまは §24／§27-5 の 89〜90 段。撃ち方は同じ〕。CUDA 機では
    `nvidia-smi` 経路（0.04 s）に落ちるので、D-2 の所要はここより速くなるはずである。
 5. **`probe/d-launch-probe.ps1` は `HF_HOME` を機体の既存キャッシュへ向ける**
    （`%USERPROFILE%\.cache\huggingface`・`HF_HUB_OFFLINE=1` で読むだけ）。
@@ -593,7 +593,9 @@ count = 2
 - `allocated`／`reserved`／`max`＝torch の allocator（`memory_allocated`／`memory_reserved`／
   `max_memory_allocated`）＝**このプロセス**。
 - `gpu_total`／`gpu_free`＝`torch.cuda.mem_get_info`（**ROCm も同じ口**）・
-  `gpu_used = gpu_total − gpu_free`＝**カード全体（他プロセス込み）**。
+  `gpu_used = gpu_total − gpu_free`＝~~**カード全体（他プロセス込み）**~~
+  〔**§27（裁定 110・2026-09-08）で撤回**＝Windows の ROCm では**カード全体ではない**（自プロセス
+  相当）。JSON は据え置き・**状態帯には出さない**〕。
 - `latents`＝`latents/<stem>.pt` の**実サイズ**を**話者 id で引いた表**。**焼いていない話者は行ごと出ない**
   （`0` と「まだ焼いていない」を混ぜない）。`latents_total` はその合計。
 - **device が `cpu` か未読込のとき数値 6 欄は `null`**（`0` ではない）。**そのときも `latents` は出る**。
@@ -641,9 +643,16 @@ count = 2
    `gpu_used／gpu_total` の帯は「VRAM の残り」ではなく**共有プールの残り**を意味する。
    離散 GPU（RTX）では素直に VRAM になる＝**同じ 1 本の帯で意味が変わる**ので、
    ランチャの表示は `gcn_arch`（Radeon なら非 null）で言い分けるか、割合ではなく実数で出すこと。
+   〔**§27（裁定 110・2026-09-08）で撤回**＝状態帯は `gpu_used`／`gpu_total` を**もう出さない**。
+   「GPU 全体」の分母は DXGI の `DedicatedVideoMemory`（この機体 63.83 GiB＝共有は含まない）に
+   なったので、**`gcn_arch` で言い分ける必要は無い**（宛先の帯ごと無くなった）。JSON の
+   `gpu_total` の意味＝共有プール、という読みはそのまま残る。〕
 2. **`gpu_used`（2,535,399,424＝2.36 GiB）と OS の `GPU Process Memory`（`docs/radeon.md` §7-7 の
    読込直後 3.37 GiB）は一致しない**。前者はドライバの `mem_get_info`、後者は Windows の別勘定＝
    **測っている物が違う**。**片方でもう片方を否定しない**（§7-7 の注意書きと同じ）。
+   〔**§27（裁定 110）で決着**＝どちらが「カード全体」かを測り直した。答えは**どちらでもない**＝
+   `gpu_used` は自プロセス相当、`GPU Process Memory` も自プロセス。カード全体は 3 本目の
+   `GPU Adapter Memory\Dedicated Usage` である。画面が「GPU 全体」と名乗ってよいのはこれだけ。〕
 3. **`max > reserved` は普通に起きる**（実射で `max` 4,002,721,792 ＞ `reserved` 2,212,495,360）。
    `max` は**プロセス起動以来のピーク**・`reserved` は**現在**なので、
    ランチャは `allocated ≤ reserved ≤ max` を**不変条件にしてはいけない**。
@@ -2415,3 +2424,230 @@ CUDA 版で落とした原檔が残っていると、その檔はどの台帳も
 **実測**＝`dotnet build launcher/IrodoriTtsYwk.sln -c Release` **0 警告 0 エラー**・
 `dotnet test` **610 合格**（従前 603＋7）。窓を立てての UIA 実射は**していない**
 （`MainWindow`／`AboutTitleText`／`FirstRunWizard` の窓題は未実測）。
+
+## 27. GPU メモリは Windows の計数から（裁定 110・2026-09-08）の記帳（opus サブ席）
+
+司令官の指示（逐語）＝「**Windowsの計数を読もうか。複数GPUの場合も想定して適切に対処よろしく。**」
+「**共有メモリは除外。あくまでTTSエンジンが使用しているGPUが集計対象。**」
+
+### 27-1 なぜ変えたか（実測・この機体・2026-09-08 01:3x）
+
+機体＝Radeon 8060S（gfx1151・共有メモリ）・wrapper **pid 31556**（18088・待機）。同じ瞬間の 4 通りの値：
+
+| 誰が測ったか | 値 | 何を測っているか |
+|---|---:|---|
+| `/ywk/status.memory.allocated`（torch） | 2.07 GiB | torch の allocator が握っている量 |
+| 同 `reserved` | 2.64 GiB | torch が OS から取り上げてある量 |
+| 同 `gpu_used`（`torch.cuda.mem_get_info`） | 3.66 GiB | **自プロセス相当**（他プロセスを含まない） |
+| `GPU Process Memory(pid_31556_…)\Dedicated Usage` | **10.84 GiB** | OS から見た**この pid** の専用 GPU メモリ |
+| `GPU Adapter Memory(luid_…_0x000137d0)\Dedicated Usage` | **29.79 GiB** | **カード全体（他プロセス込み）**＝タスク マネージャーの「専用」29.8 GB と一致 |
+
+同じ瞬間に `llama-server`（pid 3688）が 16.20 GiB・`dwm`（pid 2968）が 0.81 GiB を持っていた＝
+**カード全体は他人のぶんを含む**。裁定 87 ⑴ の「`gpu_used`＝カード全体（他プロセス込み）」は
+**Windows の ROCm では成り立っていない**（`gpu_used` 3.66 GiB ＜ 自プロセスの OS 上の 10.84 GiB）。
+帯の「GPU 全体」がその値を名乗り続けるのは**嘘**なので、OS の計数を読む。
+
+〔**この改訂では触っていない事実**＝1 射しても解放されない（`reserved` 2.34 → 2.64 GiB のまま・
+OS 側 10.84 GiB は平ら）。上流の `empty_cache` は切ってある（`IRODORI_EMPTY_CACHE_INTERVAL=0`＝
+`app.py`）。**この件は裁定 110 の範囲外**である。〕
+
+### 27-2 決めた 7 つ（D1〜D7）
+
+- **D1 出所＝Windows の PDH をランチャ（C#）で読む。** `pdh.dll` への P/Invoke だけ＝
+  **NuGet は 1 つも増やさない**（`licenses/dotnet` の台帳は .NET と NAudio しか許していない）。
+  道は 3 本＝`\GPU Process Memory(*)\Dedicated Usage`・`\GPU Adapter Memory(*)\Dedicated Usage`・
+  控えの `\GPU Local Adapter Memory(*)\Local Usage`（区画 `_part_N` は LUID ごとに足す）。
+  **query は 1 本を開きっぱなし**＝ワイルドカードは `PdhCollectQueryData` のたびに展開し直され、
+  新しい pid が勝手に載る。メモリ系は瞬時値なので**助走の 2 標本は要らない**。
+- **D2 総量＝DXGI の `DedicatedVideoMemory` だけ。** `CreateDXGIFactory1` →`EnumAdapters1` →
+  `GetDesc1`。**`SharedSystemMemory` は読まない**（司令官の指示 2＝共有メモリは除外）。
+  ソフトウェア アダプタ（`DXGI_ADAPTER_FLAG_SOFTWARE`・`Microsoft Basic Render Driver`）は数えない。
+  DXGI の `LUID` は `luid_0x<HighPart:x8>_0x<LowPart:x8>`（**小文字 8 桁**＝`OsGpuMemory.LuidToken` の
+  実装どおり）に綴り直して PDH の instance 名と突き合わせる
+  （**大小は無視**＝実測で PDH が `0x000137D0`・DXGI が `0x000137d0` と別の大小で出た）。
+- **D3 集計の相手＝TTS エンジンが使っている GPU だけ**（司令官の指示 2）。設定の `gpuName`／`gpuUuid` とは
+  突き合わせない＝**その pid に `GPU Process Memory` の instance があり値が 0 より大きい LUID** が相手。
+  複数 GPU はそのまま複数行になる（模型と codec を別の GPU に載せれば 2 行・python が触っていない
+  iGPU は出ない）。pid が無い（止まっている）・計数が読めない・CPU 変種＝**行は 1 つも出ない**で、
+  既存の文言（`UiText.NotRunning`／「CPU（GPU メモリなし）」）がそのまま出る。
+- **D4 帯の綴り**（`StatusViewModel.DescribeMemory`／`DescribeOsGpuRows`＝純関数）：
+  - GPU 1 枚＝`torch 使用量 2.07 GiB（最大 4.57 GiB）／占有量 2.64 GiB／このプロセス 11.20 GiB／GPU 全体 30.18 GiB / 63.83 GiB（AMD Radeon(TM) 8060S Graphics）`
+  - GPU 2 枚以上＝組ごとに名前を頭に立てる＝`…／GPU A＝このプロセス x／GPU 全体 y / z／GPU B＝…`。
+    **同じ名前が並んだら LUID の下位を添える**（是正・2026-09-08）＝`AMD Radeon(TM) 8060S Graphics（0x000137d0）`。
+    この機体の DXGI は同名・同総量のアダプタを 4 つ名乗るので、名前だけでは読み分けられない。
+  - **wrapper の `gpu_used`／`gpu_total` は帯から消えた**（JSON と契約 ⑹ は据え置き＝互換のため）。
+  - 読めない数は `—`（`0 B` と混ぜない・裁定 87 ⑴ の作法のまま）。DXGI が読めなければ名前は LUID の綴り。
+    **「GPU 全体」は使える数のときだけ名乗る**（是正・2026-09-08）＝アダプタ側の instance が
+    **値 0** なら控え（`GPU Local Adapter Memory`）へ落ち、控えも 0 なら `—`。
+    **自分（このプロセス）より小さい「全体」も出さない**＝帯が自分自身と矛盾しない。
+- **D5 配線＝見張りの糸で、`/ywk/status` と同じ回に採る**
+  （**起動待ちは 1 s**＝`ServerProcess.PollInterval`・**ready の後は 2 s**＝`WatchInterval`。
+  どちらも `SampleAsync` の中で標本と同じ回に採る）。
+  `SampleAsync` が標本を公開する直前に `LatestOsGpuMemory` を書き、窓は `StatusSampled` が
+  上がった回にその欄を読むだけ（**窓は読むだけ**＝low 3・裁定 88 ⑶）。
+  **PDH は collect も開設も UI の糸で 1 度も走らない**（是正・2026-09-08＝
+  改訂の初稿は `ServerProcess` の引数なしコンストラクタ＝`LauncherComposition.Compose()`＝
+  `App.OnStartup`＝**UI の糸・しかも窓を作る前**で query を開いており、**実測 221.8〜229.5 ms**
+  だけ起動を止めていた。開設は最初の `Sample()`＝見張りの糸に遅らせてある）。
+  代金の実測（この機体）＝**開設 221.8／228.0 ms（2 走）＝プロセスに 1 度だけ**
+  （内訳＝`PdhOpenQueryW` 1.7 ms ＋ `\GPU Process Memory(*)` の追加 214.1 ms＝
+  `pdh.dll` の perflib の初期化）・
+  **1 標本は連続撃ちで 0.03〜0.07 ms／見張りと同じ 2 s の間を空けると 0.17〜0.27 ms**
+  （`PdhCollectQueryData` ＋ 3 本の `PdhGetFormattedCounterArrayW`）。
+  連続撃ちの数字は PDH が直前の標本を返すぶんだけ安い＝**実費は 2 s 間隔のほう**である
+  （どちらも 5 ms の物差しの内側）。
+- **D6 純関数に切る**＝instance 名の読み（`OsGpuMemory.ParseInstance`）・集計（`Aggregate`）・
+  綴り（`DescribeMemory`／`DescribeOsGpuRows`）は実機なしで釘付けできる。interop は
+  `IGpuMemoryCounters`（PDH）と `IGpuAdapterInfoSource`（DXGI）の 2 つの口の裏に閉じてある。
+- **D7 釘＝xUnit 40 本**（610 → **650**＝合格 649＋スキップ 1）。うち 1 本は**実機の PDH と DXGI を
+  叩く**が、環境変数 `YWK_LIVE_GPU=1` のときだけ走る。無い回は**理由つきのスキップとして数える**
+  （是正・2026-09-08＝初稿は「何も検めずに合格」だったので、この 1 本が壊れても合格数が動かなかった。
+  `SkippableFact` は第三者パッケージ＝台帳が許さないので、`FactAttribute` を継いだ
+  `LiveGpuFactAttribute` のコンストラクタで `Skip` を立てる＝パッケージは 1 つも増えない）。
+  釘の内訳＝instance 名の読み **15**（`Theory` の 11 を含む）・集計 **9**（値 0 のアダプタ・
+  自分より小さい全体を含む）・係 **5**（**開くのは最初の標本の回で 1 度だけ**・開設の理由 1 行・
+  collect の理由 1 行）・帯の綴り **9**（同名 2 枚の読み分けを含む）・**見張りの配線 1**
+  （`StatusSampled` の回にはもう新しい行が置かれている・止まったら空へ戻る＝テスト用
+  コンストラクタに口を足して押さえた）・実機 **1**。
+
+### 27-3 interop の面（檔と関数）
+
+| 檔 | 中身 |
+|---|---|
+| `Services/Gpu/OsGpuMemory.cs` | **純関数だけ**＝`GpuCounterInstance`／`GpuInstanceName`／`GpuAdapterInfo`／`OsGpuMemoryRow`／`GpuCounterSample` の記録型、口 2 つ（`IGpuMemoryCounters`・`IGpuAdapterInfoSource`）、`ParseInstance`・`LuidToken`・`Aggregate` |
+| `Services/Gpu/PdhGpuMemoryCounters.cs` | `pdh.dll`＝`PdhOpenQueryW` → `PdhAddEnglishCounterW`（**英語の口**＝地域設定で綴りが変わる機体でも同じ道）→ `PdhCollectQueryData` → `PdhGetFormattedCounterArrayW`（`PDH_FMT_LARGE=0x400`・**2 度呼び**＝1 度目は `PDH_MORE_DATA=0x800007D2` と要る大きさ）→ `PdhCloseQuery` |
+| `Services/Gpu/DxgiGpuAdapters.cs` | `dxgi.dll`＝`CreateDXGIFactory1` →`IDXGIFactory1::EnumAdapters1` →`IDXGIAdapter1::GetDesc1` |
+| `Services/Gpu/OsGpuMemorySampler.cs` | 2 つの口を束ねて 1 標本＝`Sample(pid)`。**query を開くのも最初の `Sample()` の回**（＝見張りの糸）。DXGI は 1 度読んで持ち、知らない LUID が出たときだけ（60 s に 1 度まで）数え直す |
+
+**P/Invoke の作法**（是正・2026-09-08）：
+
+- **`[DefaultDllImportSearchPaths(DllImportSearchPath.System32)]` を全宣言に付ける**＝
+  `pdh.dll` も `dxgi.dll` も KnownDLLs に無く、既定の探索順は**アプリの置き場が先**である。
+  配布先の置き場（`%LOCALAPPDATA%\Programs\irodori-tts-ywk-…`）は利用者が書ける（`Get-Acl` で
+  `FullControl` を実測）ので、exe の隣に置かれた偽の `pdh.dll` が載る筋があった。
+  この 2 本はランチャで**最初で唯一の P/Invoke** なので、倣う先の家の作法も無かった。
+- **`PdhGetFormattedCounterArrayW` の 2 度呼びは最大 3 度まで繰り返す**＝instance の顔ぶれは
+  標本の合間にも動く（この機体で process 側 65〜71 件・browser や `llama-server` が出入りする）。
+  大きさを聞いてから受け取るまでに 1 つ増えると 2 度目も `PDH_MORE_DATA` になり、1 度で諦めると
+  **その counter の instance が丸ごと消える**＝帯の OS の組が 2 秒だけ消えて、また出る。
+- **受け皿は counter ごとに使い回す**（`CounterSlot`）＝落ち着いた機体では 2 秒ごとの割り当てが 0。
+- **開けなかった道の後始末を 1 箇所に寄せる**＝`PdhOpenQueryW` が通った後に
+  `PdhAddEnglishCounterW` が投げる筋（`EntryPointNotFoundException`）で query の柄が漏れていた。
+- **`EnumAdapters1` が `DXGI_ERROR_NOT_FOUND` 以外で失敗しても柄は放す**＝
+  `Marshal.FinalReleaseComObject` を通らずに `break` していた。
+
+**構造体**＝`PDH_FMT_COUNTERVALUE_ITEM_W { IntPtr szName; PDH_FMT_COUNTERVALUE FmtValue }`（x64 で **24 B**）・
+`PDH_FMT_COUNTERVALUE` は `[Explicit, Size=16]`（`CStatus` は offset 0・`LargeValue` は **offset 8**）。
+`CStatus` が `PDH_CSTATUS_VALID_DATA`（0）／`PDH_CSTATUS_NEW_DATA`（1）でない item は捨てる。
+`DXGI_ADAPTER_DESC1` は `WCHAR Description[128]`（`ByValTStr`）＋`UINT` 4 つ＋`SIZE_T`（`nuint`）3 つ＋
+`LUID`（`uint LowPart` ＋ `int HighPart`）＋`UINT Flags`。
+
+**vtable の席順が命**（`[ComImport]` の宣言順がそのまま呼び出し口の番号になる＝呼ばない席も宣言だけは要る）：
+
+- `IDXGIFactory1`＝`IDXGIObject`（`SetPrivateData`・`SetPrivateDataInterface`・`GetPrivateData`・`GetParent`）
+  →`IDXGIFactory`（`EnumAdapters`・`MakeWindowAssociation`・`GetWindowAssociation`・`CreateSwapChain`・
+  `CreateSoftwareAdapter`）→`IDXGIFactory1`（**`EnumAdapters1`**・`IsCurrent`）
+- `IDXGIAdapter1`＝`IDXGIObject`（4）→`IDXGIAdapter`（`EnumOutputs`・`GetDesc`・`CheckInterfaceSupport`）
+  →`IDXGIAdapter1`（**`GetDesc1`**）
+
+### 27-4 落ちたときの畳み方（**画面は止めない**）
+
+`pdh.dll` が無い・counter の組が無い・`PDH_NO_DATA`・COM が落ちた・DXGI が読めない、のどれでも
+**行が出ないだけ**にする（例外は 1 つも UI へ届かない）。理由 1 行は**プロセスにつき 1 度だけ**
+ログ帯へ流す（見張りは 2 秒ごとに来る＝毎回書くと受け入れ条件 D-4 の 3 行が末尾 20 行から押し出される）。
+DXGI だけが落ちた回は**名前が LUID の綴り・総量が `—`**になり、「このプロセス」と「GPU 全体」は出る。
+
+**理由 1 行は「投げた」ときだけではない**（是正・2026-09-08）＝`PdhCollectQueryData` が status で
+失敗し続ける機体（perflib が壊れている・counter を切ってある＝`PDH_NO_DATA 0x800007D5`）は、
+初稿では行が消えるだけで**ログが無音**だった＝利用者にも次席にも「pid が GPU を触っていない」と
+見分けが付かない。いまは `IGpuMemoryCounters.Sample(out string? failureReason)` が理由を持ち帰り、
+係が同じ「1 度だけ」の道でログ帯へ流す。**開設に失敗した理由も同じ道**である（開設は最初の標本の
+回に走るので、ログ帯の購読はもう始まっている＝初稿の「理由を持ち越す」仕掛けは要らなくなった）。
+
+**無人検分でも「行が出ない」は赤ではない**＝`probe/d-launch-probe.ps1` の段 a は、OS の組が
+帯に無ければ**段を立てずに `[skip]` を書く**（畳み方が正しく効いた機体を非零終了にしない）。
+
+### 27-5 実測（この機体・2026-09-08）
+
+- DXGI＝`AMD Radeon(TM) 8060S Graphics`・`DedicatedVideoMemory` **68,535,640,064 B（63.83 GiB）**＝
+  タスク マネージャーの「専用 GPU メモリ 63.8 GB」と一致（**GB ではなく GiB 表記の数字だった**）。
+  この機体は**同じ名前のアダプタを 4 つ**名乗る（LUID は `0x000137d0`／`0x0002494a`／`0x00021538`／
+  `0x0001de50`）＝**pid が触っている 1 枚だけを採る** D3 の規則がそのまま効いている。
+- PDH＝`pid_31556_luid_0x00000000_0x000137D0_phys_0` **12,025,266,176 B（11.20 GiB）**・
+  アダプタ側 **30.11〜30.29 GiB**（標本ごとに動く。是正の回の逐語は 30.11 GiB）。
+- **アダプタ側に値 0 の instance が居る**（是正の回の逐語・同じ 1 標本）＝
+  `luid_…_0x00015A49_phys_0 = 0`・`luid_…_0x00015A0A_phys_0 = 0`・
+  `luid_…_0x000137D0_phys_0 = 32,331,927,552`。控えの `GPU Local Adapter Memory` は同じ瞬間に
+  `0x00015A49_part_0 = 2,515,914,752`・`0x00015A0A_part_0 = 8,192`・`0x000137D0_part_0 = 32,405,004,288`＝
+  **instance の有無だけで控えに落とすと「GPU 全体 0 B」を綴る**（値でも切り替える理由の実測）。
+- **同じ瞬間の wrapper 側**（`/ywk/status`・是正の回）＝`pid=31556`・`allocated=2,226,294,784`（2.07 GiB）・
+  `reserved=2,470,445,056`（2.30 GiB）・`max=4,902,777,344`（4.57 GiB）・
+  `gpu_used=3,440,652,288`（3.20 GiB）・`gpu_total=107,090,132,992`（99.74 GiB）。
+  **`gpu_used` 3.20 GiB に対し、OS が同じ pid を数えると 11.20 GiB**＝裁定 110 の根拠がそのまま出る。
+- **帯の綴り（見本＝実窓の標本ではない）**＝
+  `torch 使用量 2.07 GiB（最大 4.57 GiB）／占有量 2.64 GiB／このプロセス 11.20 GiB／GPU 全体 30.11 GiB / 63.83 GiB（AMD Radeon(TM) 8060S Graphics）`。
+  この 1 行は**実機テストが組んだ文字列**で、torch の 3 数は釘付け用の固定値である
+  （実機の `reserved` は上のとおり 2.30 GiB）。OS の 2 数だけが実機の標本である。
+- **新しい帯は実窓（UIA）でまだ見ていない**＝司令官のランチャ（18088・pid 31556）に触らない決めなので、
+  窓は 1 度も立てていない。実窓での確認は次に窓を立てられる席で。
+- 代金（是正の回の逐語・2 走）＝**開設 221.8 ms／228.0 ms**（プロセスに 1 度・`pdh.dll` の
+  perflib の初期化）・**1 標本は連続撃ち 0.06 / 0.04 / 0.03 / 0.03 / 0.03 ms（1 走目）・
+  0.07 / 0.05 / 0.03 / 0.03 / 0.03 ms（2 走目）**・
+  **2 s 間隔（見張りと同じ）0.24 / 0.26 / 0.23 ms・0.27 / 0.21 / 0.17 ms**
+  （どちらも 5 ms の物差しの内側）。
+  連続撃ちの数字は PDH が直前の標本を返すぶんだけ安い＝**後日「重くなった」を判じる基準は 2 s 間隔の方**。
+- `dotnet build launcher/IrodoriTtsYwk.sln -c Release` **0 警告 0 エラー**・
+  `dotnet test` **合格 649・スキップ 1・合計 650**（従前 610＋40。スキップの 1 本は実機の PDH と DXGI）。
+- 無人検分 `probe/d-launch-probe.ps1` は**この席でも走らせていない**＝司令官のランチャが 18088 で
+  走っており、単一起動の錠がぶつかる。段 a の期待だけ新しい帯に合わせて書き換え（`torch 使用量`／
+  `占有量` は必須・OS の組は**別の段**に切り、その段は**計数が読めた機体でだけ立つ**）、
+  `[scriptblock]::Create` の構文検査（ASCII・CRLF のまま）で通してある。
+  **段の総数は 89 → 90**（§24 の実走 `=== 0 failure(s) of 89 ===` に、段 a の 2 本目が 1 段増える。
+  計数の読めない機体では段が立たないので 89 のまま＝どちらも赤にはならない）。**実射は未了**。
+
+### 27-6 是正席の記帳（2026-09-08・敵対検分の 25 件）
+
+**直した物**（初稿からの差＝檔は同じ・振る舞いと文書だけ動いた）：
+
+1. **high＝PDH の開設が UI の糸だった。** `ServerProcess()`（引数なし）が
+   `OsGpuMemorySampler.CreateForMachine` を同期で呼び、`LauncherComposition.Compose()`＝
+   `App.OnStartup`＝**窓を作る前**で `PdhOpenQueryW`＋3 本の `PdhAddEnglishCounterW` を撃っていた
+   （**実測 221.8〜229.5 ms**＝毎回の起動がその分だけ止まる。行が 1 度も出ない CPU 変種でも払う）。
+   いまは口を用意するだけで、開くのは**最初の `Sample()`＝見張りの糸**。初稿の「理由を持ち越す」
+   仕掛け（`_pendingReason`）は要らなくなって消えた。初稿の報告と §27-2 D5 の
+   「PDH は UI の糸で 1 度も走らない」は collect についてしか正しくなかった＝**文も直した**。
+2. **medium＝`DllImport` に探索路を指定していなかった。** `pdh.dll`／`dxgi.dll` はどちらも
+   KnownDLLs に無く、既定の探索順は**アプリの置き場が先**。配布先の置き場は利用者が書ける＝
+   exe の隣の偽物が載る筋があった（`Get-Acl` で `FullControl` を実測）。全宣言に
+   `[DefaultDllImportSearchPaths(DllImportSearchPath.System32)]` を付けた。
+3. **medium＝「GPU 全体 0 B」。** 控えへ落ちる条件が instance の**有無**だけだったので、
+   **値 0 の instance を名乗る LUID**（この機体に実在＝§27-5 の逐語）で `0 B` を綴り、
+   「このプロセス 1.86 GiB ＞ GPU 全体 0 B」という自己矛盾が出せた。いまは**値でも切り替え**、
+   さらに**自分より小さい「全体」は出さない**（どちらも `—`）。釘 2 本。
+4. **low＝2 度呼びの取りこぼし。** 大きさを聞いてから受け取るまでに instance が増えると
+   2 度目も `PDH_MORE_DATA` になり、**その counter の instance が丸ごと消える**（帯の組が 2 秒
+   消えて戻る）。最大 3 度まで数え直す。受け皿は counter ごとに使い回す（`CounterSlot`）。
+5. **low＝柄の漏れ 2 つ。** `PdhOpenQueryW` の後に `PdhAddEnglishCounterW` が投げる筋で query が、
+   `EnumAdapters1` が `DXGI_ERROR_NOT_FOUND` 以外で失敗した筋で `IDXGIAdapter1` が漏れていた。
+6. **low＝collect の無音。** status で失敗し続ける機体（`PDH_NO_DATA`）は行が消えるだけでログが
+   無音だった＝口を `Sample(out string? failureReason)` に替え、**1 度だけ**の道でログ帯へ流す。
+7. **medium＝実機テストが「無検証の合格」だった。** `FactAttribute` を継いだ
+   `LiveGpuFactAttribute` で、環境変数の無い回は**理由つきのスキップ**として数える
+   （パッケージは増やしていない）。走行の数字は **649 合格＋1 スキップ**になった。
+8. **medium＝配線が無検証だった。** テスト用コンストラクタに `OsGpuMemorySampler?` の口を足し、
+   `StatusSampled` の回にはもう新しい行が置かれていること・`Stopped` で空へ戻ることを釘付けした。
+9. **low＝同名アダプタの読み分け。** 重なった名前にだけ LUID の下位を添える（§27-2 D4）。
+10. **low＝台本の段の切り分け。** 段 a の棒（`—`）の検査を、torch の側は**組の直前まで**・
+    OS の側は**その組だけ**に絞った（アダプタ名に棒が入っても落ちない）。`torch ` の接頭辞も検める。
+    OS の段は**計数が読めた機体でだけ立てる**（畳み方が効いた機体を赤にしない）。
+11. **文書**＝`launcher/README.md` §9-1 の対応表・`Contracts/WrapperResponses.cs` の XML 註 4 箇所・
+    §15-3 ⑴（`gcn_arch` で言い分けよ）・`docs/contract.md` ⑹ の題目一覧に、撤回／読み替えの註を
+    足した（**履歴は消していない**）。周期（起動待ち 1 s／ready 後 2 s）・代金の逐語・
+    `LuidToken` の綴り（**小文字** 8 桁）・釘の数・段の総数も実測に合わせた。
+    `tests/contract/test_memory.py` は docstring の折り返しだけ直した（**挙動は 1 字も変えていない**）。
+
+**直していない物 1 件**＝§13-1（:378）と §13-4（:483）の「**27 段**」を「28 段」に改めよ、という
+検分の指図は**採らなかった**。⑴ あの 2 行は「## 13. 統合席の記帳（**2026-09-05**・便 D）」の中の
+**その日の記帳**であり、⑵ いまの総数は 27 でも 28 でもなく **89 → 90**（§24 の実走
+`=== 0 failure(s) of 89 ===` が正）だからである。代わりに両行へ「これはその日の値・いまの総数は
+§24／§27-5 を見よ」と註を足した（履歴は残し、次席が突き合わせられる形にした）。

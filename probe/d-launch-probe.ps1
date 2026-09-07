@@ -15,8 +15,11 @@
 #   7  stop the server and prove no python child survived
 #
 # Round two (convoy D (2), decisions 87 / 88) adds, in the same window:
-#   a  the memory band carries numbers          (decisions 87 (1) / 67 (3): allocated / reserved /
-#                                                gpu_used / gpu_total, never a bare 0 for a null)
+#   a  the memory band carries numbers          (decisions 87 (1) / 67 (3) / 110: torch used /
+#                                                reserved from the wrapper, plus "this process" and
+#                                                "whole GPU" from the Windows GPU counters (PDH) for
+#                                                every GPU the wrapper's pid actually touches --
+#                                                never a bare 0 for a null)
 #   b  the latent cache line says ON/OFF and how many voices are baked   (decisions 67 (1))
 #   c  one voice's estimate flips from the wav coefficient to the real .pt size (decisions 67 (2))
 #   d  THE GATE: a GPU variant that cannot see a GPU is refused before any child is started, with a
@@ -133,7 +136,10 @@ $T = [ordered]@{
     # ---- round two (decisions 87 / 88) ----
     Used       = New-JpText 0x4F7F, 0x7528, 0x91CF                   # "used"      = memory.allocated
     Reserved   = New-JpText 0x5360, 0x6709, 0x91CF                   # "reserved"  = memory.reserved
-    Whole      = New-JpText 0x5168, 0x4F53                           # "whole"     = gpu_used/gpu_total
+    Whole      = New-JpText 0x5168, 0x4F53                           # "whole"     = the whole GPU (PDH)
+    # ---- decisions 110 (2026-09-08): the band's OS group comes from the Windows GPU counters ----
+    ThisProc   = New-JpText 0x3053, 0x306E, 0x30D7, 0x30ED, 0x30BB, 0x30B9   # "this process"
+    BandSep    = New-JpText 0xFF0F                                   # the full-width slash the band uses
     Baked      = New-JpText 0x713C, 0x3044, 0x305F, 0x8A71, 0x8005   # "baked voices"
     LatentRef  = New-JpText 0x6F5C, 0x5728, 0x53C2, 0x7167           # "latent reference"
     Measured   = New-JpText 0x5B9F, 0x6E2C                           # "measured"
@@ -1979,21 +1985,59 @@ try {
 
     # ========================================================= a. the memory band (87 (1) / 67 (3))
     #
-    # The band reads used = memory.allocated, reserved = memory.reserved, whole = gpu_used/gpu_total
-    # (decisions 87 (1)). What is checked here is that all four numbers really arrived: a null must
-    # print as an em dash, never as 0 B, so a band that still says "not supported" or carries a dash
-    # is a failure, not a formatting choice.
+    # The band reads used = memory.allocated and reserved = memory.reserved from the wrapper's torch
+    # allocator (decisions 87 (1)), and -- since decisions 110 (2026-09-08) -- "this process" and
+    # "whole GPU x / y" from the WINDOWS GPU counters, one group per GPU that the wrapper's pid
+    # actually touches. The wrapper's own gpu_used / gpu_total are no longer shown: on Windows ROCm
+    # they are neither the card nor the process (measured: gpu_used 3.66 GiB while the OS counted
+    # 10.84 GiB for that pid and 29.79 GiB for the card).
+    #
+    # What is checked here is that the numbers really arrived: a null must print as an em dash, never
+    # as 0 B, so a band that still says "not supported" or carries a dash is a failure, not a
+    # formatting choice. Each half is judged on ITS OWN slice of the band -- the torch half up to the
+    # slash that opens the OS group, the OS group from there on -- so a missing torch number cannot
+    # fail the OS step and an adapter name that happens to contain an em dash cannot fail the torch
+    # one. The word "torch " in front of "used" is checked on purpose: relabelling those two numbers
+    # as torch's own view is the point of decisions 110.
+    #
+    # The OS group is NOT an unconditional step. decisions 110 D5 says a machine that cannot read the
+    # Windows counters (no pdh.dll, no counter set, PDH_NO_DATA, a CPU variant) degrades to NO ROWS,
+    # so demanding the group here would turn a correct degradation into a red run. When the group is
+    # absent the probe says so and moves on; when it is there, it must be complete.
     Write-Host ''
-    Write-Host '=== a. the GPU memory band carries numbers (decisions 87 (1) / 67 (3)) ==='
-    $mem = Wait-ForPattern -Root $win -Id 'StatusMemoryText' -Pattern ($T.Used + ' \d') -TimeoutSeconds 20 -IntervalMilliseconds 500
+    Write-Host '=== a. the GPU memory band carries numbers (decisions 87 (1) / 67 (3) / 110) ==='
+    $mem = Wait-ForPattern -Root $win -Id 'StatusMemoryText' -Pattern ('torch ' + $T.Used + ' \d') -TimeoutSeconds 20 -IntervalMilliseconds 500
     Write-Host ('[memory] ' + $mem.text)
+    $memText = [string]$mem.text
+    $osAt = $memText.IndexOf($T.ThisProc, [System.StringComparison]::Ordinal)
+    if ($osAt -ge 0) {
+        $cut = $memText.LastIndexOf($T.BandSep, $osAt, [System.StringComparison]::Ordinal)
+        if ($cut -lt 0) { $cut = $osAt }
+        $torchPart = $memText.Substring(0, $cut)
+        $osPart = $memText.Substring($cut)
+    } else {
+        $torchPart = $memText
+        $osPart = ''
+    }
     $memOk = $mem.ok `
-        -and ($mem.text -match ($T.Used + ' \d')) `
-        -and ($mem.text -match ($T.Reserved + ' \d')) `
-        -and ($mem.text -match ('GPU ' + $T.Whole + ' \d')) `
-        -and ($mem.text -notlike ('*' + $T.Unsupported + '*')) `
-        -and ($mem.text -notlike ('*' + $T.Dash + '*'))
-    Add-Step 'the memory band shows allocated, reserved and the whole card' $memOk ([string]$mem.text)
+        -and ($memText -match ('torch ' + $T.Used + ' \d')) `
+        -and ($torchPart -match ($T.Reserved + ' \d')) `
+        -and ($memText -notlike ('*' + $T.Unsupported + '*')) `
+        -and ($torchPart -notlike ('*' + $T.Dash + '*'))
+    Add-Step 'the memory band shows torch used and reserved' $memOk $torchPart
+
+    if ($osAt -ge 0) {
+        # Each slot is judged where it stands, not by hunting an em dash anywhere in the group: the
+        # adapter's own NAME lives in this slice too, and a card whose name carries an em dash would
+        # otherwise fail a perfectly good band.
+        $osOk = ($osPart -match ($T.ThisProc + ' \d')) `
+            -and ($osPart -match ('GPU ' + $T.Whole + ' \d[^/]* / \d')) `
+            -and ($osPart -notmatch ($T.ThisProc + ' ' + $T.Dash)) `
+            -and ($osPart -notmatch ('GPU ' + $T.Whole + ' ' + $T.Dash))
+        Add-Step 'the band shows this process and the whole GPU from the Windows counters (110)' $osOk $osPart
+    } else {
+        Write-Host '[skip] no OS group in the band -- this machine reads no Windows GPU counters (110 D5 degradation)'
+    }
 
     # ========================================================= b. the latent cache line (67 (1))
     $cache = Get-TextById -Root $win -Id 'StatusLatentCacheText'
