@@ -256,7 +256,7 @@ public sealed class FirstRunViewModel : ObservableObject
     public string VariantNote => RuntimeVariants.IsCpu(_variant)
         ? "CPU は GPU の数百分の一の速さです。配信用途では勧めません（試すためだけの選択肢です）。"
         : RuntimeVariants.IsRocm(_variant)
-            ? "Radeon（ROCm）版です。精度は bf16 に固定されます（未保障・gfx1151 で確認済み）。"
+            ? "ROCm 版です（Radeon の GPU 向け）。精度は bf16 に固定されます（未保障・gfx1151 で確認済み）。"
             : "NVIDIA の GPU で動きます。ドライバの版が下限に届いているか下の行を確かめてください。";
 
     /// <summary>取得の見積り（台帳の <c>size</c> の総和＋モデル）。</summary>

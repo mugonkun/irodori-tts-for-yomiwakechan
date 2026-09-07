@@ -98,7 +98,7 @@ trap {
 # across hosts (design 14-3 / 14-4). Those two files are now written as literal text, and both hosts
 # were measured writing 50 B / 345 B with the same sha256, tree = 108 files / 37,111,434 B.
 $ExpectedAppFiles = 108
-$ExpectedAppBytes = @([int64]37125643)
+$ExpectedAppBytes = @([int64]37125639)
 
 # Gate A-7. Files named ONE BY ONE, because their absence produces the worst artefact this line can
 # make: a setup that installs, exits 0 and then does not work. Nothing else in gate A sees them --

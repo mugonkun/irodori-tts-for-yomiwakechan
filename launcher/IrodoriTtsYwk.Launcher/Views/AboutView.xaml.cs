@@ -17,6 +17,10 @@ public partial class AboutView : UserControl
     {
         InitializeComponent();
 
+        // 見出しは版で分ける（裁定 109）＝樹の ledger/ から読む。読めなければ CUDA 版として振る舞う。
+        TitleText.Text = ReleaseFlavors.AppTitle(
+            ReleaseFlavors.DetectFrom(AppServices.Paths.LedgerDir));
+
         DisclaimerText.Text = AboutViewModel.Disclaimer;
         VersionText.Text = AboutViewModel.VersionText;
         UpstreamText.Text = AboutViewModel.UpstreamText;

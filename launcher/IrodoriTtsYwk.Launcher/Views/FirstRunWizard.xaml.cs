@@ -23,6 +23,10 @@ public partial class FirstRunWizard : Window
 
         _model = model;
         DataContext = model;
+
+        // 窓題は版で分ける（裁定 109）。版は ViewModel が樹から読んだもの（FirstRunViewModel.Flavor）。
+        Title = ReleaseFlavors.WizardTitle(model.Flavor);
+
         model.Completed += OnCompleted;
 
         // 「入れる／飛ばす」の 2 択（裁定 87 ⑷）＝System32 の msvcp140.dll を確かめられなかった

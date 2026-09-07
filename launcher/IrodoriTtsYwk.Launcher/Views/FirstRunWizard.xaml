@@ -6,6 +6,10 @@
         WindowStartupLocation="CenterOwner"
         AutomationProperties.AutomationId="FirstRunWizard">
   <!--
+    上の Title は設計時（デザイナ）用の見本であって落ち先ではない。実行時は必ず
+    FirstRunWizard.xaml.cs が ReleaseFlavors.WizardTitle で
+    「初回取得（CUDA 版）」「初回取得（ROCm 版）」に差し替える（裁定 109）。
+
     初回取得（設計書 §6・受け入れ条件 D-5＝利用者操作 ≤ 6）。
     通知（そのまま表示）→同意→変種→取得→展開→モデル→起動→完了。
     段の中身は ViewModels/FirstRunViewModel に在る。

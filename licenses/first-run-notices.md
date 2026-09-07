@@ -48,7 +48,7 @@ DirectML は **⒝案（ONNX Runtime＋DirectML EP）を採らないので非該
 
 ---
 
-## B. Radeon 版（rocm-gfx1151）で追加で入る物
+## B. ROCm 版（rocm-gfx1151）で追加で入る物
 
 > 出典＝`ledger/runtime-rocm-gfx1151.json`（便 C が 2026-09-05 に生成）と、**その台帳が指す
 > wheel／sdist を実際に開いて読んだ事実**（2026-09-05）。
@@ -78,7 +78,7 @@ DirectML は **⒝案（ONNX Runtime＋DirectML EP）を採らないので非該
 ＝`ledger/README.md` § 4-6。落とさなくても torch が読み込めることは
 `build/assemble-runtime.ps1 -ExpectGpu` の import 検分が実射で示す（便 C の C-2）。
 
-Radeon 版はそもそも**未保障・別リリース**（`docs/radeon.md`）。**B1〜B6 が未特定であることを取得前に明示する**。
+ROCm 版はそもそも**未保障・別リリース**（`docs/radeon.md`）。**B1〜B6 が未特定であることを取得前に明示する**。
 この未特定は席の読みではなく、**wheel を開いて見た結果そこに名乗りが無かったという事実**である
 （`decisions.md` 22＝席は推測で断定しない）。
 

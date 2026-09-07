@@ -81,7 +81,10 @@ irodori-tts-for-yomiwakechan/
 
 ## 2. 実行時の配置（利用者機）と起動の型
 
-- インストール先（便 E・per-user）＝`%LOCALAPPDATA%\Programs\irodori-tts-ywk\`＝ランチャ exe・`server/`（wrapper＋**パッチ適用済みの上流の写し**＝MIT・数 MB のテキスト）・`ledger/`・`licenses/`・`voices/`（プリセット）・docs。
+- インストール先（便 E・per-user・**裁定 109** で版ごとに分けた）＝CUDA 版は
+  `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`・ROCm 版は `…\Programs\irodori-tts-ywk-radeon\`
+  （改訂前の CUDA 版は版なしの `…\Programs\irodori-tts-ywk\` だった＝`decisions.md` 109・
+  `docs/design/ben-e-installer.md` §17）＝ランチャ exe・`server/`（wrapper＋**パッチ適用済みの上流の写し**＝MIT・数 MB のテキスト）・`ledger/`・`licenses/`・`voices/`（プリセット）・docs。
 - 初回取得先＝`%LOCALAPPDATA%\irodori-tts-ywk\`＝`runtime\<variant>\`（埋め込み Python＋site-packages）・`models\`（`HF_HOME`）・`voices\`（利用者の話者・`voices.json`）・`logs\`・`settings.json`。
 - 起動＝ランチャが env を組んで `runtime\<variant>\python.exe -m ywk_server --host 127.0.0.1 --port 18088` を子プロセスで起こす（bat を使わない＝CRLF/UTF-8 事故の反面教師 `research/local-additions/`）。
 - `._pth`（`runtime\<variant>\python312._pth`）＝5 行・絶対パス・forward slash・`import site` なし：

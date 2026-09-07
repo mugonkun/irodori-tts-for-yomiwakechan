@@ -12,7 +12,8 @@
 #
 #   1  silent install   /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG=
 #      -> exit 0, the three log lines (User privileges: None / Administrative install mode: No /
-#         Install mode root key: HKEY_CURRENT_USER), the HKCU uninstall key, one new start menu .lnk,
+#         Install mode root key: HKEY_CURRENT_USER), the HKCU uninstall key, InstallLocation and the
+#         DisplayName and the one new start menu .lnk all carrying THIS flavour's name (decisions 109),
 #         and every file of {app} matched against the source trees by sha256          (E-7, I-3)
 #   2  UI install: the three wizard pages driven with SendMessage(BM_CLICK)
 #      -> the same tree as stage 1, and the page count is 3                            (E-5, I-4)
@@ -38,8 +39,12 @@
 # miopen\ voices\ settings.json), not a byte copy: the real tree is 3.4 GB and copying it proves
 # nothing the shape does not.
 #
-# The installs go to the real per-user place ({autopf}\irodori-tts-ywk[-radeon] =
-# %LOCALAPPDATA%\Programs\...). No /DIR is passed, so the default of the .iss is what gets exercised.
+# The installs go to the real per-user place ({autopf}\irodori-tts-ywk-cuda and
+# {autopf}\irodori-tts-ywk-radeon = %LOCALAPPDATA%\Programs\...). No /DIR is passed, so the default of
+# the .iss is what gets exercised. The cuda directory was plain 'irodori-tts-ywk' until decisions 109
+# renamed it to match the candidates the host app (yomiwakechan2, EngineLaunchDefaults) probes; the
+# radeon one never changed. Both flavours may sit on one machine at once (different AppId, different
+# directory) and they SHARE the data tree %LOCALAPPDATA%\irodori-tts-ywk by design.
 # The finally block uninstalls whatever is still installed and proves the key, {app} and the .lnk are gone.
 #
 # It never elevates, never binds 8088 / 7861 / 18088, and the launcher it starts is pinned to a private
@@ -131,6 +136,14 @@ $T = [ordered]@{
     ReadySize    = New-JpText 0x7D04
     # launcher FirstRunViewModel.Title(Notices) marker: 'the third party notices'
     NoticeTitle  = New-JpText 0x7B2C,0x4E09,0x8005,0x7269,0x306E,0x901A,0x77E5
+    # .iss [Setup] AppName (decisions 109), split into the stem and the flavour tag that follows it:
+    #   'irodori-TTS for ' + <7 kana/kanji> + U+FF08 + 'CUDA ' | 'ROCm ' + U+7248 + U+FF09
+    # Get-ExpectedAppName below joins them; the DisplayName in HKCU and the start menu .lnk name are
+    # both matched against the result.
+    AppStem      = 'irodori-TTS for ' + (New-JpText 0x8AAD,0x307F,0x5206,0x3051,0x3061,0x3083,0x3093)
+    ParenOpen    = New-JpText 0xFF08
+    ParenClose   = New-JpText 0xFF09
+    Edition      = New-JpText 0x7248
 }
 
 # ------------------------------------------------------------------ defaults
@@ -192,6 +205,32 @@ function Get-SetupPath {
     param([string]$FlavorName)
     if ($FlavorName -eq 'radeon') { return $SetupRadeon }
     return $SetupCuda
+}
+
+function Get-ExpectedAppName {
+    <#
+      .SYNOPSIS
+        The .iss [Setup] AppName of one flavour, verbatim (decisions 109).
+        cuda   -> irodori-TTS for <7 chars>(CUDA <edition>)
+        radeon -> irodori-TTS for <7 chars>(ROCm <edition>)     [the parentheses are full width]
+        The same string is the UninstallDisplayName stem and the start menu shortcut name.
+    #>
+    param([string]$FlavorName)
+    $tag = 'CUDA '
+    if ($FlavorName -eq 'radeon') { $tag = 'ROCm ' }
+    return ($T.AppStem + $T.ParenOpen + $tag + $T.Edition + $T.ParenClose)
+}
+
+function Get-ExpectedAppDir {
+    <#
+      .SYNOPSIS
+        The .iss DefaultDirName of one flavour under {autopf} (= %LOCALAPPDATA%\Programs).
+        decisions 109 renamed the cuda one from 'irodori-tts-ywk' to 'irodori-tts-ywk-cuda' so that it
+        matches the candidates the host app (yomiwakechan2, EngineLaunchDefaults) already probes.
+    #>
+    param([string]$FlavorName)
+    if ($FlavorName -eq 'radeon') { return (Join-Path $script:ProgramsRoot 'irodori-tts-ywk-radeon') }
+    return (Join-Path $script:ProgramsRoot 'irodori-tts-ywk-cuda')
 }
 
 # ------------------------------------------------------------------ Inno helpers (design 7-1)
@@ -995,21 +1034,32 @@ function Invoke-Stage1 {
     Add-Step ('stage 1: HKCU uninstall key ' + (Get-AppId -FlavorName $FlavorName) + '_is1 exists') (
         $null -ne $key) ''
     $appDir = ''
+    $wantName = Get-ExpectedAppName -FlavorName $FlavorName
     if ($null -ne $key) {
         $appDir = ([string]$key.InstallLocation).TrimEnd('\')
-        $expectedDir = Join-Path $script:ProgramsRoot 'irodori-tts-ywk'
-        if ($FlavorName -eq 'radeon') { $expectedDir = Join-Path $script:ProgramsRoot 'irodori-tts-ywk-radeon' }
+        $expectedDir = Get-ExpectedAppDir -FlavorName $FlavorName
         Add-Step 'stage 1: InstallLocation is the per-user default ({autopf} = %LOCALAPPDATA%\Programs)' (
             $appDir -eq $expectedDir) ('InstallLocation=' + $appDir + ' expected=' + $expectedDir)
         Write-Host ('[key] DisplayName=' + $key.DisplayName)
         Write-Host ('[key] DisplayVersion=' + $key.DisplayVersion)
         Write-Host ('[key] UninstallString=' + $key.UninstallString)
+        # decisions 109: the two flavours must be told apart in 'Apps and features'. The .iss writes
+        # UninstallDisplayName = '<AppName> <AppVersion>', so the name is the head of the DisplayName.
+        $displayName = [string]$key.DisplayName
+        Add-Step 'stage 1: DisplayName starts with this flavour AppName (decisions 109)' (
+            $displayName.StartsWith($wantName, [System.StringComparison]::Ordinal)) (
+            'DisplayName=' + $displayName + ' expected head=' + $wantName)
     }
 
     $lnkAfter = @(Get-StartMenuLink)
     $newLnk = @($lnkAfter | Where-Object { $lnkBefore -notcontains $_ })
     Add-Step 'stage 1: exactly one new start menu shortcut' ($newLnk.Count -eq 1) (
         'new=' + $newLnk.Count + ' :: ' + ($newLnk -join ' ; '))
+    # decisions 109: [Icons] Name is '{autoprograms}\<AppName>', so the .lnk carries the flavour too.
+    $lnkName = ''
+    if ($newLnk.Count -eq 1) { $lnkName = [System.IO.Path]::GetFileName($newLnk[0]) }
+    Add-Step 'stage 1: the new shortcut is named "<AppName>.lnk" (decisions 109)' (
+        $lnkName -eq ($wantName + '.lnk')) ('lnk=' + $lnkName + ' expected=' + $wantName + '.lnk')
 
     if (-not [string]::IsNullOrEmpty($appDir)) {
         $cmp = Compare-AppTree -AppDir $appDir -FlavorName $FlavorName

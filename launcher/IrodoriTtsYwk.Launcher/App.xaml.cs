@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using IrodoriTtsYwk.Launcher.Contracts;
+using IrodoriTtsYwk.Launcher.ViewModels;
 using Forms = System.Windows.Forms;
 
 // Application.MainWindow（既存のプロパティ）と型名がぶつかるので別名で呼ぶ。
@@ -46,6 +47,9 @@ public partial class App : Application
     private MainWindowView? _window;
     private bool _shuttingDown;
 
+    /// <summary>この配布樹がどちらの版か（裁定 109＝吹き出しの名札に出す）。既定は CUDA 版。</summary>
+    private ReleaseFlavor _flavor = ReleaseFlavor.Cuda;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -60,6 +64,9 @@ public partial class App : Application
             Shutdown();
             return;
         }
+
+        // 版は配布樹の ledger/ から読む（裁定 109）。exe は 1 本で両リリースを兼ねるので焼き込まない。
+        _flavor = ReleaseFlavors.DetectFrom(AppServices.Paths.LedgerDir);
 
         AppServices.Paths.EnsureDataDirectories();
         _ = AppServices.Settings; // 早い段階で読む（壊れていても既定で立ち上がる）
@@ -211,8 +218,9 @@ public partial class App : Application
             _stopItem.Enabled = stoppable;
         }
 
-        // Text は 63 字まで（Win32 の制約）＝短く保つ
-        _trayIcon.Text = "irodori-TTS " + AppVersion.Display + "／" + StateLabel(state);
+        // Text は 63 字まで（Win32 の制約）＝短く保つ。組み立ては純関数に寄せてある
+        // （ReleaseFlavors.TrayText＝裁定 109 の名札つき・枠は xUnit が全状態で釘付けする）。
+        _trayIcon.Text = ReleaseFlavors.TrayText(_flavor, AppVersion.Display, StateLabel(state));
     }
 
     /// <summary>状態の日本語（UI は日本語のみ＝裁定 52）。</summary>

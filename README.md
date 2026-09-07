@@ -35,8 +35,8 @@
 
 - CPU でも合成できますが**とても遅い**（実測 RTF 3.27・40 steps）＝配信用途には使えません
   （`decisions.md` 13）。UI で選べるだけの露出にしています。
-- **Radeon（ROCm）は未保障**＝別リリースです。保証できるのは「gfx1151（Ryzen AI MAX+ 395／
-  Radeon 8060S）で確認済み」という事実だけです（`docs/radeon.md`）。
+- **Radeon（ROCm）は未保障**＝**ROCm 版**という別リリースです。保証できるのは「gfx1151
+  （Ryzen AI MAX+ 395／Radeon 8060S）で確認済み」という事実だけです（`docs/radeon.md`）。
 - 出力音声には **SilentCipher の非可聴透かし**が既定で乗ります（切る経路は持ちません＝
   `decisions.md` 9）。
 
@@ -48,7 +48,10 @@
 > 受け入れ条件は「利用者操作 ≤ 6（vc_redist を黙って通せれば ≤ 5）」（`docs/acceptance.md`）。
 
 1. Release からインストーラ（ランチャ＋埋め込み Python の取得台帳＋自作分・数十 MB）を落として実行する。
-2. インストーラが `%LOCALAPPDATA%\Programs\irodori-tts-ywk\` に本体を置く（per-user・管理者権限なし）。
+2. インストーラが `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（ROCm 版は `…\irodori-tts-ywk-radeon\`）
+   に本体を置く（per-user・管理者権限なし）。**アプリ名も版で分かれる**＝
+   「irodori-TTS for 読み分けちゃん（CUDA 版）」／「…（ROCm 版）」（`decisions.md` 109）。
+   2 本は同じ機体に**同居できる**（取得物の置き場だけは共有する）。
 3. 初回起動でランチャが**実行系とモデルを取得**する（合計 ≈5.4 GiB・100 Mbps 級で 10 分以内が目標）。
    取得先は `%LOCALAPPDATA%\irodori-tts-ywk\`（`runtime\<variant>\`・`models\`・`voices\`・`logs\`）。
    - 実行系＝torch は `download.pytorch.org` の版固定 URL、依存は PyPI、いずれも sha256 で検証。
@@ -73,7 +76,7 @@
 | `docs/contract.md` | 配布版が本体に約束する HTTP 契約（本体が写す一枚）。 |
 | `docs/acceptance.md` | 受け入れ条件（数値）。 |
 | `docs/install.md` | 導入手順（案・便 E で確定）。 |
-| `docs/radeon.md` | Radeon 版の注記（gfx1151 で確認済みの事実だけ）。 |
+| `docs/radeon.md` | ROCm 版の注記（gfx1151 で確認済みの事実だけ）。 |
 | `docs/design/` | 便ごとの設計書。 |
 | `upstream/` | 上流 2 本の submodule（**無改変**・`Irodori-TTS` `8224daf`／`Irodori-TTS-Server` `841fb7c`）。 |
 | `patches/` | ビルド時にだけ当てる差分（submodule には当てない）。 |

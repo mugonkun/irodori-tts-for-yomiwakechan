@@ -161,6 +161,94 @@ public sealed class ReleaseFlavorTests
         var available = ReleaseFlavors.AvailableChoices(ReleaseFlavor.Radeon, []);
         Assert.Equal(RuntimeVariants.RadeonReleaseChoices, available);
     }
+
+    // ---- 裁定 109＝版の名札（CUDA 版／ROCm 版）--------------------------------------
+
+    [Fact]
+    public void 版の名札は利用者にはROCm版と名乗る()
+    {
+        // 内部の識別子（enum の Radeon・台帳名 runtime-rocm-*・Flavor id の radeon）は据え置きで、
+        // **利用者に見せる名だけ**が「ROCm 版」＝司令官の逐語「(CUDA版)(ROCm版)」。
+        Assert.Equal("CUDA 版", ReleaseFlavors.FlavorLabel(ReleaseFlavor.Cuda));
+        Assert.Equal("ROCm 版", ReleaseFlavors.FlavorLabel(ReleaseFlavor.Radeon));
+    }
+
+    [Fact]
+    public void 窓題はインストーラの表示名と1字も違わない()
+    {
+        // installer/irodori-tts-ywk.iss の MyAppName の逐語（全角括弧・版の前に半角空白 1 つ）。
+        Assert.Equal("irodori-TTS for 読み分けちゃん（CUDA 版）", ReleaseFlavors.AppTitle(ReleaseFlavor.Cuda));
+        Assert.Equal("irodori-TTS for 読み分けちゃん（ROCm 版）", ReleaseFlavors.AppTitle(ReleaseFlavor.Radeon));
+        Assert.StartsWith(ReleaseFlavors.AppBaseName, ReleaseFlavors.AppTitle(ReleaseFlavor.Radeon), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void 初回取得の窓題も版で分かれる()
+    {
+        Assert.Equal("初回取得（CUDA 版）", ReleaseFlavors.WizardTitle(ReleaseFlavor.Cuda));
+        Assert.Equal("初回取得（ROCm 版）", ReleaseFlavors.WizardTitle(ReleaseFlavor.Radeon));
+    }
+
+    [Fact]
+    public void トレイの吹き出しは版を名乗る()
+    {
+        Assert.Equal(
+            "irodori-TTS（ROCm 版） v0.1.0／待機",
+            ReleaseFlavors.TrayText(ReleaseFlavor.Radeon, "v0.1.0", App.StateLabel(ServerState.Ready)));
+        Assert.Equal(
+            "irodori-TTS（CUDA 版） v0.1.0／待機",
+            ReleaseFlavors.TrayText(ReleaseFlavor.Cuda, "v0.1.0", App.StateLabel(ServerState.Ready)));
+    }
+
+    [Fact]
+    public void トレイの吹き出しはどの状態でも63字を超えない()
+    {
+        // Win32 の NotifyIcon.szTip は 63 字まで（App.xaml.cs:UpdateTray の注釈）。
+        // 組み立てはアプリと同じ純関数を通す＝ここが通れば実機でも切られない。
+        foreach (var flavor in new[] { ReleaseFlavor.Cuda, ReleaseFlavor.Radeon })
+        {
+            foreach (var state in Enum.GetValues<ServerState>())
+            {
+                var text = ReleaseFlavors.TrayText(flavor, AppVersion.Display, App.StateLabel(state));
+                Assert.True(text.Length <= 63, text + " = " + text.Length + " 字");
+            }
+        }
+    }
+
+    [Fact]
+    public void 樹が読めなくてもDetectFromは投げずCUDA版と読む()
+    {
+        // 窓題（MainWindow.xaml.cs）・このアプリについての見出し（AboutView.xaml.cs）・
+        // トレイ（App.OnStartup）の 3 箇所がこの 1 本を通る＝ここが投げると起動そのものが死ぬ。
+        // LedgerNames は ArgumentException.ThrowIfNullOrWhiteSpace で始まるので、
+        // DetectFrom の空白判定だけがそれを塞いでいる（ReleaseFlavor.cs の逐語）。
+        Assert.Equal(ReleaseFlavor.Cuda, ReleaseFlavors.DetectFrom(null));
+        Assert.Equal(ReleaseFlavor.Cuda, ReleaseFlavors.DetectFrom(string.Empty));
+        Assert.Equal(ReleaseFlavor.Cuda, ReleaseFlavors.DetectFrom("   "));
+
+        // 在りもしない路＝Directory.Exists が false ＝空の並び ＝ CUDA 版
+        var missing = Path.Combine(Path.GetTempPath(), "ywk-detect-" + Guid.NewGuid().ToString("N"));
+        Assert.Equal(ReleaseFlavor.Cuda, ReleaseFlavors.DetectFrom(missing));
+    }
+
+    [Fact]
+    public void rocmの台帳が在る樹はDetectFromでもRadeon版と読む()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "ywk-detect-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "runtime-cpu.json"), "{}");
+            Assert.Equal(ReleaseFlavor.Cuda, ReleaseFlavors.DetectFrom(dir));
+
+            File.WriteAllText(Path.Combine(dir, "runtime-rocm-gfx1151.json"), "{}");
+            Assert.Equal(ReleaseFlavor.Radeon, ReleaseFlavors.DetectFrom(dir));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
 }
 
 public sealed class LogTailTests

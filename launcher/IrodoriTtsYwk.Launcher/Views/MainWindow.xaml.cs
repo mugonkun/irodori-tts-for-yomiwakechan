@@ -47,6 +47,12 @@ public partial class MainWindow : Window
             + "／" + (AppVersion.IsReleaseBuild ? AboutViewModel.UpstreamText : "開発ビルド");
 
         var paths = AppServices.Paths;
+
+        // 窓題は版で分ける（裁定 109）。XAML 側の Title（MainWindow.xaml:5）は設計時（デザイナ）用の
+        // 見本で、実行時は必ずこの行が版つきに差し替える＝素の幹が利用者の目に入る経路は無い。
+        // 樹が読めないときも DetectFrom は投げず ReleaseFlavor.Cuda を返す＝「（CUDA 版）」と名乗る。
+        Title = ReleaseFlavors.AppTitle(ReleaseFlavors.DetectFrom(paths.LedgerDir));
+
         HeaderText.Text = "変種 " + RuntimeVariants.DisplayName(AppServices.Settings.Variant)
             + (paths.DeveloperMode ? "／開発モード（" + paths.AppDir + "）" : string.Empty);
 

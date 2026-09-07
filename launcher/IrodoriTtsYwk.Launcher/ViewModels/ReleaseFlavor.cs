@@ -79,6 +79,56 @@ public static class ReleaseFlavors
         return filtered.Length > 0 ? filtered : Choices(flavor);
     }
 
+    // ---- 版の名札（裁定 109＝CUDA 版と ROCm 版を利用者に見せ分ける）--------------------
+    // 司令官の逐語（2026-09-07）＝「『CUDA版とROCm版の区別』インストーラーが別のはずだが、アプリ名称も
+    // (CUDA版)(ROCm版)としてデフォルトインストールフォルダも分けたい。……Windowタイトルも別に分ける。」
+    // ここに置く理由＝exe は 1 本で両リリースを兼ねる（樹から読む）ので、名札も樹から導く純関数にする。
+    // 内部の識別子（enum の Radeon・台帳名 runtime-rocm-*・Flavor id の radeon）は 1 字も変えない
+    // ＝利用者に見せる名だけが「ROCm 版」である。
+
+    /// <summary>版に依らないアプリの名（表示名の幹）。</summary>
+    public const string AppBaseName = "irodori-TTS for 読み分けちゃん";
+
+    /// <summary>トレイの吹き出し用の短い幹（Win32 の 63 字の枠に収めるため）。</summary>
+    public const string TrayBaseName = "irodori-TTS";
+
+    /// <summary>版の名札（<c>CUDA 版</c>／<c>ROCm 版</c>・純関数）。</summary>
+    public static string FlavorLabel(ReleaseFlavor flavor) => flavor switch
+    {
+        ReleaseFlavor.Radeon => "ROCm 版",
+        _ => "CUDA 版",
+    };
+
+    /// <summary>幹に版の名札を括弧で足す（全角括弧＝インストーラの表示名と 1 字も違えない）。</summary>
+    public static string Decorate(string baseName, ReleaseFlavor flavor)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(baseName);
+        return baseName + "（" + FlavorLabel(flavor) + "）";
+    }
+
+    /// <summary>窓題・このアプリについての見出し（＝インストーラの AppName と同じ文字列）。</summary>
+    public static string AppTitle(ReleaseFlavor flavor) => Decorate(AppBaseName, flavor);
+
+    /// <summary>初回取得ウィザードの窓題。</summary>
+    public static string WizardTitle(ReleaseFlavor flavor) => Decorate("初回取得", flavor);
+
+    /// <summary>
+    /// トレイの吹き出し（純関数＝<b>63 字の枠</b>を試験で釘付けするためにここに置く）。
+    /// 例＝<c>irodori-TTS（ROCm 版） v0.1.0／待機</c>。
+    /// <para>
+    /// 版の名札を足す前の「<c>irodori-TTS v0.1.0／待機</c>」と同じく、版と版数の間は半角空白で切る
+    /// （両版×全 ServerState の最長でも 30 字＝63 字の枠に 33 字の余りがあるので詰める理由が無い）。
+    /// </para>
+    /// </summary>
+    public static string TrayText(ReleaseFlavor flavor, string versionDisplay, string stateLabel) =>
+        Decorate(TrayBaseName, flavor) + " " + versionDisplay + "／" + stateLabel;
+
+    /// <summary>配布樹の <c>ledger/</c> を読んで版を決める（薄い殻＝読めなければ CUDA 版）。</summary>
+    public static ReleaseFlavor DetectFrom(string? ledgerDir) =>
+        string.IsNullOrWhiteSpace(ledgerDir)
+            ? ReleaseFlavor.Cuda
+            : Detect(LedgerNames(ledgerDir));
+
     /// <summary>配布樹の <c>ledger/</c> を読む（薄い殻＝檔が読めなければ CUDA 版として振る舞う）。</summary>
     public static IReadOnlyList<string> LedgerNames(string ledgerDir)
     {

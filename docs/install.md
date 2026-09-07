@@ -5,7 +5,8 @@
 > 正典＝`decisions.md` 8・12・46・80・83・87・88。受け入れ条件＝`docs/acceptance.md` の「導入」「サイズ」
 > 「ドライバ」「起動」「起動失敗」の各行。事実の出典＝`research/`（調査便の写し）と、便 B・C・D・E の実射。
 >
-> **この檔は配布物に入る**（`%LOCALAPPDATA%\Programs\irodori-tts-ywk\docs\install.md`）。
+> **この檔は配布物に入る**（CUDA 版なら `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\docs\install.md`・
+> ROCm 版なら `…\Programs\irodori-tts-ywk-radeon\docs\install.md`＝`decisions.md` 109）。
 
 ---
 
@@ -19,11 +20,31 @@
   `User privileges: None` ／ `Administrative install mode: No` ／ `Install mode root key: HKEY_CURRENT_USER`。
   ※ **アンインストールでは UAC が出ることがある**（Inno の仕様＝管理者権限が使える口座では
   アンインストーラが常に「管理者を要する」と印される）。導入で出ないことと混同しない。
-- **リリースは版ごとに 2 本**（`decisions.md` 5）。
+- **リリースは版ごとに 2 本**（`decisions.md` 5・**表示名と導入先は `decisions.md` 109**）。
   - `irodori-tts-ywk-setup-v<版>-cuda.exe`＝**CUDA 版**（cu130／cu126／CPU を選べる）
-  - `irodori-tts-ywk-setup-v<版>-radeon.exe`＝**Radeon 版**（rocm-gfx1151／CPU）
-  - 2 本は**導入先も別**（`…\irodori-tts-ywk` と `…\irodori-tts-ywk-radeon`）で、**同じ機体に同居できる**。
-    ただし取得物の置き場（`%LOCALAPPDATA%\irodori-tts-ywk\`）は**共有**する。
+    ＝アプリ名は「**irodori-TTS for 読み分けちゃん（CUDA 版）**」
+  - `irodori-tts-ywk-setup-v<版>-radeon.exe`＝**ROCm 版**（rocm-gfx1151／CPU）
+    ＝アプリ名は「**irodori-TTS for 読み分けちゃん（ROCm 版）**」
+    ※ 檔名の `radeon` は**内部の識別子**なので変えていない（`decisions.md` 5 以来の名）。
+  - 2 本は**導入先も別**（`…\Programs\irodori-tts-ywk-cuda` と `…\Programs\irodori-tts-ywk-radeon`）で、
+    **同じ機体に同居できる**。Python 無しの機体で両方を試したい人のために、名も置き場も分けてある。
+  - ただし取得物と話者の置き場（`%LOCALAPPDATA%\irodori-tts-ywk\`）は**共有**する（版ごとには分けない）。
+    実行系は変種ごとの枝（`runtime\cu130\`・`runtime\rocm-gfx1151\` …）に入るので混ざらない。
+  - **同時に走るランチャは 1 個体だけ**＝2 つの版は同じ単一起動の錠（`Local\irodori-tts-ywk-launcher`）と
+    同じポート（`127.0.0.1:18088`）を使う。片方が走っている最中にもう片方を起こすと、
+    **先に走っている方の窓が前に出るだけ**である（2 個目は静かに退く）。
+  - 既知の癖＝**もう一方の版のランチャが走っている最中に導入すると弾かれる**（インストーラの
+    `AppMutex` も 2 版で共有している）。そのとき出る文が名乗るのは**これから入れる側の版の名**なので、
+    「ROCm 版が検出されました」と読めても、実際に走っているのは CUDA 版のことがある。
+    **導入だけでなくアンインストールでも同じ錠を見る**（Inno の逐語＝"a mutex which Setup **and
+    Uninstall** should check"）ので、撤去も同じ文で断られる。どちらにせよ**走っているランチャを
+    終了すれば通る**。
+  - **両方を入れた機体で読み分けちゃん2 が自動で選ぶのは ROCm 版**である。本体の候補順が
+    `…\Programs\irodori-tts-ywk-radeon\` → `…\Programs\irodori-tts-ywk-cuda\` で、
+    **実在する最初の 1 つ**を採るからである（本体側 `UI/Services/Launch/EngineLaunchDefaults.cs`）。
+    CUDA 版を起こさせたいときは、本体の元栓のパス欄に
+    `…\Programs\irodori-tts-ywk-cuda\IrodoriTtsYwk.Launcher.exe` を**手で指す**
+    （保存値が正なので推定は上書きしない）。
 - **署名は無い**。Release ノートに載せた **sha256** と突き合わせてから実行すること。
   SmartScreen が出たら「詳細情報」→「実行」（※ 実際に出るかは未実射）。
 - 取得したものは**すべて sha256 で検証**する。台帳（`ledger/*.json`）が URL と sha256 の唯一の正本で、
@@ -40,7 +61,7 @@
 
 | # | 操作 | 何が起きるか | 目安 |
 |---|---|---|---|
-| 1 | インストーラを実行する（中は 3 クリック＝次へ／インストール／完了） | `%LOCALAPPDATA%\Programs\irodori-tts-ywk\` に本体（ランチャ exe・`server/`・`ledger/`・`licenses/`・`voices/`・`docs/`）が入る。**約 106 MiB**。 | 数秒 |
+| 1 | インストーラを実行する（中は 3 クリック＝次へ／インストール／完了） | `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（ROCm 版は `…-radeon\`）に本体（ランチャ exe・`server/`・`ledger/`・`licenses/`・`voices/`・`docs/`）が入る。**約 106 MiB**。 | 数秒 |
 | 2 | ランチャを起動する | **完了頁の「実行する」チェック（既定 ON）が起こすので、追加の操作は要らない。** | — |
 | 3 | 通知に同意する | 初回セットアップの 1 段目に**ライセンス通知**（初回取得で入る第三者物の一覧＝`licenses/first-run-notices.md`。**手順 1 で一緒に入る**＝`decisions.md` 46）が出る。 | — |
 | 4 | 実行系の種類を選んで「取得を始める」を押す | 検出した GPU を UUID つきで一覧表示。CUDA 版の既定は cu130、ドライバが 580 未満なら cu126 を**勧める**（自動では切り替えない＝`decisions.md` 4・80）。実行系とモデル＝**cu130 で 5.26 GiB**を取得して `%LOCALAPPDATA%\irodori-tts-ywk\` に展開する。`vc_redist.x64.exe`（≈24.4 MiB）もここで通す（**UAC が 1 回出る**）。 | 100 Mbps 級で **≤ 10 分** |
@@ -60,7 +81,7 @@
 |---|---|---|
 | cu130（CUDA 版の既定） | **5.26 GiB** | **11.56 GiB** |
 | cu126 | 5.93 GiB | 14.45 GiB |
-| rocm-gfx1151（Radeon 版） | 4.79 GiB | 9.55 GiB |
+| rocm-gfx1151（ROCm 版） | 4.79 GiB | 9.55 GiB |
 | cpu | 3.62 GiB | 4.53 GiB |
 
 （`ledger/README.md` §7。「要る空き」は展開が済むまで原檔と展開後が同時に在るため。
@@ -75,13 +96,16 @@
 
 | 場所 | 中身 | 誰の物 | 消してよいか |
 |---|---|---|---|
-| `%LOCALAPPDATA%\Programs\irodori-tts-ywk\`（**アプリ樹**） | ランチャ exe（69,588,729 B）・`server\`（wrapper＋**パッチ適用済みの上流の写し**＝MIT・数 MB のテキスト）・`ledger\`・`licenses\`・`voices\presets\`（プリセット話者 11 檔・32,571,364 B）・`docs\`・`unins000.exe` | **インストーラの専管**（利用者の檔は 1 つも置かれない） | アンインストーラが消す |
+| `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（**アプリ樹**・ROCm 版は `…-radeon\`） | ランチャ exe（69,588,729 B）・`server\`（wrapper＋**パッチ適用済みの上流の写し**＝MIT・数 MB のテキスト）・`ledger\`・`licenses\`・`voices\presets\`（プリセット話者 11 檔・32,571,364 B）・`docs\`・`unins000.exe` | **インストーラの専管**（利用者の檔は 1 つも置かれない） | アンインストーラが消す |
 | `%LOCALAPPDATA%\irodori-tts-ywk\runtime\<variant>\` | 埋め込み Python ＋ site-packages（cu130／cu126／cpu／rocm-gfx1151 のいずれか） | ランチャの専管 | 消せる（次回起動で取り直し） |
 | `%LOCALAPPDATA%\irodori-tts-ywk\models\` | モデル（`HF_HOME`）＝checkpoint 2.86 GiB・コーデック 410 MB・透かし 65 MiB・tokenizer 6 MiB | 同 | 消せる（同上・**3.33 GiB の取り直し**） |
 | `%LOCALAPPDATA%\irodori-tts-ywk\cache\` | 取得中の `.part` と検証済みの原檔（cu130 で ≈1.93 GiB） | 同 | 消せる（**消すと修復が遅くなる**＝§5-2） |
 | `%LOCALAPPDATA%\irodori-tts-ywk\voices\` | 利用者の話者（参照 wav・`refs\`）・`latents\`・`voices.json`・`voices.ywk.json` | 同 | **利用者の資産＝既定では消さない** |
-| `%LOCALAPPDATA%\irodori-tts-ywk\logs\`・`miopen\` | ログ・MIOpen db（Radeon 版のみ） | 同 | 消せる |
-| `%LOCALAPPDATA%\irodori-tts-ywk\settings.json` | 設定（GPU の UUID・CUDA 版・精度など） | 同 | 消せる（初期設定に戻る） |
+| `%LOCALAPPDATA%\irodori-tts-ywk\logs\`・`miopen\` | ログ・MIOpen db（ROCm 版のみ） | 同 | 消せる |
+| `%LOCALAPPDATA%\irodori-tts-ywk\settings.json` | 設定（GPU の UUID・変種＝`cu130`／`cu126`／`cpu`／`rocm-gfx1151`・精度など） | 同 | 消せる（初期設定に戻る） |
+
+※ 表のアプリ樹の路は**新しく入れた機体の既定**である。**`decisions.md` 109 より前に入れた CUDA 版**は
+`…\Programs\irodori-tts-ywk\`（版なし）のままで、上書き更新でも動かない（§5-1）。
 
 **インストーラはデータ樹（`%LOCALAPPDATA%\irodori-tts-ywk\`）に 1 檔も作らず、更新でも 1 檔も触らない。**
 だから**版を上げてもモデルと実行系は取り直しにならない**（実装で担保するのではなく、置き場が分かれていることで満たされる）。
@@ -89,7 +113,7 @@
 「書き込み側のディレクトリを作る（**導入先には 1 檔も作らない**）」。
 
 **導入後のディスク使用量**＝アプリ樹 **約 106 MiB**（実測）＋データ樹。
-データ樹の実測（この開発機・Radeon 版の材料）＝実行系 `runtime-rocm-gfx1151` が **4,636,458,599 B（4.32 GiB）**、
+データ樹の実測（この開発機・ROCm 版の材料）＝実行系 `runtime-rocm-gfx1151` が **4,636,458,599 B（4.32 GiB）**、
 モデルが 3,570,982,039 B（3.33 GiB）＝**合計 約 8.3 GB**（`cache\` を除く）。
 ※ `docs/acceptance.md` サイズ行の「導入後 ≤ 7.0 GB」は**落とすバイト**を前提にした値で、
 **展開後の実測とは合わない**。cu130 の展開後はまだ実測していない。条件値の扱いは卓の裁定待ち
@@ -163,9 +187,11 @@
 | 起動して `/health` が 200 になるのに、最初の合成でランチャが「サーバが落ちました（exit −1073741819）」と出す | cu130 の実行系が GPU を見られない機体で走った | **cu126 か CPU の変種に切り替える**（`decisions.md` 83。cu130 の CPU 転落は配布版が禁じている） |
 | 合成は通るが 1 発目だけ極端に遅い | 初見形状のカーネル生成（**Radeon のみ**） | `docs/radeon.md` を見る。CUDA 機では該当する罰は観測されていない |
 | 話者一覧に「デフォルト」しか出ない | `voices\` が空 | ランチャで参照 wav を追加する（wav 選択＋名付けの 2 操作） |
-| 本体が配布版を見つけない | ポート違い | 配布版は **18088**。本体側は接続先の改修が要る（`docs/contract.md` ⑼ D-9） |
-| ランチャの選択肢に cu130／cu126 が出ない（CUDA 版なのに） | `ledger\` に `runtime-rocm-*.json` が混ざっている | **入れ直す**（インストーラは導入の最初の段で `ledger\` を作り直す）。混ざると Radeon 版と判定される（`ReleaseFlavor.Detect`） |
-| 導入の途中で「管理者権限が要ります」と断られる | Program Files（全ユーザ）や Windows フォルダを選んだ | 既定の `%LOCALAPPDATA%\Programs\irodori-tts-ywk` を使う |
+| 本体が配布版のランチャを**自動で見つけない** | 導入先が本体の候補と合っていない（**`decisions.md` 109 より前に入れた CUDA 版**は `…\Programs\irodori-tts-ywk\` のままである＝Inno の `UsePreviousAppDir` で上書き更新しても場所は動かない） | 本体が見るのは `…-radeon\` と `…-cuda\` の 2 つだけ。**いったんアンインストールしてから新しい setup を入れ直す**（データ樹は共有なので話者・設定・モデルは残る＝§5-1）か、本体の元栓のパス欄に exe を**手で指す** |
+| 本体が配布版につながらない | ポート違い | 配布版は **18088**（本体側は**便 F で対応済み**＝`decisions.md` 107。契約は `docs/contract.md` ⑼ D-9） |
+| ランチャの選択肢に cu130／cu126 が出ない（CUDA 版なのに） | `ledger\` に `runtime-rocm-*.json` が混ざっている | **入れ直す**（インストーラは導入の最初の段で `ledger\` を作り直す）。混ざると ROCm 版と判定される（`ReleaseFlavor.Detect`） |
+| 導入の途中で「管理者権限が要ります」と断られる | Program Files（全ユーザ）や Windows フォルダを選んだ | 既定の `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda`（ROCm 版は `…-radeon`）を使う |
+| どちらの版を入れたのか分からなくなった | 名も置き場も版で分かれている（`decisions.md` 109） | 「アプリと機能」の表示名（`…（CUDA 版）`／`…（ROCm 版）`）・ランチャの窓題・トレイの吹き出しの 3 つが同じ名を出す |
 
 ---
 
@@ -179,6 +205,12 @@
   ＝旧版で消えた檔が残らない）。
 - **データ樹には触らない**＝**モデルと実行系の取り直しは起きない**。
 - **ランチャが走っていると弾かれる**（「…が実行中です」と出る）。ランチャを終了してからやり直す。
+  ※ **どちらの版のランチャが走っていても弾かれる**（錠は 2 版で共有＝§0）。
+- ※ **`decisions.md` 109 より前に入れた CUDA 版**を上書き更新しても、導入先は旧名
+  `…\Programs\irodori-tts-ywk\` のままである（Inno の `UsePreviousAppDir`＝既定 yes）。
+  新しい既定 `…-cuda\` にしたい／**本体の自動発見に乗せたい**ときは、**いったんアンインストール
+  してから入れ直す**（データ樹は別なのでモデルの取り直しは起きない＝§2）。
+  入れ直さないなら、本体側でランチャの路を手で指す（§4）。
 
 ### 5-2 修復
 
@@ -215,10 +247,13 @@ Inno の `DelTree` の「reparse point の中までは消さない」免除が�
 
 ### 5-4 アンインストール
 
-1. 「アプリと機能」からアンインストーラを実行する＝`%LOCALAPPDATA%\Programs\irodori-tts-ywk\` が消える。
-   **ランチャが走っていると弾かれる**（終了してからやり直す）。
+1. 「アプリと機能」からアンインストーラを実行する。表示名は「**irodori-TTS for 読み分けちゃん（CUDA 版）
+   v<版>**」／「**…（ROCm 版）v<版>**」で、消えるのはその版のアプリ樹
+   （`%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`／`…-radeon\`）だけである。
+   **どちらの版のランチャが走っていても弾かれる**（両版で錠を共有している＝§0。Inno は
+   導入と撤去の両方で同じ `AppMutex` を見る）。**走っている方を終了してからやり直す。**
 2. **取得物（実行系・モデル・取得キャッシュ・ログ・MIOpen db）を消すかどうかを尋ねる。既定は「残す」。**
-   ※ **もう一方の種（CUDA 版と Radeon 版）がまだ入っているときは尋ねない**＝取得物は共有なので道連れにしない。
+   ※ **もう一方の版（CUDA 版と ROCm 版）がまだ入っているときは尋ねない**＝取得物は共有なので道連れにしない。
 3. **話者（`voices\`）と設定（`settings.json`）を消すかどうかを別に尋ねる。既定は「残す」。**
    利用者の資産なので、消すには**明示の選択が要る**。
 4. **無人アンインストール**（`/VERYSILENT /SUPPRESSMSGBOXES`）では、2 つとも**黙って「残す」に落ちる**（実射で確認）。

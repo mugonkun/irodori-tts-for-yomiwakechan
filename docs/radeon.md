@@ -1,6 +1,9 @@
-# radeon.md — Radeon（ROCm）版の注記
+# radeon.md — ROCm 版の注記（Radeon の GPU＝gfx1151 向け）
 
-> **ROCm は未保障。Radeon 版は別リリースである**（`decisions.md` 5・21）。
+> 檔名の `radeon` と、本文の `Radeon 8060S`・`gfx1151`・`rocm-gfx1151` は**道具の名**なので据え置き。
+> **リリース／アプリを指す名だけ**が「ROCm 版」である（`decisions.md` 109）。
+
+> **ROCm は未保障。ROCm 版は別リリースである**（`decisions.md` 5・21）。
 > 本檔に書くのは **gfx1151（Ryzen AI MAX+ 395／Radeon 8060S）で実際に測った事実だけ**である。
 > 他の Radeon で動くか・速いかは**測っていない**＝謳わない。
 > 出典＝`research/lab/notes/34-rocm-environment-detection.md`（環境判定）・
@@ -55,8 +58,8 @@
   `decode_latent` 28.5 s）・定常 5.61 s（RTF 0.94）。同じ位置が **bf16 なら 2.841 s／定常 0.85〜1.09 s**
   （`research/lab/notes/40` §8）。
 - ⇒ **bf16 固定は「起動直後の詰まり」を 11 倍縮める**。これが `decisions.md` 5 の
-  「Radeon 版は bf16 固定」の根拠である。
-- 上級者向けの精度セレクタも Radeon 版では**開けない**（CPU に落とす経路だけ残す）。
+  「ROCm 版は bf16 固定」の根拠である。
+- 上級者向けの精度セレクタも ROCm 版では**開けない**（CPU に落とす経路だけ残す）。
 
 ### 2-2 **初見形状の罰**がある（CUDA では観測されていない）
 
@@ -73,7 +76,7 @@
 - **db はプロセスを跨いで効く**＝S_lat 363 は初見 14.97 s → 新プロセス 2.87 s → プロセス内ウォーム
   2.17 s。空 db では 1 発目 11.2 s・モデル読込も 20.0 → 29.3 s。
 - **CUDA 機（3090）では同型の罰は観測されていない**（cold 1.1〜2.1 倍のみ・参照長の罰も無し）。
-  ⇒ `docs/acceptance.md` の「スパイク」行は **Radeon 版にだけ**掛ける。
+  ⇒ `docs/acceptance.md` の「スパイク」行は **ROCm 版にだけ**掛ける。
 
 ### 2-3 起動時に**暖機する**
 
@@ -149,7 +152,7 @@
 - **索引には広い arch が並んでいる**（gfx1010〜1036／1100〜1103／1150〜1153／1200・1201 など）が、
   **索引に wheel があることと動くことは別**＝**gfx1151 以外は測っていない**。
 - **PyTorch は ROCm でも device 名として `"cuda"` を名乗る**＝`IRODORI_MODEL_DEVICE` の値は
-  Radeon 版でも `cuda`／`cuda:N`。`/ywk/status.torch.hip` に HIP の版が入るかどうかで見分ける
+  ROCm 版でも `cuda`／`cuda:N`。`/ywk/status.torch.hip` に HIP の版が入るかどうかで見分ける
   （`torch.version.hip`）。
 
 ---
@@ -169,7 +172,7 @@
 
 ---
 
-## 6. Radeon 版のビルド変種（便 C で確定・数値は実測）
+## 6. ROCm 版のビルド変種（便 C で確定・数値は実測）
 
 - 取得台帳＝`ledger/runtime-rocm-gfx1151.json`＝**107 item**。うち **99 件は cpu 変種（`ledger/runtime-cpu.json`）と
   name・version・sha256 が完全一致**（台帳生成が毎回突合し、違えば止まる）。**AMD 索引由来は 8 件**＝
@@ -345,7 +348,7 @@ wrapper の env が効いていることの証明）。
 1. **参照ごとのプロセス内初回**＝`prepare_reference` が **0.95〜1.44 s**（2 度目は 0.28〜0.40 s）。
    話者を切り替えるたびに 1 秒級を払う。`ref_latent`（`.pt` 事前計算）ならここは消える見込みだが
    **この便では作っていない＝未検証**（`40` §4 の in-process 実測は 10〜11 ms）。
-   → **`decisions.md` 65 でこれを Radeon 版だけ採ることが裁定され、口は実装済み**＝§8。
+   → **`decisions.md` 65 でこれを ROCm 版だけ採ることが裁定され、口は実装済み**＝§8。
    **実測は §7-8**＝焼いた後は `prepare_reference` **1.0〜4.3 ms**（2 巡目）・**RTF は 2 巡目で 11/11 が 0.5 未満**。
 2. **連続運転で計算そのものが遅くなる**＝同じ 1 プロセスの 35 射を順に見ると、**純計算の段
    `sample_rf` が 618 ms（2 射目）→ 1,400 ms（34 射目）と 2.3 倍に伸びる**
@@ -371,7 +374,7 @@ wrapper の env が効いていることの証明）。
 
 - **単調に増える**（採った標本では `peak` と `last` が常に一致）＝`IRODORI_EMPTY_CACHE_INTERVAL=0` を
   焼いている以上、caching allocator は解放しない。**この機体は共有メモリ 107 GB なので破綻しないが、
-  VRAM の少ない dGPU で同じ設定を使うと危ない**＝`empty_cache_interval` の既定は Radeon 版で
+  VRAM の少ない dGPU で同じ設定を使うと危ない**＝`empty_cache_interval` の既定は ROCm 版で
   別途考える価値がある（**当席は裁定しない**）。**`interval=0` と `=10` を並べて撃った材料は §7-8 ⑶**。
 - `Non Local Usage` は全標本 0・`Shared Usage` は 124〜142 MB。
 - **`docs/acceptance.md` の「bf16 常駐 ≤ 3.2 GiB」は "読込直後" なら 3.37 GiB でほぼ境界、
@@ -476,7 +479,7 @@ FastAPI＋wav 詰め＋該当時の `empty_cache`）。
 
 ## 8. 参照潜在キャッシュ（`decisions.md` 65・2026-09-05・**口は実装済み・この機体で実測済み＝§7-8**）
 
-**なぜ Radeon 版だけか**＝§7-6 の原因⑴。話者を切り替えるたびに `prepare_reference` が
+**なぜ ROCm 版だけか**＝§7-6 の原因⑴。話者を切り替えるたびに `prepare_reference` が
 **0.95〜1.44 s**（この機体の実測）。参照 wav を一度だけ潜在に焼いて `.pt` で渡すと、
 研究段（`research/lab/notes/40-rocm-warmup.md` §6-2）では **1 発目 10.4〜11.5 ms・以後 1.2〜1.5 ms**・
 **参照長に依らず**・**VRAM も増えない**（no-ref と同じ 2,331〜2,333 MB）。

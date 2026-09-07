@@ -13,7 +13,21 @@
   `AppId`・導入先・同梱台帳を分ける。同じ機体に同居できる（取得物の置き場は共有）。
   ※ 便 A の本 README は「per-user のインストーラ **1 本**」と書いていた。これは「per-user か per-machine か」の
   意味と読み、**「版ごとに 1 本」に読み替えた**（便 E 設計 §1-4・**卓の裁定待ち**＝同 §9 Q-E1）。
-- 置き場＝`%LOCALAPPDATA%\Programs\irodori-tts-ywk\`（Radeon 版は `…-radeon\`）。
+- **アプリ名は版で分ける**（`decisions.md` 109）＝`irodori-TTS for 読み分けちゃん（CUDA 版）`／
+  `…（ROCm 版）`。この文字列が `AppName`・`AppVerName`・`UninstallDisplayName` の頭・
+  スタートメニューの近道の名・ランチャの窓題・「このアプリについて」の見出しに出る。
+  **檔名と `/DFlavor=` の `radeon` は内部の識別子**なので変えていない（`AppId` の GUID・`AppMutex`・
+  台帳名・データ樹の名も同じ）。利用者に見せる版の名だけが「ROCm 版」である。
+- 置き場＝`%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（ROCm 版は `…-radeon\`）。
+  ※ CUDA 側は素の `irodori-tts-ywk\` だったが、本体（読み分けちゃん2）の `EngineLaunchDefaults` が
+  `Programs\irodori-tts-ywk-radeon` → `Programs\irodori-tts-ywk-cuda` の順にしか探していないので、
+  **こちらを本体に合わせた**（`decisions.md` 109）。ROCm 側の路は 1 字も変えていない。
+  ※ 効くのは**新しく入れた機体だけ**＝改訂前に入れた CUDA 版は `UsePreviousAppDir`（既定 yes）で
+  旧路 `…\Programs\irodori-tts-ywk\` に留まり、本体の自動発見には**依然として乗らない**
+  （入れ直すか、本体側で路を手で指す＝`docs/install.md` §4・§5-1）。
+  ※ **両版を入れた機体で本体が自動で選ぶのは ROCm 版**である（候補順が `…-radeon\` → `…-cuda\` で、
+  実在する最初の 1 つを採る）。CUDA 版を起こさせたいときは本体の元栓のパス欄で exe を手で指す
+  ＝**候補順そのものは本体側の話**なので卓へ回す票（このリポの範囲外）。
 - 中身＝ランチャ exe（便 D）・`server\`（wrapper ＋ **パッチ適用済みの上流の写し**＝MIT・数 MB の
   テキスト）・`ledger\`（**版ごとに間引く**）・`licenses\`・`voices\`（プリセット話者・便 P）・`docs\`（**明示列挙**）。
 - **第三者バイナリ（wheel・exe・dll・モデル）は 1 つも入れない**（`decisions.md` 8）。
@@ -52,11 +66,14 @@
 1. **`[InstallDelete]` を 4 行置く**（`{app}\server`・`{app}\ledger`・`{app}\licenses`・`{app}\voices\presets`）。
    Inno は「新版で消えた檔」を消さないので、⒜ 上流の写しから減った `.py` が `._pth` 経由で import され続ける、
    ⒝ 種を跨いだ上書きで `ledger\` が混ざり **cu130／cu126 が UI から消える**（`ReleaseFlavor.Detect` は
-   `runtime-rocm-*` を 1 件見た瞬間 Radeon 版と判定する）。
-2. **`docs\` は明示列挙**（`README.md`・`docs/install.md`＋Radeon 版のみ `docs/radeon.md`）。
+   `runtime-rocm-*` を 1 件見た瞬間 ROCm 版と判定する）。
+   **5 行目（`decisions.md` 109）**＝`{autoprograms}\{#OldAppName}.lnk` を `Type: files` で消す。
+   Inno は `[Icons]` の名が変わっても旧名の近道を消さないので、改名の前に入れた機体では
+   更新導入で新旧 2 本が並ぶ。場所は `UsePreviousAppDir`（既定 yes）でそのままなので、直すのは名だけ。
+2. **`docs\` は明示列挙**（`README.md`・`docs/install.md`＋ROCm 版のみ `docs/radeon.md`）。
    一括写しにすると `acceptance.md`・`contract.md` という内部檔が利用者機へ出る。
 3. **アンインストールの問いは 2 段**（1 段目＝取得物・2 段目＝話者と設定）・**どちらも既定は「残す」**・
-   無人では黙って残る（実射で確認）。**もう一方の種がまだ入っていれば 1 段目を出さない**（取得物は共有）。
+   無人では黙って残る（実射で確認）。**もう一方の版がまだ入っていれば 1 段目を出さない**（取得物は共有）。
 4. **環境変数を 1 本も立てない**（`YWK_LAUNCHER_*` を `setx` しない）＝1 本でも立つとランチャが「開発起動」を名乗る。
 5. **生産ラインは `build/installer-build.ps1`**（新設・ASCII・CRLF・PS 5.1／7）。
    `assemble-app.ps1` → `release-build.ps1 -SkipZip` → 門 A（**7 本**）→ ISCC → 門 B（3 本）→ sha256。

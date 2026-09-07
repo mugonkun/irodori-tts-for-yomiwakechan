@@ -71,8 +71,10 @@ Test-Path msvcp140.dll
 
 ### 4-1 ランチャを起こす（遠隔席）
 
+※ 路は `…\Programs\irodori-tts-ywk-cuda\`＝**裁定 109 で改めた CUDA 版の既定の導入先**（`probe/e-install-probe.ps1` の `Get-ExpectedAppDir` と同じ根拠）。**裁定 109 より前に組んだ setup**（N: に置いた 84,986,833 B の現物など）をそのまま使うなら、その回だけ路は旧名の `…\Programs\irodori-tts-ywk\` である＝**どちらの setup を撃つのかを先に決めてから**この段へ入ること。
+
 ```
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$exe = Join-Path $env:LOCALAPPDATA 'Programs\irodori-tts-ywk\IrodoriTtsYwk.Launcher.exe'; Write-Host ('exe = ' + $exe + ' exists=' + (Test-Path -LiteralPath $exe)); $p = Start-Process -FilePath $exe -PassThru; Start-Sleep -Seconds 3; Write-Host ('pid = ' + $p.Id + ' alive=' + (-not $p.HasExited))"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$exe = Join-Path $env:LOCALAPPDATA 'Programs\irodori-tts-ywk-cuda\IrodoriTtsYwk.Launcher.exe'; Write-Host ('exe = ' + $exe + ' exists=' + (Test-Path -LiteralPath $exe)); $p = Start-Process -FilePath $exe -PassThru; Start-Sleep -Seconds 3; Write-Host ('pid = ' + $p.Id + ' alive=' + (-not $p.HasExited))"
 ```
 
 初回取得ウィザードが自動で開く。**以後の押下は設計席が CRD で行う**＝通知に同意→変種は **cpu**（この機体は cu130 も cu126 も動くが、E-1 の狙いは DLL の欠落なので取得が最小の cpu を選ぶ）→「この構成で取得を始める」。
@@ -103,7 +105,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = 'C:\Windows\System3
 - ランチャを止め（トレイ→終了、または `taskkill /IM IrodoriTtsYwk.Launcher.exe /T /F`）、無人でアンインストール：
 
 ```
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$u = Join-Path $env:LOCALAPPDATA 'Programs\irodori-tts-ywk\unins000.exe'; $p = Start-Process -FilePath $u -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/LOG=C:\ywk\logs\e1-uninstall.log') -Wait -PassThru; Write-Host ('EXIT=' + $p.ExitCode); Write-Host ('programs left = ' + ((Get-ChildItem -LiteralPath (Join-Path $env:LOCALAPPDATA 'Programs') -Directory -ErrorAction SilentlyContinue | Where-Object Name -like 'irodori*' | Measure-Object).Count)); Write-Host ('key left = ' + (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{F228543A-DCF9-45A3-8826-7485C81E1757}_is1'))"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$u = Join-Path $env:LOCALAPPDATA 'Programs\irodori-tts-ywk-cuda\unins000.exe'; $p = Start-Process -FilePath $u -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/LOG=C:\ywk\logs\e1-uninstall.log') -Wait -PassThru; Write-Host ('EXIT=' + $p.ExitCode); Write-Host ('programs left = ' + ((Get-ChildItem -LiteralPath (Join-Path $env:LOCALAPPDATA 'Programs') -Directory -ErrorAction SilentlyContinue | Where-Object Name -like 'irodori*' | Measure-Object).Count)); Write-Host ('key left = ' + (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{F228543A-DCF9-45A3-8826-7485C81E1757}_is1'))"
 ```
 
 データ樹（`%LOCALAPPDATA%\irodori-tts-ywk`）は**残してよい**（月曜以降の cu130／cu126 の 1 周に使う）。

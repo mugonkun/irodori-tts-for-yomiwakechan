@@ -77,7 +77,7 @@ CHM 逐語＝`SuppressibleTaskDialogMsgBox` は「If message boxes are being sup
 
 | 樹 | 誰の物 | 導入 | 更新 | アンインストール |
 |---|---|---|---|---|
-| **アプリ樹** `{app}`＝`%LOCALAPPDATA%\Programs\irodori-tts-ywk\` | **インストーラの専管**。利用者は 1 檔も持たない | 丸ごと置く | **丸ごと入れ替える**（§1-3） | 丸ごと畳む |
+| **アプリ樹** `{app}`＝`%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（ROCm 版は `…-radeon\`＝**裁定 109**・§17-2） | **インストーラの専管**。利用者は 1 檔も持たない | 丸ごと置く | **丸ごと入れ替える**（§1-3） | 丸ごと畳む |
 | **データ樹** `%LOCALAPPDATA%\irodori-tts-ywk\` | **ランチャの専管** | **1 檔も作らない** | **1 檔も触らない** | **尋ねてからだけ**触る（§5） |
 
 逐語の根拠＝`launcher/IrodoriTtsYwk.Launcher/Contracts/AppPaths.cs:216`
@@ -90,10 +90,13 @@ CHM 逐語＝`SuppressibleTaskDialogMsgBox` は「If message boxes are being sup
 
 ### 1-2 導入先と、そこに入る物（実測）
 
-`{app}` の既定＝`{autopf}\irodori-tts-ywk`。`PrivilegesRequired=lowest` の下で `{autopf}` は `{userpf}` に落ちる
+`{app}` の既定＝`{autopf}\{#MyDirName}`＝**cuda は `irodori-tts-ywk-cuda`・radeon は `irodori-tts-ywk-radeon`**
+（**裁定 109**・§17-2。改訂前の cuda は版なしの `irodori-tts-ywk` だった）。
+`PrivilegesRequired=lowest` の下で `{autopf}` は `{userpf}` に落ちる
 （CHM 逐語＝`autopf | commonpf | userpf`／「{userpf} The path to the current user's Program Files folder …
-it will translate to the same directory as `{localappdata}\Programs`」）＝**`%LOCALAPPDATA%\Programs\irodori-tts-ywk\`**
-＝`installer/README.md` §1 と `docs/design/ben-a-skeleton-and-build.md` §2 のとおり。
+it will translate to the same directory as `{localappdata}\Programs`」）＝
+**`%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`**（ROCm 版は `…\Programs\irodori-tts-ywk-radeon\`）
+＝`installer/README.md` §1 と `docs/design/ben-a-skeleton-and-build.md` §2 のとおり（両檔とも裁定 109 で改訂済み）。
 
 | 中身 | 出所 | 実測バイト（2026-09-05・この機体） |
 |---|---|---|
@@ -118,6 +121,10 @@ Type: filesandordirs; Name: "{app}\licenses"
 Type: filesandordirs; Name: "{app}\voices\presets"
 ```
 
+> **追記＝裁定 109（2026-09-07）＝5 行目**。`Type: files; Name: "{autoprograms}\{#OldAppName}.lnk"`。
+> 表示名を改めたので、改名の前に入れた機体では旧名のスタートメニューの近道が残る（Inno は
+> `[Icons]` の名が変わっても旧名の `.lnk` を消さない）。詳細＝§17。
+
 CHM 逐語＝「[InstallDelete] section … its entries are processed as **the first step of installation**」。
 理由 2 つ。
 
@@ -139,14 +146,23 @@ CUDA 版の `{app}\ledger` に `runtime-rocm-gfx1151.json` が 1 檔残るだけ
 `decisions.md` 5「**Radeon 版は別リリース**」に素直で、`ReleaseFlavors.Detect` が振る舞いを台帳で決める以上、
 **1 本にすると CUDA 機で cu130／cu126 が UI から消える**（§1-3 ⒝）。
 
-| | CUDA 版 | Radeon 版 |
+> **改訂＝裁定 109（2026-09-07）**。`AppName` の 2 つと CUDA 側の `DefaultDirName` が変わった。
+> 下の表は**改訂後**の値である（改訂前の値と理由は §17 に置いた）。
+
+| | CUDA 版 | ROCm 版（内部の Flavor id は `radeon`） |
 |---|---|---|
 | `AppId` | `{F228543A-DCF9-45A3-8826-7485C81E1757}` | `{ECA98712-1574-4D2A-A1FE-0FF5347BF185}` |
-| `AppName` | `irodori-TTS for 読み分けちゃん`（＝`launcher/Directory.Build.props:35` の `<Product>` 逐語） | `irodori-TTS for 読み分けちゃん（Radeon 版）` |
-| `DefaultDirName` | `{autopf}\irodori-tts-ywk` | `{autopf}\irodori-tts-ywk-radeon` |
+| `AppName` | `irodori-TTS for 読み分けちゃん（CUDA 版）` | `irodori-TTS for 読み分けちゃん（ROCm 版）` |
+| `DefaultDirName` | `{autopf}\irodori-tts-ywk-cuda` | `{autopf}\irodori-tts-ywk-radeon` |
 | 同梱台帳 | `runtime-cu130` `runtime-cu126` `runtime-cpu` | `runtime-rocm-gfx1151` `runtime-cpu` |
 | 同梱 docs | `README.md` `install.md` | ＋`radeon.md` |
 | 出力 | `irodori-tts-ywk-setup-v0.1.0-cuda.exe` | `…-v0.1.0-radeon.exe` |
+
+※ `launcher/Directory.Build.props` の `<Product>irodori-TTS for 読み分けちゃん</Product>` は
+**版を足さない**（exe は 1 本で両リリースを兼ねるので、アセンブリの属性に片方の版を焼けない）。
+`AppName` はそこから版の名札を足した文字列＝ランチャ側の
+`ReleaseFlavors.AppTitle(ReleaseFlavor)`（`launcher/IrodoriTtsYwk.Launcher/ViewModels/ReleaseFlavor.cs`）が
+出す文字列と**1 字も違わない**。
 
 **GUID は一度決めたら永久に変えられない**（CHM＝`AppId` はアンインストール鍵の名を決める）＝
 正典に載る性質の値なので、`decisions.md` への記帳を卓に求める（Q-E1）。
@@ -215,14 +231,18 @@ UTF-8 **BOM 付き**・CRLF（`.gitattributes:7` の `*.iss text eol=crlf`）。
   #define Flavor "cuda"
 #endif
 
+; 表示名と CUDA 側の既定の導入先は裁定 109（2026-09-07）で改めた＝§17。
+; OldAppName は改名前の AppName の逐語で、[InstallDelete] が旧名の近道を 1 本消すために要る。
 #if Flavor == "radeon"
-  #define MyAppId   "{ECA98712-1574-4D2A-A1FE-0FF5347BF185}"
-  #define MyAppName "irodori-TTS for 読み分けちゃん（Radeon 版）"
-  #define MyDirName "irodori-tts-ywk-radeon"
+  #define MyAppId    "{ECA98712-1574-4D2A-A1FE-0FF5347BF185}"
+  #define MyAppName  "irodori-TTS for 読み分けちゃん（ROCm 版）"
+  #define OldAppName "irodori-TTS for 読み分けちゃん（Radeon 版）"
+  #define MyDirName  "irodori-tts-ywk-radeon"
 #elif Flavor == "cuda"
-  #define MyAppId   "{F228543A-DCF9-45A3-8826-7485C81E1757}"
-  #define MyAppName "irodori-TTS for 読み分けちゃん"
-  #define MyDirName "irodori-tts-ywk"
+  #define MyAppId    "{F228543A-DCF9-45A3-8826-7485C81E1757}"
+  #define MyAppName  "irodori-TTS for 読み分けちゃん（CUDA 版）"
+  #define OldAppName "irodori-TTS for 読み分けちゃん"
+  #define MyDirName  "irodori-tts-ywk-cuda"
 #else
   #error Flavor must be cuda or radeon
 #endif
@@ -291,6 +311,8 @@ Type: filesandordirs; Name: "{app}\server"
 Type: filesandordirs; Name: "{app}\ledger"
 Type: filesandordirs; Name: "{app}\licenses"
 Type: filesandordirs; Name: "{app}\voices\presets"
+; 裁定 109＝旧名のスタートメニューの近道を 1 本消す（§1-3 の追記・§17）。
+Type: files; Name: "{autoprograms}\{#OldAppName}.lnk"
 
 [Files]
 Source: "{#SrcExe}\IrodoriTtsYwk.Launcher.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -677,7 +699,7 @@ PS 5.1 では `Get-Content` に **`-Encoding UTF8` を必ず付ける**（`decis
 
 | 段 | 撃つもの | 対応する条件 |
 |---|---|---|
-| 1 | `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR= /LOG=` で導入 → `{app}` の檔数と sha256 突合 → `HKCU\…\Uninstall\{AppId}_is1` の 3 値 → ログ 3 行（`User privileges: None`／`Administrative install mode: No`／`Install mode root key: HKEY_CURRENT_USER`） | E-7・導入行 |
+| 1 | `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG=` で導入（**`/DIR` は渡さない**＝`.iss` の `DefaultDirName` そのものを実射する。台本の逐語＝`probe/e-install-probe.ps1` の頭 "No /DIR is passed, so the default of the .iss is what gets exercised."）→ `{app}` の檔数と sha256 突合 → `HKCU\…\Uninstall\{AppId}_is1` の 3 値（**`InstallLocation` が版ごとの既定＝`…-cuda\`／`…-radeon\`・`DisplayName` がその版の `AppName` で始まる**＝**裁定 109**）→ **新しい近道が `{autoprograms}\<AppName>.lnk` 1 本**（旧名の近道は `[InstallDelete]` が消す）→ ログ 3 行（`User privileges: None`／`Administrative install mode: No`／`Install mode root key: HKEY_CURRENT_USER`） | E-7・導入行・裁定 109 |
 | 2 | **UI で 3 頁**（`BM_CLICK`）→ 段 1 と同じ結果になる・**頁が 3 枚である**ことを数える | **E-5**（操作 ≤ 6） |
 | 3 | ランチャを起こし、初回ウィザード 1 段目に**通知が読める**（`{app}\licenses\first-run-notices.md` を開けている）＝WPF なので UIA が効く | `decisions.md` 46 |
 | 4 | `{app}` に `icacls … /deny (OI)(CI)W` を掛けて 1 周（ランチャ起動→通知→変種選択まで） | **E-3** |
@@ -2695,3 +2717,138 @@ Uninstall 鍵 2 つとも **無し**／スタートメニューの irodori `.lnk
 - **別機体・別版 ISCC での再現**＝この機体 1 台だけ。
 - **最終の 2 射は pwsh 7.6.5 のみ。**PS 5.1 は parse と `assemble-app` の実走までで、
   最終の全段 `-All` は 5.1 で撃ち直していない（§12-6 の I-9 は旧実装での実測）。
+
+---
+
+## 17. 改訂＝裁定 109（2026-09-07）＝版の表示名と既定の導入先
+
+**この節は設計の改訂であって、§11〜§16 の実射の記帳ではない。**§11 以降は「そのとき何が起きたか」の
+記録なので書き換えていない（旧名・旧路のまま残っている行がある＝当時の事実である）。
+機械が読む正の値は §1-4 の表と `installer/irodori-tts-ywk.iss` である。
+
+### 17-1 司令官の下命（逐語）
+
+> 「CUDA版とROCm版の区別」インストーラーが別のはずだが、アプリ名称も(CUDA版)(ROCm版)としてデフォルト
+> インストールフォルダも分けたい。yomiwakechanからは無いが、Python無し環境での利用で両方インストール
+> したい人も居ると思われる。Windowタイトルも別に分ける。本PCにインストールされている版はそのままでよい。
+
+### 17-2 変えたもの（3 つだけ）
+
+| | 改訂前 | 改訂後 |
+|---|---|---|
+| `AppName`（cuda） | `irodori-TTS for 読み分けちゃん` | `irodori-TTS for 読み分けちゃん（CUDA 版）` |
+| `AppName`（radeon） | `irodori-TTS for 読み分けちゃん（Radeon 版）` | `irodori-TTS for 読み分けちゃん（ROCm 版）` |
+| `DefaultDirName`（cuda） | `{autopf}\irodori-tts-ywk` | `{autopf}\irodori-tts-ywk-cuda` |
+
+`AppName` は `AppVerName`・`UninstallDisplayName`（＝「アプリと機能」の表示名）・`[Icons]` の近道の名・
+`[Run]` の `{cm:LaunchProgram,…}` に一斉に効く。ランチャ側も同じ文字列を出す（§17-4）。
+
+**`DefaultDirName`（radeon）は 1 字も変えていない。** 本席の機体に入っている ROCm 版
+（`…\Programs\irodori-tts-ywk-radeon`・鍵 `{ECA98712…}_is1`）はそのままでよい＝司令官の逐語
+「本PCにインストールされている版はそのままでよい」。
+
+### 17-3 CUDA 側の路を改めた理由＝**本体に合わせる側はこちらだった**
+
+本体（読み分けちゃん2）の `UI/Services/Launch/EngineLaunchDefaults.cs` は配布版のランチャを
+
+```
+%LOCALAPPDATA%\Programs\irodori-tts-ywk-radeon\IrodoriTtsYwk.Launcher.exe
+%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\IrodoriTtsYwk.Launcher.exe
+```
+
+の順に探しており、素の `Programs\irodori-tts-ywk` は**候補に入っていない**
+（本体側の試験 `IrodoriYwkCompositionTests.cs` が「候補に `-radeon` と `-cuda` が在ること」と
+「素の `Programs\irodori-tts-ywk` が**無い**こと」の両方を釘付けしている）。
+＝改訂前の CUDA 版は**本体の自動発見に引っかからなかった**。この改訂はその食い違いを閉じる
+＝ただし**閉じるのは新しく入れた機体だけ**である（既存の導入は §17-5 のとおり旧路に留まる）。
+
+### 17-4 内部の識別子は 1 つも変えていない
+
+`Flavor` の id（`cuda`／`radeon`）・`/DFlavor=`・setup の檔名（`…-cuda.exe`／`…-radeon.exe`）・
+`AppId` の GUID 2 つ・`AppMutex`（`Local\irodori-tts-ywk-launcher`）・ランチャの錠と合図の名・
+enum `ReleaseFlavor.Radeon`・台帳名（`runtime-rocm-gfx1151`）・データ樹の名（`irodori-tts-ywk`）・
+`launcher/Directory.Build.props` の `<Product>`。**利用者に見せる版の名だけ**が「ROCm 版」である
+（`Radeon` は道具の名＝gfx1151・Radeon 8060S・`docs/radeon.md` として残る）。
+
+ランチャ（exe は 1 本で両リリースを兼ねる）は版を**樹から読む**＝
+`ReleaseFlavors.Detect(ReleaseFlavors.LedgerNames(paths.LedgerDir))`。
+`launcher/IrodoriTtsYwk.Launcher/ViewModels/ReleaseFlavor.cs` に純関数を足した：
+
+| 関数 | 出す文字列（ROCm 版の例） | 差す先 |
+|---|---|---|
+| `AppTitle(flavor)` | `irodori-TTS for 読み分けちゃん（ROCm 版）` | 主窓の `Title`（`MainWindow.xaml.cs`）・「このアプリについて」の見出し（`AboutView.xaml.cs`） |
+| `WizardTitle(flavor)` | `初回取得（ROCm 版）` | 初回取得ウィザードの `Title`（`FirstRunWizard.xaml.cs`） |
+| `TrayText(flavor, 版, 状態)` | `irodori-TTS（ROCm 版） v0.1.0／待機` | トレイの吹き出し（`App.xaml.cs` の `UpdateTray`） |
+| `VariantNote`（`FirstRunViewModel`） | `ROCm 版です（Radeon の GPU 向け）。精度は bf16 に固定されます（未保障・gfx1151 で確認済み）。` | 初回取得ウィザードの変種選択の頁 |
+
+吹き出しは Win32 の 63 字の枠が在るので、**組み立てを純関数に出して xUnit が全状態×両版で釘付けする**
+（`ReleaseFlavorTests`）。実測の最長は 30 字なので枠には 33 字の余りがあり、版と版数の間の半角空白は
+改訂前（`irodori-TTS v0.1.0／待機`）どおり残してある。
+樹が読めない機体では `DetectFrom` が例外を出さずに CUDA 版として振る舞う（`ReleaseFlavorTests` が
+`null`／空白／在りもしない路の 3 つで釘付けする）。
+XAML 側の `Title` は**設計時（デザイナ）用の見本**であって落ち先ではない＝実行時は必ず code-behind が
+版つきに差し替えるので、素の幹が利用者の目に入る経路は無い。
+なお `RuntimeVariants` の `Radeon gfx1151（未保障・bf16 固定）` は**変種＝道具の名**なので据え置き
+（版の名ではない）。
+
+### 17-5 改名の引き継ぎ＝旧名の近道を 1 本消す
+
+Inno は `[Icons]` の名が変わっても**旧名の `.lnk` を消さない**（消えるのはアンインストールのときで、
+しかも消す名は「いま入っている版が書き込んだ名」）＝改名の前に入れた機体では更新導入で新旧 2 本が並ぶ。
+`[InstallDelete]` に 1 行足して塞いだ（§1-3 の追記）。
+**導入先は直さない**＝Inno の `UsePreviousAppDir`（既定 yes）で既存の導入はその場所に上書きされる。
+`DefaultDirName` の改訂が効くのは**新規の機体だけ**である。
+
+司令官の逐語「本PCにインストールされている版はそのままでよい」が免じたのは**本席の機体の ROCm 版**
+であって、他機の CUDA 版まで免じたものではない。だから残る欠けを名指しで書き留める：
+
+- **改訂前に CUDA 版を入れてある機体は、上書き更新しても `%LOCALAPPDATA%\Programs\irodori-tts-ywk\`
+  に留まる**＝本体（読み分けちゃん2）の候補は `…-radeon\` と `…-cuda\` の 2 つだけで、
+  素の路は本体側の試験が候補から除くことまで釘付けしている＝**自動発見は改訂後も直らない**。
+- 手当ては 2 つ＝⑴ **いったんアンインストールしてから新しい setup を入れ直す**
+  （データ樹 `%LOCALAPPDATA%\irodori-tts-ywk\` は共有＝話者・設定・モデルは残る）。
+  ⑵ 入れ直さずに、本体の元栓のパス欄で exe の路を手で指す（保存値が正なので推定は上書きしない）。
+- 利用者向けの写し＝`docs/install.md` §2 の但し書き・§4 の「本体が配布版のランチャを自動で見つけない」の行・§5-1。
+
+### 17-6 同居の意味（**変えていない・書き留めるだけ**）
+
+- 2 つの版は `AppId` も導入先も別なので**同じ機体に同居できる**。
+- **データ樹（`%LOCALAPPDATA%\irodori-tts-ywk\`）は共有**する（§2・§5-4）。版ごとには分けない
+  ＝実行系は変種ごとの枝に入るので混ざらず、話者と設定は 2 版で 1 つの資産である。
+- **同時に走るランチャは 1 個体だけ**＝錠（`Local\irodori-tts-ywk-launcher`）もポート（`127.0.0.1:18088`）も
+  2 版で共有する。2 個目は 1 個目の窓を前に出して静かに退く（`App.xaml.cs` の `SignalExistingInstance`）。
+- **既知の癖（直さない）**＝`.iss` の `AppMutex` も共有なので、**もう一方の版のランチャが走っている最中に
+  導入すると弾かれる**。そのとき Inno が出す `SetupAppRunningError` が名乗るのは
+  **これから入れる側の `AppName`** である（走っているのは向こうの版なのに「ROCm 版が検出されました」と
+  読める）。**導入だけではない**＝Inno の CHM 逐語は "a mutex which Setup **and Uninstall** should
+  check" なので、**撤去も同じ錠を見る**（CUDA 版を撤去しようとして、走っているのは ROCm 版のランチャ
+  なのに断られる、が同じ頻度で起きる）。害は無い（どちらにせよランチャを終了すれば通る）ので、
+  錠を分けてまで直さない＝錠を分けると「両版のランチャが同時に走ってポートを取り合う」という
+  本物の事故が開く。
+- **両版を入れた機体で本体（読み分けちゃん2）が自動で選ぶのは ROCm 版**である
+  （候補順が `…-radeon\` → `…-cuda\` で、実在する最初の 1 つを採る）。CUDA 機に両方入れると
+  本体の一括起動が ROCm 版を起こす形になるので、本体側で路を手で指すか、本体の候補順の話として
+  卓へ回す（**このリポの範囲外**＝ここでは書き留めるだけ）。
+
+### 17-7 この改訂で触った檔
+
+`installer/irodori-tts-ywk.iss`／
+`launcher/IrodoriTtsYwk.Launcher/ViewModels/ReleaseFlavor.cs`・`ViewModels/FirstRunViewModel.cs`・`App.xaml.cs`・
+`Views/MainWindow.xaml`＋`.cs`・`Views/AboutView.xaml`＋`.cs`・`Views/FirstRunWizard.xaml`＋`.cs`／
+`launcher/IrodoriTtsYwk.Launcher.Tests/ViewModelsTests.cs`（`ReleaseFlavorTests` に 7 本足して **610 本**）／
+`probe/e-install-probe.ps1`（段 1 に「`DisplayName` がこの版の `AppName` で始まる」と
+「近道が `<AppName>.lnk` である」の 2 本を足し、cuda の期待路を `irodori-tts-ywk-cuda` に改めた）／
+`probe/rtx-e1-runbook.md`（E-1 台本の直書きの路を `…-cuda\` に改めた）／
+`licenses/first-run-notices.md`（§B の見出しと末尾の 1 文が**リリース**を名乗る所を「ROCm 版」に改めた
+＝配布物に入り初回取得ウィザードが逐語で出す檔なので、窓題と食い違わせない）／
+`docs/install.md`・`README.md`・`installer/README.md`・`docs/radeon.md`・
+`docs/design/ben-a-skeleton-and-build.md` §2・`docs/design/ben-d-launcher.md` §26・この設計書。
+
+**卓へ回す票**＝`licenses/first-run-notices.md` は `build/out/app` に入る檔なので、この改訂で
+配布樹の総バイトが **37,125,643 B → 37,125,639 B（−4 B）**に動く。`build/installer-build.ps1` の
+`$ExpectedAppBytes` は**本席の持ち場ではない**ので触っていない。門 A-1 の**檔数は FAILURE・バイトは
+WARN**（同 `:513-515` の逐語「The bytes are a WARN: they move when a licence or a ledger sentence
+moves.」）なので、放っておいても走行は止まらないが、記帳を新しい実測値に直すかは主席の裁量である。
+
+**未実射**＝この改訂は setup を組み直していない（`build/installer-build.ps1` は主席が回す）。
+段 1 の新しい 2 本と、改名の引き継ぎ（旧名の `.lnk` が消えること）は**まだ実弾で見ていない**。

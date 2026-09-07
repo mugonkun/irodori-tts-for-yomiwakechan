@@ -29,14 +29,30 @@
 #endif
 
 ; --- 種ごとの値（AppId の GUID は永久＝decisions.md 90 に記帳済み）-----------------
+; 裁定 109（2026-09-07）＝司令官の逐語「『CUDA版とROCm版の区別』インストーラーが別のはずだが、
+; アプリ名称も(CUDA版)(ROCm版)としてデフォルトインストールフォルダも分けたい。yomiwakechan からは
+; 無いが、Python無し環境での利用で両方インストールしたい人も居ると思われる。Windowタイトルも別に分ける。」
+;   ⑴ 表示名は **両方**に版を足す＝「…（CUDA 版）」「…（ROCm 版）」。旧 CUDA 版は版なしだった。
+;   ⑵ 既定の導入先は CUDA 版を irodori-tts-ywk → **irodori-tts-ywk-cuda** に改める。
+;       本体（読み分けちゃん2）の EngineLaunchDefaults は既に
+;       Programs\irodori-tts-ywk-radeon → Programs\irodori-tts-ywk-cuda の順で探しており、
+;       素の irodori-tts-ywk は **候補に入っていない**＝こちらが本体に合わせる側である。
+;       radeon 側の路は 1 字も変えない（本席の機体にも本体にも既に焼かれている）。
+;   ⑶ **内部の識別子は 1 つも変えない**＝Flavor の id（cuda／radeon）・/DFlavor=・AppId の GUID・
+;       AppMutex・setup の檔名（…-cuda.exe／…-radeon.exe）・台帳名（runtime-rocm-gfx1151）・
+;       データ樹の名（irodori-tts-ywk）。英語の #error 文の "the Radeon release" も道具の名
+;       （gfx1151 の機体）として残す＝**利用者に見せる版の名だけ**が「ROCm 版」である。
+;   ⑷ OldAppName＝改名前の AppName の逐語。[InstallDelete] が旧名の近道を 1 本消すために要る。
 #if Flavor == "radeon"
-  #define MyAppId   "{ECA98712-1574-4D2A-A1FE-0FF5347BF185}"
-  #define MyAppName "irodori-TTS for 読み分けちゃん（Radeon 版）"
-  #define MyDirName "irodori-tts-ywk-radeon"
+  #define MyAppId    "{ECA98712-1574-4D2A-A1FE-0FF5347BF185}"
+  #define MyAppName  "irodori-TTS for 読み分けちゃん（ROCm 版）"
+  #define OldAppName "irodori-TTS for 読み分けちゃん（Radeon 版）"
+  #define MyDirName  "irodori-tts-ywk-radeon"
 #elif Flavor == "cuda"
-  #define MyAppId   "{F228543A-DCF9-45A3-8826-7485C81E1757}"
-  #define MyAppName "irodori-TTS for 読み分けちゃん"
-  #define MyDirName "irodori-tts-ywk"
+  #define MyAppId    "{F228543A-DCF9-45A3-8826-7485C81E1757}"
+  #define MyAppName  "irodori-TTS for 読み分けちゃん（CUDA 版）"
+  #define OldAppName "irodori-TTS for 読み分けちゃん"
+  #define MyDirName  "irodori-tts-ywk-cuda"
 #else
   #error Flavor must be cuda or radeon
 #endif
@@ -133,6 +149,13 @@ AppMutex=Local\irodori-tts-ywk-launcher
 ; ↑ launcher/IrodoriTtsYwk.Launcher/App.xaml.cs:32 の逐語
 ;   private const string MutexName = @"Local\irodori-tts-ywk-launcher";
 ;   CHM 逐語＝「mutex name comparison in Windows is case sensitive」＝1 字も変えない
+; ↑ この錠は **両方の種で同じ**（ランチャ exe が 1 本で両リリースを兼ねるから）＝裁定 109 でも変えない。
+;   既知の癖＝もう一方の種のランチャが走っている最中にこちらを導入すると、Inno は
+;   SetupAppRunningError を出して断るが、その文が名乗るのは **こちらの版の AppName** である
+;   （走っているのは向こうの版なのに「ROCm 版が検出されました」と読める）。害は無いので直さない
+;   ＝どちらの版でもランチャは同時に 1 個体しか走らない（同じ錠・同じ 127.0.0.1:18088）。
+;   CHM 逐語＝「Specifies the name of a mutex which Setup **and Uninstall** should check」＝
+;   **撤去でも同じ錠を見る**＝もう一方の版のランチャが走っていると、こちらの撤去も同じ文で断られる。
 RestartApplications=no
 ; CloseApplications は書かない（既定 yes のまま・頼らない＝設計書 §8 危険 6）
 Uninstallable=yes
@@ -155,6 +178,12 @@ Type: filesandordirs; Name: "{app}\server"
 Type: filesandordirs; Name: "{app}\ledger"
 Type: filesandordirs; Name: "{app}\licenses"
 Type: filesandordirs; Name: "{app}\voices\presets"
+; 旧名のスタートメニューの近道を 1 本消す（裁定 109 の改名）。
+; Inno は [Icons] の名が変わっても **旧名の .lnk を消さない**（消えるのはアンインストールのときだけ・
+; しかも消す名は「いま入っている版が書き込んだ名」）＝更新導入では新旧 2 本が並ぶ。
+; 既存の導入は UsePreviousAppDir（既定 yes）で **場所はそのまま**なので、直すのは近道の名だけでよい。
+; OldAppName＝cuda は「irodori-TTS for 読み分けちゃん」／radeon は「…（Radeon 版）」の逐語。
+Type: files; Name: "{autoprograms}\{#OldAppName}.lnk"
 
 [Files]
 Source: "{#SrcExe}\IrodoriTtsYwk.Launcher.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -205,12 +234,12 @@ Type: dirifempty;     Name: "{app}"
 [Messages]
 ; 歓迎頁は既定で出ない（DisableWelcomePage の既定＝yes）＝WelcomeLabel2 に文言を置かない。
 ; 数字は準備完了頁と完了頁の 2 箇所だけ（設計書 §6-2）。
-; **種ごとに切り替える**（敵対検分 medium 3）＝Radeon 版の利用者に、その版が絶対に取得できない
+; **種ごとに切り替える**（敵対検分 medium 3）＝ROCm 版の利用者に、その版が絶対に取得できない
 ; cu130 の数字（5.26 GiB／11.56 GiB）を出さない。数字の出所＝ledger/README.md §7 の表と、
 ; 本席が台帳 json から FetchPlanner.cs:54,57-59,65 の式を踏み直した実測（§11-8 に逐語）。
 #if Flavor == "radeon"
-ja.ReadyLabel2a=ここで入るのは本体（約 106 MiB）だけです。実行系とモデル（Radeon 版 rocm-gfx1151 で 4.79 GiB）は、最初にランチャを起動したときに取得します。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
-ja.ReadyLabel2b=ここで入るのは本体（約 106 MiB）だけです。実行系とモデル（Radeon 版 rocm-gfx1151 で 4.79 GiB）は、最初にランチャを起動したときに取得します。%n%nインストールを続行するには「インストール」をクリックしてください。
+ja.ReadyLabel2a=ここで入るのは本体（約 106 MiB）だけです。実行系とモデル（ROCm 版 rocm-gfx1151 で 4.79 GiB）は、最初にランチャを起動したときに取得します。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
+ja.ReadyLabel2b=ここで入るのは本体（約 106 MiB）だけです。実行系とモデル（ROCm 版 rocm-gfx1151 で 4.79 GiB）は、最初にランチャを起動したときに取得します。%n%nインストールを続行するには「インストール」をクリックしてください。
 ja.FinishedLabel=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 9.55 GiB の空きが要ります（CPU 変種なら 4.53 GiB）。
 ja.FinishedLabelNoIcons=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 9.55 GiB の空きが要ります（CPU 変種なら 4.53 GiB）。
 #else
@@ -229,7 +258,7 @@ const
   OtherFlavorName = 'CUDA 版';
 #else
   OtherFlavorKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{ECA98712-1574-4D2A-A1FE-0FF5347BF185}_is1';
-  OtherFlavorName = 'Radeon 版';
+  OtherFlavorName = 'ROCm 版';
 #endif
   { 取得中に要る空き＝FetchPlan.EstimatedPeakDiskBytes（FetchPlanner.cs:54,57-59,65）＝
     CacheBytes ＋ (python-embed + runtime) * ExpansionFactor(3.3) ＋ ModelBytes。
@@ -244,7 +273,7 @@ const
   PeakDiskBytes = 10252286678;
   PeakDiskText  = '9.55 GiB';
   FetchText     = '4.79 GiB';
-  VariantText   = 'Radeon 版（rocm-gfx1151）';
+  VariantText   = 'ROCm 版（rocm-gfx1151）';
 #else
   PeakDiskBytes = 15515873265;
   PeakDiskText  = '14.45 GiB';

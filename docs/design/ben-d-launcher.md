@@ -2372,3 +2372,46 @@ CUDA 版で落とした原檔が残っていると、その檔はどの台帳も
 `dotnet test` **592 合格**（従前 581＋8＋是正 3）・`probe/d-launch-probe.ps1` は
 `[System.Management.Automation.Language.Parser]::ParseFile` で **parse OK**、`-DryRun` も通した
 （**全段は撃っていない**＝本物のモデルと機体の GPU が要る＝25-4 の 2 段と D-1 は**未実測**である）。
+
+---
+
+## 26. 版の表示名（裁定 109・2026-09-07）の記帳（opus サブ席）
+
+**ランチャの UI 文字列 4 つに版の名札を足した。**正典＝`decisions.md` 109、設計の本文＝
+`docs/design/ben-e-installer.md` §17（インストーラ側と対で読むこと＝出す文字列は 1 字も違わない）。
+
+**exe は 1 本で両リリースを兼ねる**（`decisions.md` 5）ので、版はアセンブリに焼かず**樹から読む**
+＝`ReleaseFlavors.Detect(ReleaseFlavors.LedgerNames(AppServices.Paths.LedgerDir))`。
+`ViewModels/ReleaseFlavor.cs` に純関数を足した（`AppBaseName`・`FlavorLabel`・`Decorate`・`AppTitle`・
+`WizardTitle`・`TrayText`・薄い殻の `DetectFrom`）。
+
+| 出す場所 | 改訂前 | 改訂後（ROCm 版の例） |
+|---|---|---|
+| 主窓の `Title`（`Views/MainWindow.xaml.cs`） | `irodori-TTS for 読み分けちゃん`（XAML 固定） | `irodori-TTS for 読み分けちゃん（ROCm 版）` |
+| 「このアプリについて」の見出し（`Views/AboutView.xaml.cs`） | 同（XAML 固定） | 同上 |
+| 初回取得ウィザードの `Title`（`Views/FirstRunWizard.xaml.cs`） | `初回取得`（XAML 固定） | `初回取得（ROCm 版）` |
+| トレイの吹き出し（`App.xaml.cs` の `UpdateTray`） | `irodori-TTS v0.1.0／待機` | `irodori-TTS（ROCm 版） v0.1.0／待機` |
+| 変種の注記（`ViewModels/FirstRunViewModel.cs` の `VariantNote`） | `Radeon（ROCm）版です。精度は bf16 に固定されます（未保障・gfx1151 で確認済み）。` | `ROCm 版です（Radeon の GPU 向け）。精度は bf16 に固定されます（未保障・gfx1151 で確認済み）。` |
+
+- 5 行目は**同じ窓（初回取得ウィザード）の中**の文字列である＝題が「初回取得（ROCm 版）」になった以上、
+  本文だけ別名（「Radeon（ROCm）版」）を名乗らせない。ここでも「Radeon」は**道具（GPU）の名**として
+  残し、版の名だけを ROCm に寄せた。`RuntimeVariants` の `Radeon gfx1151（未保障・bf16 固定）` は
+  **変種＝道具の名**なので据え置きである。
+- **XAML 側の `Title` は残してあるが落ち先ではない**＝あれは設計時（デザイナ）用の見本で、実行時は
+  必ず code-behind の 1 行が版つきに差し替える。素の幹が利用者の目に入る経路は無い。
+- 吹き出しは Win32 の `szTip` が **63 字**だが、両版 × 全 `ServerState` の**実測の最長は 30 字**
+  （`irodori-TTS（ROCm 版） v0.1.0／起動中`）で 33 字の余りがある＝字を惜しむ理由が無いので、
+  版と版数の間の半角空白は改訂前どおり残した。組み立ては `ReleaseFlavors.TrayText` に出してあり、
+  `ReleaseFlavorTests` が**両版 × 全 `ServerState`** で 63 字以内を釘付けする。
+- 版が読めない樹（`ledger/` が無い・読めない）では `DetectFrom` が例外を出さずに **CUDA 版**と
+  名乗る（`LedgerNames` が IO の失敗を飲む既存の作法のまま）。主窓・About・`App.OnStartup` の 3 箇所が
+  この 1 本を通るので、`ReleaseFlavorTests` が `null`／空文字／空白／在りもしない路の 4 つで
+  「投げずに CUDA 版」を、一時樹に `runtime-rocm-gfx1151.json` を置いて「Radeon と読む」を釘付けする。
+- **内部の識別子は 1 つも変えていない**＝enum `ReleaseFlavor.Radeon`・台帳名 `runtime-rocm-gfx1151`・
+  錠 `Local\irodori-tts-ywk-launcher`・合図 `…-activate`・データ樹の名・
+  `launcher/Directory.Build.props` の `<Product>`（版を足せない＝exe が 1 本だから）。
+  「Radeon」は道具の名として残り、**利用者に見せる版の名だけ**が「ROCm 版」である。
+
+**実測**＝`dotnet build launcher/IrodoriTtsYwk.sln -c Release` **0 警告 0 エラー**・
+`dotnet test` **610 合格**（従前 603＋7）。窓を立てての UIA 実射は**していない**
+（`MainWindow`／`AboutTitleText`／`FirstRunWizard` の窓題は未実測）。
