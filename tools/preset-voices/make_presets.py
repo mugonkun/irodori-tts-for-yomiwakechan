@@ -45,7 +45,9 @@ RIGHTS_NOTE = (
 
 # decisions 17 の 12 名。status pending / skipped の 5 名も最初から載せる。
 ROSTER = [
-    {"id": "vv_mochiko_sexy", "display_name": "もち子さん", "engine": "voicevox",
+    # 裁定 108＝司令官の改名指示（2026-09-07）。display_name はそのまま話者 id になる（裁定 17）ので、
+    # engine_speaker（VOICEVOX の話者名）は「もち子さん」のまま動かさない。
+    {"id": "vv_mochiko_sexy", "display_name": "もち子さん（セクシー／あん子）", "engine": "voicevox",
      "engine_speaker": "もち子さん", "speaker_uuid": None,
      "style": {"name": "セクシー／あん子", "id": 66}, "status": "done"},
     {"id": "vv_chibishikijii", "display_name": "ちび式じい", "engine": "voicevox",

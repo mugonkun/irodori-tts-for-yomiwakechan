@@ -98,6 +98,15 @@ public sealed class MainViewModel : ObservableObject
 
         About = new AboutViewModel(paths);
 
+        // 「入れ直す」で改名（裁定 108）が起きたら、直した設定を檔へ落とし、設定画面の写しも
+        // 取り直す。取り直さないと、構築時の写しを書き戻す「適用」で旧い id が甦る
+        // （暖機は知らない話者で走行ごと failed＝契約 ⑺ 7-2）。
+        Voices.SettingsChanged = () =>
+        {
+            _store.Save(_settings);
+            Settings.SyncFromLive();
+        };
+
         // 話者が変わったら、試し撃ちの候補と状態帯の概算メモリを引き直す。
         Voices.RowsChanged += (_, rows) =>
         {

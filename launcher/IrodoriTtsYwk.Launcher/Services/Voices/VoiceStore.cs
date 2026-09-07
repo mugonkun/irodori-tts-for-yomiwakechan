@@ -254,7 +254,7 @@ public sealed class VoiceStore : IVoiceStore
     /// 消す物は契約 ⑷ 4-3 の 4 つのうち<b>檔の 3 つ</b>＝⒝ <c>latents/&lt;stem&gt;.pt</c>
     /// ⒞ 同名 <c>.json</c> ⒟ 参照 wav。⒜ <c>voices.json</c> の欄は
     /// <see cref="VoicesJsonWriter"/> が書き直す。<c>&lt;stem&gt;</c> は<b>話者 id 由来</b>
-    /// （<c>server/ywk_server.py:2127-2137</c>＝<c>sha256(voice_id)[:12]</c>）なので、
+    /// （<c>server/ywk_server.py:2506-2518</c> の <c>latent_stem</c>＝<c>sha256(voice_id)[:12]</c>）なので、
     /// 台帳の <c>ref_latent</c> が空でも場所は判る＝サーバが止まっていても取りこぼさない。
     /// </para>
     /// </summary>
@@ -291,7 +291,29 @@ public sealed class VoiceStore : IVoiceStore
         }
 
         // ⒝⒞ 焼いた潜在と sidecar（台帳が知らなくても話者 id から場所は決まる）
-        foreach (var path in LatentPaths(id, entry.RefLatent))
+        removed.AddRange(DeleteLatentFiles(id, entry.RefLatent));
+
+        var updated = table with { Voices = voices };
+        Save(updated);
+        return new VoiceRemoval(updated, true, removed);
+    }
+
+    /// <summary>
+    /// その話者の焼いた潜在と sidecar を消す（<b>檔だけ</b>＝台帳には触れない）。戻り＝実際に消えた檔の名。
+    /// <para>
+    /// 消す場所の規則は削除（<see cref="RemoveVoiceDetailed"/>）と改名（<see
+    /// cref="PresetVoices.MigrateRenamed"/>＝裁定 108）で<b>1 つ</b>である。幹は話者 id 由来
+    /// （<see cref="LatentStem"/>）なので、改名した話者の旧い <c>.pt</c> は新しい id からは
+    /// 二度と当たらない＝ここで消さないと置き場に居座る。
+    /// </para>
+    /// </summary>
+    /// <param name="voiceId">話者 id（改名なら<b>旧</b> id）。</param>
+    /// <param name="refLatent">台帳が知っている潜在の相対パス（無ければ null）。</param>
+    public IReadOnlyList<string> DeleteLatentFiles(string voiceId, string? refLatent)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(voiceId);
+        var removed = new List<string>(2);
+        foreach (var path in LatentPaths(voiceId.Trim(), refLatent))
         {
             if (TryDelete(path))
             {
@@ -299,9 +321,7 @@ public sealed class VoiceStore : IVoiceStore
             }
         }
 
-        var updated = table with { Voices = voices };
-        Save(updated);
-        return new VoiceRemoval(updated, true, removed);
+        return removed;
     }
 
     /// <summary>

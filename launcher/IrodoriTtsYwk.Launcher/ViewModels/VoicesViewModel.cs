@@ -102,6 +102,18 @@ public sealed class VoicesViewModel : ObservableObject
     /// </summary>
     public Func<VoiceRow, bool>? ConfirmRemove { get; set; }
 
+    /// <summary>
+    /// 設定（<c>settings.json</c>）を書き換えたので<b>保存し直す手</b>（裁定 108＝改名の引き継ぎ）。
+    /// <para>
+    /// 「入れ直す」で改名が起きると <see cref="PresetVoices.RenameInSettings"/> が並び・暖機・
+    /// 試し撃ちの旧い id を直すが、<b>檔に落とすのはこの手</b>である。差されていなければ
+    /// 直した値は次の保存まで宙に浮き、設定頁の「適用」（構築時の写しを書き戻す）で
+    /// <b>旧い id に巻き戻る</b>＝暖機が走行ごと <c>failed</c> になったまま直らない。
+    /// 差さなくても画面は動く（xUnit から素で叩ける）。
+    /// </para>
+    /// </summary>
+    public Action? SettingsChanged { get; set; }
+
     /// <summary>一覧（「デフォルト」が先頭に常在＝受け入れ条件 D-3）。</summary>
     public ObservableCollection<VoiceRow> Rows { get; } = [];
 
@@ -568,6 +580,11 @@ public sealed class VoicesViewModel : ObservableObject
     /// <summary>
     /// 同梱のプリセットを入れ直す（設計書 §4「再インストールで戻る」＝是正・2026-09-05）。
     /// 既に在る id は飛ばすので、利用者が足した話者には触れない。
+    /// <para>
+    /// <b>入れ直す前に改名を引き継ぐ</b>（裁定 108）＝旧い名（「もち子さん」）の台帳のまま押すと、
+    /// 新しい名（「もち子さん（セクシー／あん子）」）が<b>隣に足されて</b>同じ wav を指す 2 名になる。
+    /// 改めた名は文言にも出す（利用者は名が変わった理由を画面から知る）。
+    /// </para>
     /// </summary>
     public void RestorePresets()
     {
@@ -579,14 +596,26 @@ public sealed class VoicesViewModel : ObservableObject
 
         try
         {
+            var renamed = PresetVoices.MigrateRenamed(_paths, store);
+            if (PresetVoices.RenameInSettings(_settings, renamed))
+            {
+                // 檔にも落とす＝落とさないと設定頁の「適用」で旧い id に巻き戻る（裁定 108）。
+                SettingsChanged?.Invoke();
+            }
+
             var restored = PresetVoices.Restore(_paths, store);
             _file = LoadStore();
             _writer.Write(_paths.VoicesJsonPath, _file ?? VoiceStore.Empty());
             Rebuild();
 
-            Message = restored > 0
+            Message = (restored > 0
                 ? "同梱のプリセットを " + restored.ToString(CultureInfo.InvariantCulture) + " 名入れ直しました。"
-                : "入れ直すプリセットはありませんでした（配布物にプリセットが無いか、既に全員居ます）。";
+                : renamed.Count > 0
+                    // 改名だけが起きた回に「プリセットが無いか、既に全員居ます」を添えると、
+                    // 名が変わった当人には 2 つの半分が噛み合わない（是正・検分 low）。
+                    ? "入れ直すプリセットはありませんでした。"
+                    : "入れ直すプリセットはありませんでした（配布物にプリセットが無いか、既に全員居ます）。")
+                + DescribeRenames(renamed);
         }
         catch (IOException ex)
         {
@@ -596,6 +625,27 @@ public sealed class VoicesViewModel : ObservableObject
         {
             Message = "プリセットを入れ直せませんでした：" + ex.Message;
         }
+    }
+
+    /// <summary>
+    /// 改めた名を文言の後ろに足す（<b>純関数</b>＝裁定 108）。0 件なら空文字。
+    /// 例＝<c>名を改めた 1 名（もち子さん→もち子さん（セクシー／あん子））</c>。
+    /// </summary>
+    private static string DescribeRenames(IReadOnlyList<PresetRename> renames)
+    {
+        if (renames.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var pairs = new List<string>(renames.Count);
+        foreach (var rename in renames)
+        {
+            pairs.Add(rename.OldId + "→" + rename.NewId);
+        }
+
+        return "名を改めた " + renames.Count.ToString(CultureInfo.InvariantCulture) + " 名（"
+            + string.Join("・", pairs) + "）。";
     }
 
     /// <summary>

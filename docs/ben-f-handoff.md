@@ -281,7 +281,7 @@ range_source, note, required, default, default_source, nullable, exposed_to_ywk}
 {"object": "list",
  "data": [{"id": "デフォルト", "object": "voice", "display_name": "デフォルト",
            "preset": false, "no_ref": true, "latent": false, "latent_stale": false},
-          {"id": "琴葉茜", "object": "voice", "display_name": "琴葉茜（関西弁）",
+          {"id": "琴葉茜（関西弁）", "object": "voice", "display_name": "琴葉茜（関西弁）",
            "preset": true, "no_ref": false, "latent": true, "latent_stale": false}]}
 ```
 
@@ -293,6 +293,10 @@ range_source, note, required, default, default_source, nullable, exposed_to_ywk}
   ⇒ **`docs/contract.md` ⑼ の D-8（`voices.json` 破損を発見段で検知できない）は配布版で消える。**
 - **上流由来の `none` は一覧に出ない**（`IRODORI_ALLOW_NO_REF_VOICE=false` を焼いてある）。
 - **話者 id に日本語・空白・記号が使える**（走査と合成は voice_id を一切検査しない）。
+- **プリセットの表示名（＝話者 id）は版で変わりうる**（裁定 108＝初件は「もち子さん」→
+  「もち子さん（セクシー／あん子）」）。ランチャが起動時に利用者の台帳を改名するので旧い id は
+  一覧から消え、送れば `ywk_unknown_voice`（⑶ 3-3 の 1 行目）＝
+  **id を版をまたいで固定せず一覧を読み直す**こと。
 
 ### 3-2 `GET /ywk/voices`（配布版の口・**表示名と理由が要るならこちら**）
 

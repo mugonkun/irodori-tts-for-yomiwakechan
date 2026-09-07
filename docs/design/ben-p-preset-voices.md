@@ -28,11 +28,13 @@
 
 `decisions.md` 17 の 12 名。`id` は ASCII（参照ボイス檔名と Irodori の voice id を兼ねる）、`display_name` は本体 yomiwakechan2 に見せる日本語名。
 
+**`display_name` はそのまま話者 id である**（裁定 17・契約 ⑷ 4-1＝`PresetVoices.FromPresetsJson` が `PresetVoice.Id` に入れる）。同じ話者で複数スタイルがあるとき、および司令官が名を指したときはスタイルを添える＝「おふとんP（きざ）」「もち子さん（セクシー／あん子）」（裁定 108・2026-09-07）。ここを変えると**既存の利用者の台帳の id も変わる**ので、ランチャが起動と「入れ直す」で改名を引き継ぐ（同じ参照 wav を指すプリセットの行を新しい名へ移し、旧い id の潜在を消す＝便 D 設計書 §4）。
+
 接頭辞＝`vv_`（VOICEVOX）・`co_`（COEIROINK）・`vr2_`（VOICEROID2）・`cevio_`（CeVIO AI）。
 
 | # | id | display_name | エンジン | 話者 / スタイル | 実機 ID | 状態 |
 |---|----|--------------|----------|-----------------|---------|------|
-| 1 | `vv_mochiko_sexy` | もち子さん | VOICEVOX | もち子さん / セクシー／あん子 | styleId **66** | **done** |
+| 1 | `vv_mochiko_sexy` | もち子さん（セクシー／あん子） | VOICEVOX | もち子さん / セクシー／あん子 | styleId **66** | **done** |
 | 2 | `vv_chibishikijii` | ちび式じい | VOICEVOX | ちび式じい / ノーマル | styleId **42** | **done** |
 | 3 | `co_tsukuyomi` | つくよみちゃん | COEIROINK | つくよみちゃん / れいせい | uuid `3c37646f-3881-5374-2a83-149267990abc` style **0** | **done** |
 | 4 | `co_kana_naisho` | KANA（ないしょばなし） | COEIROINK | KANA / ないしょばなし | uuid `297a5b91-f88a-6951-5841-f1e648b2e594` style **33** | **done** |

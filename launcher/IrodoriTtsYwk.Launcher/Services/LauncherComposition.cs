@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Services.Gpu;
 using IrodoriTtsYwk.Launcher.Services.Http;
@@ -45,7 +46,14 @@ public static class LauncherComposition
         // 失敗しても起動は止めない（話者 0 名でも「デフォルト」で合成できる＝裁定 45）。
         try
         {
-            PrepareVoices(paths, store, new VoicesJsonWriter());
+            PrepareVoices(paths, store, new VoicesJsonWriter(), out var renamed);
+
+            // 改名（裁定 108）＝設定に残った旧い id も同じ回で改める。並びと試し撃ちは知らない
+            // id を捨てるだけだが、暖機は旧い id で走行ごと failed になる（RenameInSettings）。
+            if (PresetVoices.RenameInSettings(AppServices.Settings, renamed))
+            {
+                AppServices.SaveSettings();
+            }
         }
         catch (System.IO.IOException)
         {
@@ -54,6 +62,10 @@ public static class LauncherComposition
         catch (UnauthorizedAccessException)
         {
             // 同上
+        }
+        catch (ArgumentException)
+        {
+            // 台帳の中身（鍵）が壊れていても起動は止めない（裁定 45＝話者 0 名でも合成できる）。
         }
     }
 
@@ -64,6 +76,14 @@ public static class LauncherComposition
     /// （是正・2026-09-05＝直下に置くと上流の走査が檔名の幹を話者 id にして同じ話者が一覧に 2 件出る）。
     /// ⑵ 初回だけプリセットを利用者データへ写す（配布樹は読むだけ）。
     /// ⑶ <b>写した話者を <c>voices.json</c> にも載せる</b>（統合席 §19・裁定 78 ⑴）。
+    /// ⑷ <b>改名の引き継ぎ</b>（裁定 108）＝配布側が <c>display_name</c>（＝話者 id）を変えた分を
+    /// 利用者の台帳へ写す（<see cref="Voices.PresetVoices.MigrateRenamed"/>）。
+    /// </para>
+    /// <para>
+    /// ⑷ は<b>⑵ の前</b>に走る。後に回すと、<c>presets_installed</c> の印が無い台帳
+    /// （<c>presets.json</c> を読めていなかった回の残骸）で ⑵ が新しい名を先に足してしまい、
+    /// 旧い名と 2 名並ぶ＝同じ wav を指す重複ができる。改名が 1 件でも起きたら ⑶ も走らせる
+    /// （別名表の鍵が変わる＝旧い鍵は台帳に居ないので落ちる）。
     /// </para>
     /// <para>
     /// ⑶ が要る理由＝<see cref="Voices.PresetVoices"/> が書くのはランチャの台帳
@@ -77,16 +97,29 @@ public static class LauncherComposition
     /// </para>
     /// </summary>
     /// <returns>写したプリセットの数（<c>voices.json</c> を書いたかは <c>File.Exists</c> で判る）。</returns>
-    public static int PrepareVoices(AppPaths paths, VoiceStore store, IVoicesJsonWriter writer)
+    public static int PrepareVoices(AppPaths paths, VoiceStore store, IVoicesJsonWriter writer) =>
+        PrepareVoices(paths, store, writer, out _);
+
+    /// <summary>
+    /// 同上＋<b>改めた名を返す</b>（裁定 108）＝呼ぶ側が設定の旧い id も直せる
+    /// （<see cref="Voices.PresetVoices.RenameInSettings"/>）。
+    /// </summary>
+    /// <param name="renamed">この回で改めた名（無ければ空）。</param>
+    public static int PrepareVoices(
+        AppPaths paths,
+        VoiceStore store,
+        IVoicesJsonWriter writer,
+        out IReadOnlyList<PresetRename> renamed)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(writer);
 
         var moved = store.MigrateReferences();
+        renamed = PresetVoices.MigrateRenamed(paths, store);
         var copied = PresetVoices.InstallIfFirstRun(paths, store);
 
-        if (moved > 0 || copied > 0 || !System.IO.File.Exists(paths.VoicesJsonPath))
+        if (moved > 0 || copied > 0 || renamed.Count > 0 || !System.IO.File.Exists(paths.VoicesJsonPath))
         {
             writer.Write(paths.VoicesJsonPath, store.Load());
         }

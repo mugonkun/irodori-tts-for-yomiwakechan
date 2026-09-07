@@ -29,8 +29,9 @@ DEFAULT_PORT = 50021
 # decisions.md 17 のうち VOICEVOX 分。style_id は実機 GET /speakers で確認済み（2026-09-04）。
 SPEAKERS = [
     {
+        # 裁定 108＝司令官の改名指示（2026-09-07）。engine_speaker は VOICEVOX の話者名なので動かさない。
         "id": "vv_mochiko_sexy",
-        "display_name": "もち子さん",
+        "display_name": "もち子さん（セクシー／あん子）",
         "engine_speaker": "もち子さん",
         "style_name": "セクシー／あん子",
         "style_id": 66,

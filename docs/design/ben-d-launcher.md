@@ -64,6 +64,11 @@ build/
 - 配布版の台帳 `voices.ywk.json`（`{"schema":1,"voices":{"<id>":{"display_name","file","caption","params":{"num_steps":40,...},"preset":true|false,"origin":"preset|user","added_at"}}}`＝便 A の assemble-app が置く雛形と同形）。
 - 追加＝wav（8 拡張子）を選ぶ→名前を付ける（日本語可）→ `voices\<ascii-id>.wav` に写し（id は内容 sha256 先頭 12＝本体の `ywk-<sha12>` の型を倣う）→ `voices.json` を原子的に書き換え（`{"<表示名>":{"ref_wav":"<ascii-id>.wav"}}`＋`{"デフォルト":{"no_ref":true}}`）。上流は毎要求 `iterdir()` なので再起動不要。**登録 API は使わない**（ASCII 限定・decisions 16）。
 - プリセット 11（＋弦巻マキ）＝`voices/presets/*.wav` を初回に `voices\` へ写し、台帳に `preset:true`。削除は利用者の意思で可（再インストールで戻る）。
+- **改名の引き継ぎ**（裁定 108・2026-09-07＝`PresetVoices.MigrateRenamed`）。プリセットの `display_name` はそのまま話者 id なので（裁定 17）、配布側が名を変えると**既存の利用者の台帳だけが旧い id を持ち続ける**＝`InstallIfFirstRun` は `presets_installed` の印で何もせず、「入れ直す」（`PresetVoices.Restore`）は既に在る id を飛ばすだけなので**新しい名を旧い名の隣に足す**＝同じ wav を指す 2 名になる。
+  - **組にする規則**＝⑴ 正本（`voices/presets.json`＝`Discover` の ⑴）から読めたときだけ走る（⑵ の台帳・⑶ の檔名走査では走らない＝⑶ の id は ASCII の幹なので日本語の id が化ける）⑵ 台帳の側はプリセット（`preset` か `origin=preset`）で檔名を持ち、その id が正本に無い行 ⑶ 檔名が一致する正本の行が在り、その新しい id が台帳にまだ無い。同じ檔を指す行が 2 つ在れば**序数で先頭の 1 つだけ**を改める。利用者が足した話者（`origin=user`）は同じ檔を指していても触らない。空白だけの鍵（壊れた台帳）は相手にしない。なお**檔名の幹が id になっていた古い台帳**（是正・2026-09-05 より前＝`presets.json` を読めずに `vv_mochiko_sexy` が id になっていた回）も同じ規則で日本語名へ直る＝更新の直後の事前計算が最大 11 件になる。
+  - **持ち越す物**＝檔・caption・既定パラメータ・`preset`・`origin`・`added_at`。**消す物**＝`ref_latent` の欄と旧い id の `latents/<stem>.pt`・同名 `.json`（幹は話者 id 由来なので新しい名からは二度と当たらない＝`VoiceStore.DeleteLatentFiles`）。**参照 wav は消さない**（新しい名の行が同じ檔を指す）。焼き直しは wrapper の起動時の事前計算がやる（裁定 78 ⑴）。**順は台帳を確定させてから潜在を消す**＝逆にすると台帳の保存が落ちた回に「旧い id の行と `ref_latent` は残るのに `.pt` が無い」個体ができ、事前計算は `ref_embed` を持つ行を飛ばす（`ywk_server.py:3230-3246`）ので二度と焼き直らない。
+  - **走る場所**＝起動の `LauncherComposition.PrepareVoices`（移送 → **改名** → 初回展開 → `voices.json`。改名を初回展開の**前**に置くのは、`presets_installed` の印が無い台帳で新しい名が先に入って重複するのを避けるため）と、話者画面の「入れ直す」（`VoicesViewModel.RestorePresets`＝改名を通してから `Restore`）。設定に残った旧い id（`voiceOrder`・`warmupVoices`・`lastTestVoice`）も同じ回で改め、**その回に `settings.json` へ落とす**（起動側は `AppServices.SaveSettings`・「入れ直す」側は `VoicesViewModel.SettingsChanged`＝`MainViewModel` が保存と設定画面の写しの取り直しを差す。落とさないと設定頁の「適用」が構築時の写しを書き戻して旧い id が甦る）。直す理由＝`PresetVoices.RenameInSettings`＝暖機は知らない話者で走行ごと `failed` になる。
+  - **最初の 1 件**＝もち子さん → もち子さん（セクシー／あん子）（2026-09-07・裁定 108）。`engine_speaker` は VOICEVOX の話者名なので据え置き。
 - 参照 wav の長さ＝10〜30 s を勧める文言（上流の推奨・120 s 上限で切り詰め警告）。
 
 ## 5. 暖機（便 C の結果で確定）
@@ -717,7 +722,7 @@ EXIT=0  elapsed=1.39 s
 ```
 
 **11 檔・32,571,364 B（31.06 MiB）**。着地は **`build/out/app/voices/presets/`**、台帳は
-**`build/out/app/voices/presets.json`**（50,955 B・原檔をそのまま写す）。
+**`build/out/app/voices/presets.json`**（50,955 B・原檔をそのまま写す＝裁定 108 の改名で **50,985 B**）。
 `build/out/app` の檔数は **108**（今回足したのは 12 檔＝wav 11 ＋ `presets.json` 1）。upstream は前後とも clean。
 
 **ランチャの読む path と一致することを読んで確かめた**（`launcher/` は触らずに読むだけ）＝
@@ -733,7 +738,7 @@ EXIT=0  elapsed=1.39 s
 
 | # | 檔 | バイト | 表示名（＝話者 id） |
 |---|---|---|---|
-| 1 | `vv_mochiko_sexy.wav` | 2,953,004 | もち子さん |
+| 1 | `vv_mochiko_sexy.wav` | 2,953,004 | もち子さん（セクシー／あん子） |
 | 2 | `vv_chibishikijii.wav` | 3,041,324 | ちび式じい |
 | 3 | `co_tsukuyomi.wav` | 2,711,084 | つくよみちゃん |
 | 4 | `co_kana_naisho.wav` | 3,194,924 | KANA（ないしょばなし） |

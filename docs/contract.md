@@ -257,7 +257,7 @@
 {"object": "list",
  "data": [{"id": "デフォルト", "object": "voice", "display_name": "デフォルト",
            "preset": false, "no_ref": true, "latent": false, "latent_stale": false},
-          {"id": "琴葉茜", "object": "voice", "display_name": "琴葉茜（関西弁）",
+          {"id": "琴葉茜（関西弁）", "object": "voice", "display_name": "琴葉茜（関西弁）",
            "preset": true, "no_ref": false, "latent": true, "latent_stale": false}]}
 ```
 
@@ -276,6 +276,10 @@
 - **上流由来の `none` は出ない**＝`IRODORI_ALLOW_NO_REF_VOICE=false` を焼く
   （`research/lab/notes/38` 実射 13b）。同じ意味の話者が 2 つ見える状態を作らない。
   ただし**送るぶんには通る**＝上流の別名 5 つは「デフォルト」に正規化される（⑶ 3-1・⑼ D-4）。
+- **プリセットの表示名（＝話者 id）は配布版の版で変わりうる**（裁定 108）。ランチャは起動時に
+  利用者の台帳の旧い id を新しい id へ改めるので、**旧い id は一覧から消える**。本体が保存して
+  おいた旧い id を送ると `ywk_unknown_voice`（⑶ 3-3 の 1 行目）で返る＝**版をまたいで id を固定せず、
+  一覧を読み直す**こと。最初の 1 件＝「もち子さん」→「もち子さん（セクシー／あん子）」（2026-09-07）。
 - **話者 id に日本語・空白・記号が使える**（走査と合成は voice_id を一切検査しない＝`voices.py:168-186`）。
   上流の登録 API は `^[A-Za-z0-9_-]+$`（`voices.py:24,151-155`）で日本語を 400 にするが、
   **本体はこれを使わない**（⑼ の D-3）＝配布版は**書き込みの 3 口

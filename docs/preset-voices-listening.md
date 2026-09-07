@@ -150,7 +150,7 @@ KANA（ないしょばなし）は**スペクトル重心が一次より明る�
 
 ---
 
-### 1. もち子さん（VOICEVOX・セクシー／あん子・styleId 66） — `vv_mochiko_sexy`
+### 1. もち子さん（セクシー／あん子）（VOICEVOX・エンジンの話者名「もち子さん」・styleId 66） — `vv_mochiko_sexy`
 
 - 一次 30 s ： `P:vv_mochiko_sexy_30s.wav` （36.47 s・24 kHz）
 - 二次 30 s 参照【採用中】： `S:vv_mochiko_sexy.wav` （30.76 s・48 kHz・**seed 1235 で撃ち直し**） ← 末尾 −35.4 dB＝直った
