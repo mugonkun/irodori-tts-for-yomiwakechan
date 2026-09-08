@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "voices" / "presets.json"
 PRESET_WAVS = ROOT / "voices" / "presets"
 GENERATORS = ROOT / "tools" / "preset-voices"
+CORPUS = GENERATORS / "corpus.json"
 
 #: 裁定 17 の 12 名（status pending / skipped の行も最初から載っている）。
 EXPECTED_ROWS = 12
@@ -49,6 +50,18 @@ def presets() -> list[dict]:
     rows = document["presets"]
     assert isinstance(rows, list)
     return rows
+
+
+@pytest.fixture(scope="module")
+def document() -> dict:
+    assert MANIFEST.is_file(), f"missing {MANIFEST}"
+    return json.loads(MANIFEST.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="module")
+def corpus() -> dict:
+    assert CORPUS.is_file(), f"missing {CORPUS}"
+    return json.loads(CORPUS.read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="module")
@@ -127,6 +140,37 @@ def test_the_generators_agree_with_the_manifest(presets, by_id):
         assert manifest_row["engine_speaker"] == spec["engine_speaker"]
         assert manifest_row["style"]["name"] == spec["style_name"]
         assert manifest_row["style"]["id"] == spec["style_id"]
+
+
+def test_every_secondary_row_quotes_the_corpus_text_it_names(presets, document, corpus):
+    """行の ``secondary.text`` が ``text_id`` の本文と**逐語で**一致すること（裁定 112）.
+
+    掃引は話者を数本だけ撃ち直す。``make_presets.py`` はかつて本文を台帳の**頭**から
+    読んでいたので、別の本文で撃ち直した行が**古い本文を名乗る**ところだった
+    （裁定 111 で ``generated_at`` について踏んだのと同じ穴・設計書 ben-p §11-2）。
+    穴は 2 度とも手で塞いだだけで門が無かった＝この模組がその門。
+
+    頭の ``corpus_texts`` は「いま何種類の本文が混ざっているか」を台帳の頭だけで
+    見せる欄なので、行が名乗った id の集合と一致することも同じ 1 本で釘付けする。
+    """
+    texts = corpus["secondary"]
+    named: set[str] = set()
+    for row in presets:
+        secondary = row.get("secondary")
+        if not secondary:
+            continue
+        text_id = secondary.get("text_id")
+        assert text_id, f"{row['id']}: secondary.text_id が無い"
+        assert text_id in texts, f"{row['id']}: corpus.json に無い text_id ({text_id})"
+        assert secondary.get("text") == texts[text_id]["text"], (
+            f"{row['id']}: secondary.text が corpus の {text_id} と違う"
+            "（掃引で撃ち直した行が古い本文を名乗っていないか）"
+        )
+        named.add(text_id)
+
+    assert document.get("corpus_texts") == sorted(named), (
+        "頭の corpus_texts が行の text_id の集合と合っていない"
+    )
 
 
 def test_done_rows_have_their_secondary_wav_with_the_recorded_size(presets):

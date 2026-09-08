@@ -192,14 +192,20 @@ python .\run_secondary.py --also-ref10
 | 引数 | 意味 |
 |------|------|
 | `--also-ref10` | 10 s 参照でも生成して比較用に残す |
-| `--text greeting_10s` | 予備の短い挨拶本文を使う（既定は `expressive_30s`） |
+| `--text expressive_20s` | **約 20 秒ぶんに縮めた本文**（90 字）を使う。裁定 112＝司令官「3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。文章を20秒程度に見積もって再生成。」＝3 本とも**同じ位置**で参照から離れたので、cfg ではなく**本文の長さ**を変えた手当て。`cfg_scale_speaker` は **7.0 のまま**添える |
+| `--text greeting_10s` | 予備の短い挨拶本文を使う（既定は `expressive_30s`＝146 字） |
 | `--only <id>` | 1 名だけ作り直す |
 | `--port 8090` | 使う口（既定 8090。**8088 にはしない**） |
 | `--ready-timeout 600` | ready 待ちの上限秒 |
 | `--keep-server` | 終了時にサーバを落とさない（調査用・自分で止めること） |
 | `--cfg-scale-speaker <値>` | 参照ボイス（話者）への寄せ具合＝上流 `cfg_scale_speaker`。**渡さなければ上流既定 5.0**（`Irodori-TTS-Server/src/irodori_openai_tts/config.py:54`）。渡すと全射の `irodori` 欄に載り、台帳の `secondary.irodori.cfg_scale_speaker` に残る（暖機の `no_ref` には載せない）。裁定 111 は **7.0** |
 
-1 名あたり 25〜55 s かかる。14 本で 10 分ほど。
+1 名あたり 25〜55 s かかる。14 本で 10 分ほど（本文の長さに比例する＝`expressive_20s` なら 3〜20 s）。
+
+**撃った本文は射ごとに台帳へ刻む**（裁定 112）。`run_secondary.result.json` の `items[].text_id`／`items[].text` が
+その 1 本の本文で、**頭の `text_id`／`text` は最初に 22 本を撃った run のもの**（掃引では差し替えない＝
+`generated_at`・`irodori_params` と同じ方針）。`make_presets.py` は行から先に読むので、本文を変えて数本だけ
+撃ち直しても、撃っていない行が新しい本文を名乗ることはない。
 
 確かめる。
 
@@ -229,6 +235,11 @@ python .\run_secondary.py --sweep-seed --sweep-ids "vv_mochiko_sexy,co_tsukuyomi
 | `--no-trim-fallback` | seed を使い切っても clean が出ない時の `trim_tail=false` の一巡を切る |
 | `--tail-ms` ほか 8 つ | 末尾判定の窓と閾。名も既定も `verify_wavs.py` と同じ（上の表） |
 | `--cfg-scale-speaker <値>` | 掃引の全射に同じ `cfg_scale_speaker` を載せる（`trim_tail=false` の一巡も同じ値） |
+
+**本文の長さを変えて撃ち直すとき**は掃引に `--text` を添える
+（裁定 112＝`python .\run_secondary.py --sweep-seed --sweep-ids "co_kana_naisho,co_ofutonp_kiza,vr2_akane_west" --cfg-scale-speaker 7.0 --text expressive_20s`
+＝**cfg は 7.0 のまま**で本文だけ 146 字 → 90 字に縮めた。声が**3 本とも同じ位置で**参照ボイスから離れる、
+という司令官の検分に対する手当て。実測＝20.24／18.32／21.00 s）。
 
 **参照ボイスへの寄せ具合を変えて撃ち直すとき**は掃引に `--cfg-scale-speaker` を添える
 （裁定 111＝`python .\run_secondary.py --sweep-seed --sweep-ids "co_kana_naisho,co_ofutonp_kiza,vr2_akane_west" --cfg-scale-speaker 7.0`
@@ -310,13 +321,24 @@ Copy-Item "$W\secondary\co_tsukuyomi_ref10_secondary.wav" "$R\voices\presets\co_
 `corpus.json` だけを直す。道具はすべてここから読む。
 
 - `primary.text_10s` / `text_30s`＝一次の素の地の文（感嘆符・絵文字を**入れない**）
-- `secondary.expressive_30s.text`＝二次の本番本文（「！」「？」と 😊😢😆🎉 を含む・1 文を短く）
-- `secondary.greeting_10s.text`＝予備の短い挨拶
+- `secondary.expressive_30s.text`＝二次の本番本文（146 字・「！」「？」と 😊😢😆🎉 を含む・1 文を短く）
+- `secondary.expressive_20s.text`＝**約 20 秒ぶんの本文（90 字・裁定 112）**。感情 5 段。
+  今の同梱ボイスは KANA ないしょばなし・おふとんP きざ・琴葉茜（関西弁）の 3 本がこれ
+- `secondary.greeting_10s.text`＝予備の短い挨拶（44 字）
 - `irodori_params`＝`num_steps`（既定 40）・`seed`（既定 1234）
 
-**秒数の目安。** Irodori の読み速は実測**約 4.6 字/秒**。VOICEVOX／COEIROINK より遅いので、
-二次本文は一次より短く書く。30 s を狙うなら**約 145 字**。
-（初稿の約 200 字は 37〜48 s になり目標超過だった。）
+**秒数の目安。** Irodori の読み速は実測**約 4.6 字/秒**（話者ごとに 4.1〜6.1 字/秒と幅がある）。
+VOICEVOX／COEIROINK より遅いので、二次本文は一次より短く書く。30 s を狙うなら**約 145 字**、
+20 s を狙うなら**約 90 字**。（初稿の約 200 字は 37〜48 s になり目標超過だった。）
+
+**新しい本文を足すときの手順**（裁定 112 で `expressive_20s` を足したときの実際）。
+
+1. `corpus.json` の `secondary` に `{id, target_s, emotion_arc, text, $calibration}` を足す。
+   **`emoji_palette.used` に無い絵文字は本文に入れない**（増やすなら先にそちらへ足す）。
+2. `run_secondary.py` の `--text` の `choices` に id を足す。
+3. 撃って実測し、**目標から外れていたら 1 句だけ足し引きして撃ち直す**。
+   `$calibration` に**両方の実測**を残す（見積りと実測がずれた幅が次の便の目盛りになる）。
+4. `presets.json.schema` の `secondary.text_id` の説明に id を足す（**enum は無い**ので値では弾かれない）。
 
 ---
 

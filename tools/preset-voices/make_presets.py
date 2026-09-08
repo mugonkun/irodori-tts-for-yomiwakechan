@@ -174,6 +174,8 @@ def main() -> int:
     sweep = runsec.get("seed_sweep") or {}
     sweep_rows = {r["voice"]: r for r in sweep.get("results", [])}
     health = runsec.get("health", {}) or {}
+    # 本文は「その 1 本を実際に撃った run」のもの＝行（items[]）が持っていればそれを採る（裁定 112）。
+    # 下の 2 つは行が本文を持たない場合（＝畳み込み先の run で撃った行）の控え。
     sec_text_id = runsec.get("text_id")
     sec_text = runsec.get("text")
     par = runsec.get("irodori_params", corpus["irodori_params"])
@@ -276,8 +278,11 @@ def main() -> int:
                 "bits": v.get("bits"),
                 "peak_dbfs": v.get("peak_dbfs"),
                 "rms_dbfs": v.get("rms_dbfs"),
-                "text_id": sec_text_id,
-                "text": sec_text,
+                # 行ごとの本文（裁定 112）。掃引で本文を変えて撃ち直した行は自分の本文を持つ
+                # （run_secondary.py が item に刻み merge_result が保つ）。持たない行は
+                # 畳み込み先の run＝最初に 22 本を撃った run の本文。
+                "text_id": s.get("text_id") or sec_text_id,
+                "text": s.get("text") or sec_text,
                 "ref_variant": args.ref_variant,
                 "ref_10s_file": other["file"] if other else None,
                 "irodori": irodori,
@@ -327,6 +332,16 @@ def main() -> int:
         "version": 1,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "corpus": "tools/preset-voices/corpus.json",
+        # corpus は出所の檔だけを指す文字列（形＝schema の type: string）。本文が 1 種類とは限らない
+        # ので（裁定 112 で 3 行だけ expressive_20s になった）、実際に行が名乗っている本文の id を
+        # 並べて添える＝台帳の頭を見ただけで「何種類の本文が混ざっているか」が分かる。
+        "corpus_texts": sorted(
+            {
+                p["secondary"]["text_id"]
+                for p in presets
+                if p.get("secondary") and p["secondary"].get("text_id")
+            }
+        ),
         "notes": [
             "decisions.md 17・18・26・27 が正典。設計＝docs/design/ben-p-preset-voices.md。",
             "secondary.file が実体の参照ボイス＝voices/presets/<id>.wav。一次 wav は素材で配布物には入れない"
@@ -345,7 +360,12 @@ def main() -> int:
             "secondary.irodori.cfg_scale_speaker が無い行は上流既定 5.0 で撃った（2026-09-05）。"
             "在る行はその値で撃った（裁定 111＝co_kana_naisho・co_ofutonp_kiza・vr2_akane_west を 7.0 で撃ち直し）。"
             "ただしこの 3 名の ref_10s_file（10 s 参照版）は撃ち直していない＝cfg 5.0 の射のままなので、"
-            "上の ref_variant の註に従って差し替えるなら先に 7.0 で撃ち直すこと。",
+            "上の ref_variant の註に従って差し替えるなら"
+            "先に `--cfg-scale-speaker 7.0 --text expressive_20s` で撃ち直すこと"
+            "（cfg と本文の両方が是正前＝裁定 111・112）。",
+            "secondary.text_id が expressive_20s の行は本文を約 20 秒に縮めて撃った"
+            "（裁定 112＝3 本とも同じ位置で参照ボイスから離れたため・cfg_scale_speaker 7.0 のまま）。"
+            "expressive_30s の行は 146 字の本文のまま。",
             "presets[].generated_at は「その行の二次を実際に撃った run」の時刻＝掃引で撃ち直した行は"
             "撃ち直した日が入る（裁定 111 の 3 行は 2026-09-09・ほかの 8 行は 2026-09-05）。"
             "doc の頭の generated_at はこの台帳を組み立てた時刻で、別物。",

@@ -11,6 +11,11 @@
     "version": { "type": "integer", "minimum": 1, "description": "台帳の書式版。" },
     "generated_at": { "type": "string", "description": "この台帳を書き出した時刻（ISO 8601）。" },
     "corpus": { "type": "string", "description": "本文の出所（例 tools/preset-voices/corpus.json）。" },
+    "corpus_texts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "presets[].secondary.text_id に実際に現れる本文の id（重複を畳んで並べたもの）。本文は行ごとに違いうる＝裁定 112 で 3 行だけ expressive_20s になったので、頭を見ただけで何種類混ざっているかが分かるように make_presets.py が書く。"
+    },
     "notes": { "type": "array", "items": { "type": "string" } },
 
     "presets": {
@@ -109,8 +114,8 @@
             "bits": { "type": "integer" },
             "peak_dbfs": { "type": ["number", "null"] },
             "rms_dbfs": { "type": ["number", "null"] },
-            "text_id": { "type": "string", "description": "corpus.json の secondary のどれか（expressive_30s / greeting_10s）。" },
-            "text": { "type": "string", "description": "生成に使った本文（逐語）。" },
+            "text_id": { "type": "string", "description": "corpus.json の secondary のどれか（expressive_30s＝146 字 / expressive_20s＝90 字 / greeting_10s＝44 字）。行ごとに違いうる＝裁定 112 で co_kana_naisho・co_ofutonp_kiza・vr2_akane_west の 3 行だけ expressive_20s で撃ち直した（司令官 2026-09-09 逐語「3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。文章を20秒程度に見積もって再生成。」）。台帳の頭の corpus_texts に、実際に使われている id が並ぶ。" },
+            "text": { "type": "string", "description": "生成に使った本文（逐語）。text_id と対で行ごとに持つ。" },
             "ref_variant": {
               "type": "string",
               "enum": ["30s", "10s"],

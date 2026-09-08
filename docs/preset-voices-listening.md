@@ -1,13 +1,112 @@
 # プリセット参照ボイス 聴取表（便 P・検分席）
 
-正典＝`decisions.md` 17・18・26・27・39・**111**。設計＝`docs/design/ben-p-preset-voices.md`。
-検分＝2026-09-05（初回）／**2026-09-09（追記 ③＝cfg_scale_speaker 7.0 の 3 本・ここが今の検分の的）**。
+正典＝`decisions.md` 17・18・26・27・39・111・**112**。設計＝`docs/design/ben-p-preset-voices.md`。
+検分＝2026-09-05（初回）／2026-09-09 追記 ③（cfg 7.0・**不合格**）／**2026-09-09 追記 ④＝本文を約 20 秒に縮めた 3 本・ここが今の検分の的**。
 対象＝二次 wav 22 本（11 話者 × 30 s 参照版／10 s 参照版）＋一次 wav 22 本。
 弦巻マキ（英）は decisions 27 により今回は無し（台帳 12 行目 status `skipped`）。
 
 **席は音を聴けない。** 下の「機械が測れたこと」は数値だけの所見で、採否は司令官の耳が決める。
 
-> **2026-09-09 追記 ③（`cfg_scale_speaker` 5→7 で 3 本を撃ち直した・裁定 111＝この追記が最新）。**
+> **2026-09-09 追記 ④（本文を約 20 秒に縮めて 3 本を撃ち直した・裁定 112＝この追記が最新）。**
+> 司令官の検分（2026-09-09・追記 ③ の cfg 7.0 版を聴いたうえで）＝逐語
+> 「**3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。文章を20秒程度に見積もって再生成。**」
+> ＝**3 本とも同じ位置で**参照ボイスから離れる、という所見。3 本は話者もエンジンも別なのに離れる箇所が揃う
+> ＝**cfg の強さの問題ではなく、本文の長さ（＝その位置まで来たこと）に依る**。よって**アプローチを変えた**＝
+> `cfg_scale_speaker` は **7.0 のまま**（裁定 111 の指示は撤回されていない）で、**本文だけ**を約 20 秒に縮めて
+> この 3 本を撃ち直した。**追記 ③ の 3 本（33.28／30.60／34.92 s）は司令官が聴いて外した＝この 3 名については
+> 追記 ③ は役目を終えている**（A/B 用に残してあるだけ）。ほかの 8 本は**1 バイトも触っていない**（md5 一致を確認済み）。
+>
+> **新しい本文（`corpus.json` の `secondary.expressive_20s`・90 字＝うち絵文字 4・半角空白 3）。**
+>
+> > こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 正直、何度もくじけそうになりました😢 でも、ここまで来られました。さあ、本番ですよ！一緒に楽しみましょう😆
+>
+> **見積りの立て方。** 146 字の `expressive_30s` は 11 話者で 24.8〜35.8 s。この 3 名は 33.28／30.60／34.92 s
+> ＝**4.4／4.8／4.2 字/秒**なので、20 s なら **85〜95 字**。絵文字は 4 つ（😊→🎉→😢→😆）＝顔ぶれも順も
+> `expressive_30s` から変えていない（`emoji_palette.used` のまま）。落としたのは
+> 『ええっ、もう出来たの？と驚きましたか？』『つらい日もありました。』『準備はいいですか？』『最高の一日になります🎉』
+> の **4 句**＝「驚き・問いかけ」段と「締めの祝い」段は丸ごと、「落胆・悲しみ」段と「高揚・呼びかけ」段は 1 句ずつ。
+> 『でも、ここまで来られました。』（＝「持ち直し」段）は**残した**ので `emotion_arc` は **5 段**。
+>
+> **目盛りは実射で 2 度合わせた（両方の記録を残してある）。**
+>
+> | 版 | 字数 | KANA | きざ | 琴葉茜 | 判定 |
+> |---|---|---|---|---|---|
+> | ⑴ 初稿（頭が『みなさん、こんにちは！』） | 95 字 | 22.40 s | 19.96 s | **23.24 s** | 琴葉茜が許容 18〜23 s を **0.24 s 超過**＝不採用 |
+> | ⑵ **今の本文**（呼びかけの 1 句『みなさん、』5 字だけを落とした） | **90 字** | **20.24 s** | **18.32 s** | **21.00 s** | **3 本とも許容の内側**＝採用 |
+>
+> ⑴ の射は `build/out/preset-work/secondary/sweep/20s-95chars/`（採用相当 3 本＋seed 1234 の射 3 本）と
+> `logs/run_secondary.20s-95chars.log`・`logs/run_secondary.sweep.20s-95chars.json` に残してある。
+>
+> **掃引の結果（⑵・`--sweep-seed --sweep-ids "co_kana_naisho,co_ofutonp_kiza,vr2_akane_west" --cfg-scale-speaker 7.0 --text expressive_20s`）。**
+>
+> | 話者 | 採った seed（射数） | 秒数（追記 ③＝30 s 本文 → 追記 ④＝20 s 本文） | 末尾 Δ／末尾 50 ms（③→④） | 末尾判定 | md5（③→④） | バイト数（③→④） |
+> |---|---|---|---|---|---|---|
+> | KANA ないしょばなし | **1234**（**1 射目**） | 33.28 s → **20.24 s** | −53.74 → **−56.40 dB**／−72.97 → **−73.96 dBFS** | **clean** | `cfb2786f…` → **`494a3adc…`** | 3,194,924 → **1,943,084** |
+> | おふとんP きざ | **1234**（**1 射目**） | 30.60 s → **18.32 s** | −53.81 → **−57.32 dB**／−73.76 → **−74.52 dBFS** | **clean** | `cd37a2ae…` → **`d606722e…`** | 2,937,644 → **1,758,764** |
+> | 琴葉茜（関西弁） | **1235**（**2 射目**・1234 は ⒝ 絶対値で失格＝Δ −20.24 dB・tail50 **−38.02 dBFS**・rise −4.57 dB） | 34.92 s → **21.00 s** | −56.77 → **−57.92 dB**／−73.36 → **−74.86 dBFS** | **clean** | `c8e1e619…` → **`27a93475…`** | 3,352,364 → **2,016,044** |
+>
+> 逐語（`build/out/preset-work/logs/run_secondary.20s.log`）＝
+> 「`[sweep] co_kana_naisho seed=1234 trim_tail=True 20.24s Δ=-56.4 dB tail50=-73.96 dBFS rise=None dB [clean] 20.5 s`」
+> 「`[sweep] co_ofutonp_kiza seed=1234 trim_tail=True 18.32s Δ=-57.32 dB tail50=-74.52 dBFS rise=None dB [clean] 19.1 s`」
+> 「`[sweep] vr2_akane_west seed=1234 trim_tail=True 21.00s Δ=-20.24 dB tail50=-38.02 dBFS rise=-4.57 dB [TAIL?] why=abs 5.1 s`」
+> 「`[sweep] vr2_akane_west seed=1235 trim_tail=True 21.00s Δ=-57.92 dB tail50=-74.86 dBFS rise=None dB [clean] 3.3 s`」。
+> `trim_tail` は 3 本とも `true`（`trim_tail=false` の一巡は要らなかった）。RMS は −19.23→**−17.56**（KANA）・
+> −19.95→**−17.20**（きざ）・−16.59→**−16.94 dBFS**（茜）。**11 本とも 3 条件で clean** は保たれている。
+>
+> **A/B 用の控え（3 世代とも消していない）。**
+>
+> | 世代 | 本文 | cfg | 在処 |
+> |---|---|---|---|
+> | 今（追記 ④） | 20 s・90 字 | 7.0 | `voices/presets/<id>.wav`（＝下の表の `S:`）／N: は `…/preset-voices/secondary/<id>_secondary.wav` |
+> | 追記 ③（司令官が外した） | 30 s・146 字 | 7.0 | `build/out/preset-work/secondary/cfg7-30s/<id>.wav`・射は `secondary/sweep/cfg7-30s/`（10 本）／N: は `…/secondary/cfg7-30s/<id>.wav` |
+> | 追記 ②まで | 30 s・146 字 | 5.0（上流既定） | `build/out/preset-work/secondary/cfg5/<id>.wav`・射は `secondary/sweep/cfg5/`（10 本）／N: は `…/secondary/cfg5/<id>.wav` |
+>
+> **掃引の射（`secondary/sweep/`）の読み方。** 檔名 `<id>_seed<N>.wav` に cfg も本文も入らないので、**直下は最新の世代**
+> ＝KANA・きざ・琴葉茜 は追記 ④（20 s 本文・cfg 7.0）の射、ほかの 8 名は 2026-09-05（30 s 本文・cfg 5.0）の射。
+> ただし**直下には前の世代の射も同じ檔名規則で残っている**（`co_kana_naisho_seed1235.wav`・`co_ofutonp_kiza_seed1235`〜`1239`
+> ＝追記 ③＝30 s 本文・cfg 7.0。大きさが 3,194,924／2,937,644 バイトの側）。世代を確かめるには `secondary/sweep/README.txt`
+> と、同じ檔が在る `sweep/cfg7-30s/`・`sweep/cfg5/` を見ること（md5 は一致する）。N: の `…/secondary/sweep/` は
+> 2026-09-09 にこの形へ撮り直した（直下＋`cfg7-30s/`＋`cfg5/`＋`20s-95chars/`＋`README.txt`＝repo と同じ）。
+>
+> **聴く順（3 段）。**
+>
+> | 順 | すること | 檔 |
+> |---|---|---|
+> | 1 | **新しい 3 本（20 s）**を通しで聴き、**途中から声が変わらないか**（参照から離れないか）を見る | `S:co_kana_naisho.wav`・`S:co_ofutonp_kiza.wav`・`S:vr2_akane_west.wav` |
+> | 2 | 同じ話者の**一次 30 s**（＝参照ボイスそのもの）と突き合わせ、**同じ人に聞こえるか**を見る | `P:co_kana_naisho_30s.wav`・`P:co_ofutonp_kiza_30s.wav`・`P:vr2_akane_west_30s.wav` |
+> | 3 | **追記 ③ の版（30 s 本文・cfg 7.0）**を聴き、**外れていた箇所がそもそも来ないか**を確かめる（20 s 版が短くて届いていないだけなのか、離れ方そのものが消えたのかを分ける） | `R:cfg7-30s\<id>.wav` |
+>
+> ```powershell
+> $S = "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\voices\presets"
+> $P = "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\build\out\preset-work\primary"
+> $R = "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\build\out\preset-work\secondary\cfg7-30s"
+> foreach ($i in "co_kana_naisho","co_ofutonp_kiza","vr2_akane_west") {
+>   Start-Process "$S\$i.wav";      Start-Sleep -Seconds 25   # 新（20 s 本文・cfg 7.0）
+>   Start-Process "$P\${i}_30s.wav"; Start-Sleep -Seconds 45   # 一次＝参照ボイスそのもの
+>   Start-Process "$R\$i.wav";      Start-Sleep -Seconds 40   # 追記 ③（30 s 本文・cfg 7.0）
+> }
+> ```
+>
+> **席は音を聴けない。** 上の表は数値だけの所見で、「参照から離れなくなったか」は司令官の耳でしか決まらない。
+> **合格するまで次へ進まない。** 外れた場合の手はまだ 2 つ残っている＝⑴ さらに短い `greeting_10s`（44 字）で撃つ、
+> ⑵ 本文の長さは据え置いて `cfg_scale_speaker` をさらに上げる（口は `tools/preset-voices/README.md` §4）。
+>
+> **台帳の読み方（裁定 112 で足した）。** 本文は**行ごと**になった＝この 3 行だけ `secondary.text_id` が
+> **`expressive_20s`**（ほかの 8 行は `expressive_30s`）。台帳の頭の `corpus_texts` に、実際に使われている本文の id が
+> `["expressive_20s", "expressive_30s"]` と並ぶ。**行ごとの `generated_at`** はこの 3 行が **2026-09-09T02:37:35+0900**、
+> ほかの 8 行は 2026-09-05T00:12:38+0900。`secondary.irodori.cfg_scale_speaker` は**この 3 行だけ 7.0**（据え置き）。
+> もとは `make_presets.py` が本文を台帳の**頭**（最初に 22 本を撃った run の `text_id`／`text`）からしか読まず、
+> 撃ち直した行まで古い 146 字の本文を名乗るところだった。`run_secondary.py` が射ごとに `items[].text_id`／`items[].text`
+> を刻み、`merge_result` がそれを保ち、`make_presets.py` が行から読むように直した（`generated_at` と同じ扱い）。
+>
+> **秒数が変わったので下の表の「秒数」も 3 名だけ動いた**（打ち消し線＝追記 ③ の 30 s 本文の値・太字＝今の 20 s 本文の値）。
+> バイト数も約 4 割減った（3 本で計 9,484,932 → 5,717,892 バイト）＝`build/installer-build.ps1` の
+> `$ExpectedAppBytes` は**主席が測り直す**（この席は触っていない）。
+
+> **2026-09-09 追記 ③（`cfg_scale_speaker` 5→7 で 3 本を撃ち直した・裁定 111）。**（※ 最新は上の**追記 ④**。
+> **司令官はこの 3 本を聴いて外した**＝「3ファイルともおなじところで参照ボイスが外れるね」。
+> KANA・きざ・琴葉茜 の 3 本は追記 ④ で 20 s 本文の射に差し替わっている。この追記は
+> 「cfg を上げても直らなかった」という記録と、A/B の控えの在処として残す。）
 > 司令官の検分（2026-09-09）＝逐語「**サンプルボイスをよく検分してなかった。２次生成ボイスが途中から参照ボイスに
 > なってないね。CFG Scale Speaker を2ほど上げて再生成を頼む。co_kana_naisho / co_ofutonp_kiza / vr2_akane_west
 > 出来たら検分するので、検分合格で次に進もう**」。
@@ -27,9 +126,12 @@
 > 秒数は 3 本とも 1/100 秒まで同じ。RMS だけわずかに動いた（KANA −19.04→**−19.23**・きざ −19.94→**−19.95**・
 > 茜 −16.69→**−16.59** dBFS）。**11 本とも 3 条件で clean** は保たれている。
 >
-> **新版（cfg 7.0）の在処。** repo は `voices/presets/<id>.wav`（＝下の表の `S:`）。
-> **N: の写しは `N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/secondary/<id>_secondary.wav`**
-> ＝作業ディレクトリと同じ命名で、**旧版（`cfg5/<id>.wav`）とは檔名の形が違う**（`_secondary` の有無）。
+> ~~**新版（cfg 7.0）の在処。** repo は `voices/presets/<id>.wav`（＝下の表の `S:`）。~~
+> **⚠ 追記 ④ で `voices/presets/<id>.wav` は 20 s 本文の射に差し替わった。この 30 s 本文・cfg 7.0 の 3 本は
+> `build/out/preset-work/secondary/cfg7-30s/<id>.wav`（射は `secondary/sweep/cfg7-30s/` の 10 本）と
+> `N:/…/preset-voices/secondary/cfg7-30s/<id>.wav` に退避してある。**
+> N: の採用版は今も `…/preset-voices/secondary/<id>_secondary.wav`＝作業ディレクトリと同じ命名で、
+> 控え（`cfg5/<id>.wav`・`cfg7-30s/<id>.wav`）とは檔名の形が違う（`_secondary` の有無）。
 > N: から聴くときは並べて取り違えないこと（md5 は repo の `voices/presets/<id>.wav` と一致・突合済み）。
 >
 > **旧版（cfg 5.0）は消していない。A/B で聴き比べられる。**
@@ -38,37 +140,31 @@
 > - `build/out/preset-work/secondary/sweep/cfg5/<id>_seed<N>.wav`（cfg 5.0 の掃引の全射 10 本）
 > - `N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/secondary/cfg5/<id>.wav`（司令官の手元用）
 >
-> **聴く順（3 段）。**
+> ~~**聴く順（3 段）。**~~ **⚠ この順路は追記 ④ の順路に差し替わった（上）。以下は当時の記録。**
 >
 > | 順 | すること | 檔 |
 > |---|---|---|
-> | 1 | **新しい 3 本**を通しで聴き、**途中から声が変わらないか**（参照から離れないか）を見る | `S:co_kana_naisho.wav`・`S:co_ofutonp_kiza.wav`・`S:vr2_akane_west.wav` |
+> | 1 | ~~**新しい 3 本**を通しで聴き、**途中から声が変わらないか**（参照から離れないか）を見る~~ → **司令官の検分＝3 本とも同じところで外れた（不合格）** | ~~`S:<id>.wav`~~ 今は `R:cfg7-30s\<id>.wav` |
 > | 2 | 同じ話者の**一次 30 s**（＝参照ボイスそのもの）と突き合わせ、**同じ人に聞こえるか**を見る | `P:co_kana_naisho_30s.wav`・`P:co_ofutonp_kiza_30s.wav`・`P:vr2_akane_west_30s.wav` |
-> | 3 | **旧版（cfg 5.0）**を聴き、離れ方が減ったかを比べる（減っていなければさらに上げる余地がある） | `R:cfg5\<id>.wav` |
->
-> ```powershell
-> $S = "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\voices\presets"
-> $R = "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\build\out\preset-work\secondary\cfg5"
-> foreach ($i in "co_kana_naisho","co_ofutonp_kiza","vr2_akane_west") {
->   Start-Process "$S\$i.wav"; Start-Sleep -Seconds 40   # 新（cfg 7.0）
->   Start-Process "$R\$i.wav"; Start-Sleep -Seconds 40   # 旧（cfg 5.0）
-> }
-> ```
+> | 3 | **旧版（cfg 5.0）**を聴き、離れ方が減ったかを比べる | `R:cfg5\<id>.wav` |
 >
 > **席は音を聴けない。** 上の表は数値だけの所見で、「参照から離れなくなったか」は司令官の耳でしか決まらない。
-> 合格なら次へ、外れなら `--cfg-scale-speaker` をさらに上げて撃ち直す（口は `tools/preset-voices/README.md` §4）。
-> 台帳では新しい 3 行だけが `secondary.irodori.cfg_scale_speaker: 7.0` を持つ。**欄が無い 8 行は上流既定 5.0 で撃った**
-> の意（値を後から捏造していない）。
+> **結果＝不合格。** cfg を 2 上げても離れ方は消えず、しかも**3 本とも同じ位置**だったので、
+> 手当ては cfg ではなく本文の長さに移った（追記 ④・裁定 112）。
+> 台帳では新しい 3 行だけが `secondary.irodori.cfg_scale_speaker: 7.0` を持つ（**追記 ④ でも 7.0 のまま据え置き**）。
+> **欄が無い 8 行は上流既定 5.0 で撃った**の意（値を後から捏造していない）。
 >
 > **日付の読み方（裁定 111 の付帯で直した）。** 台帳の**行ごとの `generated_at`** は「その 1 本を実際に撃った run」の時刻＝
-> この 3 行は **2026-09-09T01:38:43+0900**、ほかの 8 行は 2026-09-05T00:12:38+0900。
+> ~~この 3 行は 2026-09-09T01:38:43+0900~~（**追記 ④ で 2026-09-09T02:37:35+0900 に進んだ**）、ほかの 8 行は 2026-09-05T00:12:38+0900。
 > もとは `merge_result()` が畳み込み先の top-level を差し替えないせいで、撃ち直した 3 行まで 9/5 を名乗っていた
 > （＝台帳が自己矛盾していた）。畳み込む行に自分の run の `generated_at`／`server_log` を持たせて直した
 > （`tools/preset-voices/run_secondary.py` の `merge_result`・`make_presets.py` の行の組み立て）。
 > `voices/presets.json` の**頭の** `generated_at` は台帳を組み立てた時刻で、撃った時刻ではない。
-> `secondary.server.device` は行ごとの server ログ（`server-8090-20260909-013843.log`）から拾った実 device。
-> `hf_checkpoint`・`precision`・`port` は畳み込み先の `/health` の写しだが、**2026-09-09 の run の `/health` も同値**
+> `secondary.server.device` は行ごとの server ログ（~~`server-8090-20260909-013843.log`~~ 今は
+> **`server-8090-20260909-023735.log`**＝追記 ④ の run）から拾った実 device。
+> `hf_checkpoint`・`precision`・`port` は畳み込み先の `/health` の写しだが、**2026-09-09 の 2 つの run の `/health` も同値**
 > （`logs/run_secondary.sweep.json` の `health`＝v4.1-Small・bf16・8090）なので、値としては今の射のもので合っている。
+> **本文も同じ形で行ごとになった**＝裁定 112（上の追記 ④「台帳の読み方」）。
 
 > **2026-09-05 追記 ①（末尾切れの是正のあと・検分席が自前計測で裏を取った）。**
 > decisions 39 の seed 掃引で、末尾ぶつ切りだった 6 本を撃ち直した（`tools/preset-voices/run_secondary.py --sweep-seed`）。
@@ -76,8 +172,9 @@
 > ゆえに**下の秒数・パスは全部そのまま生きている**。変わったのは末尾の中身と、下の A 群・B 群の数値。
 > ただし **月読アイだけは規則の縁（Δ＝−20.19 dB・閾は −20.0）で、実際には終端の 0.175 s に音が立ち上がったまま切れていた。**
 
-> **2026-09-05 追記 ②（規則を強めて撃ち直した）。**（※ 最新は上の**追記 ③**。この追記は末尾の規則の話で、
-> KANA・きざ・琴葉茜の 3 本は追記 ③ で `cfg_scale_speaker` 7.0 の射に差し替わっている。）
+> **2026-09-05 追記 ②（規則を強めて撃ち直した）。**（※ 最新は上の**追記 ④**。この追記は末尾の規則の話で、
+> KANA・きざ・琴葉茜の 3 本は追記 ③ で `cfg_scale_speaker` 7.0 の射に、さらに追記 ④ で 20 s 本文の射に差し替わっている。
+> **末尾判定の 3 条件そのものは追記 ③・④ でも変えていない。**）
 > 検分席が挙げた「規則の取りこぼし」を受け、`verify_wavs.py` の末尾判定を **1 条件から 3 条件に強めた**。
 >
 > | | 条件 | 意味 |
@@ -98,8 +195,10 @@
 
 ## 0. 10 分の順路
 
-**2026-09-09 は先に追記 ③ の 3 段（cfg 7.0 の 3 本＝KANA・おふとんP きざ・琴葉茜）を聴いてほしい。**
-下の順路は 2026-09-05 の全体検分のもので、そのまま生きている（3 本の中身だけが cfg 7.0 の射に変わった）。
+**2026-09-09 は先に追記 ④ の 3 段（20 s 本文の 3 本＝KANA・おふとんP きざ・琴葉茜）を聴いてほしい。**
+（追記 ③ の 3 段はもう役目を終えた＝司令官がその 3 本を外したのがこの撃ち直しの発端。）
+下の順路は 2026-09-05 の全体検分のもので、そのまま生きている
+（3 本の**中身と秒数**だけが 20 s 本文・cfg 7.0 の射に変わった＝33.28／30.60／34.92 s → **20.24／18.32／21.00 s**）。
 
 | 順 | すること | 所要 |
 |---|---|---|
@@ -132,19 +231,21 @@ Get-ChildItem "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\voice
 | もち子さん | +8.95 dB | 1235（2 射目・1 度目の掃引） | −35.37 dB | −52.14 dBFS | **−3.21 dB**（減衰） | 0.03 s | 減衰して終わる。○ |
 | つくよみちゃん | +8.37 dB | 1240（7 射目・1 度目） | −59.43 dB | −76.44 dBFS | 無音 | 1.07 s | 無音まで落ちる。○ |
 | おふとんP のーまるv2 | +7.41 dB | 1240（7 射目・1 度目） | −57.70 dB | −78.20 dBFS | 無音 | 0.13 s | 減衰して終わる。○ |
-| KANA ないしょばなし | ~~+4.65 dB（cfg 5.0 の射）~~ **+1.04 dB**（cfg 7.0 の射） | 1235（2 射目・**3 度目＝cfg 7.0 の掃引**） | ~~−53.77 dB~~ **−53.74 dB** | ~~−72.81~~ **−72.97 dBFS** | 無音 | ~~0.57 s~~ **1.05 s** | 無音まで落ちる。○（**追記 ③ で cfg 7.0 の射に差し替え**） |
-| おふとんP きざ | ~~+2.28 dB（cfg 5.0 の射）~~ **+3.17 dB**（cfg 7.0 の射） | 1239（6 射目・**3 度目＝cfg 7.0 の掃引**） | ~~−54.17 dB~~ **−53.81 dB** | ~~−74.11~~ **−73.76 dBFS** | 無音 | ~~0.32 s~~ **0.31 s** | 直った（作り直しは不要）。○（**追記 ③ で cfg 7.0 の射に差し替え**） |
-| 琴葉茜（関西弁） | ~~−5.97 dB（cfg 5.0 の射）~~ **+5.61 dB**（cfg 7.0 の射） | 1235（2 射目・**3 度目＝cfg 7.0 の掃引**） | ~~−56.73 dB~~ **−56.77 dB** | ~~−73.42~~ **−73.36 dBFS** | 無音 | 1.05 s | 無音まで落ちる。○（**追記 ③ で cfg 7.0 の射に差し替え**） |
+| KANA ないしょばなし | ~~+4.65 dB（cfg 5.0）~~ ~~+1.04 dB（cfg 7.0・30 s 本文）~~ **−56.40 dB**（cfg 7.0・**20 s 本文＝1 射目で clean**） | ~~1235~~ **1234**（1 射目・**4 度目＝20 s 本文の掃引**） | ~~−53.77~~ ~~−53.74~~ **−56.40 dB** | ~~−72.81~~ ~~−72.97~~ **−73.96 dBFS** | 無音 | ~~0.57~~ ~~1.05~~ **1.01 s** | 無音まで落ちる。○（**追記 ④ で 20 s 本文の射に差し替え**） |
+| おふとんP きざ | ~~+2.28 dB（cfg 5.0）~~ ~~+3.17 dB（cfg 7.0・30 s 本文）~~ **−57.32 dB**（cfg 7.0・**20 s 本文＝1 射目で clean**） | ~~1239~~ **1234**（1 射目・**4 度目＝20 s 本文の掃引**） | ~~−54.17~~ ~~−53.81~~ **−57.32 dB** | ~~−74.11~~ ~~−73.76~~ **−74.52 dBFS** | 無音 | ~~0.32~~ ~~0.31~~ **0.98 s** | 直った（作り直しは不要）。○（**追記 ④ で 20 s 本文の射に差し替え**） |
+| 琴葉茜（関西弁） | ~~−5.97 dB（cfg 5.0）~~ ~~+5.61 dB（cfg 7.0・30 s 本文）~~ **−20.24 dB**（cfg 7.0・20 s 本文・seed 1234＝⒝ 絶対値 −38.02 dBFS で失格） | ~~1235~~ **1235**（2 射目・**4 度目＝20 s 本文の掃引**・番号は偶然同じで中身は別の射） | ~~−56.73~~ ~~−56.77~~ **−57.92 dB** | ~~−73.42~~ ~~−73.36~~ **−74.86 dBFS** | 無音 | ~~1.05~~ **1.02 s** | 無音まで落ちる。○（**追記 ④ で 20 s 本文の射に差し替え**） |
 | **月読アイ** | −20.19 dB（⒝⒞ で失格） | **1238（4 射目・2 度目の掃引）** | **−56.07 dB** | **−72.60 dBFS** | 無音 | **1.13 s**（前は 0.00 s） | **直った。**○ |
 | **ちび式じい** | −32.94 dB（⒞ で失格） | **1235（1 射目・2 度目の掃引）** | **−46.32 dB** | **−65.19 dBFS** | 無音 | **0.35 s**（前は 0.00 s） | **直った。**○ |
 | ほか 3 名（MANA・吉田くん・月読ショウタ） | もともと 3 条件とも clean | 1234 のまま | −50〜−58 dB | −73〜−75 dBFS | 無音 | 0.35〜1.03 s | 触っていない。○ |
 
-註（追記 ③ の 3 名）＝**1 行に 2 つの run の数値が混ざらないよう、打ち消し線が cfg 5.0 の射・太字が cfg 7.0 の射**。
-「最初の Δ（seed 1234）」欄の cfg 7.0 の値（+1.04／+3.17／+5.61 dB）は
-`build/out/preset-work/logs/run_secondary.cfg7.log` の逐語（例「`[sweep] co_kana_naisho seed=1234 trim_tail=True 33.28s Δ=1.04 dB`」）。
-**「末尾の無音」の旧値**（0.57／0.32 s）は 2026-09-05 の実測で、cfg 5.0 の控え
-（`build/out/preset-work/secondary/cfg5/`）に `verify_wavs.py` を掛け直して裏を取ってある（trail 0.569 s／0.316 s）。
-琴葉茜の 1.05 s は前後で同値。
+註（追記 ③・④ の 3 名）＝**1 行に 3 つの run の数値が混ざらないよう、打ち消し線が古い射・太字が今の射（20 s 本文・cfg 7.0）**。
+古い順に ⑴ cfg 5.0＋30 s 本文（2026-09-05）→ ⑵ cfg 7.0＋30 s 本文（追記 ③・司令官が外した）→ ⑶ **cfg 7.0＋20 s 本文（追記 ④＝今）**。
+「最初の Δ（seed 1234）」欄の今の値は `build/out/preset-work/logs/run_secondary.20s.log` の逐語
+（例「`[sweep] co_kana_naisho seed=1234 trim_tail=True 20.24s Δ=-56.4 dB tail50=-73.96 dBFS rise=None dB [clean]`」）。
+**KANA と きざ は 1 射目がそのまま clean**なので「最初の Δ」と「今の Δ」が同じ値になる。琴葉茜だけ 1234 が
+⒝（絶対値 −38.02 dBFS）で落ち、**1235 の 2 射目**を採った。追記 ③ の値（+1.04／+3.17／+5.61 dB）は
+`logs/run_secondary.cfg7.log`、cfg 5.0 の値は 2026-09-05 の実測（控えは `secondary/cfg5/`・`secondary/cfg7-30s/`）。
+**「末尾の無音」の今の値**（1.01／0.98／1.02 s）は追記 ④ のあとの `logs/verify_secondary.json` の `trail_silence_s`（1.012／0.977／1.020 s）。
 
 **2 本の終端 0.5 秒（25 ms ごとの dBFS・是正の前後）。**
 
@@ -178,8 +279,10 @@ Get-ChildItem "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\voice
 **この表は seed 掃引の前（seed 1234）の檔で測ったもの。1 度目の掃引で撃ち直した 6 本は中身が変わったので、
 検分席が同じやり方で測り直した（「差（1 度目の是正後）」欄）。**
 
-⚠ **3 度目の撃ち直し（追記 ③・cfg_scale_speaker 7.0）で KANA・おふとんP きざ・琴葉茜 の射も変わった。
-下の「差（1 度目の是正後）」欄はいずれも cfg 5.0 の射で測った値＝この 3 名についてはもう今の檔のものではない。**
+⚠ **3 度目（追記 ③・cfg 7.0）と 4 度目（追記 ④・cfg 7.0＋20 s 本文）の撃ち直しで、KANA・おふとんP きざ・琴葉茜 の射は
+2 度変わった。下の「差（1 度目の是正後）」欄はいずれも cfg 5.0＋30 s 本文の射で測った値＝この 3 名についてはもう
+今の檔のものではない。しかも今の 3 本は本文そのものが違う（90 字）ので、146 字の射との F0 の直接比較には
+「読んだ文が違う」ぶんの目減りが乗る。**
 参照への寄せを強めたので **F0 は一次に近づいている可能性が高い**が、誰も測り直していない（席は音を聴けず、
 便 P の末尾席は F0 を測る道具を持たない）。数値が要るなら検分席に同じ実装で測り直させること。
 
@@ -224,9 +327,15 @@ KANA（ないしょばなし）は**スペクトル重心が一次より明る�
 - `S:` ＝ `C:/Users/mugonkun/source/repos/irodori-tts-for-yomiwakechan/voices/presets/`
 - `R:` ＝ `C:/Users/mugonkun/source/repos/irodori-tts-for-yomiwakechan/build/out/preset-work/secondary/`
 
-二次の本文（全話者で同じ）。
+二次の本文（**裁定 112 から 2 種類ある**。台帳では行ごとの `secondary.text_id` で分かれる）。
+
+**⒜ 8 本（`expressive_30s`・146 字）＝もち子・ちび式じい・つくよみ・MANA・のーまるv2・吉田くん・月読アイ・月読ショウタ。**
 
 > みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉
+
+**⒝ 3 本（`expressive_20s`・90 字・追記 ④）＝KANA ないしょばなし・おふとんP きざ・琴葉茜（関西弁）。**
+
+> こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 正直、何度もくじけそうになりました😢 でも、ここまで来られました。さあ、本番ですよ！一緒に楽しみましょう😆
 
 ---
 
@@ -288,20 +397,24 @@ KANA（ないしょばなし）は**スペクトル重心が一次より明る�
 
 ### 4. KANA（COEIROINK・ないしょばなし・style 33） — `co_kana_naisho`
 
-**追記 ③（2026-09-09・裁定 111）で `cfg_scale_speaker` 5.0 → 7.0 にして撃ち直した。**（司令官の 3 本のうちの 1 本）
+~~**追記 ③（2026-09-09・裁定 111）で `cfg_scale_speaker` 5.0 → 7.0 にして撃ち直した。**~~
+**追記 ④（2026-09-09・裁定 112）で、cfg 7.0 のまま本文を 90 字（約 20 秒）に縮めて撃ち直した。**（司令官の 3 本のうちの 1 本。
+追記 ③ の cfg 7.0 版は司令官が聴いて外した＝「3ファイルともおなじところで参照ボイスが外れる」。）
 
 - 一次 30 s ： `P:co_kana_naisho_30s.wav` （39.22 s・44.1 kHz・RMS −26.1 dBFS＝ささやき）
-- 二次 30 s 参照【採用中】： `S:co_kana_naisho.wav` （33.28 s・**seed 1235・cfg_scale_speaker 7.0**・md5 `cfb2786f…`） ← 末尾 −53.74 dB＝clean
-- 旧版（cfg 5.0・A/B 用）： `R:cfg5\co_kana_naisho.wav` （33.28 s・seed 1235・md5 `ef329c24…`）
-- 二次 10 s 参照： `R:co_kana_naisho_ref10_secondary.wav` （32.16 s・末尾きれい・**cfg 5.0 のまま**）
-- 機械の所見：秒数は旧版と同じ 33.28 s。RMS −19.04 → **−19.23 dBFS**。
+- 二次 30 s 参照【採用中】： `S:co_kana_naisho.wav` （**20.24 s**・**本文 `expressive_20s`（90 字）・seed 1234（1 射目）・cfg_scale_speaker 7.0**・md5 `494a3adc…`・1,943,084 バイト） ← 末尾 −56.40 dB／−73.96 dBFS＝clean
+- 追記 ③ の版（30 s 本文・cfg 7.0・A/B 用）： `R:cfg7-30s\co_kana_naisho.wav` （~~33.28 s~~・seed 1235・md5 `cfb2786f…`）
+- さらに旧版（30 s 本文・cfg 5.0・A/B 用）： `R:cfg5\co_kana_naisho.wav` （33.28 s・seed 1235・md5 `ef329c24…`）
+- 二次 10 s 参照： `R:co_kana_naisho_ref10_secondary.wav` （32.16 s・末尾きれい・**cfg 5.0＋30 s 本文のまま**）
+- 機械の所見：秒数 ~~33.28 s~~ → **20.24 s**（本文が 146 → 90 字）。RMS ~~−19.04~~ ~~−19.23~~ → **−17.56 dBFS**。
+  ピークだけ 11 本で唯一 0 dBFS に張り付かない（**−1.52 dBFS**＝正規化に届く山が無かった）。
   スペクトル重心が一次より明るい・cfg 5.0 の射では F0 が **−1.3 半音**下がっていた（**新しい射では未測定**・B 群の ⚠）。
   **ささやきの息っぽさが薄れていないか／途中から声が離れないか**
 
 | 問い | 記入 |
 |---|---|
 | 一次に似ているか | 　　 |
-| **途中から参照ボイスから離れないか（cfg 7.0 で直ったか）** | 　　 |
+| **途中から参照ボイスから離れないか（本文を 20 秒に縮めて直ったか）** | 　　 |
 | **ないしょばなし（ささやき）の質は保たれているか** | 　　 |
 | 表情が出ているか | 　　 |
 | 末尾は切れていないか（30 s 版） | 　　 |
@@ -329,22 +442,25 @@ KANA（ないしょばなし）は**スペクトル重心が一次より明る�
 ### 6. おふとんP（COEIROINK・きざ・style 23） — `co_ofutonp_kiza`
 
 **末尾切れは seed 1239 の撃ち直しで直った（作り直しは不要になった）。**
-**追記 ③（2026-09-09・裁定 111）で `cfg_scale_speaker` 5.0 → 7.0 にして撃ち直した。**（司令官の 3 本のうちの 1 本。
+~~**追記 ③（2026-09-09・裁定 111）で `cfg_scale_speaker` 5.0 → 7.0 にして撃ち直した。**~~
+**追記 ④（2026-09-09・裁定 112）で、cfg 7.0 のまま本文を 90 字（約 20 秒）に縮めて撃ち直した。**（司令官の 3 本のうちの 1 本。
 cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうなったかも、ここで一緒に聴ける。）
 
 - 一次 30 s ： `P:co_ofutonp_kiza_30s.wav` （33.42 s・44.1 kHz）
-- 二次 30 s 参照【採用中】： `S:co_ofutonp_kiza.wav` （30.60 s・**seed 1239・cfg_scale_speaker 7.0**・md5 `cd37a2ae…`） ← 末尾 −53.81 dB＝clean
-- 旧版（cfg 5.0・A/B 用）： `R:cfg5\co_ofutonp_kiza.wav` （30.60 s・seed 1239・md5 `3dbf8574…`）
-- 二次 10 s 参照： `R:co_ofutonp_kiza_ref10_secondary.wav` （31.24 s・**cfg 5.0 のまま**） ← **こちらは末尾 Δ＝+4.01 dB・−14.23 dBFS のまま**
+- 二次 30 s 参照【採用中】： `S:co_ofutonp_kiza.wav` （**18.32 s**＝11 本で最短・**本文 `expressive_20s`（90 字）・seed 1234（1 射目）・cfg_scale_speaker 7.0**・md5 `d606722e…`・1,758,764 バイト） ← 末尾 −57.32 dB／−74.52 dBFS＝clean
+- 追記 ③ の版（30 s 本文・cfg 7.0・A/B 用）： `R:cfg7-30s\co_ofutonp_kiza.wav` （~~30.60 s~~・seed 1239・md5 `cd37a2ae…`）
+- さらに旧版（30 s 本文・cfg 5.0・A/B 用）： `R:cfg5\co_ofutonp_kiza.wav` （30.60 s・seed 1239・md5 `3dbf8574…`）
+- 二次 10 s 参照： `R:co_ofutonp_kiza_ref10_secondary.wav` （31.24 s・**cfg 5.0＋30 s 本文のまま**） ← **こちらは末尾 Δ＝+4.01 dB・−14.23 dBFS のまま**
   （掃引は採用版＝30 s 参照だけを撃ったので手つかず。**22 本のうち新規則で落ちる唯一の本**だが採用していないので放置してよい）
-- 機械の所見：秒数は旧版と同じ 30.60 s。RMS −19.94 → **−19.95 dBFS**。
+- 機械の所見：秒数 ~~30.60 s~~ → **18.32 s**（本文が 146 → 90 字。**3 名の中で読み速がいちばん速い**＝90 字で 4.91 字/秒・KANA 4.45・茜 4.29 なので 3 本で最短になった）。
+  RMS ~~−19.94~~ ~~−19.95~~ → **−17.20 dBFS**。
   F0 は cfg 5.0 の射で **+2.7 半音**（さらに前の射は +3.09 半音）＝11 名で最大の変化だった。**新しい射では未測定**（B 群の ⚠）。
   **別人に聞こえないか／途中から声が離れないか**
 
 | 問い | 記入 |
 |---|---|
 | 一次に似ているか（**声の高さが上がっていないか**） | 　　 |
-| **途中から参照ボイスから離れないか（cfg 7.0 で直ったか）** | 　　 |
+| **途中から参照ボイスから離れないか（本文を 20 秒に縮めて直ったか）** | 　　 |
 | 「きざ」らしさは残っているか | 　　 |
 | 表情が出ているか | 　　 |
 | 末尾は切れていないか（両版とも） | 　　 |
@@ -356,7 +472,7 @@ cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうな�
 ### 7. おふとんP（COEIROINK・のーまるv2・style 2） — `co_ofutonp_normal_v2`
 
 - 一次 30 s ： `P:co_ofutonp_normal_v2_30s.wav` （29.35 s・44.1 kHz）
-- 二次 30 s 参照【採用中】： `S:co_ofutonp_normal_v2.wav` （26.32 s＝11 名で最短・**seed 1240 で撃ち直し**） ← 末尾 −57.7 dB＝直った
+- 二次 30 s 参照【採用中】： `S:co_ofutonp_normal_v2.wav` （26.32 s＝**146 字組 8 本で最短**〔11 本では 4 番目＝20 s 本文の 3 本のほうが短い〕・**seed 1240 で撃ち直し**） ← 末尾 −57.7 dB＝直った
 - 二次 10 s 参照： `R:co_ofutonp_normal_v2_ref10_secondary.wav` （27.72 s・末尾きれい）
 - 機械の所見：F0 は撃ち直しで一次と同じ高さに戻った（是正前は +1.39 半音）。読み速 5.65 字/s＝11 名で 2 番目に速い。早口に聞こえないか
 
@@ -373,20 +489,24 @@ cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうな�
 
 ### 8. 琴葉茜（VOICEROID2・関西弁・akane_west_emo_44） — `vr2_akane_west`
 
-**追記 ③（2026-09-09・裁定 111）で `cfg_scale_speaker` 5.0 → 7.0 にして撃ち直した。**（司令官の 3 本のうちの 1 本）
+~~**追記 ③（2026-09-09・裁定 111）で `cfg_scale_speaker` 5.0 → 7.0 にして撃ち直した。**~~
+**追記 ④（2026-09-09・裁定 112）で、cfg 7.0 のまま本文を 90 字（約 20 秒）に縮めて撃ち直した。**（司令官の 3 本のうちの 1 本。
+3 本のうち**唯一 1 射目が末尾 ⒝ で落ちた**話者＝seed 1235 の 2 射目を採った。）
 
 - 一次 30 s ： `P:vr2_akane_west_30s.wav` （41.09 s・44.1 kHz・小さめ RMS −25.8）
-- 二次 30 s 参照【採用中】： `S:vr2_akane_west.wav` （34.92 s・**seed 1235・cfg_scale_speaker 7.0**・md5 `c8e1e619…`） ← 末尾 −56.77 dB＝clean
-- 旧版（cfg 5.0・A/B 用）： `R:cfg5\vr2_akane_west.wav` （34.92 s・seed 1235・md5 `d42b02df…`）
-- 二次 10 s 参照： `R:vr2_akane_west_ref10_secondary.wav` （34.60 s・末尾きれい・**cfg 5.0 のまま**）
-- 機械の所見：秒数は旧版と同じ 34.92 s。RMS −16.69 → **−16.59 dBFS**。
+- 二次 30 s 参照【採用中】： `S:vr2_akane_west.wav` （**21.00 s**・**本文 `expressive_20s`（90 字）・seed 1235（2 射目）・cfg_scale_speaker 7.0**・md5 `27a93475…`・2,016,044 バイト） ← 末尾 −57.92 dB／−74.86 dBFS＝clean
+- 追記 ③ の版（30 s 本文・cfg 7.0・A/B 用）： `R:cfg7-30s\vr2_akane_west.wav` （~~34.92 s~~・seed 1235・md5 `c8e1e619…`）
+- さらに旧版（30 s 本文・cfg 5.0・A/B 用）： `R:cfg5\vr2_akane_west.wav` （34.92 s・seed 1235・md5 `d42b02df…`）
+- 二次 10 s 参照： `R:vr2_akane_west_ref10_secondary.wav` （34.60 s・末尾きれい・**cfg 5.0＋30 s 本文のまま**）
+- 機械の所見：秒数 ~~34.92 s~~ → **21.00 s**（本文が 146 → 90 字。読み速 4.2 字/秒＝3 名で最も遅いので 3 本で最長）。
+  RMS ~~−16.69~~ ~~−16.59~~ → **−16.94 dBFS**。
   **関西弁のイントネーションが二次で残っているかが最大の見どころ**（Irodori は標準語で学習）。
-  参照への寄せを強めたので、**関西弁が戻っているか**も併せて聴いてほしい
+  参照への寄せは 7.0 のまま・本文だけを縮めたので、**関西弁が戻っているか**も併せて聴いてほしい
 
 | 問い | 記入 |
 |---|---|
 | 一次に似ているか | 　　 |
-| **途中から参照ボイスから離れないか（cfg 7.0 で直ったか）** | 　　 |
+| **途中から参照ボイスから離れないか（本文を 20 秒に縮めて直ったか）** | 　　 |
 | **関西弁のイントネーションは残っているか** | 　　 |
 | 表情が出ているか | 　　 |
 | 末尾は切れていないか（30 s 版） | 　　 |
@@ -466,11 +586,15 @@ cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうな�
 
 ## 3. 聴き終わったあとに決めてほしいこと
 
-0. **【最優先・裁定 111】cfg_scale_speaker 7.0 の 3 本（KANA・おふとんP きざ・琴葉茜）を合格とするか。**
-   「途中から参照ボイスになっていない」が直ったかを耳で決める（追記 ③ の 3 段の順路）。
-   合格なら次へ進む。外れなら値をさらに上げて撃ち直す（例 9.0）。**残り 8 本は cfg 5.0 のまま**なので、
-   3 本が良ければ「ほかも 7.0 で撃ち直すか」も併せて決めてほしい。
-   ※ 2・3 の F0 の数値は cfg 5.0 の射で測ったもの＝この 3 名についてはもう古い（B 群の ⚠）。
+0. **【最優先・裁定 112】本文を約 20 秒に縮めた 3 本（KANA 20.24 s・おふとんP きざ 18.32 s・琴葉茜 21.00 s）を合格とするか。**
+   「3ファイルともおなじところで参照ボイスが外れる」が消えたかを耳で決める（追記 ④ の 3 段の順路）。
+   合格なら次へ進む。外れた場合の手は 2 つ＝⑴ さらに短い `greeting_10s`（44 字）で撃つ、
+   ⑵ 本文はこのままで `cfg_scale_speaker` をさらに上げる（例 9.0）。
+   **残り 8 本は 146 字・cfg 5.0 のまま**なので、3 本が良ければ「**ほかの 8 本も 20 秒の本文＋cfg 7.0 で撃ち直すか**」
+   （＝プリセット全体を短い本文で揃えるか）も併せて決めてほしい。今のままだと同梱の参照ボイスは
+   **18〜36 秒と長さがまちまち**になる。
+   ※ 2・3 の F0 の数値は cfg 5.0＋30 s 本文の射で測ったもの＝この 3 名についてはもう古い（B 群の ⚠）。
+   ※ ~~追記 ③（cfg 7.0・30 s 本文）は司令官が聴いて外した~~＝この項の前身。控えは `R:cfg7-30s\` に残っている。
 
 1. ~~**月読アイの末尾をどうするか**~~ → **片付いた。** 2 度目の是正（seed 1238）で新しい 3 条件すべてを満たした。
    ちび式じい（seed 1235）も同時に直した。**11 本とも 30 s 参照版のままでよい＝10 s 参照版への差し替えは要らない。**
@@ -483,32 +607,38 @@ cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうな�
 6. 月読アイの一次が 55.30 s と長い理由（話速設定）を追うか、放っておくか。
 7. **ちび式じい と 月読アイ の F0 を測り直させるか**（B 群の ⚠）。2 度目の是正で射が変わったので、
    前の測定値はもう今の檔のものではない。
-8. `voices/presets/*.wav` 計 32 MB を git に入れるか。**`.gitignore` に `*.wav` の行は無く、今のままだと追跡対象に入る**
-   （`git check-ignore` で確認済み・現状は 11 本とも untracked）。decisions 22「第三者バイナリをコミットしない」との
-   線引きは司令官の判断。席は commit していない。
+8. `voices/presets/*.wav` 計 32 MB を git に入れるか。**`.gitignore` に `*.wav` の行は無く、11 本とも既に追跡対象に入っている**
+   （`git ls-files voices/presets/` が 11 本を返す・追記 ④ で撃ち直した 3 本は `git status` に `M` で出る）。
+   decisions 22「第三者バイナリをコミットしない」との線引きは司令官の判断。席は commit していない。
 
 ## 4. 数値の出どころ
 
 | 何 | 檔 |
 |---|---|
-| **3 度目（cfg 7.0・追記 ③）の掃引の逐語** | `build/out/preset-work/logs/run_secondary.cfg7.log` |
-| **3 度目（cfg 7.0）の掃引の台帳（10 射）** | `build/out/preset-work/logs/run_secondary.sweep.json`（**その run の分だけなので、2 度目の掃引の記録はこの檔にはもう無い**＝2 度目は `run_secondary.result.json` の `seed_sweep.results` と `sweep-run-20260905-p3.log` に残る） |
+| **4 度目（20 s 本文・cfg 7.0・追記 ④）の掃引の逐語** | `build/out/preset-work/logs/run_secondary.20s.log`（採用した 90 字の run）。**目盛り合わせの初稿 95 字の run** は `logs/run_secondary.20s-95chars.log`＝22.40／19.96／**23.24** s で琴葉茜が許容超過だったもの |
+| **4 度目の掃引の台帳（4 射）** | `build/out/preset-work/logs/run_secondary.sweep.json`（**その run の分だけ**。初稿 95 字の分は `logs/run_secondary.sweep.20s-95chars.json` に退避） |
+| **4 度目**のサーバ記録 | `build/out/preset-work/logs/server-8090-20260909-023735.log`（初稿 95 字の run は `...-023414.log`） |
+| **4 度目の撃ち直しの旧版（30 s 本文・cfg 7.0＝追記 ③）** | `build/out/preset-work/secondary/cfg7-30s/<id>.wav`（採用していた 3 本）・`build/out/preset-work/secondary/sweep/cfg7-30s/`（cfg 7.0 の全射 10 本）・`N:/…/preset-voices/secondary/cfg7-30s/` |
+| **初稿 95 字の射（不採用）** | `build/out/preset-work/secondary/sweep/20s-95chars/`（採用相当 3 本＋seed 1234 の射 3 本） |
+| **本文の目盛り合わせの記録** | `tools/preset-voices/corpus.json` の `secondary.expressive_20s.$calibration`（逐語・2 度の実射の秒数つき） |
+| **3 度目（cfg 7.0・30 s 本文・追記 ③）の掃引の逐語** | `build/out/preset-work/logs/run_secondary.cfg7.log` |
+| **3 度目（cfg 7.0）の掃引の台帳（10 射）** | ~~`build/out/preset-work/logs/run_secondary.sweep.json`~~ **この檔にはもう無い**（4 度目の run が上書きした）＝3 度目は `run_secondary.result.json` の `seed_sweep.results`（話者ごとに畳んである）と `run_secondary.cfg7.log` にだけ残る |
 | **3 度目**のサーバ記録 | `build/out/preset-work/logs/server-8090-20260909-013843.log` |
 | **3 度目の撃ち直しの旧版（cfg 5.0）** | `build/out/preset-work/secondary/cfg5/<id>.wav`（採用版 3 本）・`build/out/preset-work/secondary/sweep/cfg5/`（cfg 5.0 の全射 10 本）・`N:/…/preset-voices/secondary/cfg5/` |
-| **2 度目の是正後**・採用 11 本の末尾（最終・3 条件） | `build/out/preset-work/logs/verify_presets_tail.json`（**KANA・きざ・琴葉茜 は追記 ③ で射が変わったので、この 3 本の値は古い。今の値は下の `verify_secondary.json`**） |
-| **二次 22 本の諸元（3 条件・追記 ③ のあとに測り直した）** | `build/out/preset-work/logs/verify_secondary.json` |
+| **2 度目の是正後**・採用 11 本の末尾（最終・3 条件） | `build/out/preset-work/logs/verify_presets_tail.json`（**KANA・きざ・琴葉茜 は追記 ③・④ で射が変わったので、この 3 本の値は古い。今の値は下の `verify_secondary.json`**） |
+| **二次 22 本の諸元（3 条件・追記 ④ のあとに測り直した）** | `build/out/preset-work/logs/verify_secondary.json` |
 | **2 度目の是正後**・一次 22 本の諸元（3 条件・22/22 clean） | `build/out/preset-work/logs/verify_primary.json` |
 | **2 度目の seed 掃引の記録（5 射）** | ~~`run_secondary.sweep.json`~~ **この檔にはもう無い**（3 度目の run が上書きした）。2 度目は `run_secondary.result.json` の `seed_sweep.results`（話者ごとに畳んである）と `build/out/preset-work/logs/sweep-run-20260905-p3.log` にだけ残る |
 | 2 度目の掃引の逐語 | `build/out/preset-work/logs/sweep-run-20260905-p3.log` |
-| 射ごとの wav（掃引の全射） | `build/out/preset-work/secondary/sweep/<id>_seed<N>.wav`＝**檔名に cfg が入らない**。KANA・きざ・琴葉茜 の分は 3 度目（cfg 7.0）の射に上書きされ、**cfg 5.0 の射は `secondary/sweep/cfg5/` に退避**。ほかの話者の分は cfg 5.0 のまま。何で撃ったかは `run_secondary.result.json` の `seed_sweep.results[].attempts[].cfg_scale_speaker`（無い行＝上流既定 5.0） |
-| 生成の台帳（畳み込み後・1〜3 度目の掃引を全部保持） | `build/out/preset-work/logs/run_secondary.result.json`（`seed_sweep.results` に話者ごとの行。行ごとに `seeds`・`tail_rule`・`cfg_scale_speaker`。**頭の `generated_at`／`irodori_params` は最初に 22 本を撃った run のもので、掃引では差し替えない**＝3 度目の分は `seed_sweep.generated_at`＝2026-09-09T01:38:43+0900 と `seed_sweep.irodori_params`（`cfg_scale_speaker: 7.0`）、および `items[].generated_at`／`items[].request.irodori`） |
+| 射ごとの wav（掃引の全射） | `build/out/preset-work/secondary/sweep/<id>_seed<N>.wav`＝**檔名に cfg も本文も入らない**。KANA・きざ・琴葉茜 の分は 4 度目（20 s 本文・cfg 7.0）の射に上書きされ、**3 度目（30 s 本文・cfg 7.0）の射は `secondary/sweep/cfg7-30s/`・cfg 5.0 の射は `secondary/sweep/cfg5/` に退避**。ほかの話者の分は cfg 5.0＋30 s 本文のまま。何で撃ったかは `run_secondary.result.json` の `seed_sweep.results[].attempts[].cfg_scale_speaker`（無い行＝上流既定 5.0）と `items[].text_id`（無い行＝頭の `text_id`＝`expressive_30s`） |
+| 生成の台帳（畳み込み後・話者ごとに最後の掃引を保持） | `build/out/preset-work/logs/run_secondary.result.json`（`seed_sweep.results` に話者ごとの行。行ごとに `seeds`・`tail_rule`・`cfg_scale_speaker`。**同じ話者を撃ち直すと前の行は置き換わる**＝この 3 名の 3 度目の行はもう無い（逐語は `run_secondary.cfg7.log`）。**頭の `generated_at`／`irodori_params`／`text_id`／`text` は最初に 22 本を撃った run のもので、掃引では差し替えない**＝4 度目の分は `seed_sweep.generated_at`＝2026-09-09T02:37:35+0900 と `seed_sweep.irodori_params`（`cfg_scale_speaker: 7.0`）、および `items[].generated_at`／`items[].text_id`／`items[].text`／`items[].request.irodori`） |
 | 1 度目の是正前・二次 11 本の諸元 | `build/out/preset-work/logs/verify_recheck_presets.json` |
 | 1 度目の是正前・二次 22 本の諸元 | `build/out/preset-work/logs/verify_recheck_secondary.json` |
 | 1 度目の是正前・一次 22 本の諸元 | `build/out/preset-work/logs/verify_recheck_primary.json` |
 | 1 度目の是正前・末尾ぶつ切りの測定 | `build/out/preset-work/logs/tail_check.json` |
 | 1 度目の是正前・F0・スペクトル重心 | `build/out/preset-work/logs/f0_profile.json` |
 | 生成時のサーバ記録 | `build/out/preset-work/logs/server-8090-20260905-001238.log`（1 度目の掃引は `...-004526.log`・**2 度目は `...-011519.log`**） |
-| 台帳 | `voices/presets.json`（`secondary.md5`・`secondary.size_bytes`・`secondary.irodori.seed`・**`secondary.irodori.cfg_scale_speaker`（在る 3 行だけ＝7.0。無い 8 行は上流既定 5.0）**・`secondary.irodori.seed_sweep`・`secondary.tail`）。**行ごとの `generated_at` は撃った run の時刻**＝この 3 行は 2026-09-09T01:38:43+0900・ほかの 8 行は 2026-09-05T00:12:38+0900（頭の `generated_at` は台帳を組み立てた時刻＝別物） |
+| 台帳 | `voices/presets.json`（`secondary.md5`・`secondary.size_bytes`・**`secondary.text_id`／`secondary.text`（行ごと＝この 3 行だけ `expressive_20s`・90 字）**・`secondary.irodori.seed`・**`secondary.irodori.cfg_scale_speaker`（在る 3 行だけ＝7.0。無い 8 行は上流既定 5.0）**・`secondary.irodori.seed_sweep`・`secondary.tail`）。頭の **`corpus_texts`** に使われている本文の id が並ぶ（今は `["expressive_20s","expressive_30s"]`）。**行ごとの `generated_at` は撃った run の時刻**＝この 3 行は 2026-09-09T02:37:35+0900・ほかの 8 行は 2026-09-05T00:12:38+0900（頭の `generated_at` は台帳を組み立てた時刻＝別物） |
 | 台帳の形 | `tools/preset-voices/presets.json.schema`（`md5`・`size_bytes`・`tail` は required・jsonschema で適合を確認済み） |
 
 末尾判定の規則の逐語は各台帳の `tail_rule`（`voices/presets.json` では `secondary.tail.rule`）に入っている。

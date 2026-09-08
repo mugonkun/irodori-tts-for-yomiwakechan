@@ -35,9 +35,20 @@ seed 掃引モード（--sweep-seed・decisions 39）:
   畳み込み先の **top-level** irodori_params は最初に 22 本を撃った run のままで差し替えない
   （撃っていない行の既定にまで新しい値が被らないように＝merge_result の註）。
 
+本文の長さ（--text・裁定 112）:
+  corpus.json の secondary の本文を名で選ぶ。expressive_30s（146 字・既定）・
+  expressive_20s（90 字）・greeting_10s（44 字）。
+  司令官 2026-09-09「3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。
+  文章を20秒程度に見積もって再生成。」＝cfg_scale_speaker 7.0 で撃った 3 本が 3 本とも同じ位置で
+  参照ボイスから離れた＝長さ／位置に依る、という耳の所見。手当てが expressive_20s。
+  **撃った本文は射ごとに items[].text_id／items[].text に刻む**（merge_result はこれを持ったまま畳む）。
+  畳み込み先の top-level の text_id／text は最初に 22 本を撃った run のままで差し替えない
+  ＝撃っていない行にまで新しい本文が被らないように（generated_at／irodori_params と同じ扱い）。
+  make_presets.py は行の text_id／text を先に見て、無い行だけ top-level を使う。
+
 使い方:
     python run_secondary.py [--work <preset-work>] [--port 8090] [--also-ref10]
-                            [--text expressive_30s|greeting_10s] [--only <id>]
+                            [--text expressive_30s|expressive_20s|greeting_10s] [--only <id>]
                             [--ready-timeout 600] [--keep-server]
                             [--cfg-scale-speaker 7.0]
 
@@ -272,11 +283,11 @@ def merge_result(logs: Path, sweep_report: dict) -> Path:
     seed_sweep.results も voice ごとに畳む（前回の掃引で採った話者の記録を消さない）。
     各行は自分の run の seeds と規則を持つので、run をまたいでも読める。
 
-    畳み込み先の top-level（generated_at・server_log・irodori_params）は**触らない**
+    畳み込み先の top-level（generated_at・server_log・irodori_params・text_id・text）は**触らない**
     ＝あれは「最初に 22 本を撃った run」の素性で、掃引で撃ち直した数本のものではない。
-    そのままだと撃ち直した行が古い日付を名乗るので（裁定 111 の付帯）、
-    畳み込む item に自分の run の generated_at・server_log を持たせる
-    （make_presets.py が行ごとの generated_at にこれを使う）。
+    そのままだと撃ち直した行が古い日付・古い本文を名乗るので（裁定 111 の付帯・裁定 112）、
+    畳み込む item に自分の run の generated_at・server_log・text_id・text を持たせる
+    （make_presets.py が行ごとの generated_at・text_id・text にこれを使う）。
     掃引 run の irodori_params は seed_sweep の下に置く＝top-level には混ぜない
     （混ぜると撃っていない行の既定にまで新しい値が被る）。
     """
@@ -292,6 +303,10 @@ def merge_result(logs: Path, sweep_report: dict) -> Path:
         # この射を撃ったのは「今の run」＝行に自分の日付と server ログを持たせる。
         it["generated_at"] = sweep_report.get("generated_at")
         it["server_log"] = sweep_report.get("server_log")
+        # 本文も同じ扱い（裁定 112）。掃引の item は自分で刻んでいるが、古い形の
+        # 報告を畳むときのために、無ければこの run の本文で埋める。
+        it.setdefault("text_id", sweep_report.get("text_id"))
+        it.setdefault("text", sweep_report.get("text"))
     items = []
     for it in base.get("items", []):
         items.append(adopted.pop(it.get("voice"), it))
@@ -336,7 +351,9 @@ def main() -> int:
     ap.add_argument("--work", default=str(REPO / "build" / "out" / "preset-work"))
     ap.add_argument("--port", type=int, default=8090)
     ap.add_argument("--corpus", default=str(Path(__file__).with_name("corpus.json")))
-    ap.add_argument("--text", default="expressive_30s", choices=["expressive_30s", "greeting_10s"])
+    ap.add_argument("--text", default="expressive_30s",
+                    choices=["expressive_30s", "expressive_20s", "greeting_10s"],
+                    help="corpus.json の secondary の本文を名で選ぶ（裁定 112 で expressive_20s＝90 字を足した）")
     ap.add_argument("--also-ref10", action="store_true", help="10 s 参照でも生成して比較用に残す（_ref10）")
     ap.add_argument("--only", default=None, help="この id だけ生成する")
     ap.add_argument("--ready-timeout", type=float, default=600.0)
@@ -426,6 +443,7 @@ def main() -> int:
                else "渡さない（上流既定 5.0）"),
             flush=True,
         )
+        print(f"[sweep] text: {sec['id']}（{len(text)} 字）", flush=True)
 
     # ---- 1. 参照ボイスを voices_dir に ASCII 檔名で置く
     refs: dict[str, list[str]] = {}
@@ -597,6 +615,10 @@ def main() -> int:
                                 "id": vid,
                                 "voice": voice_id,
                                 "ref_variant": "30s",
+                                # 何の本文で撃ったかを行に刻む（裁定 112）。畳み込み先の top-level は
+                                # 最初の run のままなので、行が自分の本文を持たないと嘘を名乗る。
+                                "text_id": sec["id"],
+                                "text": text,
                                 "file": name,
                                 "path": str(dest),
                                 "bytes": len(wav),
@@ -693,6 +715,9 @@ def main() -> int:
                         "id": vid,
                         "voice": voice_id,
                         "ref_variant": "30s" if voice_id == vid else "10s",
+                        # 掃引と同じく、何の本文で撃ったかを行に刻む（裁定 112）。
+                        "text_id": sec["id"],
+                        "text": text,
                         "file": name,
                         "path": str(dest),
                         "bytes": len(wav),

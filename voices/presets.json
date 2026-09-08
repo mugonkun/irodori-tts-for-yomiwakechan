@@ -1,7 +1,11 @@
 {
   "version": 1,
-  "generated_at": "2026-09-09T02:04:49+0900",
+  "generated_at": "2026-09-09T03:08:06+0900",
   "corpus": "tools/preset-voices/corpus.json",
+  "corpus_texts": [
+    "expressive_20s",
+    "expressive_30s"
+  ],
   "notes": [
     "decisions.md 17・18・26・27 が正典。設計＝docs/design/ben-p-preset-voices.md。",
     "secondary.file が実体の参照ボイス＝voices/presets/<id>.wav。一次 wav は素材で配布物には入れない（build/out/preset-work/primary/ と N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/primary/ に保全）。",
@@ -11,7 +15,8 @@
     "ref_variant は 30s／10s の両方を生成済み。聴いて良い方に差し替えてよい（ref_10s_file が対の檔）。",
     "secondary.md5 / secondary.size_bytes は voices/presets/<id>.wav の実檔から測った値（make_presets.py が --copy の複写後に測る）。N: の写しとの突合はこの md5 で行う。",
     "secondary.tail は 3 条件の末尾判定（decisions 39）＝⒜ 相対 Δ≦−20 dB・⒝ 絶対 ≦−40 dBFS・⒞ 末尾 300 ms を 25 ms 刻みで見て最後の 100 ms に +0.5 dB を超える立ち上がりが無い（−60 dBFS 以下は無音扱い）。⒜ だけの旧規則は、いったん無音に落ちてから鳴り出して切れる檔をΔ=−20.19 dB の縁で通してしまった（月読アイ）。規則の逐語は secondary.tail.rule に入る。",
-    "secondary.irodori.cfg_scale_speaker が無い行は上流既定 5.0 で撃った（2026-09-05）。在る行はその値で撃った（裁定 111＝co_kana_naisho・co_ofutonp_kiza・vr2_akane_west を 7.0 で撃ち直し）。ただしこの 3 名の ref_10s_file（10 s 参照版）は撃ち直していない＝cfg 5.0 の射のままなので、上の ref_variant の註に従って差し替えるなら先に 7.0 で撃ち直すこと。",
+    "secondary.irodori.cfg_scale_speaker が無い行は上流既定 5.0 で撃った（2026-09-05）。在る行はその値で撃った（裁定 111＝co_kana_naisho・co_ofutonp_kiza・vr2_akane_west を 7.0 で撃ち直し）。ただしこの 3 名の ref_10s_file（10 s 参照版）は撃ち直していない＝cfg 5.0 の射のままなので、上の ref_variant の註に従って差し替えるなら先に `--cfg-scale-speaker 7.0 --text expressive_20s` で撃ち直すこと（cfg と本文の両方が是正前＝裁定 111・112）。",
+    "secondary.text_id が expressive_20s の行は本文を約 20 秒に縮めて撃った（裁定 112＝3 本とも同じ位置で参照ボイスから離れたため・cfg_scale_speaker 7.0 のまま）。expressive_30s の行は 146 字の本文のまま。",
     "presets[].generated_at は「その行の二次を実際に撃った run」の時刻＝掃引で撃ち直した行は撃ち直した日が入る（裁定 111 の 3 行は 2026-09-09・ほかの 8 行は 2026-09-05）。doc の頭の generated_at はこの台帳を組み立てた時刻で、別物。"
   ],
   "presets": [
@@ -371,21 +376,21 @@
       },
       "secondary": {
         "file": "co_kana_naisho.wav",
-        "md5": "cfb2786f8d7108dff76f444378cccc8a",
-        "size_bytes": 3194924,
-        "duration_s": 33.28,
+        "md5": "494a3adc791a17d4f47f4c06bd3e266b",
+        "size_bytes": 1943084,
+        "duration_s": 20.24,
         "sample_rate": 48000,
         "channels": 1,
         "bits": 16,
-        "peak_dbfs": 0.0,
-        "rms_dbfs": -19.23,
-        "text_id": "expressive_30s",
-        "text": "みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉",
+        "peak_dbfs": -1.52,
+        "rms_dbfs": -17.56,
+        "text_id": "expressive_20s",
+        "text": "こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 正直、何度もくじけそうになりました😢 でも、ここまで来られました。さあ、本番ですよ！一緒に楽しみましょう😆",
         "ref_variant": "30s",
         "ref_10s_file": "co_kana_naisho_ref10_secondary.wav",
         "irodori": {
           "num_steps": 40,
-          "seed": 1235,
+          "seed": 1234,
           "cfg_scale_speaker": 7.0,
           "seed_sweep": {
             "seeds": [
@@ -399,19 +404,18 @@
               1241
             ],
             "seeds_tried": [
-              1234,
-              1235
+              1234
             ],
-            "adopted_seed": 1235,
+            "adopted_seed": 1234,
             "adopted_trim_tail": true,
-            "tries": 2,
+            "tries": 1,
             "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
           }
         },
         "tail": {
           "window_ms": 50.0,
-          "tail_rms_dbfs": -72.97,
-          "tail_delta_db": -53.74,
+          "tail_rms_dbfs": -73.96,
+          "tail_delta_db": -56.4,
           "margin_db": 20.0,
           "delta_clean": true,
           "abs_dbfs": -40.0,
@@ -424,18 +428,18 @@
           "rise_db": null,
           "rise_clean": true,
           "profile_dbfs": [
-            -75.82,
-            -72.45,
-            -71.7,
-            -72.23,
+            -72.05,
+            -72.8,
+            -71.32,
+            -71.3,
+            -72.61,
+            -72.01,
+            -72.55,
             -71.73,
-            -72.43,
-            -71.15,
-            -71.79,
-            -83.2,
-            -80.11,
-            -73.2,
-            -72.76
+            -72.47,
+            -72.62,
+            -72.93,
+            -75.29
           ],
           "fail_reasons": [],
           "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
@@ -449,9 +453,9 @@
           "device": "cuda",
           "device_configured": "auto"
         },
-        "elapsed_s": 6.48
+        "elapsed_s": 20.54
       },
-      "generated_at": "2026-09-09T01:38:43+0900"
+      "generated_at": "2026-09-09T02:37:35+0900"
     },
     {
       "id": "co_mana_isshoukenmei",
@@ -572,21 +576,21 @@
       },
       "secondary": {
         "file": "co_ofutonp_kiza.wav",
-        "md5": "cd37a2ae51efef292ae1d31ca972dad1",
-        "size_bytes": 2937644,
-        "duration_s": 30.6,
+        "md5": "d606722eae91a7c03fc85172caa4703a",
+        "size_bytes": 1758764,
+        "duration_s": 18.32,
         "sample_rate": 48000,
         "channels": 1,
         "bits": 16,
         "peak_dbfs": -0.0,
-        "rms_dbfs": -19.95,
-        "text_id": "expressive_30s",
-        "text": "みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉",
+        "rms_dbfs": -17.2,
+        "text_id": "expressive_20s",
+        "text": "こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 正直、何度もくじけそうになりました😢 でも、ここまで来られました。さあ、本番ですよ！一緒に楽しみましょう😆",
         "ref_variant": "30s",
         "ref_10s_file": "co_ofutonp_kiza_ref10_secondary.wav",
         "irodori": {
           "num_steps": 40,
-          "seed": 1239,
+          "seed": 1234,
           "cfg_scale_speaker": 7.0,
           "seed_sweep": {
             "seeds": [
@@ -600,23 +604,18 @@
               1241
             ],
             "seeds_tried": [
-              1234,
-              1235,
-              1236,
-              1237,
-              1238,
-              1239
+              1234
             ],
-            "adopted_seed": 1239,
+            "adopted_seed": 1234,
             "adopted_trim_tail": true,
-            "tries": 6,
+            "tries": 1,
             "tail_rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）"
           }
         },
         "tail": {
           "window_ms": 50.0,
-          "tail_rms_dbfs": -73.76,
-          "tail_delta_db": -53.81,
+          "tail_rms_dbfs": -74.52,
+          "tail_delta_db": -57.32,
           "margin_db": 20.0,
           "delta_clean": true,
           "abs_dbfs": -40.0,
@@ -629,18 +628,18 @@
           "rise_db": null,
           "rise_clean": true,
           "profile_dbfs": [
-            -67.27,
-            -81.05,
-            -75.34,
-            -72.34,
-            -71.29,
-            -71.43,
-            -79.73,
-            -80.42,
-            -72.7,
+            -71.63,
+            -70.75,
+            -70.84,
             -72.09,
-            -73.41,
-            -74.13
+            -71.26,
+            -72.01,
+            -71.18,
+            -71.83,
+            -71.09,
+            -70.9,
+            -73.65,
+            -75.6
           ],
           "fail_reasons": [],
           "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
@@ -654,9 +653,9 @@
           "device": "cuda",
           "device_configured": "auto"
         },
-        "elapsed_s": 5.4
+        "elapsed_s": 19.15
       },
-      "generated_at": "2026-09-09T01:38:43+0900"
+      "generated_at": "2026-09-09T02:37:35+0900"
     },
     {
       "id": "co_ofutonp_normal_v2",
@@ -801,16 +800,16 @@
       },
       "secondary": {
         "file": "vr2_akane_west.wav",
-        "md5": "c8e1e619c11efad11f84c51bb63f3e46",
-        "size_bytes": 3352364,
-        "duration_s": 34.92,
+        "md5": "27a93475a941e3429dd0bcaeb20dd376",
+        "size_bytes": 2016044,
+        "duration_s": 21.0,
         "sample_rate": 48000,
         "channels": 1,
         "bits": 16,
-        "peak_dbfs": 0.0,
-        "rms_dbfs": -16.59,
-        "text_id": "expressive_30s",
-        "text": "みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉",
+        "peak_dbfs": -0.0,
+        "rms_dbfs": -16.94,
+        "text_id": "expressive_20s",
+        "text": "こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 正直、何度もくじけそうになりました😢 でも、ここまで来られました。さあ、本番ですよ！一緒に楽しみましょう😆",
         "ref_variant": "30s",
         "ref_10s_file": "vr2_akane_west_ref10_secondary.wav",
         "irodori": {
@@ -840,8 +839,8 @@
         },
         "tail": {
           "window_ms": 50.0,
-          "tail_rms_dbfs": -73.36,
-          "tail_delta_db": -56.77,
+          "tail_rms_dbfs": -74.86,
+          "tail_delta_db": -57.92,
           "margin_db": 20.0,
           "delta_clean": true,
           "abs_dbfs": -40.0,
@@ -854,18 +853,18 @@
           "rise_db": null,
           "rise_clean": true,
           "profile_dbfs": [
-            -71.97,
-            -71.69,
-            -71.93,
-            -71.53,
-            -71.1,
-            -71.46,
-            -72.39,
-            -71.69,
+            -72.11,
+            -71.26,
+            -71.22,
+            -76.89,
+            -84.36,
+            -72.21,
+            -71.33,
+            -71.21,
+            -71.22,
             -72.24,
-            -71.19,
-            -71.82,
-            -75.76
+            -72.73,
+            -79.25
           ],
           "fail_reasons": [],
           "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
@@ -879,9 +878,9 @@
           "device": "cuda",
           "device_configured": "auto"
         },
-        "elapsed_s": 5.67
+        "elapsed_s": 3.31
       },
-      "generated_at": "2026-09-09T01:38:43+0900"
+      "generated_at": "2026-09-09T02:37:35+0900"
     },
     {
       "id": "vr2_yoshida",
