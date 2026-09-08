@@ -193,6 +193,8 @@ python .\run_secondary.py --also-ref10
 |------|------|
 | `--also-ref10` | 10 s 参照でも生成して比較用に残す |
 | `--text expressive_20s` | **約 20 秒ぶんに縮めた本文**（90 字）を使う。裁定 112＝司令官「3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。文章を20秒程度に見積もって再生成。」＝3 本とも**同じ位置**で参照から離れたので、cfg ではなく**本文の長さ**を変えた手当て。`cfg_scale_speaker` は **7.0 のまま**添える |
+| `--text calm_20s` | **感情の切り替えを弱めた約 20 秒の本文**（94 字・絵文字は 😊 が 1 つだけ・「！」無し）。裁定 113 の候補 ⒜ |
+| `--text plain_20s` | **感情の切り替えを無くした約 20 秒の本文**（89 字・絵文字も「！」も無い平坦な地の文）。裁定 113 の候補 ⒝ |
 | `--text greeting_10s` | 予備の短い挨拶本文を使う（既定は `expressive_30s`＝146 字） |
 | `--only <id>` | 1 名だけ作り直す |
 | `--port 8090` | 使う口（既定 8090。**8088 にはしない**） |
@@ -218,6 +220,12 @@ python .\verify_wavs.py "$W\secondary" --out "$W\logs\verify_secondary.json"
 本文も参照も変えずに **seed だけ**を 1234 から順に振り、生成のたびに末尾判定を掛けて
 **clean になった最初の seed を採る**。
 
+**合格の条件は 2 つ（裁定 113 で 1 つ足した）。** ⑴ 末尾 3 条件が `clean`、⑵ **潰れていないこと**
+（`verify_wavs.py` の `clipped`＝full scale が **3 サンプル以上連続**）。⑵ を見ていなかったせいで、
+裁定 113 の初回は `plain_20s` の KANA に `max_clip_run=3` の射（seed 1238）を候補として採ってしまい、
+**seed 1239 以降の 3 射が未使用のまま**残っていた（同梱 11 本はいずれも `max_clip_run` 0〜2 で `clipped=false`）。
+今は末尾が `clean` でも潰れている射は `[CLIP?]` で失格にして次の seed へ進む（`--allow-clip` で外せる）。
+
 ```powershell
 # 採用版（secondary\<id>_secondary.wav）のうち tail_suspect の本を自動で拾って掃引
 python .\run_secondary.py --sweep-seed
@@ -233,8 +241,10 @@ python .\run_secondary.py --sweep-seed --sweep-ids "vv_mochiko_sexy,co_tsukuyomi
 | `--sweep-max-seeds 8` | 試す seed の個数（既定 8＝1234〜1241） |
 | `--sweep-seed-start 1234` | 起点の seed。**一度採った seed から撃ち直すときは次の番号を渡す**（例 `--sweep-seed-start 1235`） |
 | `--no-trim-fallback` | seed を使い切っても clean が出ない時の `trim_tail=false` の一巡を切る |
+| `--allow-clip` | 潰れている射（`clipped`＝full scale が 3 サンプル以上連続）も採る。**既定は失格にして次の seed へ**（裁定 113 の是正） |
 | `--tail-ms` ほか 8 つ | 末尾判定の窓と閾。名も既定も `verify_wavs.py` と同じ（上の表） |
 | `--cfg-scale-speaker <値>` | 掃引の全射に同じ `cfg_scale_speaker` を載せる（`trim_tail=false` の一巡も同じ値） |
+| `--candidate <名>` | **候補モード**（裁定 113）。射の行き先を `candidates\<名>\` に移し、`run_secondary.result.json` に**畳み込まない**＝採用中の成果物に触れない。§4-3 |
 
 **本文の長さを変えて撃ち直すとき**は掃引に `--text` を添える
 （裁定 112＝`python .\run_secondary.py --sweep-seed --sweep-ids "co_kana_naisho,co_ofutonp_kiza,vr2_akane_west" --cfg-scale-speaker 7.0 --text expressive_20s`
@@ -265,6 +275,69 @@ seed を使い切っても clean が出なければ、**本文を変えずに** 
 **実績（2026-09-05）。** 1 度目＝旧規則（⒜ のみ）で 6 本を 1234 起点で掃引して採用。
 2 度目＝規則を 3 条件に強めたら 2 本（月読アイ・ちび式じい）が落ちたので `--sweep-seed-start 1235` で撃ち直し、
 ちび式じい は 1 射目（seed 1235）、月読アイ は 4 射目（seed 1238）で clean。`trim_tail=false` の一巡は要らなかった。
+
+### 4-3. 候補として撃つ（`--candidate`・採用は `--adopt-candidate`・裁定 113）
+
+**何のための口か。** 本文をいくつか試して**司令官に聴き比べてもらう**とき、撃つたびに
+`voices/presets/` と `voices/presets.json` が動いてしまうと、いま採用中の音が消える。
+`--candidate <名>` を付けると行き先が候補置き場に移り、**採用中の成果物には 1 バイトも触れない**。
+
+```powershell
+# 本文 2 種 × 話者 2 名＝4 本を候補として撃つ（裁定 113 の実際）
+python .\run_secondary.py --sweep-seed --sweep-ids "co_kana_naisho,vr2_akane_west" `
+                          --cfg-scale-speaker 7.0 --text calm_20s  --candidate calm_20s
+python .\run_secondary.py --sweep-seed --sweep-ids "co_kana_naisho,vr2_akane_west" `
+                          --cfg-scale-speaker 7.0 --text plain_20s --candidate plain_20s
+
+python .\verify_wavs.py "$W\candidates\calm_20s"  --out "$W\logs\verify_candidates.calm_20s.json"
+python .\verify_wavs.py "$W\candidates\plain_20s" --out "$W\logs\verify_candidates.plain_20s.json"
+```
+
+行き先（`--candidate` を付けたときと付けないときの対応）。
+
+| 何 | 既定（採用側） | `--candidate <名>` |
+|---|---|---|
+| 採用相当の射 | `secondary\<id>_secondary.wav` | `candidates\<名>\<id>_secondary.wav` |
+| 掃引の全射 | `secondary\sweep\` | `candidates\<名>\sweep\` |
+| その run の台帳 | `logs\run_secondary.sweep.json` | `logs\run_secondary.<名>.sweep.json` |
+| 画面の写し | （標準出力だけ） | `logs\run_secondary.<名>.log`（**画面にも出る**・**標準エラーも同じ檔**＝途中で止まった理由も残る） |
+| `logs\run_secondary.result.json` への畳み込み | する | **しない** |
+| `voices/presets.json`・`voices/presets/` | `make_presets.py --copy` で動く | **動かない**（`make_presets.py` は候補を見ない） |
+
+**`--candidate` は `--sweep-seed` と併せてしか使えない**（付けずに打つと argparse の段で止まる）。
+掃引でない候補 run は台帳が `run_secondary.<名>.result.json` になり、`--adopt-candidate` が読めない
+＝**上げられない候補**ができてしまうため。あわせて **`--sweep-ids` も必須**
+（候補置き場には採用版が無いので tail_suspect の自動拾いが効かない）。
+`<名>` は英数字と `_ . -` の 1〜64 字だけ（`..` や `\` は弾く＝候補置き場の外に書かせない）。
+`--adopt-candidate` と `--candidate` は**同時に渡せない**（取り違え防止）。
+
+**司令官が選んだあと**は、サーバを起こさずに採用へ上げる。
+
+```powershell
+python .\run_secondary.py --adopt-candidate calm_20s --sweep-ids "co_kana_naisho,vr2_akane_west"
+python .\verify_wavs.py "$W\secondary" --out "$W\logs\verify_secondary.json"
+python .\make_presets.py --copy
+```
+
+`--adopt-candidate` がやること＝⑴ `candidates\<名>\<id>_secondary.wav` を `secondary\<id>_secondary.wav` へ複写、
+⑵ **その id の掃引の射（`candidates\<名>\sweep\<id>_seed*.wav`）を `secondary\sweep\<名>\` へ複写**し、
+項目と行に `sweep_dir`（複写先の絶対路）を刻む＝台帳の `sweep_file`／`attempts[].file` は**裸の檔名**なので、
+複写しないと採用後の台帳が `secondary\sweep\` に無い檔名を指す（どの射を採ったか辿れなくなる）。
+箱を分けるのは `cfg5\`・`cfg7-30s\`・`20s-95chars\` と同じ要領、
+⑶ その候補 run の台帳（`logs\run_secondary.<名>.sweep.json`）の**その id の項目と掃引の行だけ**を
+`merge_result()` で `logs\run_secondary.result.json` に畳む（項目の `file`／`path` は複写先に書き換え、
+`adopted_from_candidate` に候補の名を刻む）。行が自分の `text_id`／`text`／`seed`／`cfg_scale_speaker`／
+`generated_at` を持っているので、**畳んだあとも素性は候補 run のもの**が残る。
+`--sweep-ids` は**必須**（うっかり候補を全部上げないため）。
+
+**実績（2026-09-09・裁定 113）。** `calm_20s`＝KANA 20.08 s（seed 1234・1 射目）／琴葉茜 20.48 s（同）。
+`plain_20s`＝KANA 21.48 s（seed **1239**・**6 射目**＝1234〜1237 は末尾で失格・**1238 は末尾 clean だが
+クリップ〔`max_clip_run=3`〕で失格**）／琴葉茜 21.24 s（seed 1234・1 射目）。
+**4 本とも末尾 3 条件で clean・4 本とも `norm`（`max_clip_run` 2）**・4 本とも許容 18〜23 s の内側。
+（初回はクリップの門が無く、seed 1238 の潰れた射を候補にしていた＝門を足して撃ち直した。
+初回の記録は `logs\run_secondary.plain_20s.pre-clipfix.log` ほかに残してある。）
+採否は司令官の耳（`docs/preset-voices-listening.md` 追記 ⑤）
+＝**この時点では `voices/presets` は 1 バイトも動いていない**。
 
 ---
 
@@ -324,12 +397,19 @@ Copy-Item "$W\secondary\co_tsukuyomi_ref10_secondary.wav" "$R\voices\presets\co_
 - `secondary.expressive_30s.text`＝二次の本番本文（146 字・「！」「？」と 😊😢😆🎉 を含む・1 文を短く）
 - `secondary.expressive_20s.text`＝**約 20 秒ぶんの本文（90 字・裁定 112）**。感情 5 段。
   今の同梱ボイスは KANA ないしょばなし・おふとんP きざ・琴葉茜（関西弁）の 3 本がこれ
+- `secondary.calm_20s.text`＝**感情の切り替えを弱めた約 20 秒の本文（94 字・裁定 113）**。絵文字は 😊 が 1 つだけ（後ろ寄り）・「！」無し・`emotion_arc` は 1 段。**候補**＝採用はしていない
+- `secondary.plain_20s.text`＝**感情の切り替えを無くした約 20 秒の本文（89 字・裁定 113）**。絵文字も「！」も無い平坦な地の文・`emotion_arc` は **0 段（空配列）**。**候補**＝採用はしていない
 - `secondary.greeting_10s.text`＝予備の短い挨拶（44 字）
 - `irodori_params`＝`num_steps`（既定 40）・`seed`（既定 1234）
 
 **秒数の目安。** Irodori の読み速は実測**約 4.6 字/秒**（話者ごとに 4.1〜6.1 字/秒と幅がある）。
 VOICEVOX／COEIROINK より遅いので、二次本文は一次より短く書く。30 s を狙うなら**約 145 字**、
 20 s を狙うなら**約 90 字**。（初稿の約 200 字は 37〜48 s になり目標超過だった。）
+
+**読み速は本文でも動く（裁定 113 の実測）。** 同じ 2 名（KANA・琴葉茜）で本文だけを替えると
+`expressive_20s`（90 字）4.45／4.29 字/秒 → `calm_20s`（94 字）**4.68／4.59** → `plain_20s`（89 字）**4.14／4.19**。
+＝**平坦な地の文ほどゆっくり読まれる**（感嘆符と絵文字が入るほど速い）。見積りは話者だけでなく
+**本文の調子込みで 4.1〜4.7 字/秒の幅**を見ておくこと。
 
 **新しい本文を足すときの手順**（裁定 112 で `expressive_20s` を足したときの実際）。
 
@@ -339,6 +419,9 @@ VOICEVOX／COEIROINK より遅いので、二次本文は一次より短く書�
 3. 撃って実測し、**目標から外れていたら 1 句だけ足し引きして撃ち直す**。
    `$calibration` に**両方の実測**を残す（見積りと実測がずれた幅が次の便の目盛りになる）。
 4. `presets.json.schema` の `secondary.text_id` の説明に id を足す（**enum は無い**ので値では弾かれない）。
+   **候補（§4-3）のうちは 4 を打たない**＝台帳にその id の行がまだ 1 つも無いので、説明だけ先に増やすと
+   「使っている本文」の一覧が実物とずれる。**採用（`--adopt-candidate`）のときに一緒に足す。**
+   裁定 113 の `calm_20s`／`plain_20s` は 1〜3 まで済み・**4 は未了**（候補のままなので正しい状態）。
 
 ---
 
