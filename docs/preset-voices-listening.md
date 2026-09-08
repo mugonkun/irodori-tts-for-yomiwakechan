@@ -1,13 +1,97 @@
 # プリセット参照ボイス 聴取表（便 P・検分席）
 
-正典＝`decisions.md` 17・18・26・27・39・111・112・**113**。設計＝`docs/design/ben-p-preset-voices.md`。
-検分＝2026-09-05（初回）／2026-09-09 追記 ③（cfg 7.0・**不合格**）／2026-09-09 追記 ④（20 秒本文・**きざ だけ合格・KANA と 茜 は不合格**）／**2026-09-09 追記 ⑤＝新しい本文 2 種の候補 4 本・ここが今の検分の的**。
+正典＝`decisions.md` 17・18・26・27・39・111・112・113・**114**（114 の条は主席がこの便のコミットで `decisions.md` に起こした。逐語と実測はこの追記 ⑥ と設計書 `ben-p` §12-6 にも在る）。設計＝`docs/design/ben-p-preset-voices.md`。
+検分＝2026-09-05（初回）／2026-09-09 追記 ③（cfg 7.0・**不合格**）／2026-09-09 追記 ④（20 秒本文・**きざ だけ合格・KANA と 茜 は不合格**）／2026-09-09 追記 ⑤（新しい本文 2 種の候補 4 本・**① calm が採られた**）／**2026-09-09 追記 ⑥＝裁定 114＝calm を採用して 11 本が確定・ここが最新**。
 対象＝二次 wav 22 本（11 話者 × 30 s 参照版／10 s 参照版）＋一次 wav 22 本。
 弦巻マキ（英）は decisions 27 により今回は無し（台帳 12 行目 status `skipped`）。
 
 **席は音を聴けない。** 下の「機械が測れたこと」は数値だけの所見で、採否は司令官の耳が決める。
 
-> **2026-09-09 追記 ⑤（本文を 2 種つくって候補 4 本を撃った・裁定 113＝この追記が最新）。**
+> **2026-09-09 追記 ⑥（裁定 114＝calm 採用・この追記が最新）。**
+> 司令官の検分（2026-09-09・追記 ⑤ の候補 4 本を聴いたうえで）＝逐語
+> 「**calm採用。 インストーラーくみなおしとマージを頼む。**」
+> ＝**① `calm_20s`（絵文字 1 つ・「！」無し・`emotion_arc` 1 段）を 2 名とも採用**。
+> **② `plain_20s` は採用しなかった**（候補として残す・下の「退いた射の在処」）。
+> 追記 ⑤ の仮説（**強い調子の切り替えそのものが「別人の声」に聞こえていた**）は、
+> 「① だけで足りた＝絵文字 1 つ・1 段なら振れても入れ替わらない」という形で**司令官の耳が支持した**。
+> ただし ② を聴き比べた結果としての採用なので、**「② が駄目だった」ことまでは言えない**（逐語は「calm採用」だけ）。
+>
+> **採ったもの（`--adopt-candidate calm_20s --sweep-ids "co_kana_naisho,vr2_akane_west"` → `verify_wavs.py` → `make_presets.py --copy`）。**
+>
+> | 話者 | 本文 | 採った seed（射数） | cfg | 秒数 | 読み速 | peak／RMS | 末尾 Δ／末尾 50 ms | 末尾判定 | クリップ | 頭の無音／末の無音 | md5 | バイト数 |
+> |---|---|---|---|---|---|---|---|---|---|---|---|---|
+> | **KANA ないしょばなし**（`co_kana_naisho`） | **`calm_20s`**（94 字） | **1234**（**1 射目**） | 7.0 | **20.08 s** | 4.68 字/秒 | 0.00／**−21.37 dBFS** | −52.40 dB／−73.77 dBFS | **clean** | `norm`（`max_clip_run` 2） | 0.464 s／0.883 s | **`021feb6a37e0c550985fcc4d755eea90`** | **1,927,724** |
+> | **琴葉茜（関西弁）**（`vr2_akane_west`） | **`calm_20s`**（94 字） | **1234**（**1 射目**） | 7.0 | **20.48 s** | 4.59 字/秒 | 0.00／**−16.09 dBFS** | −56.82 dB／−72.91 dBFS | **clean** | `norm`（`max_clip_run` 2） | **0.930 s**／0.981 s | **`610ec04b1f3b509f8ae2ad291fbc1250`** | **1,966,124** |
+>
+> **本文（`corpus.json` の `secondary.calm_20s`・94 字・絵文字 1〔😊〕・「！」無し・`emotion_arc` 1 段）。**
+>
+> > 今日は、来てくれてありがとう。この配信では、みんなのコメントを読みながら、のんびりお話ししていくね😊 途中で気になることがあったら、いつでも声をかけてね。最後まで、ゆっくり楽しんでいこう。
+>
+> **⚠ 琴葉茜の頭の無音 0.930 s はそのまま容れた。** 追記 ⑤ で示した 3 択（⑴ 頭を詰める・⑵ 別 seed で撃ち直す・
+> ⑶ そのまま容れる）のうち **⑶**＝司令官は**この音のまま採ると言った**（逐語に詰めろの指示は無い）。
+> ゆえに **`voices/presets/vr2_akane_west.wav` は同梱 11 本で最長の頭の無音**（次点は つくよみちゃん 0.726 s）。
+> 席の判断で切るのは「聴いて採られた音を席が作り替える」ことになるので**しない**。
+> 詰めたくなったら司令官の指示で撃ち直すか、頭を切る一手を別便で立てること。
+>
+> **これで同梱 11 本が確定した（本文は 3 世代が混ざったまま）。**
+>
+> | 何本 | 本文 | 字数 | cfg | 話者 |
+> |---|---|---|---|---|
+> | **8 本** | `expressive_30s` | 146 字 | **5.0**（上流既定・欄が無い） | もち子・ちび式じい・つくよみ・MANA・のーまるv2・吉田くん・月読アイ・月読ショウタ |
+> | **1 本** | `expressive_20s` | 90 字 | **7.0** | **おふとんP きざ だけ**（裁定 112 で撃ち直し・113 で「のみ完成」と確定） |
+> | **2 本** | **`calm_20s`** | 94 字 | **7.0** | **KANA ないしょばなし・琴葉茜（関西弁）**（この追記） |
+>
+> **HEAD から動いたのは KANA と 琴葉茜 の 2 本だけ**（`git status` に `M` が 2 本）。**ほかの 9 本は 1 バイトも動いていない**。
+> 台帳の註を足したあとの `make_presets.py --copy` の再実行では、**11 本とも md5 が前後で完全に一致**した
+> （複写しても中身は同じ＝台帳の `notes`／`corpus_texts` だけが動いた）。
+> 同梱 11 本の合計は **28,804,324 → 28,739,044 バイト**（**−65,280**）
+> ＝`build/installer-build.ps1` の `$ExpectedAppBytes` は**主席が測り直す**（この席は installer に触っていない）。
+>
+> **射と控えの在処（どれも消していない）。**
+>
+> | 世代 | 本文 | cfg | 在処 |
+> |---|---|---|---|
+> | **今（追記 ⑥）** | `calm_20s` 94 字（KANA・茜）／`expressive_20s` 90 字（きざ）／`expressive_30s` 146 字（8 名） | 7.0／7.0／5.0 | `voices/presets/<id>.wav`（＝`S:`）と作業樹の `build/out/preset-work/secondary/<id>_secondary.wav`。N: の `…/preset-voices/secondary/<id>_secondary.wav` も**主席が 2026-09-09 04:5x に差し替えた**（md5 `021feb6a…`／`610ec04b…`＝S: と一致・下の ⚠ は解消） |
+> | 採用した calm の掃引の全射（2 射） | `calm_20s` | 7.0 | `build/out/preset-work/secondary/sweep/calm_20s/<id>_seed1234.wav`（`--adopt-candidate` が候補置き場から連れてきた） |
+> | 候補のまま（**不採用**） | **`plain_20s`** 89 字 | 7.0 | `build/out/preset-work/candidates/plain_20s/<id>_secondary.wav`（掃引の全射 7 本は `…/plain_20s/sweep/`）／N: は `…/preset-voices/candidates/plain_20s/` |
+> | 候補（採用済み・出どころ） | `calm_20s` | 7.0 | `build/out/preset-work/candidates/calm_20s/<id>_secondary.wav`（**採用後も残る**＝`secondary/<id>_secondary.wav` と md5 一致を突合済み〔`021feb6a…`／`610ec04b…`〕）／N: は `…/preset-voices/candidates/calm_20s/` |
+> | 追記 ④（KANA・茜 の分は退いた） | `expressive_20s` 90 字 | 7.0 | 射は `build/out/preset-work/secondary/sweep/`（直下・`<id>_seed<N>.wav`）。初稿 95 字の射は `secondary/sweep/20s-95chars/` |
+> | 追記 ③（司令官が外した） | `expressive_30s` 146 字 | 7.0 | `build/out/preset-work/secondary/cfg7-30s/<id>.wav`・射は `secondary/sweep/cfg7-30s/`（10 本）／N: は `…/secondary/cfg7-30s/` |
+> | 追記 ②まで | `expressive_30s` 146 字 | 5.0 | `build/out/preset-work/secondary/cfg5/<id>.wav`・射は `secondary/sweep/cfg5/`（10 本）／N: は `…/secondary/cfg5/` |
+>
+> **⚠（解消・2026-09-09 04:5x＝主席が複写した）。** 檔の席の実測時点（04:4x）では N: は裁定 113 の版のままだった＝
+> `N:\temp_for_claudecode_agents\irodori-ywk\preset-voices\secondary\co_kana_naisho_secondary.wav` は `494a3adc…`、
+> `vr2_akane_west_secondary.wav` は `27a93475…`＝**どちらも退いた追記 ④ の射**。同じ木の `presets.json` も
+> `28eab8d7…`（`generated_at` 2026-09-09T03:08:06+0900・`corpus_texts` は `[expressive_20s, expressive_30s]`・`notes` 11 行）で、
+> この聴取表の写しも追記 ⑥ を含まない旧版。**採用の候補**（`…/preset-voices/candidates/calm_20s/`＝`021feb6a…`／`610ec04b…`）
+> だけは N: にも在る＝**採った音そのものは N: 側からも取れる**。裁定 111・112・113 は毎回「N: 差し替え済み・hash 一致」まで
+> 記帳しているので、この便でも主席が揃えた＝**`secondary/co_kana_naisho_secondary.wav`（`021feb6a…`）・`vr2_akane_west_secondary.wav`（`610ec04b…`）・`secondary/sweep/calm_20s/`・`secondary/run_secondary.result.json`・`presets.json`・この聴取表を N: に複写し、md5 一致を確認した**（04:5x）。
+>
+> **諸元の測り直し。** `verify_wavs.py "<work>\secondary" --out "<work>\logs\verify_secondary.json"` を
+> 採用後に掛け直した＝**22 本中 21 本 clean**。残る 1 本は `co_ofutonp_kiza_ref10_secondary.wav`
+> （10 s 参照版・末尾 Δ +4.01 dB）で、**これは一度も採用していない**（採用は 30 s 参照版）＝放置してよい。
+> **同梱 11 本はいずれも末尾 3 条件で clean・`clipped=false`。**
+>
+> **台帳（`voices/presets.json`）の動き。** KANA と 琴葉茜 の 2 行だけが
+> `secondary.text_id` **`calm_20s`**・`text`（上の 94 字）・`md5`／`size_bytes`／`duration_s`／`peak_dbfs`／`rms_dbfs`／
+> `tail`／`irodori.seed` 1234 に進み、行ごとの `generated_at` は **2026-09-09T03:32:21+0900**（＝候補を撃った run の時刻。
+> 採用の複写では時刻を作らない）。頭の `corpus_texts` は **`["calm_20s","expressive_20s","expressive_30s"]`** の 3 種。
+> `notes` に裁定 114 の 1 行を足し、`expressive_20s` の註を「**この行は co_ofutonp_kiza だけ**」に改めた。
+> `presets.json.schema` の `secondary.text_id` の説明にも `calm_20s`（採用）と `plain_20s`（**在るが不採用**）を足した
+> （README §6 の手順 4＝「採用の回に一緒に足す」）。**ほかの 8 行と 12 行目（`skipped`）は無変更。**
+>
+> **⏳ 開いたままの問い（司令官へ・席は決めない）。ほかの 8 本は 146 字・30 秒の `expressive_30s`・cfg 5.0 のまま。**
+> 今の同梱ボイスは **18.32〜35.76 秒**と長さがまちまちで、調子（絵文字 4 種・「！」有り／絵文字 1 つ・「！」無し）も揃っていない。
+> **8 本も `calm_20s`＋cfg 7.0 で撃ち直して全体を揃えるか、このままでよいか**は司令官の判断＝
+> **この席は決めていない**（§3 の 0-1 に置いた）。揃えるなら 8 本の撃ち直し＋`verify` ＋ `make_presets.py --copy` で、
+> 8 本の md5 と `$ExpectedAppBytes` が動く。揃えないなら、参照ボイスの長さの不揃いはそのまま出荷される。
+>
+> **席は音を聴けない。** 上の表は数値だけの所見で、採否は司令官の耳が決めた（逐語＝「calm採用。」）。
+
+> **2026-09-09 追記 ⑤（本文を 2 種つくって候補 4 本を撃った・裁定 113）。**（※ 最新は上の**追記 ⑥**。
+> **司令官はこの 4 本を聴いて ① `calm_20s` を 2 名とも採った**（逐語「**calm採用。 インストーラーくみなおしとマージを頼む。**」）
+> ＝**この追記の役目は終わった**。② `plain_20s` の 2 本は候補のまま `candidates/plain_20s/` に残してある。
+> 採用後の数値は追記 ⑥ の表を見ること。）
 > 司令官の検分（2026-09-09・追記 ④ の 20 秒版 3 本を聴いたうえで）＝逐語
 > 「**co_ofutonp_kiza_secondaryのみ完成として残り2本かな、発話途中で入れ替わる・・・。参照ボイスの動きが読めないね。文章を変えて残り2ファイルを再トライ**」。
 >
@@ -114,12 +198,15 @@
 > }
 > ```
 >
-> **台帳も `voices/presets/` も動いていない＝司令官が選ぶまで採用しない。**
+> ~~**台帳も `voices/presets/` も動いていない＝司令官が選ぶまで採用しない。**~~
+> **⚠ この段は候補を撃った時点の記述。追記 ⑥（裁定 114）で ① `calm_20s` が採用され、
+> `voices/presets/{co_kana_naisho,vr2_akane_west}.wav` と `voices/presets.json` は動いた。以下は当時の記録。**
 > この回は候補モード（`--candidate`）で撃ったので、`voices/presets/*.wav`（11 本）と `voices/presets.json` は
 > **`git status` で無変更**（作業ツリーの md5＝`494a3adc…` ほか・台帳は `28eab8d7…`）。
 > 作業ディレクトリの `logs/run_secondary.result.json` は **git 管理外**（`.gitignore` の `out/`）なので
 > HEAD と突き合わせようがなく、**裁定 112 の run（畳み込み `2026-09-09T02:37:35+0900`）のまま**であることで確かめた。
-> **おふとんP きざ の完成版もそのまま**。選ばれたら次の順で採用に上がる（`cd` と `$W` の 2 行を先に打つこと）。
+> **おふとんP きざ の完成版もそのまま**。選ばれたら次の順で採用に上がる（`cd` と `$W` の 2 行を先に打つこと）
+> ＝**下の 3 行がそのまま追記 ⑥ で打たれた命令**（`calm_20s` を 2 名とも採った）。
 >
 > ```powershell
 > # 例：① calm を 2 名とも採る場合（片方だけ・話者ごとに別の本文でもよい＝id を名指しする）
@@ -130,14 +217,16 @@
 > python .\make_presets.py --copy
 > ```
 >
-> **どちらも駄目だったときの手は 3 つ残っている。** ⑴ さらに短い `greeting_10s`（44 字）で撃つ、
-> ⑵ `cfg_scale_speaker` をさらに上げる（例 9.0）、⑶ **参照ボイス（一次 wav）そのものを録り直す**
+> ~~**どちらも駄目だったときの手は 3 つ残っている。**~~ **→ 使わずに済んだ（① が採られた）。** ⑴ さらに短い
+> `greeting_10s`（44 字）で撃つ、⑵ `cfg_scale_speaker` をさらに上げる（例 9.0）、
+> ⑶ **参照ボイス（一次 wav）そのものを録り直す**
 > ＝この 2 名は一次が 39.22 s／41.09 s と長く、しかも小さめ（RMS −26.1／−25.8 dBFS）。
-> 仮説（調子の切り替え）が外れたときは、次の的はここになる。
+> 仮説（調子の切り替え）が外れたときは、次の的はここになるはずだった。
 >
-> **席は音を聴けない。** 上の表は数値だけの所見で、「途中で入れ替わらないか」は司令官の耳でしか決まらない。
+> **席は音を聴けない。** 上の表は数値だけの所見で、「途中で入れ替わらないか」は司令官の耳でしか決まらない
+> ＝**答は出た（追記 ⑥・逐語「calm採用。」）**。
 
-> **2026-09-09 追記 ④（本文を約 20 秒に縮めて 3 本を撃ち直した・裁定 112）。**（※ 最新は上の**追記 ⑤**。**司令官の検分の結果＝おふとんP きざ は完成（合格・採用のまま据え置き）、KANA ないしょばなし と 琴葉茜（関西弁）は外れた**＝「発話途中で入れ替わる」。外れた 2 名の手当ては追記 ⑤ の候補 4 本。**この追記の 3 本は 3 本とも `voices/presets/` に入ったまま**＝候補はまだ採用していない。）
+> **2026-09-09 追記 ④（本文を約 20 秒に縮めて 3 本を撃ち直した・裁定 112）。**（※ 最新は**追記 ⑥**。**司令官の検分の結果＝おふとんP きざ は完成（合格・採用のまま据え置き）、KANA ないしょばなし と 琴葉茜（関西弁）は外れた**＝「発話途中で入れ替わる」。外れた 2 名の手当ては追記 ⑤ の候補 4 本で、**追記 ⑥（裁定 114）で ① `calm_20s` が採られた**。**この追記の 3 本のうち `voices/presets/` に残っているのは おふとんP きざ の 1 本だけ**＝KANA と 琴葉茜 の分は `calm_20s` の射に差し替わった。）
 > 司令官の検分（2026-09-09・追記 ③ の cfg 7.0 版を聴いたうえで）＝逐語
 > 「**3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。文章を20秒程度に見積もって再生成。**」
 > ＝**3 本とも同じ位置で**参照ボイスから離れる、という所見。3 本は話者もエンジンも別なのに離れる箇所が揃う
@@ -233,9 +322,10 @@
 > バイト数も約 4 割減った（3 本で計 9,484,932 → 5,717,892 バイト）＝`build/installer-build.ps1` の
 > `$ExpectedAppBytes` は**主席が測り直す**（この席は触っていない）。
 
-> **2026-09-09 追記 ③（`cfg_scale_speaker` 5→7 で 3 本を撃ち直した・裁定 111）。**（※ 最新は上の**追記 ⑤**。
+> **2026-09-09 追記 ③（`cfg_scale_speaker` 5→7 で 3 本を撃ち直した・裁定 111）。**（※ 最新は**追記 ⑥**。
 > **司令官はこの 3 本を聴いて外した**＝「3ファイルともおなじところで参照ボイスが外れるね」。
-> KANA・きざ・琴葉茜 の 3 本は追記 ④ で 20 s 本文の射に差し替わっている。この追記は
+> KANA・きざ・琴葉茜 の 3 本は追記 ④ で 20 s 本文の射に差し替わり、**さらに KANA と 琴葉茜 は追記 ⑥ で
+> `calm_20s` の射になった**（きざ だけ 20 s 本文のまま）。この追記は
 > 「cfg を上げても直らなかった」という記録と、A/B の控えの在処として残す。）
 > 司令官の検分（2026-09-09）＝逐語「**サンプルボイスをよく検分してなかった。２次生成ボイスが途中から参照ボイスに
 > なってないね。CFG Scale Speaker を2ほど上げて再生成を頼む。co_kana_naisho / co_ofutonp_kiza / vr2_akane_west
@@ -302,9 +392,10 @@
 > ゆえに**下の秒数・パスは全部そのまま生きている**。変わったのは末尾の中身と、下の A 群・B 群の数値。
 > ただし **月読アイだけは規則の縁（Δ＝−20.19 dB・閾は −20.0）で、実際には終端の 0.175 s に音が立ち上がったまま切れていた。**
 
-> **2026-09-05 追記 ②（規則を強めて撃ち直した）。**（※ 最新は上の**追記 ⑤**。この追記は末尾の規則の話で、
-> KANA・きざ・琴葉茜の 3 本は追記 ③ で `cfg_scale_speaker` 7.0 の射に、さらに追記 ④ で 20 s 本文の射に差し替わっている。
-> **末尾判定の 3 条件そのものは追記 ③・④ でも変えていない。**）
+> **2026-09-05 追記 ②（規則を強めて撃ち直した）。**（※ 最新は**追記 ⑥**。この追記は末尾の規則の話で、
+> KANA・きざ・琴葉茜の 3 本は追記 ③ で `cfg_scale_speaker` 7.0 の射に、追記 ④ で 20 s 本文の射に、
+> **KANA と 琴葉茜 はさらに追記 ⑥ で `calm_20s` の射に**差し替わっている。
+> **末尾判定の 3 条件そのものは追記 ③〜⑥ のどこでも変えていない**（追記 ⑤ でクリップの門を掃引に足しただけ）。）
 > 検分席が挙げた「規則の取りこぼし」を受け、`verify_wavs.py` の末尾判定を **1 条件から 3 条件に強めた**。
 >
 > | | 条件 | 意味 |
@@ -325,11 +416,12 @@
 
 ## 0. 10 分の順路
 
-**2026-09-09 の最新は追記 ⑤ の 3 段（候補 4 本＝KANA と 琴葉茜 の ① calm・② plain）。ここを先に聴いてほしい。**
-（追記 ④ の 3 段は役目を終えた＝**おふとんP きざ は完成**、KANA と 琴葉茜 は外れたので候補を撃ち直した。
-追記 ④ の 3 本は今も `voices/presets/` に入ったままで、候補はまだ採用していない。）
+**2026-09-09 現在、同梱 11 本は確定した（追記 ⑥＝裁定 114）。急いで聴くべき新しい候補は無い。**
+（追記 ⑤ の 3 段は役目を終えた＝司令官が **① `calm_20s` を 2 名とも採用**した。② `plain_20s` は候補のまま。
+追記 ④ の 3 段も同様＝**おふとんP きざ だけがそこで完成**し、KANA と 琴葉茜 は追記 ⑥ の射に進んだ。）
 下の順路は 2026-09-05 の全体検分のもので、そのまま生きている
-（3 本の**中身と秒数**だけが 20 s 本文・cfg 7.0 の射に変わった＝33.28／30.60／34.92 s → **20.24／18.32／21.00 s**）。
+（3 本の**中身と秒数**だけが動いた＝33.28／30.60／34.92 s → 追記 ④ で 20.24／18.32／21.00 s →
+**今は 20.08〔KANA・`calm_20s`〕／18.32〔きざ・`expressive_20s`〕／20.48 s〔琴葉茜・`calm_20s`〕**）。
 
 | 順 | すること | 所要 |
 |---|---|---|
@@ -362,21 +454,27 @@ Get-ChildItem "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\voice
 | もち子さん | +8.95 dB | 1235（2 射目・1 度目の掃引） | −35.37 dB | −52.14 dBFS | **−3.21 dB**（減衰） | 0.03 s | 減衰して終わる。○ |
 | つくよみちゃん | +8.37 dB | 1240（7 射目・1 度目） | −59.43 dB | −76.44 dBFS | 無音 | 1.07 s | 無音まで落ちる。○ |
 | おふとんP のーまるv2 | +7.41 dB | 1240（7 射目・1 度目） | −57.70 dB | −78.20 dBFS | 無音 | 0.13 s | 減衰して終わる。○ |
-| KANA ないしょばなし | ~~+4.65 dB（cfg 5.0）~~ ~~+1.04 dB（cfg 7.0・30 s 本文）~~ **−56.40 dB**（cfg 7.0・**20 s 本文＝1 射目で clean**） | ~~1235~~ **1234**（1 射目・**4 度目＝20 s 本文の掃引**） | ~~−53.77~~ ~~−53.74~~ **−56.40 dB** | ~~−72.81~~ ~~−72.97~~ **−73.96 dBFS** | 無音 | ~~0.57~~ ~~1.05~~ **1.01 s** | 無音まで落ちる。○（**追記 ④ で 20 s 本文の射に差し替え**） |
+| KANA ないしょばなし | ~~+4.65 dB（cfg 5.0）~~ ~~+1.04 dB（cfg 7.0・30 s 本文）~~ ~~−56.40 dB（cfg 7.0・20 s 本文）~~ **−52.40 dB**（cfg 7.0・**`calm_20s`＝1 射目で clean**） | ~~1235~~ ~~1234（20 s 本文）~~ **1234**（1 射目・**5 度目＝`calm_20s` の掃引**） | ~~−53.77~~ ~~−53.74~~ ~~−56.40~~ **−52.40 dB** | ~~−72.81~~ ~~−72.97~~ ~~−73.96~~ **−73.77 dBFS** | 無音 | ~~0.57~~ ~~1.05~~ ~~1.01~~ **0.88 s** | 無音まで落ちる。○（**追記 ⑥ で `calm_20s` の射に差し替え**） |
 | おふとんP きざ | ~~+2.28 dB（cfg 5.0）~~ ~~+3.17 dB（cfg 7.0・30 s 本文）~~ **−57.32 dB**（cfg 7.0・**20 s 本文＝1 射目で clean**） | ~~1239~~ **1234**（1 射目・**4 度目＝20 s 本文の掃引**） | ~~−54.17~~ ~~−53.81~~ **−57.32 dB** | ~~−74.11~~ ~~−73.76~~ **−74.52 dBFS** | 無音 | ~~0.32~~ ~~0.31~~ **0.98 s** | 直った（作り直しは不要）。○（**追記 ④ で 20 s 本文の射に差し替え**） |
-| 琴葉茜（関西弁） | ~~−5.97 dB（cfg 5.0）~~ ~~+5.61 dB（cfg 7.0・30 s 本文）~~ **−20.24 dB**（cfg 7.0・20 s 本文・seed 1234＝⒝ 絶対値 −38.02 dBFS で失格） | ~~1235~~ **1235**（2 射目・**4 度目＝20 s 本文の掃引**・番号は偶然同じで中身は別の射） | ~~−56.73~~ ~~−56.77~~ **−57.92 dB** | ~~−73.42~~ ~~−73.36~~ **−74.86 dBFS** | 無音 | ~~1.05~~ **1.02 s** | 無音まで落ちる。○（**追記 ④ で 20 s 本文の射に差し替え**） |
+| 琴葉茜（関西弁） | ~~−5.97 dB（cfg 5.0）~~ ~~+5.61 dB（cfg 7.0・30 s 本文）~~ ~~−20.24 dB（cfg 7.0・20 s 本文・seed 1234＝⒝ 絶対値 −38.02 dBFS で失格）~~ **−56.82 dB**（cfg 7.0・**`calm_20s`＝1 射目で clean**） | ~~1235~~ ~~1235（20 s 本文・2 射目）~~ **1234**（1 射目・**5 度目＝`calm_20s` の掃引**） | ~~−56.73~~ ~~−56.77~~ ~~−57.92~~ **−56.82 dB** | ~~−73.42~~ ~~−73.36~~ ~~−74.86~~ **−72.91 dBFS** | 無音 | ~~1.05~~ ~~1.02~~ **0.98 s** | 無音まで落ちる。○（**追記 ⑥ で `calm_20s` の射に差し替え・頭の無音 0.930 s はそのまま容れた**） |
 | **月読アイ** | −20.19 dB（⒝⒞ で失格） | **1238（4 射目・2 度目の掃引）** | **−56.07 dB** | **−72.60 dBFS** | 無音 | **1.13 s**（前は 0.00 s） | **直った。**○ |
 | **ちび式じい** | −32.94 dB（⒞ で失格） | **1235（1 射目・2 度目の掃引）** | **−46.32 dB** | **−65.19 dBFS** | 無音 | **0.35 s**（前は 0.00 s） | **直った。**○ |
 | ほか 3 名（MANA・吉田くん・月読ショウタ） | もともと 3 条件とも clean | 1234 のまま | −50〜−58 dB | −73〜−75 dBFS | 無音 | 0.35〜1.03 s | 触っていない。○ |
 
-註（追記 ③・④ の 3 名）＝**1 行に 3 つの run の数値が混ざらないよう、打ち消し線が古い射・太字が今の射（20 s 本文・cfg 7.0）**。
-古い順に ⑴ cfg 5.0＋30 s 本文（2026-09-05）→ ⑵ cfg 7.0＋30 s 本文（追記 ③・司令官が外した）→ ⑶ **cfg 7.0＋20 s 本文（追記 ④＝今）**。
-「最初の Δ（seed 1234）」欄の今の値は `build/out/preset-work/logs/run_secondary.20s.log` の逐語
-（例「`[sweep] co_kana_naisho seed=1234 trim_tail=True 20.24s Δ=-56.4 dB tail50=-73.96 dBFS rise=None dB [clean]`」）。
-**KANA と きざ は 1 射目がそのまま clean**なので「最初の Δ」と「今の Δ」が同じ値になる。琴葉茜だけ 1234 が
-⒝（絶対値 −38.02 dBFS）で落ち、**1235 の 2 射目**を採った。追記 ③ の値（+1.04／+3.17／+5.61 dB）は
-`logs/run_secondary.cfg7.log`、cfg 5.0 の値は 2026-09-05 の実測（控えは `secondary/cfg5/`・`secondary/cfg7-30s/`）。
-**「末尾の無音」の今の値**（1.01／0.98／1.02 s）は追記 ④ のあとの `logs/verify_secondary.json` の `trail_silence_s`（1.012／0.977／1.020 s）。
+註（追記 ③〜⑥ の 3 名）＝**1 行に 4 つの run の数値が混ざらないよう、打ち消し線が古い射・太字が今の射**。
+古い順に ⑴ cfg 5.0＋30 s 本文（2026-09-05）→ ⑵ cfg 7.0＋30 s 本文（追記 ③・司令官が外した）→
+⑶ cfg 7.0＋`expressive_20s` 90 字（追記 ④・**きざ だけここが今の射**）→ ⑷ **cfg 7.0＋`calm_20s` 94 字（追記 ⑥＝今・KANA と 琴葉茜 だけ）**。
+おふとんP きざ の行は ⑶ が今の射なので、太字の値は追記 ④ のまま動いていない。
+「最初の Δ（seed 1234）」欄の今の値は、KANA と 琴葉茜 が `build/out/preset-work/logs/run_secondary.calm_20s.log` の逐語、
+きざ が `logs/run_secondary.20s.log` の逐語
+（例「`[sweep] co_ofutonp_kiza seed=1234 trim_tail=True 18.32s Δ=-57.32 dB tail50=-74.52 dBFS rise=None dB [clean]`」）。
+**`calm_20s` は 2 名とも 1 射目がそのまま clean**（潰れもなし＝`max_clip_run` 2）なので、
+「最初の Δ」と「今の Δ」が同じ値になる。~~琴葉茜だけ 1234 が ⒝（絶対値 −38.02 dBFS）で落ち、**1235 の 2 射目**を採った。~~
+（＝それは追記 ④ の `expressive_20s` での話で、`calm_20s` では 1234 の 1 射目で通った。）
+追記 ③ の値（+1.04／+3.17／+5.61 dB）は `logs/run_secondary.cfg7.log`、cfg 5.0 の値は 2026-09-05 の実測
+（控えは `secondary/cfg5/`・`secondary/cfg7-30s/`）。
+**「末尾の無音」の今の値**（KANA **0.883**／きざ 0.977／琴葉茜 **0.981** s）は追記 ⑥ のあとに測り直した
+`logs/verify_secondary.json` の `trail_silence_s`。~~追記 ④ のあとの値は 1.012／0.977／1.020 s。~~
 
 **2 本の終端 0.5 秒（25 ms ごとの dBFS・是正の前後）。**
 
@@ -410,10 +508,12 @@ Get-ChildItem "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\voice
 **この表は seed 掃引の前（seed 1234）の檔で測ったもの。1 度目の掃引で撃ち直した 6 本は中身が変わったので、
 検分席が同じやり方で測り直した（「差（1 度目の是正後）」欄）。**
 
-⚠ **3 度目（追記 ③・cfg 7.0）と 4 度目（追記 ④・cfg 7.0＋20 s 本文）の撃ち直しで、KANA・おふとんP きざ・琴葉茜 の射は
-2 度変わった。下の「差（1 度目の是正後）」欄はいずれも cfg 5.0＋30 s 本文の射で測った値＝この 3 名についてはもう
-今の檔のものではない。しかも今の 3 本は本文そのものが違う（90 字）ので、146 字の射との F0 の直接比較には
-「読んだ文が違う」ぶんの目減りが乗る。**
+⚠ **3 度目（追記 ③・cfg 7.0）・4 度目（追記 ④・cfg 7.0＋`expressive_20s` 90 字）・5 度目（追記 ⑥＝裁定 114・
+cfg 7.0＋`calm_20s` 94 字。KANA と 琴葉茜 だけ）の撃ち直しで、KANA・おふとんP きざ・琴葉茜 の射は
+KANA と 琴葉茜 が 3 度・きざ が 2 度変わった。下の「差（1 度目の是正後）」欄はいずれも cfg 5.0＋30 s 本文の射で
+測った値＝この 3 名についてはもう今の檔のものではない。しかも今の 3 本は本文そのものが違う
+（きざ 90 字・KANA と 琴葉茜 94 字）ので、146 字の射との F0 の直接比較には「読んだ文が違う」ぶんの目減りが乗る。
+とくに `calm_20s` は「！」が無く絵文字も 1 つの穏やかな本文なので、感情の振れが F0 に載る量そのものが違う。**
 参照への寄せを強めたので **F0 は一次に近づいている可能性が高い**が、誰も測り直していない（席は音を聴けず、
 便 P の末尾席は F0 を測る道具を持たない）。数値が要るなら検分席に同じ実装で測り直させること。
 
@@ -442,8 +542,13 @@ KANA（ないしょばなし）は**スペクトル重心が一次より明る�
 ### C 群＝音量
 
 二次はサーバ側で参照を −16 dB に正規化して合成するため、ピークはほぼ全本 0 dBFS に張り付く（異常ではない）。
-ただし**中身の音量（RMS）は −16.53 〜 −23.79 dBFS と 7.3 dB もばらついている**（2 度目の是正後の再計測でも同じ開き）。
-とくに **吉田くん −23.79 dBFS が飛び抜けて小さい**（次に小さいのは おふとんP のーまるv2 の −20.50・きざ は −19.94）。
+~~ただし**中身の音量（RMS）は −16.53 〜 −23.79 dBFS と 7.3 dB もばらついている**（2 度目の是正後の再計測でも同じ開き）。
+とくに **吉田くん −23.79 dBFS が飛び抜けて小さい**（次に小さいのは おふとんP のーまるv2 の −20.50・きざ は −19.94）。~~
+**（追記 ⑥＝裁定 114 のあとの値。）中身の音量（RMS）は −16.09 〜 −23.79 dBFS と 7.70 dB ばらついている。**
+小さい順に **吉田くん −23.79**・**KANA −21.37**・のーまるv2 −20.50・ちび式じい −18.87・きざ −17.20・
+つくよみ／MANA −17.01・ショウタ −16.93・もち子 −16.77・月読アイ −16.53・**琴葉茜 −16.09 dBFS**。
+**KANA が `calm_20s` の射で 2 番目に小さくなった**（追記 ④ の `expressive_20s` の射では −17.56 だった＝
+平坦な本文ほど山が低い。ピークも `calm_20s` では 0.00 dBFS に届いている〔前の射は −1.52 で 11 本中唯一届かなかった〕）。
 プリセットとして並べたとき、話者を切り替えるたび音量が変わる。揃えるなら出荷前に一律正規化が要る。
 
 ---
@@ -458,16 +563,25 @@ KANA（ないしょばなし）は**スペクトル重心が一次より明る�
 - `S:` ＝ `C:/Users/mugonkun/source/repos/irodori-tts-for-yomiwakechan/voices/presets/`
 - `R:` ＝ `C:/Users/mugonkun/source/repos/irodori-tts-for-yomiwakechan/build/out/preset-work/secondary/`
 
-二次の本文（**裁定 112 から 2 種類ある**。台帳では行ごとの `secondary.text_id` で分かれる）。
-**ここの ⒜／⒝ は「同梱ボイスの本文の世代」**で、追記 ⑤ の **①／②（候補の番号）**とは別物。
+二次の本文（**裁定 112 で 2 種類・裁定 114 で 3 種類になった**。台帳では行ごとの `secondary.text_id` で分かれる）。
+**ここの ⒜／⒝／⒞ は「同梱ボイスの本文の世代」**で、追記 ⑤ の **①／②（候補の番号）**とも、
+末尾判定の **⒜⒝⒞（3 つの条件）**とも別物。**11 本の内訳＝⒜ 8 本・⒝ 1 本・⒞ 2 本。**
 
-**⒜ 8 本（`expressive_30s`・146 字）＝もち子・ちび式じい・つくよみ・MANA・のーまるv2・吉田くん・月読アイ・月読ショウタ。**
+**⒜ 8 本（`expressive_30s`・146 字・絵文字 5〔😊🎉😢😆🎉＝**4 種**・🎉 だけ 2 度出る〕・「！」有り・cfg 5.0）＝もち子・ちび式じい・つくよみ・MANA・のーまるv2・吉田くん・月読アイ・月読ショウタ。**
 
 > みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉
 
-**⒝ 3 本（`expressive_20s`・90 字・追記 ④）＝KANA ないしょばなし・おふとんP きざ・琴葉茜（関西弁）。**
+**⒝ ~~3 本~~ 1 本（`expressive_20s`・90 字・絵文字 4〔😊🎉😢😆＝**4 種**・重なりなし〕・「！」有り・cfg 7.0・追記 ④）＝おふとんP きざ だけ。**
+（~~KANA ないしょばなし・琴葉茜（関西弁）~~ の 2 本は**追記 ⑥＝裁定 114 で下の ⒞ に移った**。）
 
 > こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 正直、何度もくじけそうになりました😢 でも、ここまで来られました。さあ、本番ですよ！一緒に楽しみましょう😆
+
+**⒞ 2 本（`calm_20s`・94 字・絵文字 1〔😊〕・「！」無し・`emotion_arc` 1 段・cfg 7.0・追記 ⑥＝裁定 114）＝KANA ないしょばなし・琴葉茜（関西弁）。**
+
+> 今日は、来てくれてありがとう。この配信では、みんなのコメントを読みながら、のんびりお話ししていくね😊 途中で気になることがあったら、いつでも声をかけてね。最後まで、ゆっくり楽しんでいこう。
+
+（`plain_20s`＝89 字・絵文字も「！」も無い平坦な本文は**採用しなかった**＝同梱ボイスに 1 本も無い。
+候補は `build/out/preset-work/candidates/plain_20s/` に残してある。`greeting_10s`＝44 字も未使用。）
 
 ---
 
@@ -530,33 +644,39 @@ KANA（ないしょばなし）は**スペクトル重心が一次より明る�
 ### 4. KANA（COEIROINK・ないしょばなし・style 33） — `co_kana_naisho`
 
 ~~**追記 ③（2026-09-09・裁定 111）で `cfg_scale_speaker` 5.0 → 7.0 にして撃ち直した。**~~
-**追記 ④（2026-09-09・裁定 112）で、cfg 7.0 のまま本文を 90 字（約 20 秒）に縮めて撃ち直した。**（司令官の 3 本のうちの 1 本。
-追記 ③ の cfg 7.0 版は司令官が聴いて外した＝「3ファイルともおなじところで参照ボイスが外れる」。）
+~~**追記 ④（2026-09-09・裁定 112）で、cfg 7.0 のまま本文を 90 字（約 20 秒）に縮めて撃ち直した。**~~
+**追記 ⑥（2026-09-09・裁定 114）で、cfg 7.0 のまま本文を `calm_20s`（94 字・絵文字 1 つ・「！」無し）に替えた射を採用した。**
+（追記 ③ の cfg 7.0 版も追記 ④ の 90 字版も司令官が聴いて外した＝「3ファイルともおなじところで参照ボイスが外れる」→
+「発話途中で入れ替わる」。**この行はこれで確定**。）
 
-> **⚠ 追記 ⑤（裁定 113）＝司令官はこの射も外した**（逐語「**発話途中で入れ替わる**」）。
-> 差し替えの候補は `build/out/preset-work/candidates/{calm_20s,plain_20s}/co_kana_naisho_secondary.wav`
-> ＝**追記 ⑤ の表と 3 段の順路で聴く**（① calm 20.08 s／② plain 21.48 s）。
-> 下の行そのもの（**採用中**・md5 `494a3adc…`）は**司令官が選ぶまで据え置き**。
+> **✅ 追記 ⑥（裁定 114）＝司令官の検分で `calm_20s` を採用**（逐語「**calm採用。 インストーラーくみなおしとマージを頼む。**」）。
+> ~~差し替えの候補は `build/out/preset-work/candidates/{calm_20s,plain_20s}/co_kana_naisho_secondary.wav`~~
+> **採ったのは ① `calm_20s`**（20.08 s・md5 `021feb6a…`）。② `plain_20s`（21.48 s・md5 `e7d54eed…`）は
+> 候補のまま `build/out/preset-work/candidates/plain_20s/` に残る。
+> ~~下の行そのもの（採用中・md5 `494a3adc…`）は司令官が選ぶまで据え置き。~~ → **差し替え済み。**
 
 - 一次 30 s ： `P:co_kana_naisho_30s.wav` （39.22 s・44.1 kHz・RMS −26.1 dBFS＝ささやき）
-- 二次 30 s 参照【採用中】： `S:co_kana_naisho.wav` （**20.24 s**・**本文 `expressive_20s`（90 字）・seed 1234（1 射目）・cfg_scale_speaker 7.0**・md5 `494a3adc…`・1,943,084 バイト） ← 末尾 −56.40 dB／−73.96 dBFS＝clean
+- 二次 30 s 参照【採用中・**確定**】： `S:co_kana_naisho.wav` （**20.08 s**・**本文 `calm_20s`（94 字）・seed 1234（1 射目）・cfg_scale_speaker 7.0**・md5 `021feb6a37e0c550985fcc4d755eea90`・**1,927,724 バイト**） ← 末尾 −52.40 dB／−73.77 dBFS＝clean・`max_clip_run` 2（潰れなし）・頭の無音 0.464 s／末の無音 0.883 s
+- ~~追記 ④ の版（`expressive_20s` 90 字・cfg 7.0）：~~ **退いた**＝`build/out/preset-work/secondary/sweep/co_kana_naisho_seed1234.wav`（~~20.24 s~~・md5 `494a3adc…`・1,943,084 バイト）
+- 不採用の候補（`plain_20s` 89 字・cfg 7.0・A/B 用）： `build/out/preset-work/candidates/plain_20s/co_kana_naisho_secondary.wav` （21.48 s・seed 1239〔6 射目〕・md5 `e7d54eed…`）
 - 追記 ③ の版（30 s 本文・cfg 7.0・A/B 用）： `R:cfg7-30s\co_kana_naisho.wav` （~~33.28 s~~・seed 1235・md5 `cfb2786f…`）
 - さらに旧版（30 s 本文・cfg 5.0・A/B 用）： `R:cfg5\co_kana_naisho.wav` （33.28 s・seed 1235・md5 `ef329c24…`）
 - 二次 10 s 参照： `R:co_kana_naisho_ref10_secondary.wav` （32.16 s・末尾きれい・**cfg 5.0＋30 s 本文のまま**）
-- 機械の所見：秒数 ~~33.28 s~~ → **20.24 s**（本文が 146 → 90 字）。RMS ~~−19.04~~ ~~−19.23~~ → **−17.56 dBFS**。
-  ピークだけ 11 本で唯一 0 dBFS に張り付かない（**−1.52 dBFS**＝正規化に届く山が無かった）。
-  スペクトル重心が一次より明るい・cfg 5.0 の射では F0 が **−1.3 半音**下がっていた（**新しい射では未測定**・B 群の ⚠）。
-  **ささやきの息っぽさが薄れていないか／途中から声が離れないか**
+- 機械の所見：秒数 ~~33.28 s~~ ~~20.24 s~~ → **20.08 s**（本文が 146 → 90 → 94 字。`calm_20s` は字数が増えたのに短い＝読み速が 4.45 → **4.68 字/秒**に上がった）。
+  RMS ~~−19.04~~ ~~−19.23~~ ~~−17.56~~ → **−21.37 dBFS**（**11 本で 2 番目に小さい**・いちばん小さいのは 吉田くん −23.79）。
+  ピークは ~~**−1.52 dBFS**（11 本で唯一 0 dBFS に張り付かなかった）~~ → **0.00 dBFS＝ほかの 10 本と揃った**。
+  スペクトル重心が一次より明るい・cfg 5.0 の射では F0 が **−1.3 半音**下がっていた（**今の射では未測定**・B 群の ⚠）。
+  **ささやきの息っぽさが薄れていないか**（音量が下がったぶん、ささやきの質はむしろ見どころ）
 
 | 問い | 記入 |
 |---|---|
 | 一次に似ているか | 　　 |
 | ~~**途中から参照ボイスから離れないか（本文を 20 秒に縮めて直ったか）**~~ | **×（答は出た＝追記 ⑤ の逐語「発話途中で入れ替わる」）** |
-| **【追記 ⑤】① calm と ② plain のどちらが入れ替わらないか**（どちらも駄目、も可） | 　　 |
+| ~~**【追記 ⑤】① calm と ② plain のどちらが入れ替わらないか**~~ | **① calm（答は出た＝追記 ⑥ の逐語「calm採用。」）** |
 | **ないしょばなし（ささやき）の質は保たれているか** | 　　 |
 | 表情が出ているか | 　　 |
 | 末尾は切れていないか（30 s 版） | 　　 |
-| 採用（30s / 10s / 作り直し） | 　　 |
+| 採用（30s / 10s / 作り直し） | **30s・本文 `calm_20s`（確定・2026-09-09・追記 ⑥）** |
 | ひとこと | 　　 |
 
 ---
@@ -587,6 +707,8 @@ cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうな�
 > **✅ 追記 ⑤（裁定 113）＝司令官の検分で「のみ完成」と確定**（逐語「**co_ofutonp_kiza_secondaryのみ完成として残り2本かな**」）。
 > **この 1 本は以後撃ち直さない**＝採用中の `S:co_ofutonp_kiza.wav`（18.32 s・md5 `d606722e…`・seed 1234・本文 `expressive_20s`）を据え置き。
 > 裁定 113 の候補も撃っていない（対象は KANA と 琴葉茜 の 2 名だけ）。
+> **追記 ⑥（裁定 114）でも 1 バイトも動いていない**（`make_presets.py --copy` の前後で md5 `d606722e…` を突合）。
+> ＝**同梱 11 本で唯一 `secondary.text_id` が `expressive_20s` の行**になった（§2 の凡例 ⒝ はこの 1 本だけ）。
 
 - 一次 30 s ： `P:co_ofutonp_kiza_30s.wav` （33.42 s・44.1 kHz）
 - 二次 30 s 参照【採用中】： `S:co_ofutonp_kiza.wav` （**18.32 s**＝11 本で最短・**本文 `expressive_20s`（90 字）・seed 1234（1 射目）・cfg_scale_speaker 7.0**・md5 `d606722e…`・1,758,764 バイト） ← 末尾 −57.32 dB／−74.52 dBFS＝clean
@@ -632,34 +754,42 @@ cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうな�
 ### 8. 琴葉茜（VOICEROID2・関西弁・akane_west_emo_44） — `vr2_akane_west`
 
 ~~**追記 ③（2026-09-09・裁定 111）で `cfg_scale_speaker` 5.0 → 7.0 にして撃ち直した。**~~
-**追記 ④（2026-09-09・裁定 112）で、cfg 7.0 のまま本文を 90 字（約 20 秒）に縮めて撃ち直した。**（司令官の 3 本のうちの 1 本。
-3 本のうち**唯一 1 射目が末尾 ⒝ で落ちた**話者＝seed 1235 の 2 射目を採った。）
+~~**追記 ④（2026-09-09・裁定 112）で、cfg 7.0 のまま本文を 90 字（約 20 秒）に縮めて撃ち直した。**~~
+**追記 ⑥（2026-09-09・裁定 114）で、cfg 7.0 のまま本文を `calm_20s`（94 字・絵文字 1 つ・「！」無し）に替えた射を採用した。**
+（追記 ④ では 3 名のうち**唯一 1 射目が末尾 ⒝ で落ちた**話者だったが、`calm_20s` では **seed 1234 の 1 射目で clean**。
+**この行はこれで確定**。）
 
-> **⚠ 追記 ⑤（裁定 113）＝司令官はこの射も外した**（逐語「**発話途中で入れ替わる**」）。
-> 差し替えの候補は `build/out/preset-work/candidates/{calm_20s,plain_20s}/vr2_akane_west_secondary.wav`
-> ＝**追記 ⑤ の表と 3 段の順路で聴く**（① calm 20.48 s／② plain 21.24 s。
-> **どちらも頭の無音が 0.88〜0.93 s と長い**＝出だしの遅さは本文のせいではない）。
-> 下の行そのもの（**採用中**・md5 `27a93475…`）は**司令官が選ぶまで据え置き**。
+> **✅ 追記 ⑥（裁定 114）＝司令官の検分で `calm_20s` を採用**（逐語「**calm採用。 インストーラーくみなおしとマージを頼む。**」）。
+> ~~差し替えの候補は `build/out/preset-work/candidates/{calm_20s,plain_20s}/vr2_akane_west_secondary.wav`~~
+> **採ったのは ① `calm_20s`**（20.48 s・md5 `610ec04b…`）。② `plain_20s`（21.24 s・md5 `fa12fee4…`）は
+> 候補のまま `build/out/preset-work/candidates/plain_20s/` に残る。
+> **⚠ 頭の無音 0.930 s はそのまま容れた**（追記 ⑤ の 3 択のうち ⑶）＝**同梱 11 本で最長**（次点 つくよみちゃん 0.726 s）。
+> 司令官はこの音を聴いたうえで採ったので、席の判断で頭を詰めることはしない。**出だしが遅く聞こえたら言ってほしい**
+> （詰めるか、別 seed で撃ち直すかは司令官の指示で）。
+> ~~下の行そのもの（採用中・md5 `27a93475…`）は司令官が選ぶまで据え置き。~~ → **差し替え済み。**
 
 - 一次 30 s ： `P:vr2_akane_west_30s.wav` （41.09 s・44.1 kHz・小さめ RMS −25.8）
-- 二次 30 s 参照【採用中】： `S:vr2_akane_west.wav` （**21.00 s**・**本文 `expressive_20s`（90 字）・seed 1235（2 射目）・cfg_scale_speaker 7.0**・md5 `27a93475…`・2,016,044 バイト） ← 末尾 −57.92 dB／−74.86 dBFS＝clean
+- 二次 30 s 参照【採用中・**確定**】： `S:vr2_akane_west.wav` （**20.48 s**・**本文 `calm_20s`（94 字）・seed 1234（1 射目）・cfg_scale_speaker 7.0**・md5 `610ec04b1f3b509f8ae2ad291fbc1250`・**1,966,124 バイト**） ← 末尾 −56.82 dB／−72.91 dBFS＝clean・`max_clip_run` 2（潰れなし）・**頭の無音 0.930 s**／末の無音 0.981 s
+- ~~追記 ④ の版（`expressive_20s` 90 字・cfg 7.0）：~~ **退いた**＝`build/out/preset-work/secondary/sweep/vr2_akane_west_seed1235.wav`（~~21.00 s~~・md5 `27a93475…`・2,016,044 バイト）
+- 不採用の候補（`plain_20s` 89 字・cfg 7.0・A/B 用）： `build/out/preset-work/candidates/plain_20s/vr2_akane_west_secondary.wav` （21.24 s・seed 1234〔1 射目〕・md5 `fa12fee4…`・頭の無音 0.883 s）
 - 追記 ③ の版（30 s 本文・cfg 7.0・A/B 用）： `R:cfg7-30s\vr2_akane_west.wav` （~~34.92 s~~・seed 1235・md5 `c8e1e619…`）
 - さらに旧版（30 s 本文・cfg 5.0・A/B 用）： `R:cfg5\vr2_akane_west.wav` （34.92 s・seed 1235・md5 `d42b02df…`）
 - 二次 10 s 参照： `R:vr2_akane_west_ref10_secondary.wav` （34.60 s・末尾きれい・**cfg 5.0＋30 s 本文のまま**）
-- 機械の所見：秒数 ~~34.92 s~~ → **21.00 s**（本文が 146 → 90 字。読み速 4.2 字/秒＝3 名で最も遅いので 3 本で最長）。
-  RMS ~~−16.69~~ ~~−16.59~~ → **−16.94 dBFS**。
+- 機械の所見：秒数 ~~34.92 s~~ ~~21.00 s~~ → **20.48 s**（本文が 146 → 90 → 94 字。読み速 4.29 → **4.59 字/秒**）。
+  RMS ~~−16.69~~ ~~−16.59~~ ~~−16.94~~ → **−16.09 dBFS**（**11 本でいちばん大きい**）。ピーク 0.00 dBFS。
   **関西弁のイントネーションが二次で残っているかが最大の見どころ**（Irodori は標準語で学習）。
-  参照への寄せは 7.0 のまま・本文だけを縮めたので、**関西弁が戻っているか**も併せて聴いてほしい
+  参照への寄せは 7.0 のまま・本文だけを穏やかな調子に替えたので、**関西弁が戻っているか**も併せて聴いてほしい
 
 | 問い | 記入 |
 |---|---|
 | 一次に似ているか | 　　 |
 | ~~**途中から参照ボイスから離れないか（本文を 20 秒に縮めて直ったか）**~~ | **×（答は出た＝追記 ⑤ の逐語「発話途中で入れ替わる」）** |
-| **【追記 ⑤】① calm と ② plain のどちらが入れ替わらないか**（どちらも駄目、も可） | 　　 |
+| ~~**【追記 ⑤】① calm と ② plain のどちらが入れ替わらないか**~~ | **① calm（答は出た＝追記 ⑥ の逐語「calm採用。」）** |
 | **関西弁のイントネーションは残っているか** | 　　 |
+| **頭の無音 0.930 s（同梱で最長）で出だしが遅く聞こえないか** | 　　 |
 | 表情が出ているか | 　　 |
 | 末尾は切れていないか（30 s 版） | 　　 |
-| 採用（30s / 10s / 作り直し） | 　　 |
+| 採用（30s / 10s / 作り直し） | **30s・本文 `calm_20s`（確定・2026-09-09・追記 ⑥）** |
 | ひとこと | 　　 |
 
 ---
@@ -735,13 +865,27 @@ cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうな�
 
 ## 3. 聴き終わったあとに決めてほしいこと
 
-0-0. **【最優先・裁定 113】候補 4 本のうちどれを採るか**（話者ごとに別の本文でもよい）。
+0-0. ~~**【最優先・裁定 113】候補 4 本のうちどれを採るか**（話者ごとに別の本文でもよい）。~~
+   → **片付いた（2026-09-09・裁定 114）。**司令官の逐語「**calm採用。 インストーラーくみなおしとマージを頼む。**」＝
+   **KANA も 琴葉茜 も ① `calm_20s`**（20.08 s／20.48 s・seed 1234・cfg 7.0・md5 `021feb6a…`／`610ec04b…`）。
+   ② `plain_20s` は不採用（候補として `candidates/plain_20s/` に残す）。琴葉茜の頭の無音 0.930 s は
+   **そのまま容れた**（3 択のうち ⑶）。詳細は追記 ⑥。以下は当時の記述。
    KANA ① 20.08 s／② 21.48 s、琴葉茜 ① 20.48 s／② 21.24 s。追記 ⑤ の 3 段の順路で聴いて、
    **① calm（絵文字 1 つ）／② plain（絵文字も「！」も無い）／どちらも駄目**のどれかを言ってほしい
    （**①／② は候補の番号**＝§2 凡例の ⒜／⒝〔本文の世代〕とは別物）。
    ② だけ良ければ「絵文字 1 つでも振れる」、両方良ければ「5 段の振れが原因だった」、
    両方駄目なら「本文の調子ではない」＝**次の的が変わる**（次の手は追記 ⑤ の末尾に 3 つ）。
    選ばれるまで `voices/presets` は動かさない（**おふとんP きざ の完成版もそのまま**）。
+
+0-1. **【今いちばん大きい問い・開いたまま】ほかの 8 本も短い穏やかな本文で撃ち直して全体を揃えるか。**
+   同梱 11 本は本文が **3 世代**混ざったまま確定した＝⒜ `expressive_30s` 146 字・cfg 5.0 が **8 本**、
+   ⒝ `expressive_20s` 90 字・cfg 7.0 が **1 本**（おふとんP きざ）、⒞ `calm_20s` 94 字・cfg 7.0 が **2 本**（KANA・琴葉茜）。
+   長さは **18.32〜35.76 秒**、調子も「絵文字 4 種・「！」有り」と「絵文字 1 つ・「！」無し」が混ざる。
+   **席はこれを決めていない**（司令官の逐語は「calm採用」＝2 名の話だけで、8 本の扱いには触れていない）。
+   ⑴ **このまま出す**＝長さと調子の不揃いは残るが、8 本は既に司令官が外していない音。追加の実射は 0。
+   ⑵ **8 本も `calm_20s`＋cfg 7.0 で撃ち直して揃える**＝実射 8 本（掃引つきなら十数射）・8 本の md5 が動く・
+   `$ExpectedAppBytes` の測り直しが要る・**外した音に当たる恐れも新たに生じる**（8 本は今の射で合格している）。
+   どちらを採るかは司令官の判断。**指示があるまで席は 8 本に触らない。**
 
 0. ~~**【裁定 112】本文を約 20 秒に縮めた 3 本を合格とするか。**~~ → **片付いた（2026-09-09）。**
    **おふとんP きざ（18.32 s）＝完成・合格**。**KANA と 琴葉茜 は外れた**（「発話途中で入れ替わる」）＝
@@ -775,13 +919,18 @@ cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうな�
 
 | 何 | 檔 |
 |---|---|
+| **採用（裁定 114・追記 ⑥）＝どの候補をどこへ上げたか** | `build/out/preset-work/logs/run_secondary.result.json` の `items[]`＝KANA と 琴葉茜 の行に `adopted_from_candidate: "calm_20s"`・`candidate_path`（`candidates/calm_20s/<id>_secondary.wav`）・`sweep_dir`（`secondary/sweep/calm_20s`）が刻まれている。**採用の口（`--adopt-candidate`）はサーバを起こさないので、この回のサーバ記録も掃引ログも無い**（新しい音は 1 本も作っていない＝候補 run の音をそのまま複写した） |
+| **採用後の二次 22 本の諸元（3 条件・クリップ・頭と末の無音）** | `build/out/preset-work/logs/verify_secondary.json`（**2026-09-09 04:24 に測り直した＝21/22 clean**。残る 1 本は一度も採用していない `co_ofutonp_kiza_ref10_secondary.wav`） |
+| **採用した calm の射（2 射）** | `build/out/preset-work/secondary/sweep/calm_20s/co_kana_naisho_seed1234.wav`・`vr2_akane_west_seed1234.wav`（`--adopt-candidate` が候補置き場から連れてきた・md5 は採用版と一致）。採用版そのものは `secondary/<id>_secondary.wav` と `voices/presets/<id>.wav` |
+| **採用しなかった候補（`plain_20s` 2 本）** | `build/out/preset-work/candidates/plain_20s/<id>_secondary.wav`（掃引の全射 7 本は `…/plain_20s/sweep/`）／N: は `…/preset-voices/candidates/plain_20s/`。**採用の口は触っていないのでそのまま残る** |
+| **採用で退いた射（追記 ④＝`expressive_20s` 90 字・cfg 7.0）** | `build/out/preset-work/secondary/sweep/co_kana_naisho_seed1234.wav`（md5 `494a3adc…`・1,943,084 バイト）・`secondary/sweep/vr2_akane_west_seed1235.wav`（md5 `27a93475…`・2,016,044 バイト）＝**掃引の射としてそのまま残っている**（`sweep/calm_20s/` は別の箱なので上書きしていない） |
 | **5 度目（候補 4 本・裁定 113・追記 ⑤）の掃引の逐語** | `build/out/preset-work/logs/run_secondary.calm_20s.log`・`logs/run_secondary.plain_20s.log`（**初回の `plain_20s`＝クリップの門を足す前の run** は `logs/run_secondary.plain_20s.pre-clipfix.log`） |
 | **5 度目の候補 run の台帳** | `build/out/preset-work/logs/run_secondary.calm_20s.sweep.json`・`logs/run_secondary.plain_20s.sweep.json`（初回の分は `logs/run_secondary.plain_20s.pre-clipfix.sweep.json`）。**`run_secondary.result.json` には畳み込んでいない**＝候補だから |
 | **5 度目の候補 4 本の諸元（秒数・peak・RMS・頭と末の無音・クリップ・末尾 3 条件）** | `build/out/preset-work/logs/verify_candidates.calm_20s.json`・`logs/verify_candidates.plain_20s.json`（初回の分は `logs/verify_candidates.plain_20s.pre-clipfix.json`） |
 | **5 度目**のサーバ記録 | `build/out/preset-work/logs/server-8090-20260909-033221.log`（`calm_20s`）・`...-033339.log`（`plain_20s` 初回）・`...-040106.log`（`plain_20s` 撃ち直し） |
 | **5 度目の射の置き場（候補）** | `build/out/preset-work/candidates/calm_20s/<id>_secondary.wav`・`candidates/plain_20s/<id>_secondary.wav`（掃引の全射は各 `sweep/`＝calm 2 射・plain 7 射。**潰れていた初回の射は `candidates/plain_20s/sweep/co_kana_naisho_seed1238.wav`**） |
 | **5 度目の本文の目盛りの逐語** | `tools/preset-voices/corpus.json` の `secondary.calm_20s.$calibration`／`secondary.plain_20s.$calibration`（見積り・実測・撃ち直しの理由つき） |
-| **5 度目の N: の写し** | `N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/candidates/calm_20s/`・`.../candidates/plain_20s/`（4 本とも md5 突合済み）。この聴取表そのものの写しも `N:/…/preset-voices/preset-voices-listening.md` |
+| **5 度目の N: の写し** | `N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/candidates/calm_20s/`・`.../candidates/plain_20s/`（4 本とも md5 突合済み＝**採った音は N: からも取れる**）。この聴取表そのものの写しも `N:/…/preset-voices/preset-voices-listening.md`（**追記 ⑤ までの版**＝追記 ⑥ は入っていない） |
 | **4 度目（20 s 本文・cfg 7.0・追記 ④）の掃引の逐語** | `build/out/preset-work/logs/run_secondary.20s.log`（採用した 90 字の run）。**目盛り合わせの初稿 95 字の run** は `logs/run_secondary.20s-95chars.log`＝22.40／19.96／**23.24** s で琴葉茜が許容超過だったもの |
 | **4 度目の掃引の台帳（4 射）** | `build/out/preset-work/logs/run_secondary.sweep.json`（**その run の分だけ**。初稿 95 字の分は `logs/run_secondary.sweep.20s-95chars.json` に退避） |
 | **4 度目**のサーバ記録 | `build/out/preset-work/logs/server-8090-20260909-023735.log`（初稿 95 字の run は `...-023414.log`） |
@@ -792,22 +941,25 @@ cfg 5.0 の射で残っていた F0 の跳ね上がり +2.7 半音がどうな�
 | **3 度目（cfg 7.0）の掃引の台帳（10 射）** | ~~`build/out/preset-work/logs/run_secondary.sweep.json`~~ **この檔にはもう無い**（4 度目の run が上書きした）＝3 度目は `run_secondary.result.json` の `seed_sweep.results`（話者ごとに畳んである）と `run_secondary.cfg7.log` にだけ残る |
 | **3 度目**のサーバ記録 | `build/out/preset-work/logs/server-8090-20260909-013843.log` |
 | **3 度目の撃ち直しの旧版（cfg 5.0）** | `build/out/preset-work/secondary/cfg5/<id>.wav`（採用版 3 本）・`build/out/preset-work/secondary/sweep/cfg5/`（cfg 5.0 の全射 10 本）・`N:/…/preset-voices/secondary/cfg5/` |
-| **2 度目の是正後**・採用 11 本の末尾（最終・3 条件） | `build/out/preset-work/logs/verify_presets_tail.json`（**KANA・きざ・琴葉茜 は追記 ③・④ で射が変わったので、この 3 本の値は古い。今の値は下の `verify_secondary.json`**） |
-| **二次 22 本の諸元（3 条件・追記 ④ のあとに測り直した）** | `build/out/preset-work/logs/verify_secondary.json` |
+| **2 度目の是正後**・採用 11 本の末尾（最終・3 条件） | `build/out/preset-work/logs/verify_presets_tail.json`（**KANA・きざ・琴葉茜 は追記 ③・④・⑥ で射が変わったので、この 3 本の値は古い。今の値は上の `verify_secondary.json`〔2026-09-09 04:24〕**） |
 | **2 度目の是正後**・一次 22 本の諸元（3 条件・22/22 clean） | `build/out/preset-work/logs/verify_primary.json` |
 | **2 度目の seed 掃引の記録（5 射）** | ~~`run_secondary.sweep.json`~~ **この檔にはもう無い**（3 度目の run が上書きした）。2 度目は `run_secondary.result.json` の `seed_sweep.results`（話者ごとに畳んである）と `build/out/preset-work/logs/sweep-run-20260905-p3.log` にだけ残る |
 | 2 度目の掃引の逐語 | `build/out/preset-work/logs/sweep-run-20260905-p3.log` |
-| 射ごとの wav（掃引の全射） | `build/out/preset-work/secondary/sweep/<id>_seed<N>.wav`＝**檔名に cfg も本文も入らない**。KANA・きざ・琴葉茜 の分は 4 度目（20 s 本文・cfg 7.0）の射に上書きされ、**3 度目（30 s 本文・cfg 7.0）の射は `secondary/sweep/cfg7-30s/`・cfg 5.0 の射は `secondary/sweep/cfg5/` に退避**。ほかの話者の分は cfg 5.0＋30 s 本文のまま。何で撃ったかは `run_secondary.result.json` の `seed_sweep.results[].attempts[].cfg_scale_speaker`（無い行＝上流既定 5.0）と `items[].text_id`（無い行＝頭の `text_id`＝`expressive_30s`） |
-| 生成の台帳（畳み込み後・話者ごとに最後の掃引を保持） | `build/out/preset-work/logs/run_secondary.result.json`（`seed_sweep.results` に話者ごとの行。行ごとに `seeds`・`tail_rule`・`cfg_scale_speaker`。**同じ話者を撃ち直すと前の行は置き換わる**＝この 3 名の 3 度目の行はもう無い（逐語は `run_secondary.cfg7.log`）。**頭の `generated_at`／`irodori_params`／`text_id`／`text` は最初に 22 本を撃った run のもので、掃引では差し替えない**＝4 度目の分は `seed_sweep.generated_at`＝2026-09-09T02:37:35+0900 と `seed_sweep.irodori_params`（`cfg_scale_speaker: 7.0`）、および `items[].generated_at`／`items[].text_id`／`items[].text`／`items[].request.irodori`） |
+| 射ごとの wav（掃引の全射） | `build/out/preset-work/secondary/sweep/<id>_seed<N>.wav`＝**檔名に cfg も本文も入らない**。直下の KANA・きざ・琴葉茜 の分は 4 度目（`expressive_20s` 90 字・cfg 7.0）の射で、**5 度目（`calm_20s`）の射だけは `secondary/sweep/calm_20s/` という別の箱**（`--adopt-candidate` がそこへ連れてきた）＝**直下は上書きしていない**。**3 度目（30 s 本文・cfg 7.0）の射は `secondary/sweep/cfg7-30s/`・cfg 5.0 の射は `secondary/sweep/cfg5/`・初稿 95 字は `secondary/sweep/20s-95chars/` に退避**。ほかの話者の分は cfg 5.0＋30 s 本文のまま。何で撃ったかは `run_secondary.result.json` の `seed_sweep.results[].attempts[].cfg_scale_speaker`（無い行＝上流既定 5.0）と `items[].text_id`（無い行＝頭の `text_id`＝`expressive_30s`）、および行の `sweep_dir`（裸の檔名が指す箱） |
+| 生成の台帳（畳み込み後・話者ごとに最後の掃引を保持） | `build/out/preset-work/logs/run_secondary.result.json`（`seed_sweep.results` に話者ごとの行。行ごとに `seeds`・`tail_rule`・`cfg_scale_speaker`。**同じ話者を撃ち直すと前の行は置き換わる**＝この 3 名の 3 度目の行はもう無い（逐語は `run_secondary.cfg7.log`）。**KANA と 琴葉茜 の行は 5 度目（`calm_20s`）の採用で置き換わった**＝4 度目の行ももう無い（逐語は `run_secondary.20s.log`・射は `secondary/sweep/` 直下に残る）。**頭の `generated_at`／`irodori_params`／`text_id`／`text` は最初に 22 本を撃った run のもので、掃引でも採用でも差し替えない**＝素性は行が持つ＝`items[].generated_at`／`items[].text_id`／`items[].text`／`items[].request.irodori`（KANA と 琴葉茜 は 2026-09-09T03:32:21+0900・`calm_20s`・`cfg_scale_speaker: 7.0`）と `items[].adopted_from_candidate`／`candidate_path`／`sweep_dir`） |
 | 1 度目の是正前・二次 11 本の諸元 | `build/out/preset-work/logs/verify_recheck_presets.json` |
 | 1 度目の是正前・二次 22 本の諸元 | `build/out/preset-work/logs/verify_recheck_secondary.json` |
 | 1 度目の是正前・一次 22 本の諸元 | `build/out/preset-work/logs/verify_recheck_primary.json` |
 | 1 度目の是正前・末尾ぶつ切りの測定 | `build/out/preset-work/logs/tail_check.json` |
 | 1 度目の是正前・F0・スペクトル重心 | `build/out/preset-work/logs/f0_profile.json` |
 | 生成時のサーバ記録 | `build/out/preset-work/logs/server-8090-20260905-001238.log`（1 度目の掃引は `...-004526.log`・**2 度目は `...-011519.log`**） |
-| 台帳 | `voices/presets.json`（`secondary.md5`・`secondary.size_bytes`・**`secondary.text_id`／`secondary.text`（行ごと＝この 3 行だけ `expressive_20s`・90 字）**・`secondary.irodori.seed`・**`secondary.irodori.cfg_scale_speaker`（在る 3 行だけ＝7.0。無い 8 行は上流既定 5.0）**・`secondary.irodori.seed_sweep`・`secondary.tail`）。頭の **`corpus_texts`** に使われている本文の id が並ぶ（今は `["expressive_20s","expressive_30s"]`）。**行ごとの `generated_at` は撃った run の時刻**＝この 3 行は 2026-09-09T02:37:35+0900・ほかの 8 行は 2026-09-05T00:12:38+0900（頭の `generated_at` は台帳を組み立てた時刻＝別物） |
+| 台帳 | `voices/presets.json`（`secondary.md5`・`secondary.size_bytes`・**`secondary.text_id`／`secondary.text`（行ごと＝`calm_20s` 2 行〔KANA・琴葉茜〕・`expressive_20s` 1 行〔きざ〕・`expressive_30s` 8 行）**・`secondary.irodori.seed`・**`secondary.irodori.cfg_scale_speaker`（在る 3 行だけ＝7.0。無い 8 行は上流既定 5.0）**・`secondary.irodori.seed_sweep`・`secondary.tail`）。頭の **`corpus_texts`** に使われている本文の id が並ぶ（~~`["expressive_20s","expressive_30s"]`~~ 今は **`["calm_20s","expressive_20s","expressive_30s"]`**）。**行ごとの `generated_at` は撃った run の時刻**＝KANA と 琴葉茜 は **2026-09-09T03:32:21+0900**（`calm_20s` の候補を撃った run）・きざ は 2026-09-09T02:37:35+0900・ほかの 8 行は 2026-09-05T00:12:38+0900（頭の `generated_at` は台帳を組み立てた時刻＝別物）。`notes` に裁定 114 の 1 行を足し、`expressive_20s` の註を「この行は co_ofutonp_kiza だけ」に改めた |
 | 台帳の形 | `tools/preset-voices/presets.json.schema`（`md5`・`size_bytes`・`tail` は required・jsonschema で適合を確認済み） |
 
 末尾判定の規則の逐語は各台帳の `tail_rule`（`voices/presets.json` では `secondary.tail.rule`）に入っている。
 `secondary.tail.profile_dbfs` に末尾 300 ms の 25 ms 刻み 12 個が並ぶので、**檔を開かずに末尾の形を目で追える**。
-受け渡し先の写しは `N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/`（md5 突合済み）。
+受け渡し先の写しは `N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/`。
+**⚠ 追記 ⑥（裁定 114）の時点で md5 が突合できているのは `candidates/calm_20s/`・`candidates/plain_20s/` と
+過去の世代の箱（`secondary/cfg5/`・`secondary/cfg7-30s/`）だけ**で、
+`secondary/<id>_secondary.wav` の KANA（`494a3adc…`）と 琴葉茜（`27a93475…`）・`presets.json`（`28eab8d7…`）・
+この聴取表の写しは、檔の席の実測時点では裁定 113 の版だったが、**主席が 04:5x に差し替えて md5 一致を確認した**（追記 ⑥ の ⚠ は解消）。

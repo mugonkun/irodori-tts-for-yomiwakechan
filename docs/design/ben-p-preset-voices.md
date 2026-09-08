@@ -668,3 +668,104 @@ wav をそのまま複写する（頭を詰めない）ので、採用するな�
    （`calm_20s`／`plain_20s`）を足す＋台帳 `notes` に 1 行（候補のうちは打たない＝README §6 の手順 4）、
    ⑵ 琴葉茜の**頭の無音 0.88〜0.93 s**（§12-3）を詰めるか容れるかを決める、
    ⑶ `$ExpectedAppBytes` の測り直し（§12-4）。
+   → **⑴ と ⑵ は §12-6 で片付いた。⑶ は主席へ残る。**
+
+### 12-6. 採用（2026-09-09・裁定 114）— `calm_20s` を 2 名とも採り、同梱 11 本が確定した
+
+司令官の検分（§12-3 の候補 4 本を聴いたうえで）＝逐語
+「**calm採用。 インストーラーくみなおしとマージを頼む。**」
+
+読み方＝⑴ **① `calm_20s` を KANA・琴葉茜 の 2 名とも採用**（話者ごとに分けなかった＝§12-5 の 2 の選択肢は使わなかった）。
+⑵ **② `plain_20s` は採らない**（＝候補のまま残す。「駄目だった」とまでは言われていない＝A/B の控えとして生きる）。
+⑶ 続きは**インストーラーの組み直しとマージ**＝便 P の音づくりはここで終わり、以後は配布側の仕事。
+
+**打った命令（この席・サーバは起こしていない＝新しい音は 1 本も作っていない）。**
+
+```powershell
+cd "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\tools\preset-voices"
+$W = "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan\build\out\preset-work"
+python .\run_secondary.py --adopt-candidate calm_20s --sweep-ids "co_kana_naisho,vr2_akane_west"
+python .\verify_wavs.py "$W\secondary" --out "$W\logs\verify_secondary.json"
+python .\make_presets.py --copy
+```
+
+＝§12-2 で入れておいた採用の口をそのまま使った。`candidates/calm_20s/<id>_secondary.wav` が
+`secondary/<id>_secondary.wav` へ、掃引の射（各 1 射）が `secondary/sweep/calm_20s/<id>_seed1234.wav` へ複写され、
+候補 run の台帳から**その 2 id の項目と掃引の行だけ**が `run_secondary.result.json` に畳まれた
+（`items[].adopted_from_candidate: "calm_20s"`・`candidate_path`・`sweep_dir` が刻まれている）。
+**直下の `secondary/sweep/<id>_seed<N>.wav`（§11 の `expressive_20s` の射）は箱が別なので上書きされていない**
+＝退いた射は `co_kana_naisho_seed1234.wav`（md5 `494a3adc…`）・`vr2_akane_west_seed1235.wav`（md5 `27a93475…`）として残る。
+
+`verify_wavs.py` の測り直し＝**22 本中 21 本 clean**。残る 1 本は `co_ofutonp_kiza_ref10_secondary.wav`
+（10 s 参照版・末尾 Δ +4.01 dB）で、**一度も採用していない**（採用は 30 s 参照版）＝§11 以前から同じ状態。
+
+**確定した同梱 11 本（`voices/presets/<id>.wav`・台帳 `voices/presets.json`）。**
+
+| # | id | `text_id` | 字数 | `cfg_scale_speaker` | seed | 秒数 | md5（頭 8 桁） | バイト数 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `vv_mochiko_sexy` | `expressive_30s` | 146 | 5.0（既定・欄無し） | 1235 | 30.76 s | `0d2e0175…` | 2,953,004 |
+| 2 | `vv_chibishikijii` | `expressive_30s` | 146 | 5.0（既定・欄無し） | 1235 | 31.68 s | `247aef80…` | 3,041,324 |
+| 3 | `co_tsukuyomi` | `expressive_30s` | 146 | 5.0（既定・欄無し） | 1240 | 28.24 s | `cdc00aba…` | 2,711,084 |
+| 4 | **`co_kana_naisho`** | **`calm_20s`** | **94** | **7.0** | **1234** | **20.08 s** | **`021feb6a…`** | **1,927,724** |
+| 5 | `co_mana_isshoukenmei` | `expressive_30s` | 146 | 5.0（既定・欄無し） | 1234 | 30.16 s | `4755b737…` | 2,895,404 |
+| 6 | `co_ofutonp_kiza` | `expressive_20s` | 90 | 7.0 | 1234 | 18.32 s | `d606722e…` | 1,758,764 |
+| 7 | `co_ofutonp_normal_v2` | `expressive_30s` | 146 | 5.0（既定・欄無し） | 1240 | 26.32 s | `42c0d528…` | 2,526,764 |
+| 8 | **`vr2_akane_west`** | **`calm_20s`** | **94** | **7.0** | **1234** | **20.48 s** | **`610ec04b…`** | **1,966,124** |
+| 9 | `vr2_yoshida` | `expressive_30s` | 146 | 5.0（既定・欄無し） | 1234 | 24.84 s | `a52ec2c9…` | 2,384,684 |
+| 10 | `vr2_tsukuyomi_ai` | `expressive_30s` | 146 | 5.0（既定・欄無し） | 1238 | 35.76 s | `572f6f54…` | 3,433,004 |
+| 11 | `vr2_tsukuyomi_shota` | `expressive_30s` | 146 | 5.0（既定・欄無し） | 1234 | 32.72 s | `de8e6b63…` | 3,141,164 |
+
+12 行目 `cevio_maki_en` は `status: "skipped"`（decisions 27）＝`primary`／`secondary` とも `null`。
+**「5.0（既定・欄無し）」は台帳に `cfg_scale_speaker` の欄が無いこと**を指す＝撃った時に明示していない
+＝上流既定 5.0（§10）。値を後から書き足していない。
+**合計 28,804,324 → 28,739,044 バイト（−65,280）。** 動いたのは 4 と 8 の 2 本だけで、
+**ほかの 9 本は `make_presets.py --copy` の前後で md5 が一致**（複写しても内容は同じ）。
+本文は **3 世代が混ざったまま確定**した＝`expressive_30s` 8 本・`expressive_20s` 1 本・`calm_20s` 2 本。
+
+**琴葉茜の頭の無音 0.930 s はそのまま容れた（§12-3 の 3 択のうち ⑶）。**
+司令官は**この音を聴いたうえで採った**（逐語に詰めろの指示は無い）ので、席の判断で頭を切ることはしない。
+＝`vr2_akane_west.wav` は**同梱 11 本で最長の頭の無音**（次点は `co_tsukuyomi` の 0.726 s）。
+詰めるなら司令官の指示で別便を立てる（`make_presets.py --copy` は wav をそのまま複写する＝頭を詰める口は無い）。
+
+**仮説（§12-1）の帰結。** 「強い調子の切り替えそのものが別人の声に聞こえていた」という読みは、
+**① だけで足りた＝絵文字 1 つ・`emotion_arc` 1 段なら振れても入れ替わらない**という形で司令官の耳が支持した。
+ただし採用の逐語は「calm採用」だけなので、**② `plain_20s` が駄目だったとまでは言えない**
+（＝「5 段の振れが原因だった」も「絵文字 1 つでも振れる」も、この 1 語からは判じ切れない）。
+副産物の目盛り（読み速は本文でも動く・平坦なほど遅い）は §12-3 のまま生きている。
+
+**この回で直した台帳と形（§12-5 の 5 の ⑴）。**
+
+- `tools/preset-voices/make_presets.py` の `notes`＝**裁定 114 の 1 行を足した**
+  （`calm_20s` の行は絵文字 1 つ・「！」なしの 94 字で撃った／`plain_20s` は不採用）。
+  併せて `expressive_20s` の註を「**この行は `co_ofutonp_kiza` だけ**」に改めた（3 本と書いたままでは嘘になる）。
+- `tools/preset-voices/presets.json.schema` の `secondary.text_id` の説明＝`calm_20s`（採用）と
+  `plain_20s`（**corpus に在るが採用した行は無い**）を足し、今の内訳（8／2／1）を書いた。
+  `corpus_texts` の説明も裁定 114 まで進めた。**enum は置かない**（README §6 の手順 4 のまま）。
+- `voices/presets.json`＝`make_presets.py --copy` の再実行で `notes` と `corpus_texts` だけが動いた
+  （**wav は 11 本とも md5 不変**）。`corpus_texts` は `["calm_20s","expressive_20s","expressive_30s"]`。
+- `docs/preset-voices-listening.md`＝**追記 ⑥**（この採用の記録・退いた射の在処・11 本の内訳）、
+  §2 の凡例に **⒞ `calm_20s` 2 本**を足し ⒝ を 1 本に直した、§2 の 4（KANA）と 8（琴葉茜）の行、
+  §1 の A 群・B 群・C 群の数値（打ち消し線で履歴を残した）、§4 の「数値の出どころ」。
+
+**この席が触っていないもの。**
+
+- `build/installer-build.ps1`（`$ExpectedAppBytes` を含む）＝**1 行も触っていない**。
+  同梱 wav が 65,280 バイト減ったので**測り直しが要る**が、それは主席の仕事（§11-4 の 1・§12-4 と同じ扱い）。
+  司令官の「インストーラーくみなおし」はこの席への指示ではなく、便の続きの話として受けている。
+- `corpus.json`（`calm_20s`／`plain_20s` の本文も `$calibration` もそのまま）・`run_secondary.py`・`verify_wavs.py`。
+- 8 名分の wav と台帳の行。**commit もしていない。**
+- **`N:` の引き渡し木**（`N:\temp_for_claudecode_agents\irodori-ywk\preset-voices\`）＝檔の席は複写していない（**主席が 04:5x に揃えた＝下記**）＝
+  `secondary\co_kana_naisho_secondary.wav` は `494a3adc…`・`vr2_akane_west_secondary.wav` は `27a93475…`＝
+  **どちらも退いた §11（追記 ④）の射**、`presets.json` も `28eab8d7…`（`corpus_texts` が `[expressive_20s, expressive_30s]` の採用前の版）、
+  聴取表の写しも追記 ⑥ を含まない旧版（2026-09-09 実測）。**採った音そのもの**は `candidates\calm_20s\` に在る
+  （`021feb6a…`／`610ec04b…`＝S: と一致）。裁定 111・112・113 は毎回「N: 差し替え済み・hash 一致」まで記帳しているので、
+  この便でも主席が揃えた＝`secondary/<id>_secondary.wav`（2 本・`021feb6a…`／`610ec04b…`）・`secondary/sweep/calm_20s/`・`secondary/run_secondary.result.json`・`presets.json`・聴取表を N: に複写し md5 一致を確認（2026-09-09 04:5x）。
+- **`decisions.md`**＝114 の条は主席がこの便のコミットで起こした（檔の席の実測時点では 113 止まりだった）。
+  この §12-6 と聴取表の追記 ⑥ が **114 の一次記録**で、条を起こすのは主席
+  （`schema`・台帳 `notes`・README が参照している「裁定 114」の行き先は、条が立つまでこの 2 つ）。
+
+**残る問い（司令官へ・席は決めない）。** ほかの 8 本は `expressive_30s` 146 字・cfg 5.0 のままで、
+同梱ボイスは **18.32〜35.76 秒**と長さも調子も不揃い（§11-4 の 4・§12-5 の 4 と同じ問い）。
+**8 本も `calm_20s`＋cfg 7.0 で撃ち直して揃えるか、このまま出すか**は司令官の判断＝
+揃えるなら 8 本の実射と `$ExpectedAppBytes` の再測が要り、**今合格している 8 本が別の射に変わる危険**も負う。
+聴取表 §3 の 0-1 に同じ問いを開いたまま置いた。

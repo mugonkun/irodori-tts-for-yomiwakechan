@@ -14,7 +14,7 @@
     "corpus_texts": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "presets[].secondary.text_id に実際に現れる本文の id（重複を畳んで並べたもの）。本文は行ごとに違いうる＝裁定 112 で 3 行だけ expressive_20s になったので、頭を見ただけで何種類混ざっているかが分かるように make_presets.py が書く。"
+      "description": "presets[].secondary.text_id に実際に現れる本文の id（重複を畳んで並べたもの）。本文は行ごとに違いうる＝裁定 112 で 3 行が expressive_20s になり、裁定 114 でそのうち 2 行が calm_20s に進んだので、頭を見ただけで何種類混ざっているかが分かるように make_presets.py が書く（今は [calm_20s, expressive_20s, expressive_30s] の 3 種）。"
     },
     "notes": { "type": "array", "items": { "type": "string" } },
 
@@ -114,7 +114,7 @@
             "bits": { "type": "integer" },
             "peak_dbfs": { "type": ["number", "null"] },
             "rms_dbfs": { "type": ["number", "null"] },
-            "text_id": { "type": "string", "description": "corpus.json の secondary のどれか（expressive_30s＝146 字 / expressive_20s＝90 字 / greeting_10s＝44 字）。行ごとに違いうる＝裁定 112 で co_kana_naisho・co_ofutonp_kiza・vr2_akane_west の 3 行だけ expressive_20s で撃ち直した（司令官 2026-09-09 逐語「3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。文章を20秒程度に見積もって再生成。」）。台帳の頭の corpus_texts に、実際に使われている id が並ぶ。" },
+            "text_id": { "type": "string", "description": "corpus.json の secondary のどれか（expressive_30s＝146 字・絵文字 5〔😊🎉😢😆🎉＝4 種・🎉 だけ 2 度出る〕・「！」有り / expressive_20s＝90 字・絵文字 4〔😊🎉😢😆＝4 種・重なりなし〕・「！」有り / calm_20s＝94 字・絵文字 1 つ〔😊〕・「！」無し / plain_20s＝89 字・絵文字も「！」も無い平坦 / greeting_10s＝44 字）。このうち plain_20s と greeting_10s は corpus.json に在るだけで、台帳に採用した行は 1 つも無い（plain_20s＝裁定 113 の候補・裁定 114 で不採用。greeting_10s＝予備）。行ごとに違いうる＝裁定 112 で co_kana_naisho・co_ofutonp_kiza・vr2_akane_west の 3 行を expressive_20s で撃ち直し（司令官 2026-09-09 逐語「3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。文章を20秒程度に見積もって再生成。」）、そのうち co_kana_naisho と vr2_akane_west の 2 行が裁定 114 で calm_20s に差し替わった（司令官 2026-09-09 逐語「calm採用。 インストーラーくみなおしとマージを頼む。」）。今の内訳＝expressive_30s 8 行・calm_20s 2 行・expressive_20s 1 行（co_ofutonp_kiza だけ）。台帳の頭の corpus_texts に、実際に使われている id が並ぶ。" },
             "text": { "type": "string", "description": "生成に使った本文（逐語）。text_id と対で行ごとに持つ。" },
             "ref_variant": {
               "type": "string",

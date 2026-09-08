@@ -363,9 +363,13 @@ def main() -> int:
             "上の ref_variant の註に従って差し替えるなら"
             "先に `--cfg-scale-speaker 7.0 --text expressive_20s` で撃ち直すこと"
             "（cfg と本文の両方が是正前＝裁定 111・112）。",
-            "secondary.text_id が expressive_20s の行は本文を約 20 秒に縮めて撃った"
-            "（裁定 112＝3 本とも同じ位置で参照ボイスから離れたため・cfg_scale_speaker 7.0 のまま）。"
-            "expressive_30s の行は 146 字の本文のまま。",
+            "secondary.text_id が expressive_20s の行は co_ofutonp_kiza の 1 行だけ＝本文を約 20 秒（90 字）に"
+            "縮めて撃った（裁定 112 で co_kana_naisho・co_ofutonp_kiza・vr2_akane_west の 3 本を撃ち直したが、"
+            "司令官の検分で合格したのは co_ofutonp_kiza だけ〔裁定 113〕で、残る 2 名は裁定 114 で calm_20s に"
+            "差し替わった・cfg_scale_speaker 7.0 のまま）。expressive_30s の行は 146 字の本文のまま。",
+            "secondary.text_id が calm_20s の行は、絵文字 1 つ・「！」なしの穏やかな本文（94 字）で撃った"
+            "（裁定 113 の候補を司令官が聴いて 114 で採用＝co_kana_naisho・vr2_akane_west。"
+            "cfg_scale_speaker 7.0 のまま）。plain_20s の候補は採用しなかった。",
             "presets[].generated_at は「その行の二次を実際に撃った run」の時刻＝掃引で撃ち直した行は"
             "撃ち直した日が入る（裁定 111 の 3 行は 2026-09-09・ほかの 8 行は 2026-09-05）。"
             "doc の頭の generated_at はこの台帳を組み立てた時刻で、別物。",

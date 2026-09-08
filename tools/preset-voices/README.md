@@ -311,7 +311,7 @@ python .\verify_wavs.py "$W\candidates\plain_20s" --out "$W\logs\verify_candidat
 `<名>` は英数字と `_ . -` の 1〜64 字だけ（`..` や `\` は弾く＝候補置き場の外に書かせない）。
 `--adopt-candidate` と `--candidate` は**同時に渡せない**（取り違え防止）。
 
-**司令官が選んだあと**は、サーバを起こさずに採用へ上げる。
+**司令官が選んだあと**は、サーバを起こさずに採用へ上げる（**下の 3 行は裁定 114 で実際に打った命令**）。
 
 ```powershell
 python .\run_secondary.py --adopt-candidate calm_20s --sweep-ids "co_kana_naisho,vr2_akane_west"
@@ -337,7 +337,12 @@ python .\make_presets.py --copy
 （初回はクリップの門が無く、seed 1238 の潰れた射を候補にしていた＝門を足して撃ち直した。
 初回の記録は `logs\run_secondary.plain_20s.pre-clipfix.log` ほかに残してある。）
 採否は司令官の耳（`docs/preset-voices-listening.md` 追記 ⑤）
-＝**この時点では `voices/presets` は 1 バイトも動いていない**。
+＝~~**この時点では `voices/presets` は 1 バイトも動いていない**~~
+→ **裁定 114（2026-09-09）で `calm_20s` が 2 名とも採用された**（司令官の逐語
+「calm採用。 インストーラーくみなおしとマージを頼む。」）。上の 3 行を打って
+`voices/presets/{co_kana_naisho,vr2_akane_west}.wav` と `voices/presets.json` が動いた
+（**ほかの 9 本は md5 不変**・22 本の測り直しは 21/22 clean＝残る 1 本は未採用の `co_ofutonp_kiza_ref10`）。
+`plain_20s` は不採用のまま `candidates\plain_20s\` に残る。記録＝聴取表 追記 ⑥・設計書 §12-6。
 
 ---
 
@@ -396,10 +401,16 @@ Copy-Item "$W\secondary\co_tsukuyomi_ref10_secondary.wav" "$R\voices\presets\co_
 - `primary.text_10s` / `text_30s`＝一次の素の地の文（感嘆符・絵文字を**入れない**）
 - `secondary.expressive_30s.text`＝二次の本番本文（146 字・「！」「？」と 😊😢😆🎉 を含む・1 文を短く）
 - `secondary.expressive_20s.text`＝**約 20 秒ぶんの本文（90 字・裁定 112）**。感情 5 段。
-  今の同梱ボイスは KANA ないしょばなし・おふとんP きざ・琴葉茜（関西弁）の 3 本がこれ
-- `secondary.calm_20s.text`＝**感情の切り替えを弱めた約 20 秒の本文（94 字・裁定 113）**。絵文字は 😊 が 1 つだけ（後ろ寄り）・「！」無し・`emotion_arc` は 1 段。**候補**＝採用はしていない
-- `secondary.plain_20s.text`＝**感情の切り替えを無くした約 20 秒の本文（89 字・裁定 113）**。絵文字も「！」も無い平坦な地の文・`emotion_arc` は **0 段（空配列）**。**候補**＝採用はしていない
-- `secondary.greeting_10s.text`＝予備の短い挨拶（44 字）
+  今の同梱ボイスは **おふとんP きざ の 1 本だけ**がこれ（~~KANA ないしょばなし・琴葉茜（関西弁）~~ の 2 本は
+  裁定 114 で `calm_20s` に移った）
+- `secondary.calm_20s.text`＝**感情の切り替えを弱めた約 20 秒の本文（94 字・裁定 113）**。絵文字は 😊 が 1 つだけ（後ろ寄り）・「！」無し・`emotion_arc` は 1 段。
+  **裁定 114 で採用**（司令官 2026-09-09 逐語「calm採用。 インストーラーくみなおしとマージを頼む。」）＝
+  今の同梱ボイスは **KANA ないしょばなし・琴葉茜（関西弁）の 2 本**がこれ（seed 1234・cfg 7.0・20.08／20.48 s）
+- `secondary.plain_20s.text`＝**感情の切り替えを無くした約 20 秒の本文（89 字・裁定 113）**。絵文字も「！」も無い平坦な地の文・`emotion_arc` は **0 段（空配列）**。
+  **裁定 114 で採用しなかった**＝同梱ボイスに 1 本も無い。**檔は消していない**＝候補 2 本は
+  `build/out/preset-work/candidates/plain_20s/<id>_secondary.wav`（掃引の全射 7 本は `…/plain_20s/sweep/`）と
+  N: の写しに残してあり、A/B で聴き比べられる。本文も `corpus.json` に残す
+- `secondary.greeting_10s.text`＝予備の短い挨拶（44 字）。**未使用**（採用した行は無い）
 - `irodori_params`＝`num_steps`（既定 40）・`seed`（既定 1234）
 
 **秒数の目安。** Irodori の読み速は実測**約 4.6 字/秒**（話者ごとに 4.1〜6.1 字/秒と幅がある）。
@@ -419,9 +430,18 @@ VOICEVOX／COEIROINK より遅いので、二次本文は一次より短く書�
 3. 撃って実測し、**目標から外れていたら 1 句だけ足し引きして撃ち直す**。
    `$calibration` に**両方の実測**を残す（見積りと実測がずれた幅が次の便の目盛りになる）。
 4. `presets.json.schema` の `secondary.text_id` の説明に id を足す（**enum は無い**ので値では弾かれない）。
+   併せて `make_presets.py` の `notes` に 1 行（その本文で撃った行がどれか・なぜそうしたか）。
    **候補（§4-3）のうちは 4 を打たない**＝台帳にその id の行がまだ 1 つも無いので、説明だけ先に増やすと
    「使っている本文」の一覧が実物とずれる。**採用（`--adopt-candidate`）のときに一緒に足す。**
-   裁定 113 の `calm_20s`／`plain_20s` は 1〜3 まで済み・**4 は未了**（候補のままなので正しい状態）。
+   ~~裁定 113 の `calm_20s`／`plain_20s` は 1〜3 まで済み・**4 は未了**（候補のままなので正しい状態）。~~
+   → **裁定 114（2026-09-09）で `calm_20s` を採用したので 4 まで打った。**説明には
+   **`calm_20s`（採用・2 行）と `plain_20s`（corpus に在るが採用した行は無い）の別を書く**
+   ＝「corpus に在る」と「台帳が使っている」は違う、が読み手に伝わるようにする。
+
+**本文の世代は行ごとに混ざりうる（今そうなっている）。** 同梱 11 本の内訳は
+`expressive_30s` 8 本（cfg 5.0）・`expressive_20s` 1 本（きざ・cfg 7.0）・`calm_20s` 2 本（KANA・琴葉茜・cfg 7.0）。
+台帳の頭の `corpus_texts` に実際に使われている id が並ぶので、**そこを見れば何種類混ざっているかが分かる**。
+揃えるかどうかは司令官の判断（`docs/preset-voices-listening.md` §3 の 0-1 に開いたまま置いてある）。
 
 ---
 
