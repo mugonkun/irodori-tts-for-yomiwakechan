@@ -192,7 +192,7 @@ ready 待ち 36.1 s・暖機 2.4 s・14 本の生成で約 7 分。
 
 形は `tools/preset-voices/presets.json.schema`（JSON Schema 2020-12）。1 名あたり：
 
-`id`（ASCII）・`display_name`（日本語・本体に見せる名）・`engine`・`engine_speaker`・`speaker_uuid`・`style{name,id}`・`status`（done / pending / skipped）・`primary{檔名・秒・Hz・ch・bit・本文 id・peak・rms}`・`secondary{檔名・秒・Hz・ch・bit・peak・rms・本文 id・**本文の逐語**・ref_variant・irodori{num_steps,seed}・server{checkpoint,precision,port}・elapsed}`・`rights_note`・`rights_confirmed_by`・`rights_confirmed_at`・`rights_source_fetched`・`generated_at`。
+`id`（ASCII）・`display_name`（日本語・本体に見せる名）・`engine`・`engine_speaker`・`speaker_uuid`・`style{name,id}`・`status`（done / pending / skipped）・`primary{檔名・秒・Hz・ch・bit・本文 id・peak・rms}`・`secondary{檔名・秒・Hz・ch・bit・peak・rms・本文 id・**本文の逐語**・ref_variant・irodori{num_steps,seed,trim_tail?,cfg_scale_speaker?,seed_sweep?}・server{checkpoint,precision,port,device}・elapsed}`（`?` は在るときだけ現れる欄。`trim_tail`・`seed_sweep` は decisions 39、`cfg_scale_speaker` は §10）・`rights_note`・`rights_confirmed_by`・`rights_confirmed_at`・`rights_source_fetched`・`generated_at`。
 
 `status` が `pending` / `skipped` の 5 名も**台帳には最初から載せる**（`primary`・`secondary` は `null`）。12 名の全体像が台帳だけで分かるようにするため。
 
@@ -305,3 +305,74 @@ Python 側の口は `tools/preset-voices/gen_voiceroid2.py`。他エンジンの
 3. **30 s／10 s どちらの参照を採用するか**＝両方生成済み。**聴いて決める**。席は音を聴けないので、司令官の試聴が要る。
 4. **規約原文の取得と `licenses/` 台帳**（§7）＝別便へ申し送り。
 5. **Radeon 機の期限**＝2026-09-07（decisions 19・26）。1〜3 はそれまでに。
+
+---
+
+## 10. 追補（2026-09-09）— 参照ボイスへの寄せ具合 `cfg_scale_speaker`（裁定 111）
+
+司令官の検分（2026-09-09）＝逐語「**サンプルボイスをよく検分してなかった。２次生成ボイスが途中から参照ボイスに
+なってないね。CFG Scale Speaker を2ほど上げて再生成を頼む。co_kana_naisho / co_ofutonp_kiza / vr2_akane_west
+出来たら検分するので、検分合格で次に進もう**」。
+
+**何の口か。** `cfg_scale_speaker`＝上流 `SamplingRequest` の欄で、**参照ボイス（話者条件）への誘導の強さ**。
+`POST /v1/audio/speech` の `irodori` 欄にそのまま載る
+（`upstream/Irodori-TTS-Server/src/irodori_openai_tts/app.py` が `opts.cfg_scale_speaker` →
+`_extra(payload, "cfg_scale_speaker")` → 設定既定 の順に解決する）。
+
+| 何 | 値 | 出どころ |
+|---|---|---|
+| 上流の既定 | **5.0** | `upstream/Irodori-TTS-Server/src/irodori_openai_tts/config.py:54` `default_cfg_scale_speaker` |
+| 2026-09-05 に撃った 11 本 | **渡していない**＝既定 5.0 が効いた | 台帳に `cfg_scale_speaker` の欄が無い＝その意味 |
+| 2026-09-09 に撃ち直した 3 本 | **7.0**（＝5.0＋2） | 台帳 `secondary.irodori.cfg_scale_speaker: 7.0` |
+
+**道具の側。** `run_secondary.py` に `--cfg-scale-speaker <値>` を足した（既定 `None`＝**渡さない**）。
+渡した run は、通常経路も掃引経路も（`trim_tail=false` の一巡も）全射の `irodori` 欄に同じ値を載せる。
+**暖機の 1 発（`no_ref`）には載せない**（参照ボイスを使わない射なので意味が無い）。
+
+**どこに残るか（掃引 run の記録の在処）。**
+
+| 何 | 檔・欄 |
+|---|---|
+| 採用した射の値 | `logs/run_secondary.result.json` の `items[].request.irodori.cfg_scale_speaker` |
+| 掃引の全射の値 | 同 `seed_sweep.results[].cfg_scale_speaker` と `…[].attempts[].cfg_scale_speaker`（`null`＝渡していない＝上流既定 5.0） |
+| その run に渡した既定 | その run 限りの `logs/run_secondary.sweep.json` の `irodori_params`、および畳み込み先の `seed_sweep.irodori_params` |
+
+**畳み込み先の top-level `irodori_params`（と `generated_at`・`server_log`）は差し替えない。**
+あれは「最初に 22 本を撃った run」の素性で、掃引で撃ち直した数本のものではないから
+（`merge_result()`＝`tools/preset-voices/run_secondary.py`）。top-level に新しい値を混ぜると、
+`make_presets.py` の既定（`par`）経由で**撃っていない行にまで新しい値が被る**筋ができる。
+代わりに、畳み込む行に自分の run の `generated_at`／`server_log` を持たせ、`make_presets.py` は
+**行ごとの** `generated_at`（＝その 1 本を実際に撃った時刻）と、その run の server ログから拾った実 `device` を書く
+（裁定 111 の付帯で直した。直す前は撃ち直した 3 行が 2026-09-05 を名乗っていた）。
+`server.hf_checkpoint`・`precision`・`port` は畳み込み先の `/health` の写しのままだが、
+2026-09-09 の run の `/health` も同値（v4.1-Small・bf16・8090）。
+
+`make_presets.py` は各射の `request.irodori` から
+`num_steps`・`seed`・`trim_tail` と同じ扱いで `cfg_scale_speaker` を台帳へ写す。
+**無い行に既定値 5.0 を書き足すことはしない**＝「撃った時に明示していない」という事実をそのまま残し、
+台帳の `notes` に「無い行は上流既定 5.0 で撃った」と 1 行で断ってある。形は `presets.json.schema` の
+`secondary.irodori.properties.cfg_scale_speaker`（`type: number`）。
+
+**実射（2026-09-09・私設 8090・Radeon 8060S・bf16・v4.1-Small）。**
+`--sweep-seed --sweep-ids "co_kana_naisho,co_ofutonp_kiza,vr2_akane_west" --cfg-scale-speaker 7.0`
+＝seed 1234 起点・最大 8・末尾判定は 3 条件のまま。10 射・全体 116 s（読込 40.6 s・暖機 3.0 s・1 射 5.4〜9.9 s）。
+採用は **KANA seed 1235（2 射目）・おふとんP きざ seed 1239（6 射目）・琴葉茜 seed 1235（2 射目）**で
+いずれも `trim_tail=true`・末尾 `clean`。**秒数は 3 本とも旧版と 1/100 秒まで同じ**（33.28／30.60／34.92 s）。
+旧版（cfg 5.0）は `build/out/preset-work/secondary/cfg5/` と N: の写しに残した＝A/B 用。
+**採否は司令官の耳**（`docs/preset-voices-listening.md` 追記 ③）。合格するまで次へ進まない。
+
+**申し送り（合格したあとの本体側）。**
+
+1. **潜在は自動で作り直される＝鍵の確認は要らない。** 潜在の新旧は檔名ではなく**中身**で決まる。
+   `server/ywk_server.py` の `_sources_match()`（:2597-2609）が sidecar `<stem>.json` に記録した
+   **各 source wav の sha256** を今の檔の `file_digest()` と突き合わせ、違えば `latent_status()`（:2663-2666）が
+   stale を返す。設計註（:2420-2424）逐語＝「*the sha256 of every source wav plus the three encode parameters.
+   A changed wav flips ``latent_stale`` in the speaker list and the next run rebuilds.*」。
+   ＝入れ直しのあと**古い（cfg 5.0 の）潜在を使い続ける恐れは無い**。目視するのは
+   `GET /ywk/voices` の `latent_stale` がこの 3 名で **true** に立つこと（事前計算のあとは false に戻ること）だけ。
+2. **この 3 名の 10 s 参照版（`ref_10s_file`）は cfg 5.0 のまま**＝掃引は採用版（30 s 参照）だけを撃つ。
+   台帳 `notes` の「聴いて良い方に差し替えてよい」に従って 10 s 版へ差し替えるなら、**先に 7.0 で撃ち直すこと**
+   （そうしないと司令官が是正を命じた当の値が黙って 5.0 に戻る）。
+3. `build/installer-build.ps1` の `$ExpectedAppBytes` は主席の担当（この席は編集も `installer-build` の実行もしない）。
+   3 本とも旧版と**同じバイト数**（3,194,924／2,937,644／3,352,364）なので、アプリ木の総バイト数は動かない見込み
+   ＝実際は主席の再計測で確かめること。

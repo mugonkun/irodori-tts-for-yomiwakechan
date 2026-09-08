@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-05T01:18:57+0900",
+  "generated_at": "2026-09-09T02:04:49+0900",
   "corpus": "tools/preset-voices/corpus.json",
   "notes": [
     "decisions.md 17・18・26・27 が正典。設計＝docs/design/ben-p-preset-voices.md。",
@@ -10,7 +10,9 @@
     "rights_source_fetched は全行 false＝規約原文は席が未取得。司令官の確認のみ（decisions 18）。",
     "ref_variant は 30s／10s の両方を生成済み。聴いて良い方に差し替えてよい（ref_10s_file が対の檔）。",
     "secondary.md5 / secondary.size_bytes は voices/presets/<id>.wav の実檔から測った値（make_presets.py が --copy の複写後に測る）。N: の写しとの突合はこの md5 で行う。",
-    "secondary.tail は 3 条件の末尾判定（decisions 39）＝⒜ 相対 Δ≦−20 dB・⒝ 絶対 ≦−40 dBFS・⒞ 末尾 300 ms を 25 ms 刻みで見て最後の 100 ms に +0.5 dB を超える立ち上がりが無い（−60 dBFS 以下は無音扱い）。⒜ だけの旧規則は、いったん無音に落ちてから鳴り出して切れる檔をΔ=−20.19 dB の縁で通してしまった（月読アイ）。規則の逐語は secondary.tail.rule に入る。"
+    "secondary.tail は 3 条件の末尾判定（decisions 39）＝⒜ 相対 Δ≦−20 dB・⒝ 絶対 ≦−40 dBFS・⒞ 末尾 300 ms を 25 ms 刻みで見て最後の 100 ms に +0.5 dB を超える立ち上がりが無い（−60 dBFS 以下は無音扱い）。⒜ だけの旧規則は、いったん無音に落ちてから鳴り出して切れる檔をΔ=−20.19 dB の縁で通してしまった（月読アイ）。規則の逐語は secondary.tail.rule に入る。",
+    "secondary.irodori.cfg_scale_speaker が無い行は上流既定 5.0 で撃った（2026-09-05）。在る行はその値で撃った（裁定 111＝co_kana_naisho・co_ofutonp_kiza・vr2_akane_west を 7.0 で撃ち直し）。ただしこの 3 名の ref_10s_file（10 s 参照版）は撃ち直していない＝cfg 5.0 の射のままなので、上の ref_variant の註に従って差し替えるなら先に 7.0 で撃ち直すこと。",
+    "presets[].generated_at は「その行の二次を実際に撃った run」の時刻＝掃引で撃ち直した行は撃ち直した日が入る（裁定 111 の 3 行は 2026-09-09・ほかの 8 行は 2026-09-05）。doc の頭の generated_at はこの台帳を組み立てた時刻で、別物。"
   ],
   "presets": [
     {
@@ -369,14 +371,14 @@
       },
       "secondary": {
         "file": "co_kana_naisho.wav",
-        "md5": "ef329c245e6ffeb3e99c85c8d5c5760a",
+        "md5": "cfb2786f8d7108dff76f444378cccc8a",
         "size_bytes": 3194924,
         "duration_s": 33.28,
         "sample_rate": 48000,
         "channels": 1,
         "bits": 16,
         "peak_dbfs": 0.0,
-        "rms_dbfs": -19.04,
+        "rms_dbfs": -19.23,
         "text_id": "expressive_30s",
         "text": "みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉",
         "ref_variant": "30s",
@@ -384,10 +386,17 @@
         "irodori": {
           "num_steps": 40,
           "seed": 1235,
+          "cfg_scale_speaker": 7.0,
           "seed_sweep": {
             "seeds": [
               1234,
-              1235
+              1235,
+              1236,
+              1237,
+              1238,
+              1239,
+              1240,
+              1241
             ],
             "seeds_tried": [
               1234,
@@ -401,8 +410,8 @@
         },
         "tail": {
           "window_ms": 50.0,
-          "tail_rms_dbfs": -72.81,
-          "tail_delta_db": -53.77,
+          "tail_rms_dbfs": -72.97,
+          "tail_delta_db": -53.74,
           "margin_db": 20.0,
           "delta_clean": true,
           "abs_dbfs": -40.0,
@@ -415,18 +424,18 @@
           "rise_db": null,
           "rise_clean": true,
           "profile_dbfs": [
-            -77.09,
-            -76.72,
-            -76.64,
-            -73.58,
-            -71.71,
-            -72.35,
-            -71.21,
-            -71.85,
-            -83.37,
-            -80.28,
-            -72.87,
-            -72.74
+            -75.82,
+            -72.45,
+            -71.7,
+            -72.23,
+            -71.73,
+            -72.43,
+            -71.15,
+            -71.79,
+            -83.2,
+            -80.11,
+            -73.2,
+            -72.76
           ],
           "fail_reasons": [],
           "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
@@ -440,9 +449,9 @@
           "device": "cuda",
           "device_configured": "auto"
         },
-        "elapsed_s": 5.85
+        "elapsed_s": 6.48
       },
-      "generated_at": "2026-09-05T00:12:38+0900"
+      "generated_at": "2026-09-09T01:38:43+0900"
     },
     {
       "id": "co_mana_isshoukenmei",
@@ -563,14 +572,14 @@
       },
       "secondary": {
         "file": "co_ofutonp_kiza.wav",
-        "md5": "3dbf8574a43906903aaf9a20ad1a768d",
+        "md5": "cd37a2ae51efef292ae1d31ca972dad1",
         "size_bytes": 2937644,
         "duration_s": 30.6,
         "sample_rate": 48000,
         "channels": 1,
         "bits": 16,
-        "peak_dbfs": 0.0,
-        "rms_dbfs": -19.94,
+        "peak_dbfs": -0.0,
+        "rms_dbfs": -19.95,
         "text_id": "expressive_30s",
         "text": "みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉",
         "ref_variant": "30s",
@@ -578,6 +587,7 @@
         "irodori": {
           "num_steps": 40,
           "seed": 1239,
+          "cfg_scale_speaker": 7.0,
           "seed_sweep": {
             "seeds": [
               1234,
@@ -585,7 +595,9 @@
               1236,
               1237,
               1238,
-              1239
+              1239,
+              1240,
+              1241
             ],
             "seeds_tried": [
               1234,
@@ -603,8 +615,8 @@
         },
         "tail": {
           "window_ms": 50.0,
-          "tail_rms_dbfs": -74.11,
-          "tail_delta_db": -54.17,
+          "tail_rms_dbfs": -73.76,
+          "tail_delta_db": -53.81,
           "margin_db": 20.0,
           "delta_clean": true,
           "abs_dbfs": -40.0,
@@ -617,18 +629,18 @@
           "rise_db": null,
           "rise_clean": true,
           "profile_dbfs": [
-            -66.53,
-            -79.57,
-            -76.17,
-            -72.53,
-            -71.27,
-            -71.45,
-            -79.81,
-            -80.57,
-            -73.21,
-            -72.36,
-            -73.83,
-            -74.41
+            -67.27,
+            -81.05,
+            -75.34,
+            -72.34,
+            -71.29,
+            -71.43,
+            -79.73,
+            -80.42,
+            -72.7,
+            -72.09,
+            -73.41,
+            -74.13
           ],
           "fail_reasons": [],
           "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
@@ -642,9 +654,9 @@
           "device": "cuda",
           "device_configured": "auto"
         },
-        "elapsed_s": 5.42
+        "elapsed_s": 5.4
       },
-      "generated_at": "2026-09-05T00:12:38+0900"
+      "generated_at": "2026-09-09T01:38:43+0900"
     },
     {
       "id": "co_ofutonp_normal_v2",
@@ -789,14 +801,14 @@
       },
       "secondary": {
         "file": "vr2_akane_west.wav",
-        "md5": "d42b02df8615c49250d4cea46e33b534",
+        "md5": "c8e1e619c11efad11f84c51bb63f3e46",
         "size_bytes": 3352364,
         "duration_s": 34.92,
         "sample_rate": 48000,
         "channels": 1,
         "bits": 16,
-        "peak_dbfs": -0.0,
-        "rms_dbfs": -16.69,
+        "peak_dbfs": 0.0,
+        "rms_dbfs": -16.59,
         "text_id": "expressive_30s",
         "text": "みなさん、こんにちは！いい知らせがあるんです😊 新しい企画が、ついに完成しました🎉 ええっ、もう出来たの？と驚きましたか？正直、何度もくじけそうになりました😢 つらい日もありました。でも、ここまで来られました。さあ、本番ですよ！準備はいいですか？一緒に楽しみましょう😆 最高の一日になります🎉",
         "ref_variant": "30s",
@@ -804,10 +816,17 @@
         "irodori": {
           "num_steps": 40,
           "seed": 1235,
+          "cfg_scale_speaker": 7.0,
           "seed_sweep": {
             "seeds": [
               1234,
-              1235
+              1235,
+              1236,
+              1237,
+              1238,
+              1239,
+              1240,
+              1241
             ],
             "seeds_tried": [
               1234,
@@ -821,8 +840,8 @@
         },
         "tail": {
           "window_ms": 50.0,
-          "tail_rms_dbfs": -73.42,
-          "tail_delta_db": -56.73,
+          "tail_rms_dbfs": -73.36,
+          "tail_delta_db": -56.77,
           "margin_db": 20.0,
           "delta_clean": true,
           "abs_dbfs": -40.0,
@@ -836,17 +855,17 @@
           "rise_clean": true,
           "profile_dbfs": [
             -71.97,
-            -71.74,
-            -71.99,
-            -71.57,
-            -71.11,
-            -71.47,
-            -72.52,
-            -71.73,
-            -72.28,
-            -71.23,
-            -71.86,
-            -75.89
+            -71.69,
+            -71.93,
+            -71.53,
+            -71.1,
+            -71.46,
+            -72.39,
+            -71.69,
+            -72.24,
+            -71.19,
+            -71.82,
+            -75.76
           ],
           "fail_reasons": [],
           "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
@@ -860,9 +879,9 @@
           "device": "cuda",
           "device_configured": "auto"
         },
-        "elapsed_s": 5.64
+        "elapsed_s": 5.67
       },
-      "generated_at": "2026-09-05T00:12:38+0900"
+      "generated_at": "2026-09-09T01:38:43+0900"
     },
     {
       "id": "vr2_yoshida",

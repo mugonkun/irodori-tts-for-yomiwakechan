@@ -126,6 +126,10 @@
                 "num_steps": { "type": "integer", "description": "decisions 10＝既定 40。" },
                 "seed": { "type": "integer", "description": "再現のため固定。話者ごとに違うことがある＝末尾切れの是正（decisions 39）で seed を掃引して採った値。" },
                 "trim_tail": { "type": "boolean", "description": "上流 SamplingRequest.trim_tail（既定 true＝潜在の平坦点で末尾を切る）。seed 掃引で clean が出ず false にした話者だけ現れる。" },
+                "cfg_scale_speaker": {
+                  "type": "number",
+                  "description": "参照ボイス（話者）への寄せ具合＝上流 SamplingRequest.cfg_scale_speaker。欄が無い行は撃った時に明示していない＝上流既定 5.0（Irodori-TTS-Server config.py default_cfg_scale_speaker）で撃った。裁定 111＝司令官「２次生成ボイスが途中から参照ボイスになってないね。CFG Scale Speaker を 2 ほど上げて再生成を頼む」（2026-09-09）により、KANA ないしょばなし・おふとんP きざ・琴葉茜（関西弁）の 3 名だけ 7.0 で撃ち直した。"
+                },
                 "seed_sweep": {
                   "type": "object",
                   "description": "decisions 39 の seed 掃引の記録（掃引して採った話者だけ）。",

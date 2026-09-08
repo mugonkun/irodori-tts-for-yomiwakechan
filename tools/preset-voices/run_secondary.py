@@ -22,14 +22,28 @@ seed 掃引モード（--sweep-seed・decisions 39）:
   ⒞ 末尾 300 ms を 25 ms 刻みで見て最後の 100 ms に立ち上がりが無い）をそのまま使う。
   起点を変えたいときは --sweep-seed-start（例 1235＝直前の採用 seed の次から）。
 
+参照ボイスへの寄せ具合（--cfg-scale-speaker・裁定 111）:
+  上流 SamplingRequest.cfg_scale_speaker＝参照ボイス（話者）の誘導の強さ。渡さなければ
+  上流既定 5.0（`upstream/Irodori-TTS-Server/src/irodori_openai_tts/config.py:54`
+  default_cfg_scale_speaker）が効く。値を渡すと全射の irodori 欄に載せる（暖機の no_ref は除く）。
+  司令官 2026-09-09「２次生成ボイスが途中から参照ボイスになってないね。CFG Scale Speaker を
+  2 ほど上げて再生成を頼む」＝3 本（KANA ないしょばなし・おふとんP きざ・琴葉茜 関西弁）を
+  5.0＋2＝7.0 で撃ち直した。
+  値の残り先は 4 つ＝⑴ 採用した射の items[].request.irodori、⑵ 掃引の行と attempts の
+  cfg_scale_speaker（None＝渡していない＝上流既定 5.0）、⑶ その run の logs/run_secondary.sweep.json
+  の irodori_params、⑷ 畳み込み先 run_secondary.result.json の seed_sweep.irodori_params。
+  畳み込み先の **top-level** irodori_params は最初に 22 本を撃った run のままで差し替えない
+  （撃っていない行の既定にまで新しい値が被らないように＝merge_result の註）。
+
 使い方:
     python run_secondary.py [--work <preset-work>] [--port 8090] [--also-ref10]
                             [--text expressive_30s|greeting_10s] [--only <id>]
                             [--ready-timeout 600] [--keep-server]
+                            [--cfg-scale-speaker 7.0]
 
     python run_secondary.py --sweep-seed [--sweep-ids id1,id2,...]
                             [--sweep-max-seeds 8] [--sweep-seed-start 1234]
-                            [--no-trim-fallback]
+                            [--no-trim-fallback] [--cfg-scale-speaker 7.0]
 """
 
 from __future__ import annotations
@@ -257,6 +271,14 @@ def merge_result(logs: Path, sweep_report: dict) -> Path:
     voice が一致する項目だけ差し替え、掃引の記録を seed_sweep として足す。
     seed_sweep.results も voice ごとに畳む（前回の掃引で採った話者の記録を消さない）。
     各行は自分の run の seeds と規則を持つので、run をまたいでも読める。
+
+    畳み込み先の top-level（generated_at・server_log・irodori_params）は**触らない**
+    ＝あれは「最初に 22 本を撃った run」の素性で、掃引で撃ち直した数本のものではない。
+    そのままだと撃ち直した行が古い日付を名乗るので（裁定 111 の付帯）、
+    畳み込む item に自分の run の generated_at・server_log を持たせる
+    （make_presets.py が行ごとの generated_at にこれを使う）。
+    掃引 run の irodori_params は seed_sweep の下に置く＝top-level には混ぜない
+    （混ぜると撃っていない行の既定にまで新しい値が被る）。
     """
     rp = logs / "run_secondary.result.json"
     base: dict = {}
@@ -266,6 +288,10 @@ def merge_result(logs: Path, sweep_report: dict) -> Path:
         base = dict(sweep_report)
         base["items"] = []
     adopted = {i["voice"]: i for i in sweep_report.get("items", []) if "error" not in i}
+    for it in adopted.values():
+        # この射を撃ったのは「今の run」＝行に自分の日付と server ログを持たせる。
+        it["generated_at"] = sweep_report.get("generated_at")
+        it["server_log"] = sweep_report.get("server_log")
     items = []
     for it in base.get("items", []):
         items.append(adopted.pop(it.get("voice"), it))
@@ -281,6 +307,10 @@ def merge_result(logs: Path, sweep_report: dict) -> Path:
 
     base["seed_sweep"] = {
         "generated_at": sweep_report["generated_at"],
+        "server_log": sweep_report.get("server_log"),
+        # この掃引 run に渡した既定（cfg_scale_speaker を渡した run ならここに載る）。
+        # top-level の irodori_params は最初の run のものなので差し替えない。
+        "irodori_params": sweep_report.get("irodori_params"),
         "seeds": sweep_report["seeds"],
         "tail_window_ms": sweep_report["tail_window_ms"],
         "tail_margin_db": sweep_report["tail_margin_db"],
@@ -311,6 +341,9 @@ def main() -> int:
     ap.add_argument("--only", default=None, help="この id だけ生成する")
     ap.add_argument("--ready-timeout", type=float, default=600.0)
     ap.add_argument("--keep-server", action="store_true", help="終了時にサーバを落とさない（調査用）")
+    ap.add_argument("--cfg-scale-speaker", type=float, default=None,
+                    help="参照ボイス（話者）の誘導の強さ。既定＝渡さない＝上流既定 5.0。"
+                         "渡すと全射の irodori 欄に載る（裁定 111 は 7.0）")
     # ---- seed 掃引（decisions 39）
     ap.add_argument("--sweep-seed", action="store_true",
                     help="末尾が切れている採用版について seed を掃引し、clean になった最初の seed を採る")
@@ -353,7 +386,19 @@ def main() -> int:
     corpus = json.loads(Path(args.corpus).read_text(encoding="utf-8"))
     sec = corpus["secondary"][args.text]
     text = sec["text"]
-    par = corpus["irodori_params"]
+    # corpus の既定を壊さないよう写しを持つ。--cfg-scale-speaker を渡した run では
+    # その値を台帳の irodori_params にも残す（裁定 111）。渡さない run は欄ごと現れない
+    #＝「上流既定 5.0 で撃った」の意（値を捏造しない）。
+    par = dict(corpus["irodori_params"])
+    if args.cfg_scale_speaker is not None:
+        par["cfg_scale_speaker"] = args.cfg_scale_speaker
+
+    def irodori_body(seed: int) -> dict:
+        """1 射の irodori 欄を組む（暖機の no_ref では使わない）。"""
+        body = {"num_steps": par["num_steps"], "seed": seed}
+        if args.cfg_scale_speaker is not None:
+            body["cfg_scale_speaker"] = args.cfg_scale_speaker
+        return body
 
     ids = [i for i in PRIMARY_IDS if args.only in (None, i)]
     if not ids:
@@ -375,6 +420,12 @@ def main() -> int:
                 return 0
         print(f"[sweep] 対象 {len(ids)} 本: {', '.join(ids)}", flush=True)
         print(f"[sweep] seed: {seeds}", flush=True)
+        print(
+            "[sweep] cfg_scale_speaker: "
+            + (f"{args.cfg_scale_speaker}（明示）" if args.cfg_scale_speaker is not None
+               else "渡さない（上流既定 5.0）"),
+            flush=True,
+        )
 
     # ---- 1. 参照ボイスを voices_dir に ASCII 檔名で置く
     refs: dict[str, list[str]] = {}
@@ -486,7 +537,7 @@ def main() -> int:
                     if adopted:
                         break
                     for seed in seeds:
-                        irodori = {"num_steps": par["num_steps"], "seed": seed}
+                        irodori = irodori_body(seed)
                         if not trim_tail:
                             irodori["trim_tail"] = False
                         payload = {
@@ -504,7 +555,12 @@ def main() -> int:
                         except Exception as exc:  # noqa: BLE001 — 1 射の失敗で掃引を止めない
                             print(f"[NG]   {voice_id} seed={seed} trim_tail={trim_tail}: {exc}", flush=True)
                             attempts.append(
-                                {"seed": seed, "trim_tail": trim_tail, "error": str(exc)[:1000]}
+                                {
+                                    "seed": seed,
+                                    "trim_tail": trim_tail,
+                                    "cfg_scale_speaker": args.cfg_scale_speaker,
+                                    "error": str(exc)[:1000],
+                                }
                             )
                             rc = 1
                             continue
@@ -515,6 +571,9 @@ def main() -> int:
                             {
                                 "seed": seed,
                                 "trim_tail": trim_tail,
+                                # 射ごとに何で撃ったかを残す（None＝渡していない＝上流既定 5.0）。
+                                # 檔名（<id>_seed<N>.wav）には cfg が入らないので、ここが唯一の素性。
+                                "cfg_scale_speaker": args.cfg_scale_speaker,
                                 "file": tmp.name,
                                 "bytes": len(wav),
                                 "elapsed_s": round(elapsed, 2),
@@ -562,6 +621,7 @@ def main() -> int:
                     "voice": voice_id,
                     # この行を撃った run の条件（run をまたいで畳んでも読めるように行に持たせる）
                     "seeds": seeds,
+                    "cfg_scale_speaker": args.cfg_scale_speaker,
                     "tail_rule": _tail_rule_text(**tp),
                     "adopted": bool(adopted),
                     "adopted_seed": adopted["seed"] if adopted else None,
@@ -612,7 +672,7 @@ def main() -> int:
                     "input": text,
                     "voice": voice_id,
                     "response_format": par["response_format"],
-                    "irodori": {"num_steps": par["num_steps"], "seed": par["seed"]},
+                    "irodori": irodori_body(par["seed"]),
                 }
                 t0 = time.perf_counter()
                 try:

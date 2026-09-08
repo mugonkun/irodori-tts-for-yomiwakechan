@@ -103,20 +103,25 @@ def _load(p: Path) -> dict | None:
     return json.loads(p.read_text(encoding="utf-8"))
 
 
-def _actual_device(runsec: dict) -> str | None:
-    """実 device をサーバのログから拾う。
-
-    /health の model.model_device は *設定値* なので既定では "auto" のまま返る（実射で確認）。
-    実際に使われた device は runtime の `[runtime] start synthesize model_device=<x> ...` にしか
-    出ない。ROCm でも torch は "cuda" と名乗る。ログが無ければ None。
-    """
-    log = runsec.get("server_log")
+def _device_from_log(log: str | None) -> str | None:
+    """サーバのログ 1 檔から実 device を拾う（無ければ None）。"""
     if not log or not Path(log).is_file():
         return None
     for line in Path(log).read_text("utf-8", "replace").splitlines():
         if "start synthesize" in line and "model_device=" in line:
             return line.split("model_device=", 1)[1].split()[0]
     return None
+
+
+def _actual_device(runsec: dict) -> str | None:
+    """実 device をサーバのログから拾う。
+
+    /health の model.model_device は *設定値* なので既定では "auto" のまま返る（実射で確認）。
+    実際に使われた device は runtime の `[runtime] start synthesize model_device=<x> ...` にしか
+    出ない。ROCm でも torch は "cuda" と名乗る。ログが無ければ None。
+    掃引で撃ち直した行は自分の run の server_log を持つので、そちらを先に見る（下の呼び口）。
+    """
+    return _device_from_log(runsec.get("server_log"))
 
 
 def _md5(p: Path) -> str:
@@ -241,6 +246,10 @@ def main() -> int:
             }
             if "trim_tail" in req_ir:
                 irodori["trim_tail"] = req_ir["trim_tail"]
+            # 参照ボイスへの寄せ具合（裁定 111）。撃った時に明示した行だけ載せる。
+            # 無い行は「上流既定 5.0 で撃った」の意＝ここで値を捏造しない。
+            if "cfg_scale_speaker" in req_ir:
+                irodori["cfg_scale_speaker"] = req_ir["cfg_scale_speaker"]
             row = sweep_rows.get(voice_key)
             if row and row.get("adopted"):
                 # seed 列は「その話者を撃った run のもの」を採る。掃引を 2 度回すと
@@ -302,12 +311,15 @@ def main() -> int:
                     "port": runsec.get("port"),
                     # device＝サーバログの `start synthesize model_device=` から拾った実 device。
                     # device_configured＝/health が返す設定値（既定 "auto"）。両方残す。
-                    "device": device,
+                    # 掃引で撃ち直した行は自分の run の server_log を持つ（merge_result が持たせる）。
+                    "device": _device_from_log(s.get("server_log")) or device,
                     "device_configured": health.get("model", {}).get("model_device"),
                 },
                 "elapsed_s": s.get("elapsed_s"),
             }
-            entry["generated_at"] = runsec.get("generated_at")
+            # 行ごとの generated_at は「その 1 本を実際に撃った run」の時刻。掃引で撃ち直した行は
+            # merge_result が item に持たせた値を採る（無い行＝畳み込み先の run で撃った行は top-level）。
+            entry["generated_at"] = s.get("generated_at") or runsec.get("generated_at")
 
         presets.append(entry)
 
@@ -330,6 +342,13 @@ def main() -> int:
             "⒞ 末尾 300 ms を 25 ms 刻みで見て最後の 100 ms に +0.5 dB を超える立ち上がりが無い"
             "（−60 dBFS 以下は無音扱い）。⒜ だけの旧規則は、いったん無音に落ちてから鳴り出して切れる檔を"
             "Δ=−20.19 dB の縁で通してしまった（月読アイ）。規則の逐語は secondary.tail.rule に入る。",
+            "secondary.irodori.cfg_scale_speaker が無い行は上流既定 5.0 で撃った（2026-09-05）。"
+            "在る行はその値で撃った（裁定 111＝co_kana_naisho・co_ofutonp_kiza・vr2_akane_west を 7.0 で撃ち直し）。"
+            "ただしこの 3 名の ref_10s_file（10 s 参照版）は撃ち直していない＝cfg 5.0 の射のままなので、"
+            "上の ref_variant の註に従って差し替えるなら先に 7.0 で撃ち直すこと。",
+            "presets[].generated_at は「その行の二次を実際に撃った run」の時刻＝掃引で撃ち直した行は"
+            "撃ち直した日が入る（裁定 111 の 3 行は 2026-09-09・ほかの 8 行は 2026-09-05）。"
+            "doc の頭の generated_at はこの台帳を組み立てた時刻で、別物。",
         ],
         "presets": presets,
     }

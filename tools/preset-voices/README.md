@@ -197,6 +197,7 @@ python .\run_secondary.py --also-ref10
 | `--port 8090` | 使う口（既定 8090。**8088 にはしない**） |
 | `--ready-timeout 600` | ready 待ちの上限秒 |
 | `--keep-server` | 終了時にサーバを落とさない（調査用・自分で止めること） |
+| `--cfg-scale-speaker <値>` | 参照ボイス（話者）への寄せ具合＝上流 `cfg_scale_speaker`。**渡さなければ上流既定 5.0**（`Irodori-TTS-Server/src/irodori_openai_tts/config.py:54`）。渡すと全射の `irodori` 欄に載り、台帳の `secondary.irodori.cfg_scale_speaker` に残る（暖機の `no_ref` には載せない）。裁定 111 は **7.0** |
 
 1 名あたり 25〜55 s かかる。14 本で 10 分ほど。
 
@@ -227,6 +228,11 @@ python .\run_secondary.py --sweep-seed --sweep-ids "vv_mochiko_sexy,co_tsukuyomi
 | `--sweep-seed-start 1234` | 起点の seed。**一度採った seed から撃ち直すときは次の番号を渡す**（例 `--sweep-seed-start 1235`） |
 | `--no-trim-fallback` | seed を使い切っても clean が出ない時の `trim_tail=false` の一巡を切る |
 | `--tail-ms` ほか 8 つ | 末尾判定の窓と閾。名も既定も `verify_wavs.py` と同じ（上の表） |
+| `--cfg-scale-speaker <値>` | 掃引の全射に同じ `cfg_scale_speaker` を載せる（`trim_tail=false` の一巡も同じ値） |
+
+**参照ボイスへの寄せ具合を変えて撃ち直すとき**は掃引に `--cfg-scale-speaker` を添える
+（裁定 111＝`python .\run_secondary.py --sweep-seed --sweep-ids "co_kana_naisho,co_ofutonp_kiza,vr2_akane_west" --cfg-scale-speaker 7.0`
+＝上流既定 5.0 から 2 上げた値。声が途中から参照ボイスから離れる、という司令官の検分に対する手当て）。
 
 seed を使い切っても clean が出なければ、**本文を変えずに** `irodori.trim_tail=false` で同じ seed 列を
 もう一巡する。`trim_tail` は上流 `SamplingRequest`（`upstream/Irodori-TTS/irodori_tts/inference_runtime.py:242`）の欄で、
