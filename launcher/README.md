@@ -359,7 +359,7 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 ```json
 { "runtimeLedgers":       { "rocm-gfx1151": "<ledger/runtime-rocm-gfx1151.json の sha256（小文字 hex 64 字）>",
                             "cu126":        "<ledger/runtime-cu126.json の sha256>" },
-  "installedAppVersions": { "rocm-gfx1151": "v0.1.0", "cu126": "v0.1.0" } }
+  "installedAppVersions": { "rocm-gfx1151": "v1.0.0", "cu126": "v1.0.0" } }
 ```
 
 **鍵は変種**（是正・便 D（3）の 3 巡目）。1 巡目は `runtimeLedgerSha256`／`installedAppVersion` の

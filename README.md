@@ -33,7 +33,7 @@
 
 **できないこと・注意**
 
-- CPU でも合成できますが**とても遅い**（実測 RTF 3.27・40 steps）＝配信用途には使えません
+- CPU でも合成できますが**とても遅い**（実測 RTF 3.33・40 steps・cpu 変種＝`docs/acceptance.md`）＝配信用途には使えません
   （`decisions.md` 13）。UI で選べるだけの露出にしています。
 - **Radeon（ROCm）は未保障**＝**ROCm 版**という別リリースです。保証できるのは「gfx1151
   （Ryzen AI MAX+ 395／Radeon 8060S）で確認済み」という事実だけです（`docs/radeon.md`）。
@@ -42,10 +42,10 @@
 
 ---
 
-## 2. 導入の流れ（**案**・便 E で確定）
+## 2. 導入の流れ（概略）
 
-> この節はまだ**案**です。インストーラ（便 E）とランチャ（便 D）の実装で確定します。
-> 受け入れ条件は「利用者操作 ≤ 6（vc_redist を黙って通せれば ≤ 5）」（`docs/acceptance.md`）。
+> 便 D（ランチャ）と便 E（インストーラ）の実装で**確定した**。**確定手順は `docs/install.md`**（本節はその概略）。
+> 受け入れ条件は「利用者操作 ≤ 6（vc_redist を黙って通せれば ≤ 5）」（`docs/acceptance.md`）＝**実測 5 押下**。
 
 1. Release からインストーラ（ランチャ＋埋め込み Python の取得台帳＋自作分・数十 MB）を落として実行する。
 2. インストーラが `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（ROCm 版は `…\irodori-tts-ywk-radeon\`）
@@ -58,13 +58,13 @@
    - モデル＝Hugging Face（revision 固定）。
    - `vc_redist.x64.exe`（Microsoft 公式・≈25 MB）＝torch が `msvcp140.dll` を要求するため必須。
 4. ランチャで GPU と CUDA 版（既定 cu130／古いドライバなら cu126）を選ぶ。
-5. 「起動」を押すと `127.0.0.1:18088` で常駐する。読み上げの準備完了まで最長 120 秒。
+5. 「サーバ起動」を押すと `127.0.0.1:18088` で常駐する。読み上げの準備完了まで最長 120 秒。
 6. 本体（読み分けちゃん2）側は、配布版のエンジンを有効にするだけ。
 
 **オフライン導入は用意しません**（`decisions.md` 8）。第三者バイナリ（wheel・exe・dll・モデル）を
 配布物に入れない方針のためです。
 
-詳細＝`docs/install.md`（同じく案）。
+詳細＝`docs/install.md`（**確定手順**・配布物にも入る）。
 
 ---
 
@@ -75,7 +75,7 @@
 | `decisions.md` | **正典**。裁定はここが正。 |
 | `docs/contract.md` | 配布版が本体に約束する HTTP 契約（本体が写す一枚）。 |
 | `docs/acceptance.md` | 受け入れ条件（数値）。 |
-| `docs/install.md` | 導入手順（案・便 E で確定）。 |
+| `docs/install.md` | 導入手順（**確定**・配布物にも入る）。 |
 | `docs/radeon.md` | ROCm 版の注記（gfx1151 で確認済みの事実だけ）。 |
 | `docs/design/` | 便ごとの設計書。 |
 | `upstream/` | 上流 2 本の submodule（**無改変**・`Irodori-TTS` `8224daf`／`Irodori-TTS-Server` `841fb7c`）。 |

@@ -158,7 +158,7 @@ $null = New-Item -ItemType Directory -Path $OutDir -Force
 function Resolve-Setup {
     param([string]$Given, [string]$FlavorName)
     if (-not [string]::IsNullOrEmpty($Given)) { return $Given }
-    $name = 'irodori-tts-ywk-setup-v0.1.0-' + $FlavorName + '.exe'
+    $name = 'irodori-tts-ywk-setup-v1.0.0-' + $FlavorName + '.exe'
     $built = Join-Path (Join-Path $Repo 'build\out\installer') $name
     if (Test-Path -LiteralPath $built) { return $built }
     return $built
