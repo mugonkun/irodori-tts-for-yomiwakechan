@@ -36,7 +36,7 @@ public enum FirstRunStep
     /// <summary>起こして <c>/health</c> まで。</summary>
     Start,
 
-    /// <summary>完了（試し撃ちへ誘導）。</summary>
+    /// <summary>完了（「発話テスト」へ誘導）。</summary>
     Done,
 }
 
@@ -192,7 +192,7 @@ public sealed class FirstRunViewModel : ObservableObject
         {
             FirstRunStep.Notices => "同意して次へ",
             FirstRunStep.Variant => "この構成で取得を始める",
-            FirstRunStep.Done => "試し撃ちへ",
+            FirstRunStep.Done => "発話テストへ",
             _ => "次へ",
         };
 
@@ -311,7 +311,7 @@ public sealed class FirstRunViewModel : ObservableObject
     /// 「次へ」の 1 手。
     /// <para>
     /// <b>成功した段は自動で次へ進む</b>（裁定 94 ⑴）。押下は<b>5</b> だけになる＝
-    /// 同意チェック・同意して次へ・変種・取得を始める・試し撃ちへ。取得→展開→モデル→起動は
+    /// 同意チェック・同意して次へ・変種・取得を始める・発話テストへ。取得→展開→モデル→起動は
     /// <see cref="AdvanceAsync"/> が繋ぎ、<b>失敗した段でだけ止まる</b>（そこで「もう一度」と理由 1 行）。
     /// 便 E（2）の E2E は 9 押下で、受け入れ条件の「利用者操作 ≤ 6」を落としていた
     /// （<c>docs/acceptance.md</c> 導入行・裁定 94 ⑴）。
@@ -491,7 +491,7 @@ public sealed class FirstRunViewModel : ObservableObject
     /// <summary>
     /// ウィザードの外で起きた事実を <see cref="Trail"/> に足す口（裁定 90 Q-E2 ⑶）。
     /// <para>
-    /// 使うのは<b>取得キャッシュの削除</b>＝「起動の確認」が通り「試し撃ち」で 1 射 200 が
+    /// 使うのは<b>取得キャッシュの削除</b>＝「起動の確認」が通り「発話テスト」で 1 射 200 が
     /// 返ったところで消すので、消したのはウィザードの完了の段より<b>後</b>である。
     /// 消したバイトはログと、まだ開いていればこの Trail の両方に残す。
     /// </para>

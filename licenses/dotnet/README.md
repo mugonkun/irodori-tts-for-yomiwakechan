@@ -14,7 +14,7 @@
 | .NET ランタイム（`Microsoft.NETCore.App.Runtime.win-x64`） | **10.0.11** | MIT | `dotnet-runtime-LICENSE.txt` |
 | WPF／WinForms ランタイム（`Microsoft.WindowsDesktop.App.Runtime.win-x64`） | **10.0.11** | MIT | `windowsdesktop-runtime-LICENSE.txt` |
 | .NET ランタイムが同梱する第三者物の通知 | 10.0.11 | 各記載 | `dotnet-runtime-THIRD-PARTY-NOTICES.txt` |
-| NAudio.WinMM ＋ NAudio.Core（試し撃ちの再生＝裁定 52） | **2.2.1** | MIT（`<license type="expression">MIT</license>`・© Mark Heath 2023） | 下の §3 |
+| NAudio.WinMM ＋ NAudio.Core（発話テストの再生＝裁定 52） | **2.2.1** | MIT（`<license type="expression">MIT</license>`・© Mark Heath 2023） | 下の §3 |
 
 **版の出所**＝`launcher/IrodoriTtsYwk.Launcher/obj/project.assets.json` の
 `Microsoft.NETCore.App.Runtime.win-x64` / `Microsoft.WindowsDesktop.App.Runtime.win-x64` が

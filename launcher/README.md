@@ -173,13 +173,17 @@ launcher/IrodoriTtsYwk.Launcher/
 | タブ | `TabStatus`・`TabVoices`・`TabTry`・`TabSettings`・`TabAbout` |
 | 状態 | `StatusStateText`・`StatusReasonText`・`StatusGpuText`・`StatusVariantText`・`StatusEndpointText`・`StatusDeviceText`・`StatusWarmupText`・`StatusPrecomputeText`・`StatusMemoryPanel`／`StatusMemoryText`・**`StatusLatentCacheText`**・`StatusVoiceMemoryText`・**`StatusNoticesText`**・`StatusLogBox`・`StatusUpstreamMismatchText` |
 | 話者 | `VoicesGrid`・`VoicesBrowseButton`・`VoicesSourcePathBox`・`VoicesNewNameBox`・`VoicesNewCaptionBox`・`VoicesAddButton`・`VoicesPreviewButton`・`VoicesStopPreviewButton`・`VoicesRemoveButton`・`VoicesRefreshButton`・`VoicesPrecomputeButton`・`VoicesSelectedMemoryText`・**`VoicesPreviewBlockedText`**・**`VoicesRemoveBlockedText`**・`VoicesMessageText` |
-| 試し撃ち | `TryInputBox`・`TryInputLengthText`・`TryVoiceCombo`・`TryStepsPreset10`／`TryStepsPreset40`／`TryStepsBox`・`TryCaptionBox`・`TryCfgTextBox`／`TryCfgCaptionBox`／`TryCfgSpeakerBox`・`TrySpeedBox`・`TrySeedBox`・`TrySynthesizeButton`・`TryReplayButton`・`TryStopButton`・`TrySaveButton`・`TryResultText`・`TryMessageText` |
+| 発話テスト | `TryInputBox`・`TryInputLengthText`・`TryVoiceCombo`・`TryStepsPreset10`／`TryStepsPreset40`／`TryStepsBox`・`TryCaptionBox`・`TryCfgTextBox`／`TryCfgCaptionBox`／`TryCfgSpeakerBox`・`TrySpeedBox`・`TrySeedBox`・`TrySynthesizeButton`・`TryReplayButton`・`TryStopButton`・`TrySaveButton`・`TryResultText`・`TryMessageText` |
 | 設定 | `SettingsGpuCombo`・`SettingsRefreshGpuButton`・`SettingsDriverText`・`SettingsVariantCombo`・`SettingsPrecisionCombo`・`SettingsPortBox`・`SettingsWarmupCheck`／`SettingsWarmupStagesBox`／`SettingsWarmupVoicesBox`・`SettingsPrecomputeCheck`・`SettingsEmptyCacheBox`・`SettingsAutoStartCheck`・`SettingsShowMemoryCheck`・`SettingsReadyTimeoutBox`・`SettingsDataDirText`／`SettingsModelDirText`／`SettingsVoicesDirText`／`SettingsRuntimeRootText`／`SettingsAppDirText`・`SettingsApplyButton`／`SettingsRevertButton`・`SettingsMessageText` |
 | このアプリについて | `AboutDisclaimerText`・`AboutVersionText`・`AboutUpstreamText`・`AboutWatermarkText`・`AboutEthicsText`・`AboutLicensesDirText`・`AboutNoticesPathText`・`AboutLicenseList` |
 | 初回取得 | `FirstRunWizard`・`FirstRunStepTitle`・`FirstRunStepNumber`・`FirstRunNoticesBox`・`FirstRunAcceptCheck`・`FirstRunVariantCombo`・`FirstRunVariantNoteText`・`FirstRunDriverText`・`FirstRunSizeText`・`FirstRunProgressBar`／`FirstRunProgressText`・`FirstRunTrailList`・`FirstRunBackButton`／`FirstRunNextButton`／`FirstRunCancelButton`・`FirstRunMessageText` |
 
 **タブの中身は選ぶまで作られない**（WPF の `TabControl` は遅延生成）＝台本は `SelectionItemPattern`
 でタブを選んでから、そのタブの id を探すこと。
+
+**「発話テスト」のタブは裁定 116（2026-09-09）まで「試し撃ち」と名乗っていた**＝変えたのは利用者の目に入る札
+（タブの Header・ウィザードの完了文と「発話テストへ」の札・話者一覧のツールチップ）だけで、id（`TabTry`・`Try*`）と
+内部名（`TryView`・`TryViewModel`・設定の `lastTest*`）は据え置き。台本は名前ではなく id で掴むこと。
 
 ### 7-4 ライセンスの索引（裁定 51 の記帳先）
 
@@ -333,8 +337,8 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 
 | # | 裁定 | 何が変わったか |
 |---|---|---|
-| ⑴ | 94 ⑴ | **初回取得ウィザードの自動進行**＝取得→展開→モデル→起動は成功したら自動で次へ。押下は **5**（同意チェック・同意して次へ・変種・取得を始める・試し撃ちへ）。失敗した段だけで止まり、文言は「もう一度」＋理由 1 行。段の出入りは `Trail` に `― <段の名>` として残る。「中断」は各段で効く（`FirstRunViewModel.AdvanceAsync`） |
-| ⑵ | 90 Q-E2 ⑶ | **取得キャッシュの削除**＝⒜ 初回取得を通した後、「試し撃ち」で 1 射 200 が返ったら `<data>\cache` の中身を残らず消す（置き場自身は残す・消したバイトをログと Trail に）⒝ 設定に手動の「取得キャッシュを消す（n GiB）」⒞ **消す前の関門**＝`python.exe` の在否と `settings.runtimeLedgers[<変種>]` と配布樹の台帳の一致（どちらか欠ければ 1 バイトも消さない）。**名前で選ばない**のは、前の台帳の原檔・打ち切った `.part`・名前が変わった檔が残って「展開後（cache 削除後）」の実測が合わなくなるからである。ただし**関門を通していない変種だけが名指す原檔は残す**（是正・便 D（3）の 3 巡目＝実機の cache 4.14 GB のうち 2.41 GiB が cu126 専用で、rocm の関門を通しただけの掃除がそれを消していた。`CacheCleaner.ProtectedFileNames`）（`Services/Ledger/CacheCleaner.cs`） |
+| ⑴ | 94 ⑴ | **初回取得ウィザードの自動進行**＝取得→展開→モデル→起動は成功したら自動で次へ。押下は **5**（同意チェック・同意して次へ・変種・取得を始める・発話テストへ）。失敗した段だけで止まり、文言は「もう一度」＋理由 1 行。段の出入りは `Trail` に `― <段の名>` として残る。「中断」は各段で効く（`FirstRunViewModel.AdvanceAsync`） |
+| ⑵ | 90 Q-E2 ⑶ | **取得キャッシュの削除**＝⒜ 初回取得を通した後、「発話テスト」で 1 射 200 が返ったら `<data>\cache` の中身を残らず消す（置き場自身は残す・消したバイトをログと Trail に）⒝ 設定に手動の「取得キャッシュを消す（n GiB）」⒞ **消す前の関門**＝`python.exe` の在否と `settings.runtimeLedgers[<変種>]` と配布樹の台帳の一致（どちらか欠ければ 1 バイトも消さない）。**名前で選ばない**のは、前の台帳の原檔・打ち切った `.part`・名前が変わった檔が残って「展開後（cache 削除後）」の実測が合わなくなるからである。ただし**関門を通していない変種だけが名指す原檔は残す**（是正・便 D（3）の 3 巡目＝実機の cache 4.14 GB のうち 2.41 GiB が cu126 専用で、rocm の関門を通しただけの掃除がそれを消していた。`CacheCleaner.ProtectedFileNames`）（`Services/Ledger/CacheCleaner.cs`） |
 | ⑶ | 91 | **`settings.json` に `runtimeLedgers` と `installedAppVersions`（変種ごとの表）**（展開が通った直後にその変種の欄だけ焼く）。起動時に配布樹の台帳と突き合わせ、食い違えば状態帯に 1 行と「実行系を組み直す」1 手（cache から再展開・cache が無ければ足りない檔だけ取得から。**押す前に取り直す量を 1 行で名乗り**、走っている間は帯と「やめる」を出す）。**版だけが動いたときは 1 手を出さず焼き直して黙る**。**焼き印を押すのは `site-packages\*.dist-info` の件数が台帳と合う樹だけ**（組みかけの樹に押すと、掃除の関門が自分で作った値と突き合わせて通ってしまう）（`Services/Ledger/RuntimeStamp.cs`・`MainViewModel.RebuildRuntimeAsync`） |
 | ⑷ | 94 ⑶ | **展開係数を変種ごとの実測に**＝cu126 **1.69**・rocm-* **2.98**・cpu **3.60**・cu130 は未実測で **3.3**。見積りの 1 行は「（展開は実測 2.98 倍）」「（展開は推定 3.3 倍）」と出し分ける（`FetchPlanner.ExpansionFactorFor`） |
 | ⑸ | 92 の low 6 | ⒜ `UiText.Bytes` の綴りを **GiB／MiB／KiB** に（1024 進なのに GB と綴っていた）⒝ 「（最大 …）」を**使用量の隣**へ・`memory.error` は「（一部の欄が読めませんでした：…）」⒞ 「未対応」と **「—（サーバが動いていません）」** の出し分け ⒟ `MemoryStatus.Latents` が JSON の `null` でも落ちない（`EffectiveLatents`）⒠ `MainViewModel` の Failed 2 箇所を `IServerProcess.ReportPreflightFailure` 経由に ⒡ 「GPU メモリの欄」は「適用」した瞬間に効く（`StatusViewModel.MemoryPanelVisible` へ束縛）⒢ 409 の待ち行列は**受け取られるまで落とさない**（3 回落ちたら諦めて理由を残す） |

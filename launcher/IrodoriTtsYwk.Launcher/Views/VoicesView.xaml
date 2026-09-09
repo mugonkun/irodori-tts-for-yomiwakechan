@@ -48,7 +48,7 @@
           <DataGridTextColumn.HeaderTemplate>
             <DataTemplate>
               <TextBlock Text="{Binding}"
-                         ToolTip="この列が話者 id です（本体・試し撃ちはこの名前で話者を選びます）。日本語で構いません。" />
+                         ToolTip="この列が話者 id です（本体・発話テストはこの名前で話者を選びます）。日本語で構いません。" />
             </DataTemplate>
           </DataGridTextColumn.HeaderTemplate>
         </DataGridTextColumn>

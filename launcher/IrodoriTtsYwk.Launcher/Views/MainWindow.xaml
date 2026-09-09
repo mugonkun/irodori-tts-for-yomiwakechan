@@ -12,7 +12,7 @@
     MainWindow.xaml.cs が ReleaseFlavors.AppTitle で「（CUDA 版）」「（ROCm 版）」を足して
     差し替える＝裁定 109（樹が読めないときは CUDA 版と名乗る＝DetectFrom は投げない）。
 
-    主窓＝5 つのタブ（状態・話者・試し撃ち・設定・このアプリについて）と、
+    主窓＝5 つのタブ（状態・話者・発話テスト・設定・このアプリについて）と、
     どのタブからでも押せる起動／停止の帯。窓の × は閉じずにトレイへ隠す（常駐が主・裁定 6）。
     束縛先は Views/MainWindow.xaml.cs が組み立てる ViewModel 群。
   -->
@@ -58,7 +58,7 @@
       <TabItem Header="話者" AutomationProperties.AutomationId="TabVoices">
         <views:VoicesView DataContext="{Binding Voices}" />
       </TabItem>
-      <TabItem Header="試し撃ち" AutomationProperties.AutomationId="TabTry">
+      <TabItem Header="発話テスト" AutomationProperties.AutomationId="TabTry">
         <views:TryView DataContext="{Binding Try}" />
       </TabItem>
       <TabItem Header="設定" AutomationProperties.AutomationId="TabSettings">

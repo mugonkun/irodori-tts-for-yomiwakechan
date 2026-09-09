@@ -6,7 +6,7 @@ using Win32 = Microsoft.Win32;
 namespace IrodoriTtsYwk.Launcher.Views;
 
 /// <summary>
-/// 試し撃ちの画面（<see cref="TryViewModel"/> に束縛）。
+/// 「発話テスト」（旧「試し撃ち」＝裁定 116）の画面（<see cref="TryViewModel"/> に束縛）。
 /// <para>
 /// ここに在るのは<b>窓が要る 2 つ</b>だけ＝歩数のプリセット（裁定 10＝10／40）の 2 つのボタンと、
 /// 保存先を選ぶ窓（<c>SaveFileDialog</c>）。撃つ前の検分も body の組み立ても

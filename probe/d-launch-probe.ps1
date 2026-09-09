@@ -163,7 +163,7 @@ $T = [ordered]@{
     FetchRun   = New-JpText 0x53D6, 0x5F97, 0xFF08, 0x5B9F, 0x884C, 0x7CFB, 0xFF09   # "fetch (runtime)"
     FetchModel = New-JpText 0x53D6, 0x5F97, 0xFF08, 0x30E2, 0x30C7, 0x30EB, 0xFF09   # "fetch (models)"
     Finished   = New-JpText 0x5B8C, 0x4E86                           # "done"   (wizard step 7 title)
-    ToTry      = New-JpText 0x8A66, 0x3057, 0x6483, 0x3061, 0x3078   # "to the try screen" (last press)
+    ToTry      = New-JpText 0x767A, 0x8A71, 0x30C6, 0x30B9, 0x30C8, 0x3078   # "to the speech test screen" (last press; decisions 116 renamed the tab)
     # "rebuild the runtime" -- the one move decisions 91 asks for when the ledger stops matching.
     Rebuild    = New-JpText 0x5B9F, 0x884C, 0x7CFB, 0x3092, 0x7D44, 0x307F, 0x76F4, 0x3059
     # "delete the download cache" -- the button of decisions 90 Q-E2 (3).

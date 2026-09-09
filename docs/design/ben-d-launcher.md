@@ -79,7 +79,7 @@ build/
 
 ## 6. 初回取得（FirstRunWizard）
 
-1. 通知（`licenses/first-run-notices.md` を表示・同意）→ 2. 変種の選択（ドライバ検出・容量の見積り・「CPU（遅い）」）→ 3. 取得（台帳順・並列 2 本まで・進捗・中断／再開）→ 4. 展開（wheel＝zip・sdist＝tar・`._pth`）→ 5. モデル（`ywk_fetch_models.py` を runtime の python で・JSON 行の進捗）→ 6. 起動して `/health`→完了（試し撃ちへ誘導）。
+1. 通知（`licenses/first-run-notices.md` を表示・同意）→ 2. 変種の選択（ドライバ検出・容量の見積り・「CPU（遅い）」）→ 3. 取得（台帳順・並列 2 本まで・進捗・中断／再開）→ 4. 展開（wheel＝zip・sdist＝tar・`._pth`）→ 5. モデル（`ywk_fetch_models.py` を runtime の python で・JSON 行の進捗）→ 6. 起動して `/health`→完了（「発話テスト」へ誘導＝裁定 116 までの札は「試し撃ちへ」）。
 - 検証＝sha256 は全檔・不一致は破棄して再取得（最大 5 回）・`fallback_url` を持つ item は url→fallback の順。
 - `vc_redist`＝`ledger/vc_redist.json` の直リンク→sha256→**`/install /quiet /norestart`**（台帳の `silent_args` が正・旧稿の `/passive` は誤り＝裁定 87 ⑷。実装 `Services/Ledger/VcRedistInstaller.cs` は既に台帳を採っている）。管理者昇格が要る＝UAC・利用者操作 1 回。既に `msvcp140.dll` が System32 にあれば飛ばす（便 B の U-8 の逐語で判定文言を決める）。
 
@@ -1449,15 +1449,15 @@ git の commit／push はしていない。第三者バイナリは 1 檔も足�
 
 | 段 | 何を撃つか | どう「取得しない」を担保したか |
 |---|---|---|
-| **h** | **初回取得ウィザードの押下数**（裁定 94 ⑴）。押下＝⑴ 同意チェック ⑵「同意して次へ」⑶ 変種 ⑷「この構成で取得を始める」⑸「試し撃ちへ」 | 私設樹の `ledger/runtime-<変種>.json` の**最初の item の `sha256` の鍵名だけ**を書き換える。`LedgerReader` が「sha256 が無い」と数え、`FetchPlanner.cs:192` が `LedgerException` を投げ、`FirstRunViewModel.TryPlan` がそれを捕って**socket を 1 本も開かずに**取得の段が false になる。さらに **`vc_redist.json` を写さない**＝`MainViewModel.cs:161-166` が null を返し `FirstRunViewModel.cs:700-703` が「その段は無い」と読むので、**msvcp140.dll が台帳の下限に届かない機体でも 24 MiB を落としに行かない** |
-| **i** | **試し撃ち 200 の後に取得キャッシュが消える**（裁定 90 Q-E2 ⑶・94 ⑶）。**バイトで読む** | 落とさないので**種を播く**（`New-CacheFixture`＝原檔・`.part`・入れ子の 3 檔 196,608 B）。段は 2 本＝**1 射を撃つ前は残っていること**（起動時に掃くのは誤り＝`.part` は続きから取るための物）と、**200 の後に 0 バイトになること**（30 s まで待つ） |
+| **h** | **初回取得ウィザードの押下数**（裁定 94 ⑴）。押下＝⑴ 同意チェック ⑵「同意して次へ」⑶ 変種 ⑷「この構成で取得を始める」⑸「発話テストへ」 | 私設樹の `ledger/runtime-<変種>.json` の**最初の item の `sha256` の鍵名だけ**を書き換える。`LedgerReader` が「sha256 が無い」と数え、`FetchPlanner.cs:192` が `LedgerException` を投げ、`FirstRunViewModel.TryPlan` がそれを捕って**socket を 1 本も開かずに**取得の段が false になる。さらに **`vc_redist.json` を写さない**＝`MainViewModel.cs:161-166` が null を返し `FirstRunViewModel.cs:700-703` が「その段は無い」と読むので、**msvcp140.dll が台帳の下限に届かない機体でも 24 MiB を落としに行かない** |
+| **i** | **発話テストの 200 の後に取得キャッシュが消える**（裁定 90 Q-E2 ⑶・94 ⑶）。**バイトで読む** | 落とさないので**種を播く**（`New-CacheFixture`＝原檔・`.part`・入れ子の 3 檔 196,608 B）。段は 2 本＝**1 射を撃つ前は残っていること**（起動時に掃くのは誤り＝`.part` は続きから取るための物）と、**200 の後に 0 バイトになること**（30 s まで待つ） |
 | **j** | `settings.json` の **`runtimeLedgerSha256`／`installedAppVersion`** が焼かれ、**台帳を壊すと「実行系を組み直す」が出る**（裁定 91） | 窓を 3 枚順に起こす＝⑴ 印の無いデータ樹→**ランチャが焼くか**（20 s 待つ）⑵ 印が合っている→**出さないこと** ⑶ 私設台帳の**バイトを動かす**（`"probe_touched": true` を 1 つ足す＝檔は正しい JSON のまま sha256 だけ動く）→**出ること**（20 s 待つ）。⑴ でランチャが焼かなかったときは台本が自分で正しい sha256 を書いて⑵⑶ を続け、詳細に `guessed stamp = True` と残す＝**「焼く」と「見比べる」を別々の所見にする** |
 | **k** | **起こせない `python.exe`** を指した実行系で「サーバ起動」→ **10 s 以内**に理由 1 行（§20-5 ⑴ の再現） | 私設の実行系の根に `runtime-<変種>\python.exe` を**テキスト檔**で置くだけ（26 B）。押下から状態帯の `失敗` か `StatusReasonText` の非空までを stopwatch で測り、**10 s を予算**にする（旧＝60 s 黙る）。走の間、主窓でない窓は**閉じて名前を記録する**＝§20-5 ⑴ が疑った「このアプリは PC で実行できません」の窓が出ていたら、それ自体が所見になる。子 0・ポート閉のままも数える |
 | **l** | **「取得キャッシュを消す」ボタン**（裁定 90 Q-E2 ⑶） | 種を播いてから押し、20 s 以内に 0 バイトになることと、**データ樹そのものは残る**ことを数える。確認の窓が出たら 1 つ目のボタンで答え、出たことを印字する |
 
 **押下 5 の残り半分**＝「成功した段が自動で次へ進む」ことは、**本当に取得する走でしか測れない**。
 `-WizardFullRun` に隔離した（**E2E 席専用**・既定 off・完了の頁まで**何も押さずに**着くこと自体が証拠で、
-その後の 1 押し＝「試し撃ちへ」で合計 5 になる）。既定の（取得しない）走で数えるのは
+その後の 1 押し＝「発話テストへ」で合計 5 になる）。既定の（取得しない）走で数えるのは
 **失敗段までの 4 押し**と、**失敗段で「次へ」を押しても先へ進まない**ことの 2 つである。
 
 **switch**＝`-DryRun`（空走＝窓を開かず段の下拵えを印字して exit 0）・`-RoundThreeOnly`（h／j／k／l だけ＝
@@ -1520,7 +1520,7 @@ tree gone = True   build/out/app still has 4 entries (was 4)   licenses = 10 ent
 `FirstRunAcceptCheck`・`FirstRunVariantCombo` は今の綴りのまま使っている。**
 
 **押下の数え方**（裁定 94 ⑴ を台本がどう数えるか）＝**同意チェック・「同意して次へ」・変種の選択・
-「この構成で取得を始める」・「試し撃ちへ」の 5 つを押下 1 ずつ**とし、一覧を開いて中身を読む操作は数えない。
+「この構成で取得を始める」・「発話テストへ」の 5 つを押下 1 ずつ**とし、一覧を開いて中身を読む操作は数えない。
 自動進行の実装で**変種の頁が消える**（既定を焼いて頁ごと飛ばす）なら押下は 4 になる＝**それは緩和ではなく
 仕様変更**なので、台本の期待値ではなく卓の裁定を先に動かすこと。
 
@@ -1582,8 +1582,8 @@ tree gone = True   build/out/app still has 4 entries (was 4)   licenses = 10 ent
 
 | # | 裁定 | 何が変わったか | 檔 |
 |---|---|---|---|
-| ⑴ | **94 ⑴** | **初回取得の自動進行**＝取得→展開→モデル→起動は成功したら自動で次へ進み、**失敗した段でだけ止まる**（文言は「もう一度」＋理由 1 行）。押下は **9 → 5**（同意チェック・同意して次へ・変種・取得を始める・試し撃ちへ）。段の出入りは `Trail` に `― <段の名>` として残す（自動でもどこまで進んだかが読める）。「中断」は各段で効く（取消は失敗として扱い、そこで止まる）。`Back` は失敗の札を下ろす | `FirstRunViewModel.AdvanceAsync`／`NextAsync`／`NextButtonText` |
-| ⑵ | **90 Q-E2 ⑶** | **取得キャッシュの削除**＝⒜ `firstRunCompleted` が真の機体で「試し撃ち」が **200** を返したら `<data>\cache` を空にする（1 起動につき 1 度・消したバイトを**ログと Trail** に）⒝ 設定の手動ボタン「**取得キャッシュを消す（n GiB）**」（空なら押せない）⒞ **関門**＝`runtime\<変種>\python.exe` が在り、かつ `settings.runtimeLedgerSha256` が配布樹の台帳と一致するときだけ消す。どちらか欠ければ **1 バイトも消さず**理由 1 行 | `Services/Ledger/CacheCleaner.cs`（新設）・`MainViewModel.ClearCacheAfterFirstShot`・`SettingsViewModel.ClearCache`・`TryViewModel.Succeeded` |
+| ⑴ | **94 ⑴** | **初回取得の自動進行**＝取得→展開→モデル→起動は成功したら自動で次へ進み、**失敗した段でだけ止まる**（文言は「もう一度」＋理由 1 行）。押下は **9 → 5**（同意チェック・同意して次へ・変種・取得を始める・発話テストへ）。段の出入りは `Trail` に `― <段の名>` として残す（自動でもどこまで進んだかが読める）。「中断」は各段で効く（取消は失敗として扱い、そこで止まる）。`Back` は失敗の札を下ろす | `FirstRunViewModel.AdvanceAsync`／`NextAsync`／`NextButtonText` |
+| ⑵ | **90 Q-E2 ⑶** | **取得キャッシュの削除**＝⒜ `firstRunCompleted` が真の機体で「発話テスト」が **200** を返したら `<data>\cache` を空にする（1 起動につき 1 度・消したバイトを**ログと Trail** に）⒝ 設定の手動ボタン「**取得キャッシュを消す（n GiB）**」（空なら押せない）⒞ **関門**＝`runtime\<変種>\python.exe` が在り、かつ `settings.runtimeLedgerSha256` が配布樹の台帳と一致するときだけ消す。どちらか欠ければ **1 バイトも消さず**理由 1 行 | `Services/Ledger/CacheCleaner.cs`（新設）・`MainViewModel.ClearCacheAfterFirstShot`・`SettingsViewModel.ClearCache`・`TryViewModel.Succeeded` |
 | ⑶ | **91** | **`settings.json` に `runtimeLedgerSha256` と `installedAppVersion`**＝展開が通った直後に焼く。起動時に配布樹の台帳と突き合わせ、**台帳が違えば**状態帯に 1 行と「**実行系を組み直す**」1 手（cache から再展開・足りない原檔だけ取得から）。**版だけ違うときは急かさない**（「そのまま使えます」）。**焼き印の無い樹（便 D（2）以前・台本で組んだ樹）は起動時にいまの台帳で焼き直して黙る**＝正しく組んである機体に 4 GB の展開をやり直させない | `Services/Ledger/RuntimeStamp.cs`（新設）・`MainViewModel.CheckRuntimeStamp`／`RebuildRuntimeAsync`・`StatusViewModel.RebuildRuntimeCommand` |
 | ⑷ | **94 ⑶** | **展開係数を変種ごとの実測に**（`ExpansionFactor` の一律 3.3 を廃止）＝`cu126` **1.69**・`rocm-*` **2.98**・`cpu` **3.60**（実測）・`cu130` **3.3**（未実測）。見積りの 1 行が「（展開は**実測** 2.98 倍）」「（展開は**推定** 3.3 倍）」と出し分ける | `FetchPlanner.ExpansionFactorFor`／`ExpansionFactor` レコード・`FetchPlan.Summary` |
 | ⑸ | **92 の low 6** | 下の 21-2 の表 | 6 檔 |
@@ -2651,3 +2651,40 @@ DXGI だけが落ちた回は**名前が LUID の綴り・総量が `—`**に�
 **その日の記帳**であり、⑵ いまの総数は 27 でも 28 でもなく **89 → 90**（§24 の実走
 `=== 0 failure(s) of 89 ===` が正）だからである。代わりに両行へ「これはその日の値・いまの総数は
 §24／§27-5 を見よ」と註を足した（履歴は残し、次席が突き合わせられる形にした）。
+
+## 28. タブ「試し撃ち」→「発話テスト」（裁定 116・2026-09-09）の記帳（主席・検分は opus サブ席）
+
+司令官の指示（逐語）＝「**タブ"試し撃ち"の表示名変更"発話テスト"**」。正典＝`decisions.md` 116。
+
+**替えたのは利用者の目に入る札 4 つだけ**である。内部名は 1 つも変えていない。
+
+| 出す場所 | 改訂前 | 改訂後 |
+|---|---|---|
+| 主窓のタブ `Header`（`Views/MainWindow.xaml`・id `TabTry`） | `試し撃ち` | `発話テスト` |
+| 初回取得ウィザードの完了文（`Views/FirstRunWizard.xaml`） | `「試し撃ち」のタブで、本文と話者を選んで 1 発鳴らしてみてください。` | `「発話テスト」のタブで、…` |
+| 同ウィザードの完了ボタン（`FirstRunViewModel.NextButtonText`・`FirstRunStep.Done`） | `試し撃ちへ` | `発話テストへ` |
+| 話者一覧の id 列のツールチップ（`Views/VoicesView.xaml`） | `…（本体・試し撃ちはこの名前で話者を選びます）…` | `…（本体・発話テストは…）…` |
+
+- **据え置き**＝AutomationId `TabTry`・`Try*`（§7-3 の表）・`TryView`／`TryViewModel`・設定の鍵
+  `lastTestVoice`／`lastTestNumSteps`・契約の JSON・本体側。台本は名前ではなく id で掴む（§22-5）ので、
+  `d-launch-probe.ps1` の走は割れない。文言表 `$T.ToTry` だけはコードポイントで「発話テストへ」に
+  差し替えた（未使用の札だが、§22-5 が「変えるなら `$T` も」と定めているため）。
+- **註と文書の線引き**＝「」で括って札を逐語で引く箇所（`MainViewModel` 2 箇所・`FirstRunViewModel` 3 箇所・
+  `TryView.xaml`／`.xaml.cs`・`MainWindow.xaml` の頭の註）は新名。機能の呼び名としての「試し撃ち」
+  （`TryViewModel`・`SpeechRequestBuilder`・`LauncherSettings`・`WavInfo` ほかの註・試験名・契約の
+  「UI で試し撃ちすると」）と、歴史の記帳（この設計書の §6 以外の過去の §・`ben-e` の実測・受け入れ表の
+  改訂前の値・裁定 52／94／95）は旧名のまま。**現行の規則**を書く箇所は新名に揃えた＝§6 の段 6・
+  §21-1 ⑴⑵・§22-3 の段 h／i と押下の数え方の文・§22-5・`launcher/README.md` §7-3／§11・
+  `docs/acceptance.md` の導入行・`probe/README.md` の段 i・`licenses/dotnet/README.md`
+  （`assemble-app.ps1` が配布樹に写すので利用者の目に入る）。
+
+**実測**＝`dotnet test` **649 合格・1 skip**（`YWK_LIVE_GPU` 門・総数 650）。Release の
+`IrodoriTtsYwk.Launcher.dll` に BAML（UTF-8）の「発話テスト」×3（Header・完了文・ツールチップ）と
+C# 文字列（UTF-16）の「発話テストへ」×1、「試し撃ち」×0（註は BAML に乗らない）。
+`installer-build.ps1 -All` **20 門 0 失敗・WARN 0**（A-1 の記録値 33,294,829 → **33,294,832**＝
+`licenses/dotnet/README.md` の +3 B が配布樹に写る・exe は配布樹の外なので数に入らない・裁定 51・exe 69,637,254 B）。setup（15:1x）＝cuda **82,743,363 B** `ed53db87…`／radeon **82,758,268 B**
+`8e7eafad…`・N: `rtx-handoff\installer` に差し替え（`SHA256SUMS.txt` で一致）。
+検分（Workflow・opus 1 席）の所見 9 件（medium 3・low 6）のうち 8 件を当て込み、1 件（機能名の註 3 本を戻すか
+28 本を揃えるか）は上の線引きで据え置いた。**窓を立てての UIA 実射はしていない**＝本機では裁定 115 の個体が
+走っており（止めるのは司令官の許可があってから）、錠 `Local\irodori-tts-ywk-launcher` が新 exe の 2 個目を
+弾く。導入済みの Radeon 版のタブは入れ直すまで「試し撃ち」のままである。

@@ -134,7 +134,7 @@ public sealed class MainViewModel : ObservableObject
         Status.RebuildRuntimeCommand.Faulted += (_, line) =>
             Status.AppendLog("実行系の組み直しが落ちました：" + line);
 
-        // 「試し撃ち」で 1 射 200＝取得キャッシュを捨ててよい合図（裁定 90 Q-E2 ⑶）。
+        // 「発話テスト」で 1 射 200＝取得キャッシュを捨ててよい合図（裁定 90 Q-E2 ⑶）。
         Try.Succeeded += (_, _) => ClearCacheAfterFirstShot();
 
         Voices.Reload();
@@ -726,7 +726,7 @@ public sealed class MainViewModel : ObservableObject
     // ---- 裁定 90 Q-E2 ⑶＝取得キャッシュの削除 ---------------------------------
 
     /// <summary>
-    /// 「試し撃ち」で 1 射 200 が返った後に、その変種の取得キャッシュを消す（裁定 90 Q-E2 ⑶）。
+    /// 「発話テスト」で 1 射 200 が返った後に、その変種の取得キャッシュを消す（裁定 90 Q-E2 ⑶）。
     /// <para>
     /// <b>消すのは初回取得を通した後の 1 度だけ</b>（<c>firstRunCompleted</c> が真＝
     /// 「起動の確認」が通っている）。消したバイトは<b>ログとウィザードの Trail</b>の両方に残す。
