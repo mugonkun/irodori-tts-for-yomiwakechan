@@ -2852,3 +2852,33 @@ moves.」）なので、放っておいても走行は止まらないが、記�
 
 **未実射**＝この改訂は setup を組み直していない（`build/installer-build.ps1` は主席が回す）。
 段 1 の新しい 2 本と、改名の引き継ぎ（旧名の `.lnk` が消えること）は**まだ実弾で見ていない**。
+
+## 18. v1.0.0 のリリース（裁定 117・2026-09-09）＝切り方の手順の記帳（主席）
+
+司令官の指示（逐語）＝「**簡単なリリースページを作ってv1.0としてpublish頼めるかな。**」。正典＝`decisions.md` 117。
+Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/v1.0.0（repo は private）。
+
+**切り方（この便で通した順・次の版も同じ順で）**
+
+1. **版を 1 箇所で上げる**＝`launcher/Directory.Build.props` の `<AppDisplayVersion>`（`v` 前置・唯一の定義・
+   `installer-build.ps1` が機械読取）と、対の `server/ywk_server.py` の `YWK_VERSION`（`/ywk/status.version`）。
+   現行の値を名指す記述（契約 ⑹ の見本・`launcher/README.md` の settings 見本・`probe/e-install-probe.ps1` の
+   既定の setup 名・`.iss` と `installer-build.ps1` の註）も同じ回で。設計書の実測の記帳と Tests の fixture は動かさない。
+2. **リリース文**＝`docs/release-notes/v<版>.md`（GitHub 風味・`##` から・事実は repo の檔から引く・sha256 と
+   バイトの欄は `<sha256>`／`<bytes>` の placeholder にして組んだ後に埋める）。`.iss` の docs は明示列挙なので
+   利用者機には出ない。
+3. **旧い成果物を退かす**＝`build/out/installer/` の前の版の setup 2 本と `SHA256SUMS.txt` を外へ移す。
+   門 B-3 は「行末が同じ檔名の行」だけを置き換えるので、残すと一覧が 4 行になり `sha256sum -c` が割れる。
+4. **組む**＝`build/installer-build.ps1 -All`（20 門・WARN 0）。A-6 が exe の `ProductVersion` を新版と突き合わせる。
+   A-1 の記録値は配布樹のバイトが動いたときだけ直す（exe は樹の外＝裁定 51・この回は動かず 33,294,832）。
+5. **placeholder を埋める**＝`SHA256SUMS.txt` と実檔の大きさから（scratchpad `fill_release_notes_117.py` の型）。
+6. **commit → 注釈つき tag `v<版>` → push（main と tag）**。
+7. **Release**＝`gh release create v<版> <cuda setup> <radeon setup> SHA256SUMS.txt --title "irodori-TTS for 読み分けちゃん v<版>"
+   --notes-file docs/release-notes/v<版>.md --latest --verify-tag`。`gh release view v<版> --json assets,isDraft,isPrerelease` で
+   3 資産が `uploaded`・draft／pre-release が偽であることを検める。
+8. **N: の引き渡し木**（`rtx-handoff\installer`）を新版に差し替え、`sha256sum -c` で一致を検める。
+9. `decisions.md` に 1 条・この設計書に記帳。
+
+**この回の実測**＝xUnit 649＋1 skip・契約テスト 361・門 20／0 失敗・setup cuda 82,741,884 B `ce817787…`／
+radeon 82,756,787 B `6a65eed2…`・tag は commit `5b0568a`・公開 2026-09-09 07:00:59Z（16:00 JST）。
+**未実射**＝v1.0.0 の setup を RTX 機で撃っていない。本機の導入済み Radeon 版は v0.1.0（裁定 115）のまま。
