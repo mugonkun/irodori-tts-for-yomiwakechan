@@ -2906,4 +2906,4 @@ Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/
 
 **この回の実測**＝xUnit **674**＋1 skip（新設 25）・契約テスト 369・門 20／0 失敗・WARN 0・setup cuda **83,264,616 B** `6c60b396…`／radeon **83,279,491 B** `885b7ed5…`・tag は commit `7fc16e6`・公開 2026-09-10 11:19:42Z（20:19 JST）・N: `sha256sum -c` OK。
 **引き渡し木に添えた物**＝`wizard-probe.ps1`（scratchpad 由来・repo には入れていない）＝UIA で `FirstRunWizard` の窓を探し `session: probe=<n> launcher=<n> same=<bool>` と `launcher=pid <n> wizard=OPEN|none …` を返す読むだけの台本。本機の実測＝wizard=none／EXIT 1（窓ありの側は RTX 機の ⒝ が最初の実射）。
-**未実射**＝v1.0.2 を本機で撃っていない（走っている個体は止めない・許可待ち）。RTX 機の ⒜⒝⒞ は別席の実射待ち。
+**RTX 機の実射**＝別席が ⒜⒝⒞ を撃ち 3 段とも合格（裁定 122・20:3x）。`wizard-probe.ps1` は最初の実射で誤報した（窓は MainWindow の子孫＝`Descendants` で拾う・直して `probe/wizard-probe.ps1` に置いた）。**未実射**＝v1.0.2 を本機で撃っていない（走っている個体は止めない・許可待ち）。
