@@ -2897,3 +2897,13 @@ Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/
 
 **この回の実測**＝xUnit 649＋1 skip・契約テスト **369**（新設 8）・門 20／0 失敗・WARN 0・setup cuda **83,262,330 B** `42e8dacf…`／radeon **83,277,211 B** `16101a49…`・tag は commit `fd3d936`・公開 2026-09-10 09:21:13Z（18:21 JST）・Latest・N: `sha256sum -c` OK。
 **未実射**＝v1.0.1 の setup を RTX 機でも本機でも撃っていない（本機の導入済み Radeon 版は v0.1.0＝裁定 115 のまま・走っている個体は止めない）。新話者で合成を撃っていない・席は音を聴いていない・録音の出所は未確認（裁定 118）。
+
+## 20. v1.0.2 のリリース（裁定 121・2026-09-10）＝§18 の手順を 3 度目に通した記帳（主席）
+
+司令官の報告（RTX 機・v1.0.1・逐語）＝「**話者一覧にシャンパンコールがないね。初回起動から、モデルダウンロードへの導線を追加してほしい。単に、サーバー起動失敗となるから。**」。正典＝`decisions.md` 121・ランチャ側の設計＝`ben-d` §29。Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/v1.0.2（Latest・repo は public）。
+
+**§18 の手順との差**＝無し。配布樹（`build/out/app`）は `server/ywk_server.py` の版の字だけが動き長さは同じなので A-1 は不動（109 檔／34,087,580 B）。変わったのは配布樹の外の exe（69,637,254 → 69,641,096 B）だけ。
+
+**この回の実測**＝xUnit **674**＋1 skip（新設 25）・契約テスト 369・門 20／0 失敗・WARN 0・setup cuda **83,264,616 B** `6c60b396…`／radeon **83,279,491 B** `885b7ed5…`・tag は commit `7fc16e6`・公開 2026-09-10 11:19:42Z（20:19 JST）・N: `sha256sum -c` OK。
+**引き渡し木に添えた物**＝`wizard-probe.ps1`（scratchpad 由来・repo には入れていない）＝UIA で `FirstRunWizard` の窓を探し `session: probe=<n> launcher=<n> same=<bool>` と `launcher=pid <n> wizard=OPEN|none …` を返す読むだけの台本。本機の実測＝wizard=none／EXIT 1（窓ありの側は RTX 機の ⒝ が最初の実射）。
+**未実射**＝v1.0.2 を本機で撃っていない（走っている個体は止めない・許可待ち）。RTX 機の ⒜⒝⒞ は別席の実射待ち。
