@@ -35,7 +35,7 @@ public sealed class TryViewModel : ObservableObject
     private readonly IAudioPlayer _player;
     private readonly LauncherSettings _settings;
 
-    private string _input = "こんにちは。読み分けちゃん用の irodori-TTS です。";
+    private string _input = UiStrings.TrySampleInput;
     private string? _selectedVoice;
     private int _numSteps = 40;
     private double? _cfgScaleText;
@@ -46,6 +46,7 @@ public sealed class TryViewModel : ObservableObject
     private double? _speed;
     private string _message = string.Empty;
     private string _resultText = UiText.Missing;
+    private string _detailText = UiText.Missing;
     private byte[]? _lastAudio;
     private long? _lastSeed;
     private CancellationTokenSource? _inFlight;
@@ -83,7 +84,7 @@ public sealed class TryViewModel : ObservableObject
         SynthesizeCommand.CanExecuteChanged += (_, _) => RaiseConcurrencyChanged();
 
         // 捕れなかった例外を握り潰さない（§20-5 ⑴）。
-        SynthesizeCommand.Faulted += (_, line) => Message = "合成の手が落ちました：" + line;
+        SynthesizeCommand.Faulted += (_, line) => Message = Fold(UiStrings.TryFailed, line);
     }
 
     /// <summary>
@@ -119,6 +120,14 @@ public sealed class TryViewModel : ObservableObject
     /// </summary>
     public static string ConcurrencyNotice =>
         "いま読み分けちゃん2 の読み上げに使われています。終わってからお試しください。";
+
+    /// <summary>
+    /// 手が落ちた・書けなかったときの 1 行（<b>純関数</b>）＝<b>詳しい字は檔へ</b>。
+    /// 画面には利用者の言葉 1 文と〔ログを開く〕の案内だけを出す（憲章 原則 6 の ⑵⑶）。
+    /// 元の 1 行は捨てず、記録に残す側（<c>MainViewModel.AppendLog</c>）が持つ。
+    /// </summary>
+    public static string Fold(string headline, string? detail) =>
+        string.IsNullOrWhiteSpace(detail) ? headline : headline + UiStrings.SeeLog;
 
     /// <summary>
     /// 本体（読み分けちゃん2）が読み上げに使っている
@@ -364,6 +373,24 @@ public sealed class TryViewModel : ObservableObject
         private set => SetProperty(ref _resultText, value);
     }
 
+    /// <summary>
+    /// 所要 ms・RTF・seed の内訳（<b>詳細（上級者向け）の中にだけ出す</b>＝
+    /// 憲章 §6-1 は RTF と ms の<b>置き場</b>を詳細に限る）。
+    /// </summary>
+    public string DetailText
+    {
+        get => _detailText;
+        private set => SetProperty(ref _detailText, value);
+    }
+
+    /// <summary>
+    /// 撃ち終わりの 1 文（<b>純関数</b>・`v2-copy.md` §1-8 の :393-396 の逐語）＝
+    /// 「<b>3.3 秒の音を 1.4 秒で作りました。</b>」。<b>ms も RTF も seed も出さない。</b>
+    /// </summary>
+    public static string Outcome(double elapsedMs, double seconds) =>
+        seconds.ToString("0.0", CultureInfo.InvariantCulture) + " 秒の音を "
+        + (elapsedMs / 1000.0).ToString("0.0", CultureInfo.InvariantCulture) + " 秒で作りました。";
+
     /// <summary>保存できる音を持っているか。</summary>
     public bool HasAudio => _lastAudio is not null;
 
@@ -415,18 +442,18 @@ public sealed class TryViewModel : ObservableObject
         var built = BuildRequest();
         if (!built.Ok || built.Request is null)
         {
-            Message = built.FailureReason ?? "撃てません。";
+            Message = built.FailureReason ?? UiStrings.TryCannotSpeak;
             return;
         }
 
         var client = _wrapper();
         if (client is null)
         {
-            Message = "サーバが動いていません（先に「サーバ起動」を押してください）。";
+            Message = UiStrings.TryNotReady;
             return;
         }
 
-        Message = "合成しています…";
+        Message = UiStrings.TryWorking;
         _serverDown = null;
         var watch = Stopwatch.StartNew();
         SpeechResult result;
@@ -445,7 +472,7 @@ public sealed class TryViewModel : ObservableObject
         catch (OperationCanceledException)
         {
             // 落ちたのなら理由 1 行、そうでなければ期限切れ（黙って同じ文言にしない）。
-            Message = _serverDown ?? "合成が期限内に終わりませんでした。";
+            Message = _serverDown ?? UiStrings.TryTimedOut;
             return;
         }
         finally
@@ -472,7 +499,10 @@ public sealed class TryViewModel : ObservableObject
             ? result.Elapsed.TotalMilliseconds
             : watch.Elapsed.TotalMilliseconds;
 
-        ResultText = "所要 " + UiText.Milliseconds(elapsedMs)
+        // 帯の外に出すのは「何秒の音を何秒で作ったか」の 1 文だけ（`v2-copy.md` §1-8 の :393-396）。
+        // ms・RTF・seed は**詳細（上級者向け）の中**にだけ置く（憲章 §6-1）。
+        ResultText = Outcome(elapsedMs, seconds ?? 0);
+        DetailText = "所要 " + UiText.Milliseconds(elapsedMs)
             + "／出力 " + UiText.Seconds(seconds)
             + "／" + UiText.RealTimeFactor(elapsedMs, seconds)
             + "／seed " + (result.Seed?.ToString(CultureInfo.InvariantCulture) ?? UiText.Missing);
@@ -482,9 +512,7 @@ public sealed class TryViewModel : ObservableObject
         _settings.LastTestNumSteps = NumSteps;
 
         var played = _player.Play(result.Audio);
-        Message = played.Ok
-            ? "再生中（音量を −16 dBFS 相当に揃えています）。"
-            : played.FailureReason ?? "再生できませんでした。";
+        Message = played.Ok ? UiStrings.TryPlaying : played.FailureReason ?? UiStrings.TryPlayFailed;
 
         // 200 が返って音になった＝原檔を捨ててよい合図（再生の可否には掛けない＝
         // 音が出ないのは機体の音源の話で、実行系が組み上がった事実は変わらない）。
@@ -521,11 +549,11 @@ public sealed class TryViewModel : ObservableObject
     /// </summary>
     public static string DescribeServerDown(int? exitCode, string? reason)
     {
-        var head = exitCode is int code
-            ? "サーバが落ちました（exit " + code.ToString(CultureInfo.InvariantCulture) + "）。"
-            : "サーバが落ちました。";
-
-        return string.IsNullOrWhiteSpace(reason) ? head : head + " " + reason.Trim();
+        // 終了コードと内部の 1 行は**記録の側**に残る（帯の ⑵ が終了コードを出す＝`BandContext.ExitCode`）。
+        // ここは画面に出す 1 文なので、利用者の言葉だけを綴る（憲章 原則 6）。
+        _ = exitCode;
+        _ = reason;
+        return UiStrings.TryServerDown;
     }
 
     /// <summary>直前の音をもう一度鳴らす。</summary>
@@ -537,7 +565,7 @@ public sealed class TryViewModel : ObservableObject
         }
 
         var played = _player.Play(_lastAudio);
-        Message = played.Ok ? "再生中。" : played.FailureReason ?? "再生できませんでした。";
+        Message = played.Ok ? UiStrings.TryPlaying : played.FailureReason ?? UiStrings.TryPlayFailed;
     }
 
     /// <summary>直前の音を檔に書く（<b>揃えない生の wav</b>＝上流が出した物のまま）。</summary>
@@ -546,24 +574,24 @@ public sealed class TryViewModel : ObservableObject
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         if (_lastAudio is null)
         {
-            Message = "保存する音がありません。";
+            Message = UiStrings.TryNothingToSave;
             return false;
         }
 
         try
         {
             File.WriteAllBytes(path, _lastAudio);
-            Message = "保存しました（" + UiText.Bytes(_lastAudio.LongLength) + "）。";
+            Message = UiStrings.TrySaved;
             return true;
         }
         catch (IOException ex)
         {
-            Message = "保存できませんでした：" + ex.Message;
+            Message = Fold(UiStrings.TrySaveFailed, ex.Message);
             return false;
         }
         catch (UnauthorizedAccessException ex)
         {
-            Message = "保存できませんでした：" + ex.Message;
+            Message = Fold(UiStrings.TrySaveFailed, ex.Message);
             return false;
         }
     }

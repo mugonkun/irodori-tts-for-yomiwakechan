@@ -1,7 +1,10 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Windows;
 using IrodoriTtsYwk.Launcher.Audio;
 using IrodoriTtsYwk.Launcher.Contracts;
@@ -47,8 +50,9 @@ public partial class MainWindow : Window
             Services.LauncherComposition.DetachWrapper);
         DataContext = _model;
 
-        VersionText.Text = AboutViewModel.VersionText
-            + "／" + (AppVersion.IsReleaseBuild ? AboutViewModel.UpstreamText : "開発ビルド");
+        // v2.0 段 C＝**版の番号だけ**（`v2-copy.md` §1-1 の 33 行目）＝
+        // 元になった実装の pin の綴りは 〔このアプリについて〕 › 詳細 の中にだけ残す。
+        VersionText.Text = AboutViewModel.VersionText;
 
         var paths = AppServices.Paths;
 
@@ -82,6 +86,17 @@ public partial class MainWindow : Window
         // 「初回取得をやり直す」は設定 › 詳細へ要素ごと移った（v2.0 段 A-1）。
         // **ウィザードは窓が要る仕事**なので、押された事実だけを受け取って窓側で開く。
         SettingsPage.FirstRunRequested += (_, _) => ShowFirstRun();
+
+        // v2.0 段 C＝設定 › ふだんの 4 つと このアプリについて の 2 釦。
+        // **開ける仕事は窓が 1 箇所で持つ**（在り処ごと開く 1 本を 3 度書かない）。
+        SettingsPage.OpenLogRequested += (_, _) => OpenLog();
+        SettingsPage.OpenFolderRequested += (_, path) => OpenFolder(path);
+        AboutPage.GuideRequested += (_, _) => OpenGuide();
+
+        // 〔報告用のログを保存〕は〔ログを開く〕とは**別の仕事**である（是正・段 C の検分）＝
+        // 記録を 1 檔にまとめ、その檔の路を画面へ返す（v2-spec.md §2-6・v2-copy.md §8）。
+        AboutPage.SaveLogRequested += (_, e) => e.Path = SaveReportLog();
+        AboutPage.OpenReportFolderRequested += (_, e) => SelectInExplorer(e.Path);
 
         RefreshLogButton();
 
@@ -326,13 +341,91 @@ public partial class MainWindow : Window
         var path = CurrentLogPath();
         if (path is null || !File.Exists(path))
         {
-            _model.AppendLog("まだ記録がありません。");
+            _model.AppendLog(UiStrings.NoLogYet);
             RefreshLogButton();
+            return;
+        }
+
+        SelectInExplorer(path);
+    }
+
+    /// <summary>1 つの檔を在り処ごと選んで開く（路が無い・檔が無い回は何もしない）。</summary>
+    private void SelectInExplorer(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
             return;
         }
 
         StartShell("explorer.exe", "/select,\"" + path + "\"");
     }
+
+    /// <summary>
+    /// <b>報告用に記録を 1 檔へまとめる</b>（`v2-spec.md` §2-6＝「1 檔にまとめて<b>その檔の場所を
+    /// 出すだけ</b>」・`v2-copy.md` §8 の 1 行）。
+    /// <para>
+    /// 集めるのは <c>AppPaths.LogDir</c> に在る記録の檔（新しい順に最大 5 日ぶん）。
+    /// <b>送らない・開かない</b>＝出来た檔の路を返すだけで、送り先は隣の 1 行が指す
+    /// （X の @yomiwakechan＝裁定 131）。まとめられなければ null。
+    /// </para>
+    /// </summary>
+    private string? SaveReportLog()
+    {
+        try
+        {
+            var dir = AppServices.Paths.LogDir;
+            if (!Directory.Exists(dir))
+            {
+                return null;
+            }
+
+            var sources = Directory.GetFiles(dir, "*.log")
+                .Where(path => !Path.GetFileName(path)
+                    .StartsWith(ReportPrefix, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(path => path, StringComparer.OrdinalIgnoreCase)
+                .Take(5)
+                .Reverse()
+                .ToArray();
+
+            if (sources.Length == 0)
+            {
+                return null;
+            }
+
+            var target = Path.Combine(
+                dir,
+                ReportPrefix + DateTimeOffset.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)
+                + ".log");
+
+            using (var writer = new StreamWriter(target, append: false, new UTF8Encoding(false)))
+            {
+                writer.WriteLine("# " + AboutViewModel.VersionText);
+                foreach (var source in sources)
+                {
+                    writer.WriteLine();
+                    writer.WriteLine("### " + Path.GetFileName(source));
+                    writer.WriteLine(File.ReadAllText(source));
+                }
+            }
+
+            _model.AppendLog(UiStrings.AboutReportSaved + target);
+            RefreshLogButton();
+            return target;
+        }
+        catch (IOException ex)
+        {
+            _model.AppendLog(UiStrings.AboutReportSaveFailed + "：" + ex.Message);
+            return null;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _model.AppendLog(UiStrings.AboutReportSaveFailed + "：" + ex.Message);
+            return null;
+        }
+    }
+
+    /// <summary>まとめた檔の名の頭（自分自身を集め直さないための印）。</summary>
+    private const string ReportPrefix = "report-";
 
     /// <summary>困ったときの手引き（配布物の <c>docs\</c>）を開く。</summary>
     private void OpenGuide()
@@ -348,6 +441,15 @@ public partial class MainWindow : Window
     }
 
     private void OpenExternal(string url) => StartShell(url, null);
+
+    /// <summary>置き場を 1 つ開く（無ければ何もしない＝押せる釦が必ず失敗する形を作らない）。</summary>
+    private void OpenFolder(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            StartShell("explorer.exe", "\"" + path + "\"");
+        }
+    }
 
     private void StartShell(string target, string? arguments)
     {

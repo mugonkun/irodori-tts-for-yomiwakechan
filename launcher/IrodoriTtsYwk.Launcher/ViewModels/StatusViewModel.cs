@@ -158,7 +158,7 @@ public sealed class StatusViewModel : ObservableObject
     // ---- 裁定 121＝取得への導線 ---------------------------------------------
 
     /// <summary>取得が未了のときに出す 1 行（<b>逐語</b>）。</summary>
-    public const string AcquisitionLine = "取得が未了です。";
+    public const string AcquisitionLine = UiStrings.StatusAcquisitionLine;
 
     /// <summary>
     /// 取得への 1 手（「取得へ進む」）を出すか。
@@ -303,7 +303,7 @@ public sealed class StatusViewModel : ObservableObject
     /// <summary>組み直しに入った。</summary>
     public void BeginRebuild()
     {
-        RebuildProgressText = "実行系を組み直しています…";
+        RebuildProgressText = UiStrings.StatusRebuilding;
         RebuildProgressFraction = 0;
         IsRebuilding = true;
     }
@@ -507,19 +507,27 @@ public sealed class StatusViewModel : ObservableObject
     /// <summary>状態の日本語（<b>1 箇所で綴る</b>＝状態帯と窓題の元）。</summary>
     public static string StateLabel(ServerState state) => state switch
     {
-        ServerState.Stopped => "停止",
-        ServerState.Starting => "起動中",
-        ServerState.Listening => "読込中",
-        ServerState.Ready => "待機",
-        ServerState.Warming => "暖機中",
-        ServerState.Failed => "失敗",
+        ServerState.Stopped => BandText.StoppedByUser,
+        ServerState.Starting => BandText.Preparing,
+        ServerState.Listening => BandText.Preparing,
+        ServerState.Ready => BandText.Ready,
+        ServerState.Warming => BandText.Ready,
+        ServerState.Failed => BandText.Failed,
         _ => state.ToString(),
     };
 
     // ===================== 状態の帯（v2.0・`v2-spec.md` §2-1）=====================
     //
-    // **名乗るのは 3 語だけ**（準備しています…／使えます／止まりました）。上の StateLabel の
-    // 6 語は 1 字も触らない＝MainStateText（下の StatusBar）に残る無人検分の錨である。
+    // **名乗るのは 3 語だけ**（準備しています…／使えます／止まりました）。
+    //
+    // **上の StateLabel も同じ語を返す**（段 C・是正）＝1 巡目のこの註は「StateLabel の 6 語は
+    // 1 字も触らない」と書いていたが、段 C が StateLabel を書き替えて ServerState の 6 値を
+    // 帯の語へ畳んだ（Stopped＝止まっています／Starting・Listening＝準備しています…／
+    // Ready・Warming＝使えます／Failed＝止まりました。）。**enum ServerState の 6 値と状態機械と
+    // 契約は 1 つも触っていない**＝替えたのは綴りだけである。結果、MainStateText（下の StatusBar）と
+    // MainBandStateText は同じ 4 綴りを運ぶ＝台本の錨も同じ語で書く
+    // （probe/d-launch-probe.ps1 の $T.Ready／Starting／Stopped／Failed の註と揃えてある）。
+    //
     // 文を組むのは純関数 BandText.For で、ここはその材料を集めて結果を配るだけ。
 
     private BandLine _band = BandText.For(ServerState.Stopped, null);
@@ -689,8 +697,8 @@ public sealed class StatusViewModel : ObservableObject
         VariantText = RuntimeVariants.DisplayName(variant);
         EndpointText = "http://127.0.0.1:" + port.ToString(CultureInfo.InvariantCulture);
         GpuText = string.IsNullOrWhiteSpace(gpuName) && string.IsNullOrWhiteSpace(gpuUuid)
-            ? (RuntimeVariants.IsCpu(variant) ? "CPU（GPU を使いません）" : "未選択")
-            : (gpuName ?? "GPU") + "（UUID …" + UiText.UuidTail(gpuUuid) + "）";
+            ? (RuntimeVariants.IsCpu(variant) ? UiStrings.StatusDeviceCpu : UiStrings.StatusGpuUnselected)
+            : gpuName ?? UiStrings.StatusDeviceGpu;
 
         SettingsPendingText = DescribePending(_running, settings);
         RepaintMemory();
@@ -725,13 +733,9 @@ public sealed class StatusViewModel : ObservableObject
             || !string.Equals(running.GpuUuid ?? string.Empty, settings.GpuUuid ?? string.Empty,
                 StringComparison.OrdinalIgnoreCase);
 
-        return differs
-            ? "設定は次回の起動から有効です（いま走っているのは "
-              + RuntimeVariants.DisplayName(running.Variant)
-              + "・http://127.0.0.1:" + running.Port.ToString(CultureInfo.InvariantCulture)
-              + "・" + (string.IsNullOrWhiteSpace(running.GpuName) ? "GPU 未選択" : running.GpuName)
-              + "）。"
-            : null;
+        // 走っている個体の綴り（動かし方・つなぎ口・グラフィックス）は**画面に出さない**＝
+        // 詳しい状態の詳細に同じ 3 つが並んでいる（憲章 原則 1・§6-1）。
+        return differs ? UiStrings.SettingsPending : null;
     }
 
     /// <summary>
@@ -794,33 +798,35 @@ public sealed class StatusViewModel : ObservableObject
         NoticesText = ComposeNotices(notices);
 
     /// <summary>
-    /// 起動の結末を載せる（裁定 88 ⑴⑵）＝<b>門で断られた理由 1 行と告知をそのまま出す</b>。
+    /// 起動の結末を載せる（裁定 88 ⑴⑵）＝<b>門の告知をそのまま出す</b>。
     /// <para>
-    /// 理由は状態機械が <see cref="Reason"/> に書くのが筋だが、<b>断られた事実が
-    /// 状態に載らない実装でも画面から消えない</b>ように、<see cref="Reason"/> と食い違うときだけ
-    /// 告知の先頭に足す（同じ文言を 2 度出さない）。
+    /// <b>内部の理由 1 行はここから画面へ出さない</b>（是正・段 C の検分＝憲章 原則 6
+    /// 「生のログ・スタックトレース…は画面に出さず」）。1 巡目は「断られた事実が状態に載らない
+    /// 実装でも画面から消えない」ための保険として <see cref="Reason"/> と食い違う
+    /// <paramref name="failureReason"/> を告知の先頭へ足していたが、その道で
+    /// <c>VariantGate</c> の工学の 1 行（検分・実行系・裁定の番号）が
+    /// <c>StatusNoticesText</c> へそのまま流れていた。断られた事実は帯
+    /// （<see cref="BandReasonText"/>＝<c>BandText.For</c> の 3 部品）が必ず出すので、
+    /// ここは<b>利用者の言葉で書かれた告知だけ</b>を運ぶ。元の 1 行は記録の檔に残る
+    /// （<c>MainViewModel</c> が <c>ServerStartResult.NoticeTrail</c> と理由を <c>AppendLog</c> する）。
     /// </para>
     /// </summary>
     public void ApplyStartOutcome(bool ok, string? failureReason, IReadOnlyList<string>? notices) =>
         NoticesText = ComposeStartOutcome(ok, failureReason, notices, Reason);
 
-    /// <summary>起動の結末の畳み方（<b>純関数</b>）。</summary>
+    /// <summary>
+    /// 起動の結末の畳み方（<b>純関数</b>）。
+    /// <paramref name="failureReason"/> と <paramref name="shownReason"/> は
+    /// <b>画面には出さない</b>（上の註）＝欄は呼ぶ側の形を変えないために残してある。
+    /// </summary>
     public static string? ComposeStartOutcome(
         bool ok, string? failureReason, IReadOnlyList<string>? notices, string? shownReason)
     {
-        var lines = new List<string>();
-        if (!ok && !string.IsNullOrWhiteSpace(failureReason)
-            && !string.Equals(shownReason?.Trim(), failureReason.Trim(), StringComparison.Ordinal))
-        {
-            lines.Add(failureReason.Trim());
-        }
+        _ = ok;
+        _ = failureReason;
+        _ = shownReason;
 
-        if (notices is not null)
-        {
-            lines.AddRange(notices);
-        }
-
-        return ComposeNotices(lines);
+        return ComposeNotices(notices);
     }
 
     /// <summary>告知の畳み方（<b>純関数</b>＝行はそのまま・空は null）。</summary>
@@ -951,9 +957,7 @@ public sealed class StatusViewModel : ObservableObject
 
         return GpuResolver.SameUuid(wantedUuid, actual)
             ? null
-            : "選んだ GPU（UUID …" + UiText.UuidTail(wantedUuid)
-              + "）と、実際に載った GPU（UUID …" + UiText.UuidTail(actual)
-              + "／" + (device?.Name ?? "名前不明") + "）が違います。";
+            : UiStrings.StatusGpuMismatch;
     }
 
     /// <summary>話者一覧が変わった（裁定 67 ⑵）。</summary>
@@ -1034,16 +1038,16 @@ public sealed class StatusViewModel : ObservableObject
         {
             // device が null＝モデル未読込（裁定 87 ⑴＝数値欄は null で latents だけ来る）。
             // OS の計数は torch の外から見た値なので、読めていればここでも出す。
-            return UiText.Missing + "（モデル未読込）" + os + ErrorSuffix(memory.Error);
+            return UiStrings.StatusModelNotLoaded + os + ErrorSuffix(memory.Error);
         }
 
-        var used = "torch 使用量 " + UiText.Bytes(memory.AllocatedBytes);
+        var used = UiStrings.StatusMemoryUsed + " " + UiText.Bytes(memory.AllocatedBytes);
         if (memory.MaxAllocatedBytes is not null)
         {
             used += "（最大 " + UiText.Bytes(memory.MaxAllocatedBytes) + "）";
         }
 
-        var text = used + "／占有量 " + UiText.Bytes(memory.ReservedBytes) + os;
+        var text = used + "／" + UiStrings.StatusMemoryReserved + " " + UiText.Bytes(memory.ReservedBytes) + os;
 
         return text + ErrorSuffix(memory.Error);
     }
@@ -1141,13 +1145,13 @@ public sealed class StatusViewModel : ObservableObject
 
         if (memory is not null && memory.LatentCount > 0)
         {
-            return head + "（焼いた話者 " + memory.LatentCount.ToString(CultureInfo.InvariantCulture)
-                + " 名・合計 " + UiText.Bytes(memory.EffectiveLatentsTotal) + "）";
+            return head + "（下ごしらえ済みの声 " + memory.LatentCount.ToString(CultureInfo.InvariantCulture)
+                + " 人・合計 " + UiText.Bytes(memory.EffectiveLatentsTotal) + "）";
         }
 
         if (memory is not null)
         {
-            return head + "（焼いた話者 0 名・合計 " + UiText.Bytes(0L) + "）";
+            return head + "（下ごしらえ済みの声 0 人・合計 " + UiText.Bytes(0L) + "）";
         }
 
         var baked = 0;
@@ -1162,8 +1166,8 @@ public sealed class StatusViewModel : ObservableObject
             }
         }
 
-        return head + "（焼いた話者 " + baked.ToString(CultureInfo.InvariantCulture)
-            + " 名・合計 " + UiText.Missing + "）";
+        return head + "（下ごしらえ済みの声 " + baked.ToString(CultureInfo.InvariantCulture)
+            + " 人・合計 " + UiText.Missing + "）";
     }
 
     /// <summary>
@@ -1189,14 +1193,14 @@ public sealed class StatusViewModel : ObservableObject
 
         var tail = rows is null || rows.Count == 0
             ? string.Empty
-            : "（全員分＝全部を同時に載せたときの上限 " + UiText.Bytes(upper) + "）";
+            : "（全員ぶん＝" + UiText.Bytes(upper) + "）";
 
         if (selected is null)
         {
-            return "1 名あたり＝話者を選ぶと出ます" + tail;
+            return "1 人あたり＝声を選ぶと出ます" + tail;
         }
 
-        return "1 名あたり「" + selected.DisplayName + "」＝" + selected.MemoryText + tail;
+        return "1 人あたり「" + selected.DisplayName + "」＝" + selected.MemoryText + tail;
     }
 
     /// <summary>
@@ -1213,6 +1217,20 @@ public sealed class StatusViewModel : ObservableObject
             ? string.Empty
             : "（一部の欄が読めませんでした：" + error.Trim() + "）";
 
+    /// <summary>
+    /// 詳細の 2 行目「いま動いている場所」（<b>純関数</b>・`v2-spec.md` §2-2 の 2）。
+    /// <para>
+    /// <b>製品名だけを出す</b>（是正・段 C の検分）＝1 巡目は
+    /// <c>cuda:0／NVIDIA GeForce RTX 3090（gfx1151）／bf16</c> の形で、
+    /// <c>device.actual</c> の生の綴りと <c>gcnArchName</c> をそのまま並べていた。
+    /// <c>cuda:0</c> は `v2-copy.md` §1-2 の 40 行目が削除と決めた機械の綴りで、
+    /// <c>gfx1151</c> は憲章 附録 5 が「綴りだけを落とす」と決めた語である。
+    /// 名が読めない回は <c>GPU</c>／<c>CPU（GPU を使いません）</c> の普通の語へ落とす。
+    /// <b>bf16・FP32 は残す</b>（憲章 §6-2＝詳細の中に出してよい技術語）。
+    /// 生の <c>device</c>／<c>gcn_arch</c> は<b>記録の側にだけ</b>在る
+    /// （<c>ServerLogParser</c> が読む wrapper の banner 行と <c>/ywk/status</c> の JSON）。
+    /// </para>
+    /// </summary>
     private static string Compose(StatusDevice? device)
     {
         if (device is null)
@@ -1220,22 +1238,18 @@ public sealed class StatusViewModel : ObservableObject
             return UiText.Missing;
         }
 
-        // actual は実測値（モデル未読込なら null）＝設定値と食い違ったらそれが事実である。
-        var actual = string.IsNullOrWhiteSpace(device.Actual) ? UiText.Missing : device.Actual.Trim();
         var name = string.IsNullOrWhiteSpace(device.Name) ? null : device.Name.Trim();
         var precision = string.IsNullOrWhiteSpace(device.Precision) ? null : device.Precision.Trim();
-        var arch = string.IsNullOrWhiteSpace(device.GcnArch) ? null : device.GcnArch.Trim();
 
-        var text = actual;
-        if (name is not null)
-        {
-            text += "／" + name;
-        }
+        // actual は実測値（モデル未読込なら null）＝**綴りは出さず、CPU か GPU かだけを読む**。
+        // CPU で載った回は名が付いていても「CPU（GPU を使いません）」が事実である。
+        var actual = device.Actual?.Trim();
+        var onCpu = !string.IsNullOrEmpty(actual)
+            && actual.StartsWith("cpu", StringComparison.OrdinalIgnoreCase);
 
-        if (arch is not null)
-        {
-            text += "（" + arch + "）";
-        }
+        var text = onCpu
+            ? UiStrings.StatusDeviceCpu
+            : name ?? (string.IsNullOrEmpty(actual) ? UiText.Missing : UiStrings.StatusDeviceGpu);
 
         if (precision is not null)
         {
@@ -1327,7 +1341,7 @@ public sealed class StatusViewModel : ObservableObject
 
         return StartsWithEither(mine, theirs)
             ? null
-            : "配布物の上流 pin（" + mine + "）と、走っているサーバの pin（" + theirs.Trim() + "）が違います。";
+            : UiStrings.StatusUpstreamMismatch;
     }
 
     private static bool StartsWithEither(string a, string b)

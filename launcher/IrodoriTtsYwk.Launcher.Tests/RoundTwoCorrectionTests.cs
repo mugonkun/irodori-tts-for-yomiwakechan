@@ -77,7 +77,10 @@ public sealed class RoundTwoCorrectionTests : IDisposable
         var cu126 = VariantGate.Decide(
             RuntimeVariants.Cu126, Unobserved("ImportError: DLL load failed"), "591.86", CudaRelease);
         Assert.True(cu126.Allow);
-        Assert.Contains("ImportError", Assert.Single(cu126.Notices), StringComparison.Ordinal);
+        // 是正・段 C の検分＝torch の生の例外文は**記録の側**に落ちる（Trail）。
+        // 画面の 1 行は「確かめられませんでした」＋次の 1 手だけ（憲章 原則 6）。
+        Assert.Contains("ImportError", Assert.Single(cu126.LogLines), StringComparison.Ordinal);
+        Assert.DoesNotContain("ImportError", Assert.Single(cu126.Notices), StringComparison.Ordinal);
 
         var rocm = VariantGate.Decide(
             RuntimeVariants.RocmGfx1151, null, null, [RuntimeVariants.RocmGfx1151, RuntimeVariants.Cpu]);
@@ -219,7 +222,10 @@ public sealed class RoundTwoCorrectionTests : IDisposable
         var result = await server.StartAsync(request, CancellationToken.None);
 
         Assert.False(result.Ok);
-        Assert.Contains("未実測の帯", Assert.Single(result.Notices), StringComparison.Ordinal);
+        // 是正・段 C の検分＝告知は**画面の半分と記録の半分**に割れた。
+        // 画面はドライバの版と次の 1 手だけ、工学の綴り（未実測の帯）は NoticeTrail に残る。
+        Assert.Contains("530.00", Assert.Single(result.Notices), StringComparison.Ordinal);
+        Assert.Contains("未実測の帯", Assert.Single(result.NoticeTrail), StringComparison.Ordinal);
     }
 
     // ---- medium＝見張りが「自分の子か」を確かめていなかった -------------------
@@ -241,7 +247,7 @@ public sealed class RoundTwoCorrectionTests : IDisposable
             isStandardError: true, port: 18098);
 
         Assert.Equal(ServerState.Failed, machine.State);
-        Assert.Contains("ポート 18098 は既に使われています", machine.FailureReason!, StringComparison.Ordinal);
+        Assert.Contains("つなぎ口（18098）を使っています", machine.FailureReason!, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -450,8 +456,9 @@ public sealed class RoundTwoCorrectionTests : IDisposable
 
         var text = FirstRunViewModel.EstimateSizeText(paths, RuntimeVariants.Cpu);
 
-        Assert.StartsWith("不明", text, StringComparison.Ordinal);
-        Assert.Contains("sha256 の無い item", text, StringComparison.Ordinal);
+        // 是正・段 C の検分＝画面は平語 1 行、理由（sha256 の無い item …）は記録へ。
+        Assert.Equal(UiStrings.WizardSizeUnknown, text);
+        Assert.DoesNotContain("sha256", text, StringComparison.Ordinal);
     }
 
     // ---- medium＝vc_redist の「判らない」に答える口が無かった（裁定 87 ⑷）-----

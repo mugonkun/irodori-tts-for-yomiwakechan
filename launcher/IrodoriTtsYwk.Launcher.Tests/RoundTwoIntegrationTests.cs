@@ -270,7 +270,7 @@ public sealed class RoundTwoIntegrationTests : IDisposable
 
         Assert.False(decision.Allow);
         Assert.Equal(RuntimeVariants.RocmGfx1151, decision.SuggestedVariant);
-        Assert.Contains("rocm-gfx1151 か cpu の変種に切り替えてください", decision.Reason!, StringComparison.Ordinal);
+        Assert.Contains("ROCm に切り替えるか、" + UiStrings.SwitchInSettings, decision.Reason!, StringComparison.Ordinal);
     }
 
     // ---- ⑵ 写したプリセットは voices.json にも載る（裁定 78 ⑴） --------------
@@ -441,7 +441,7 @@ public sealed class RoundTwoIntegrationTests : IDisposable
 
         await voices.PrecomputeAsync(["テスト話者"]);
         Assert.Single(wrapper.Calls);
-        Assert.Contains("焼きます", voices.Message, StringComparison.Ordinal);
+        Assert.Contains("下ごしらえ", voices.Message, StringComparison.Ordinal);
 
         // 走行中の標本では出し直さない
         voices.ApplyPrecompute(new PrecomputeStatus { State = "running", Id = "run-1" });

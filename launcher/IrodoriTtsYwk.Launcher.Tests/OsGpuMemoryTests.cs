@@ -403,7 +403,7 @@ public sealed class OsGpuBandTests
                 11_634_429_952, 32_283_066_368, 63_805_628_416)]);
 
         Assert.Equal(
-            "torch 使用量 2.07 GiB（最大 4.57 GiB）／占有量 2.64 GiB"
+            "いま使っている量 2.07 GiB（最大 4.57 GiB）／確保している量 2.64 GiB"
             + "／このプロセス 10.84 GiB／GPU 全体 30.07 GiB / 59.42 GiB（AMD Radeon(TM) 8060S Graphics）",
             text);
     }
@@ -417,7 +417,7 @@ public sealed class OsGpuBandTests
 
         Assert.DoesNotContain("99.74 GiB", text, StringComparison.Ordinal);
         Assert.DoesNotContain("3.66 GiB", text, StringComparison.Ordinal);
-        Assert.StartsWith("torch 使用量 ", text, StringComparison.Ordinal);
+        Assert.StartsWith("いま使っている量 ", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -430,7 +430,7 @@ public sealed class OsGpuBandTests
         ]);
 
         Assert.Equal(
-            "torch 使用量 2.07 GiB（最大 4.57 GiB）／占有量 2.64 GiB"
+            "いま使っている量 2.07 GiB（最大 4.57 GiB）／確保している量 2.64 GiB"
             + "／GPU A＝このプロセス 2.00 GiB／GPU 全体 4.00 GiB / 8.00 GiB"
             + "／GPU B＝このプロセス 1.00 GiB／GPU 全体 2.00 GiB / 4.00 GiB",
             text);
@@ -473,7 +473,7 @@ public sealed class OsGpuBandTests
     {
         var text = StatusViewModel.DescribeMemory(Radeon(), true, []);
 
-        Assert.Equal("torch 使用量 2.07 GiB（最大 4.57 GiB）／占有量 2.64 GiB", text);
+        Assert.Equal("いま使っている量 2.07 GiB（最大 4.57 GiB）／確保している量 2.64 GiB", text);
         Assert.DoesNotContain("このプロセス", text, StringComparison.Ordinal);
 
         // 組そのものの純関数も、空と null では何も綴らない
@@ -487,7 +487,7 @@ public sealed class OsGpuBandTests
         var text = StatusViewModel.DescribeMemory(new MemoryStatus(), true,
             [new OsGpuMemoryRow(LuidA, "GPU A", 1_073_741_824, 2_147_483_648, 4_294_967_296)]);
 
-        Assert.StartsWith(UiText.Missing + "（モデル未読込）／このプロセス 1.00 GiB",
+        Assert.StartsWith(UiStrings.StatusModelNotLoaded + "／このプロセス 1.00 GiB",
             text, StringComparison.Ordinal);
     }
 

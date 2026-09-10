@@ -784,7 +784,7 @@ public sealed class CorrectionThreeSettingsTests : IDisposable
         main.Settings.Apply();
 
         Assert.Equal(
-            "設定を保存しました。変種・GPU・ポートを変えたときは、サーバを起動し直すと効きます。",
+            UiStrings.SettingsSaved,
             main.Settings.Message);
 
         Assert.True(live.FirstRunCompleted);

@@ -33,4 +33,30 @@ public partial class SettingsView : UserControl
 
     private void OnFirstRunClick(object sender, RoutedEventArgs e) =>
         FirstRunRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// 〔ログを開く〕（v2.0 段 C・<c>v2-spec.md</c> §2-5 の ⑷）が押された。
+    /// <b>帯と同じ動き</b>なので、開けるのは主窓に任せる（在り処ごと開く 1 本を 2 度書かない）。
+    /// </summary>
+    public event EventHandler? OpenLogRequested;
+
+    /// <summary>〔フォルダを開く〕（声のファイルの場所・データの場所）が押された。</summary>
+    public event EventHandler<string>? OpenFolderRequested;
+
+    private void OnOpenLogClick(object sender, RoutedEventArgs e) =>
+        OpenLogRequested?.Invoke(this, EventArgs.Empty);
+
+    private void OnOpenVoicesDirClick(object sender, RoutedEventArgs e) =>
+        RaiseOpenFolder((DataContext as SettingsViewModel)?.VoicesDirText);
+
+    private void OnOpenDataDirClick(object sender, RoutedEventArgs e) =>
+        RaiseOpenFolder((DataContext as SettingsViewModel)?.DataDirText);
+
+    private void RaiseOpenFolder(string? path)
+    {
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            OpenFolderRequested?.Invoke(this, path);
+        }
+    }
 }

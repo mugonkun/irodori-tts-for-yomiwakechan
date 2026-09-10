@@ -25,18 +25,15 @@ public sealed class AboutViewModel : ObservableObject
     }
 
     /// <summary>裁定 1（README 冒頭と同じ）。</summary>
-    public static string Disclaimer =>
-        "これは非公式のランチャです。Aratako 氏および Irodori-TTS／Irodori-TTS-Server とは"
-        + "関係がありません。上流は無改変のまま commit で固定して使っています。";
+    public static string Disclaimer => UiStrings.Disclaimer;
 
     /// <summary>裁定 9（透かしは既定 ON・切る経路を持たない）。</summary>
-    public static string WatermarkNotice =>
-        "合成した音声には SilentCipher の電子透かしが入ります（切る経路はありません）。";
+    public static string WatermarkNotice => UiStrings.WatermarkNotice;
 
     /// <summary>README §4（Ethical Restrictions 1・No Impersonation）。</summary>
     public static string EthicsNotice => VoicesViewModel.ImpersonationNotice;
 
-    public static string VersionText => "版 " + AppVersion.Display;
+    public static string VersionText => AppVersion.Display;
 
     /// <summary>上流 pin（publish でだけ焼かれる）。</summary>
     public static string UpstreamText => AppVersion.IsReleaseBuild

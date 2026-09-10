@@ -1,10 +1,18 @@
 <UserControl x:Class="IrodoriTtsYwk.Launcher.Views.AboutView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:IrodoriTtsYwk.Launcher.ViewModels"
              AutomationProperties.AutomationId="AboutView">
   <!--
     このアプリについて（裁定 1＝非公式・Aratako 氏とは無関係を冒頭に出す）。
-    版と上流 pin は Contracts/AppVersion が唯一の読み口（publish でだけ焼かれる）。
+    版と元になった実装の pin は Contracts/AppVersion が唯一の読み口（publish でだけ焼かれる）。
+
+    v2.0 段 C／A-5＝**畳みの外**は 見出し・非公式の断り・バージョン・音に埋め込まれる印・
+    声の元にする音声について・ライセンスの場所・末尾の 2 釦。
+    元になった実装の版とライセンスの一覧は AboutAdvancedExpander（既定は閉）の中へ移した。
+    〔不具合を報告する〕（リポジトリへのリンク）は**置かない**＝受け皿は X の @yomiwakechan
+    （裁定 131）。〔報告用のログを保存〕の隣に同じ 1 行を置く。
+    文言は ViewModels/UiStrings.cs が唯一の出所である。
   -->
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
@@ -18,36 +26,71 @@
                    AutomationProperties.AutomationId="AboutDisclaimerText" />
       </Border>
 
-      <TextBlock Text="版" FontWeight="Bold" Margin="0,16,0,4" />
+      <TextBlock Text="{x:Static vm:UiStrings.AboutVersionLabel}" FontWeight="Bold" Margin="0,16,0,4" />
       <TextBlock x:Name="VersionText" AutomationProperties.AutomationId="AboutVersionText" />
-      <TextBlock x:Name="UpstreamText" Margin="0,2,0,0" TextWrapping="Wrap"
-                 AutomationProperties.AutomationId="AboutUpstreamText" />
 
-      <TextBlock Text="電子透かし" FontWeight="Bold" Margin="0,16,0,4" />
+      <TextBlock Text="{x:Static vm:UiStrings.AboutWatermarkLabel}" FontWeight="Bold" Margin="0,16,0,4" />
       <TextBlock x:Name="WatermarkText" TextWrapping="Wrap"
                  AutomationProperties.AutomationId="AboutWatermarkText" />
 
-      <TextBlock Text="参照ボイスの扱い" FontWeight="Bold" Margin="0,16,0,4" />
+      <TextBlock Text="{x:Static vm:UiStrings.AboutEthicsLabel}" FontWeight="Bold" Margin="0,16,0,4" />
       <TextBlock x:Name="EthicsText" TextWrapping="Wrap"
                  AutomationProperties.AutomationId="AboutEthicsText" />
 
-      <TextBlock Text="ライセンスの所在" FontWeight="Bold" Margin="0,16,0,4" />
+      <TextBlock Text="{x:Static vm:UiStrings.AboutLicensesLabel}" FontWeight="Bold" Margin="0,16,0,4" />
       <TextBlock TextWrapping="Wrap"
                  AutomationProperties.AutomationId="AboutLicensesDirText"
                  Text="{Binding LicensesDirText, Mode=OneWay}" />
-      <TextBlock Margin="0,4,0,0" TextWrapping="Wrap"
-                 AutomationProperties.AutomationId="AboutNoticesPathText"
-                 Text="{Binding NoticesPathText, Mode=OneWay}" />
-      <ItemsControl x:Name="LicenseList" Margin="0,6,0,0"
-                    AutomationProperties.AutomationId="AboutLicenseList">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <TextBlock Margin="12,1,0,1" Text="{Binding}" />
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
       <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="#666666" FontSize="11"
-                 Text="実行系・モデル・vc_redist は配布物に入っていません。初回取得で、取得台帳の URL と sha256 に従って利用者の機体へ入ります。各許諾文はその展開先に残ります。" />
+                 Text="{x:Static vm:UiStrings.AboutLicensesNote}" />
+
+      <!-- 詳細（上級者向け）＝ライセンスの一覧・元になった実装の版・お知らせの全文の在り処。 -->
+      <Expander Margin="0,14,0,0" IsExpanded="False"
+                AutomationProperties.AutomationId="AboutAdvancedExpander"
+                Header="{x:Static vm:UiStrings.AdvancedHeader}">
+        <StackPanel Margin="8,6,0,0">
+          <TextBlock x:Name="UpstreamText" TextWrapping="Wrap"
+                     AutomationProperties.AutomationId="AboutUpstreamText" />
+          <TextBlock Margin="0,4,0,0" TextWrapping="Wrap"
+                     AutomationProperties.AutomationId="AboutNoticesPathText"
+                     Text="{Binding NoticesPathText, Mode=OneWay}" />
+          <ItemsControl x:Name="LicenseList" Margin="0,6,0,0"
+                        AutomationProperties.AutomationId="AboutLicenseList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Margin="12,1,0,1" Text="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Expander>
+
+      <WrapPanel Margin="0,18,0,0">
+        <Button Content="{x:Static vm:UiStrings.AboutGuideButton}" Padding="14,5" Margin="0,0,8,6"
+                AutomationProperties.AutomationId="AboutGuideButton"
+                Click="OnGuideClick" />
+        <Button Content="{x:Static vm:UiStrings.AboutSaveLogButton}" Padding="14,5" Margin="0,0,8,6"
+                AutomationProperties.AutomationId="AboutSaveLogButton"
+                Click="OnSaveLogClick" />
+      </WrapPanel>
+      <!--
+        〔報告用のログを保存〕を押したあとの 1 行（v2-copy.md §8）＝
+        「記録をまとめました。〈路〉」＋脇に〔フォルダを開く〕。**押す前は出さない。**
+        まとめるのは主窓（AboutView.xaml.cs → MainWindow.SaveReportLog）で、
+        ここは結果の 1 行を出すだけである。
+      -->
+      <StackPanel x:Name="SavedReportPanel" Margin="0,6,0,0" Visibility="Collapsed">
+        <TextBlock x:Name="SavedReportText" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="AboutSavedLogText" />
+        <Button HorizontalAlignment="Left" Margin="0,4,0,0" Padding="12,3"
+                Content="{x:Static vm:UiStrings.SettingsOpenFolderButton}"
+                AutomationProperties.AutomationId="AboutOpenReportFolderButton"
+                Click="OnOpenReportFolderClick" />
+      </StackPanel>
+
+      <!-- 報告の受け皿（裁定 131）＝GitHub の Issues へは案内しない。 -->
+      <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="#666666" FontSize="11"
+                 Text="{x:Static vm:UiStrings.ReportHint}" />
 
     </StackPanel>
   </ScrollViewer>

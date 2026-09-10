@@ -89,9 +89,9 @@ public static class ServerBindFailure
 
     /// <summary>UI に出す理由 1 行（<b>次のポートを探さない</b>ことを明言する）。</summary>
     public static string Message(int port) =>
-        "ポート " + port.ToString(CultureInfo.InvariantCulture)
-        + " は既に使われています。別のアプリを閉じるか、設定でポートを変えてください"
-        + "（自動では別のポートを探しません）。";
+        "ほかのソフトが、このアプリのつなぎ口（" + port.ToString(CultureInfo.InvariantCulture)
+        + "）を使っています。同じ番号を先に使っているソフトがあると、"
+        + "読み上げの用意ができません。";
 }
 
 /// <summary>
@@ -144,7 +144,7 @@ public sealed class ServerStateMachine
 
     /// <summary>降ろすときに出す理由 1 行。</summary>
     public const string UnreachableReason =
-        "サーバが応答しなくなりました（プロセスは生きています）。停止してから起こし直してください。";
+        "反応がなくなりました。読み上げの準備が、途中で固まったままになっています。";
 
     /// <summary>
     /// <c>/ywk/status.runtime.error</c> を状態帯に出すときの前置き（裁定 105 ⑷）。

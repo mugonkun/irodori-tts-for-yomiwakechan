@@ -154,7 +154,8 @@ public sealed class SettingsGpuPersistenceTests : IDisposable
         Assert.Equal("未選択", status.GpuText);   // 適用するまでは動かない
 
         model.Apply();
-        Assert.Contains("UUID", status.GpuText, StringComparison.Ordinal);
+        // v2.0 段 C＝出すのは製品名だけ（UUID の下 6 桁は文から落とした）。
+        Assert.DoesNotContain("UUID", status.GpuText, StringComparison.Ordinal);
         Assert.Contains("GPU 0", status.GpuText, StringComparison.Ordinal);
     }
 
@@ -249,7 +250,7 @@ public sealed class CorrectionSeatTests
         Assert.Contains("18088", status.EndpointText, StringComparison.Ordinal);
         Assert.Contains("GPU A", status.GpuText, StringComparison.Ordinal);
         Assert.NotNull(status.SettingsPendingText);
-        Assert.Contains("次回の起動", status.SettingsPendingText!, StringComparison.Ordinal);
+        Assert.Contains("次にアプリを開いたとき", status.SettingsPendingText!, StringComparison.Ordinal);
 
         // 止まれば新しい設定の姿に戻る
         status.EndRun();
@@ -281,11 +282,11 @@ public sealed class CorrectionSeatTests
         var ghost = new VoiceRow("ywk-c962284a59da", "ywk-c962284a59da", null, false, false, false, false,
             null, IsInTable: false);
         Assert.False(ghost.CanRemove);
-        Assert.Equal("サーバ側", ghost.KindText);
+        Assert.Equal("このアプリの外", ghost.KindText);
 
         var known = new VoiceRow("琴葉茜", "琴葉茜", "ywk-abc.wav", false, false, false, false, null);
         Assert.True(known.CanRemove);
-        Assert.Equal("利用者", known.KindText);
+        Assert.Equal("自分で追加", known.KindText);
 
         // 幽霊行は焼きにも行かない
         Assert.Empty(VoiceRowBuilder.NeedsPrecompute([ghost]));

@@ -35,12 +35,32 @@
   -->
   <Target Name="CleanCopiedViews" BeforeTargets="PrepareForBuild">
     <RemoveDir Directories="$(OutputPath)Views" />
+    <RemoveDir Directories="$(OutputPath)ViewModelsSource" />
+    <RemoveDir Directories="$(OutputPath)ProbeScripts" />
   </Target>
 
   <ItemGroup>
     <None Include="..\IrodoriTtsYwk.Launcher\Views\*.xaml"
           CopyToOutputDirectory="PreserveNewest"
           LinkBase="Views" />
+    <!--
+      語の検分（WordLintTests）が舐める ViewModel の**原文**。`None` なので二重に建たない。
+      是正・段 C の検分＝UiStrings と XAML だけでは「ViewModel が組み立てて束縛に載せる 1 行」が
+      1 つも見えず、隠す語が 6 本素通りしていた。
+    -->
+    <None Include="..\IrodoriTtsYwk.Launcher\ViewModels\*.cs"
+          CopyToOutputDirectory="PreserveNewest"
+          LinkBase="ViewModelsSource" />
+    <!--
+      無人検分の台本。AutomationIdsTests が「畳みの中の id を台本が開けるか」を見るのに読む
+      （是正・段 C の検分＝id が在るだけでは触れない＝畳んだ Expander は UIA から見えない）。
+    -->
+    <None Include="..\..\probe\d-launch-probe.ps1"
+          CopyToOutputDirectory="PreserveNewest"
+          LinkBase="ProbeScripts" />
+    <None Include="..\..\probe\wizard-probe.ps1"
+          CopyToOutputDirectory="PreserveNewest"
+          LinkBase="ProbeScripts" />
   </ItemGroup>
 
 </Project>

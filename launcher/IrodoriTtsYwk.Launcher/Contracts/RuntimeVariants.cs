@@ -89,10 +89,10 @@ public static class RuntimeVariants
     {
         // 「既定」は落とした（裁定 126 の B）＝どれを最初に選ぶかはドライバの帯が決めるので、
         // 一覧の札が cu130 を既定と名乗ると、門が断る側へ利用者を呼び戻すことになる。
-        Cu130 => "CUDA 13.0（ドライバ 580 以上）",
+        Cu130 => "CUDA 13.0（ドライバ 580.00 以上）",
         Cu126 => "CUDA 12.6（ドライバ 528.33 以上）",
-        Cpu => "CPU（遅い・配信用途では非推奨）",
-        RocmGfx1151 => "Radeon gfx1151（未保障・bf16 固定）",
+        Cpu => "CPU（とても遅い・配信には向きません）",
+        RocmGfx1151 => "ROCm（Radeon 向け・bf16 固定）",
         _ => variant,
     };
 
@@ -107,8 +107,8 @@ public static class RuntimeVariants
         Cu130 => "CUDA 13.0",
         Cu126 => "CUDA 12.6",
         Cpu => "CPU",
-        RocmGfx1151 => "Radeon gfx1151",
-        CudaLabel => "CUDA 版",
+        RocmGfx1151 => "ROCm",
+        CudaLabel => "CUDA（版を指定しない既定）",
         _ => variant,
     };
 }

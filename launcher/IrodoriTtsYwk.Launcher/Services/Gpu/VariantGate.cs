@@ -5,16 +5,39 @@ using IrodoriTtsYwk.Launcher.Contracts;
 
 namespace IrodoriTtsYwk.Launcher.Services.Gpu;
 
-/// <summary>変種の門の判断（<see cref="VariantGate.Decide"/> の返り）。</summary>
+/// <summary>
+/// 変種の門の判断（<see cref="VariantGate.Decide"/> の返り）。
+/// <para>
+/// <b>画面に出す文とログに落とす文を分ける</b>（`v2-copy.md` §1-8 の
+/// <c>Services/Gpu/VariantGate.cs:102-165</c>・是正・段 C の検分）＝
+/// <see cref="Notices"/> は<b>画面に出す半分</b>（憲章 §6-1 の隠す語を 1 つも含まない）、
+/// <see cref="Trail"/> は<b>記録に落とす半分</b>（検分の観測・実行系・裁定の番号＝綴りは資産なので触らない）。
+/// <see cref="Reason"/> は<b>画面に出さない</b>＝帯（<c>BandText.For</c>）が
+/// この綴りを見分けて 3 部品へ言い直し、<c>StatusReasonText</c> はその言い直しを出す。
+/// </para>
+/// </summary>
 /// <param name="Allow">起こしてよいか。</param>
-/// <param name="Reason">起こさないときの理由 1 行（<see cref="Allow"/> が真なら null）。</param>
+/// <param name="Reason">
+/// 起こさないときの理由 1 行（<see cref="Allow"/> が真なら null）。
+/// <b>ログと見分けの綴り</b>であって画面の文ではない。
+/// </param>
 /// <param name="SuggestedVariant">代わりに勧める変種（勧めようが無ければ null）。</param>
-/// <param name="Notices">起こすが伝える 1 行の列（既定は空・<b>null にはならない</b>）。</param>
+/// <param name="Notices">
+/// 起こすが伝える 1 行の列＝<b>画面に出す半分</b>（既定は空・<b>null にはならない</b>）。
+/// </param>
+/// <param name="Trail">
+/// 同じ告知の<b>記録に落とす半分</b>（既定は空）。行の数は <see cref="Notices"/> と揃える。
+/// </param>
 public sealed record GateDecision(
     bool Allow,
     string? Reason,
     string? SuggestedVariant,
-    IReadOnlyList<string> Notices);
+    IReadOnlyList<string> Notices,
+    IReadOnlyList<string>? Trail = null)
+{
+    /// <summary>記録に落とす 1 行の列（渡されていなければ画面の半分をそのまま使う）。</summary>
+    public IReadOnlyList<string> LogLines => Trail ?? Notices;
+}
 
 /// <summary>
 /// <b>変種の門</b>（裁定 88 ⑴⑵・<b>純関数</b>）。
@@ -112,6 +135,11 @@ public static class VariantGate
         //     到達できた（実射＝`Decide("cu130", 期限切れ, null)` が `Allow=True`）。
         //     rocm では無害（wrapper が自分で理由を出す）だが cu130 は沈黙して消える。
         //     ⇒ **cu130（と、どちらか判らない畳んだ名 `cuda`）だけは、確かめられないまま起こさない。**
+        //
+        //     **この Reason は画面に出ない**（是正・段 C の検分）＝帯（`BandText.For`）が
+        //     `GateProbeFailedMarker` で見分けて「グラフィックスを確かめられませんでした。…」の
+        //     3 部品へ言い直し、`StatusReasonText` はその言い直しのほうを出す。ここの綴り
+        //     （検分・実行系・裁定 83）は**記録と見分けの鍵**であって利用者の文ではないので触らない。
         if (RequiresObservedProbe(name) && (probe is null || !probe.Observed))
         {
             var unverified = Suggest(name, probe, driverVersion, installed);
@@ -140,18 +168,21 @@ public static class VariantGate
                 []);
         }
 
+        // 起こすが伝える 1 行＝**画面の半分と記録の半分を別々に組む**（是正・段 C の検分）。
+        // 画面の側に「実行系」「検分」「裁定」の綴りを 1 度も出さない（憲章 §6-1）。
         var notices = new List<string>();
+        var trail = new List<string>();
 
         if (probe is null)
         {
-            notices.Add(
-                With(name, "の") + " GPU 検分ができませんでした（実行系が見つかりません）。"
-                + "そのまま起こしますが、合成が落ちるようなら cpu の変種を選んでください。");
+            notices.Add(ViewModels.UiStrings.GateProbeUnavailable);
+            trail.Add(With(name, "の") + " GPU 検分ができませんでした（実行系が見つかりません）。"
+                + "そのまま起こします。");
         }
         else if (!probe.Observed)
         {
-            notices.Add(
-                With(name, "の") + " GPU 検分が読めませんでした（" + (probe.Error ?? "理由不明") + "）。"
+            notices.Add(ViewModels.UiStrings.GateProbeUnreadable);
+            trail.Add(With(name, "の") + " GPU 検分が読めませんでした（" + (probe.Error ?? "理由不明") + "）。"
                 + "そのまま起こします。");
         }
 
@@ -159,13 +190,15 @@ public static class VariantGate
         if (IsUnmeasuredBand(name, driverVersion))
         {
             notices.Add(
-                "ドライバ " + driverVersion!.Trim() + " は未実測の帯です（cu126 は "
+                ViewModels.UiStrings.GateUnmeasuredDriverHead + driverVersion!.Trim()
+                + ViewModels.UiStrings.GateUnmeasuredDriverTail);
+            trail.Add(
+                "ドライバ " + driverVersion.Trim() + " は未実測の帯です（cu126 は "
                 + DriverRequirement.Cu126MeasuredMinimum + " まで実射で確かめてあり、下限の "
-                + DriverRequirement.Cu126Minimum + " は NVIDIA の表からの値で未実測）。"
-                + "合成はできますが、落ちるようなら cpu の変種を選んでください。");
+                + DriverRequirement.Cu126Minimum + " は NVIDIA の表からの値で未実測）。");
         }
 
-        return new GateDecision(true, null, null, notices);
+        return new GateDecision(true, null, null, notices, trail);
     }
 
     /// <summary>
@@ -359,8 +392,8 @@ public static class VariantGate
     /// <summary>理由 1 行に出す変種の名（台帳の綴りをそのまま＝利用者が設定で選ぶ名と揃える）。</summary>
     private static string Label(string variant) =>
         string.Equals(variant, RuntimeVariants.CudaLabel, StringComparison.OrdinalIgnoreCase)
-            ? "CUDA 版"
-            : variant;
+            ? RuntimeVariants.ShortDisplayName(RuntimeVariants.CudaLabel)
+            : RuntimeVariants.ShortDisplayName(variant);
 
     /// <summary>
     /// 変種の名に助詞を継ぐ（<c>cu130 は</c>／<c>CUDA 版は</c>）。
@@ -379,12 +412,13 @@ public static class VariantGate
     {
         if (suggested is null)
         {
-            return "設定で別の変種を選んでください";
+            return ViewModels.UiStrings.SwitchInSettings;
         }
 
         return RuntimeVariants.IsCpu(suggested)
-            ? "cpu の変種に切り替えてください"
-            : suggested + " か cpu の変種に切り替えてください";
+            ? ViewModels.UiStrings.SwitchInSettings
+            : RuntimeVariants.ShortDisplayName(suggested) + " に切り替えるか、"
+              + ViewModels.UiStrings.SwitchInSettings;
     }
 
     /// <summary>括弧の中に出す観測（<b>推測を混ぜない</b>＝読めた物だけ並べる）。</summary>

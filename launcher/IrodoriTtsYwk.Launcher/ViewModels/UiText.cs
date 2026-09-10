@@ -28,7 +28,7 @@ public static class UiText
     /// （是正・便 D（3）・low 6 の ⑵）。
     /// </para>
     /// </summary>
-    public const string NotRunning = "—（サーバが動いていません）";
+    public const string NotRunning = UiStrings.StatusNotReady;
 
     /// <summary>
     /// バイト数（<b>1024 進</b>＝<c>KiB</c>／<c>MiB</c>／<c>GiB</c>）。

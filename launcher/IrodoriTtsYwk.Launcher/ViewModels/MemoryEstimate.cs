@@ -92,17 +92,17 @@ public static class MemoryEstimate
     {
         if (noRef)
         {
-            return "参照なし（増えません）";
+            return "増えません";
         }
 
         if (hasLatent)
         {
             return latentBytes is long bytes
-                ? "潜在参照（実測 " + UiText.Bytes(bytes) + "）"
-                : "潜在参照（増えません）";
+                ? "下ごしらえ済み（実測 " + UiText.Bytes(bytes) + "）"
+                : "下ごしらえ済み（増えません）";
         }
 
-        return "wav 参照（概算 +" + UiText.Bytes(WavReferenceBytes)
+        return "元の音声から読む（およそ +" + UiText.Bytes(WavReferenceBytes)
             + (IsProvisional ? "・実測前の概算" : string.Empty) + "）";
     }
 

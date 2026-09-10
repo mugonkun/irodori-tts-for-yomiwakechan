@@ -123,32 +123,50 @@ $null = New-Item -ItemType Directory -Path $outDir -Force
 
 # Japanese literals are built from code points so this file stays ASCII (see common.ps1 New-JpText).
 $T = [ordered]@{
-    Ready      = New-JpText 0x5F85, 0x6A5F                     # "waiting" = ServerState.Ready
-    Stopped    = New-JpText 0x505C, 0x6B62                     # "stopped"
-    Failed     = New-JpText 0x5931, 0x6557                     # "failed"
-    Starting   = New-JpText 0x8D77, 0x52D5, 0x4E2D             # "starting"
-    Loading    = New-JpText 0x8AAD, 0x8FBC, 0x4E2D             # "loading"
-    Warming    = New-JpText 0x6696, 0x6A5F, 0x4E2D             # "warming"
+    # ---- v2.0 stage C: the screen names THREE states, not six (v2-plan.md C-3 / C-4) ----
+    # StatusViewModel.StateLabel folds the six ServerState values into the band's own words, so the
+    # six old anchors below collapse into three. The ENUM is untouched -- only the spelling moved.
+    #   Ready / Warming   -> "it works"
+    #   Starting/Loading  -> "getting ready" (the neutral word; a fresh launch auto-starts)
+    #   Stopped (by user) -> "it is stopped"
+    #   Failed            -> "it stopped" (red)
+    Ready      = New-JpText 0x4F7F, 0x3048, 0x307E, 0x3059     # "it works"    = Ready / Warming
+    Warming    = New-JpText 0x4F7F, 0x3048, 0x307E, 0x3059     # same word (folded on purpose)
+    Starting   = New-JpText 0x6E96, 0x5099, 0x3057, 0x3066, 0x3044, 0x307E, 0x3059  # "getting ready"
+    Loading    = New-JpText 0x6E96, 0x5099, 0x3057, 0x3066, 0x3044, 0x307E, 0x3059  # same word
+    # "it is stopped" -- the user pressed stop (or autoStartServer:false). NOT a failure.
+    Stopped    = New-JpText 0x6B62, 0x307E, 0x3063, 0x3066, 0x3044, 0x307E, 0x3059
+    # "it stopped" -- ServerState.Failed (the red circle).
+    Failed     = New-JpText 0x6B62, 0x307E, 0x308A, 0x307E, 0x3057, 0x305F
     DefVoice   = New-JpText 0x30C7, 0x30D5, 0x30A9, 0x30EB, 0x30C8   # the always-present no_ref voice
     NewVoice   = New-JpText 0x30C6, 0x30B9, 0x30C8, 0x8A71, 0x8005   # the voice this probe adds
     Sentence   = New-JpText 0x3042, 0x3044, 0x3046, 0x3002           # a very short line to synthesize
     Caption    = New-JpText 0x843D, 0x3061, 0x7740, 0x3044, 0x3066   # default caption for the new voice
 
     # ---- round two (decisions 87 / 88) ----
-    Used       = New-JpText 0x4F7F, 0x7528, 0x91CF                   # "used"      = memory.allocated
-    Reserved   = New-JpText 0x5360, 0x6709, 0x91CF                   # "reserved"  = memory.reserved
+    # v2.0 stage C: "torch used / reserved" became plain Japanese (v2-copy.md 1-8, StatusViewModel).
+    # "what it is using right now" = memory.allocated
+    Used       = New-JpText 0x3044, 0x307E, 0x4F7F, 0x3063, 0x3066, 0x3044, 0x308B, 0x91CF
+    # "what it has set aside"      = memory.reserved
+    Reserved   = New-JpText 0x78BA, 0x4FDD, 0x3057, 0x3066, 0x3044, 0x308B, 0x91CF
     Whole      = New-JpText 0x5168, 0x4F53                           # "whole"     = the whole GPU (PDH)
     # ---- decisions 110 (2026-09-08): the band's OS group comes from the Windows GPU counters ----
     ThisProc   = New-JpText 0x3053, 0x306E, 0x30D7, 0x30ED, 0x30BB, 0x30B9   # "this process"
     BandSep    = New-JpText 0xFF0F                                   # the full-width slash the band uses
-    Baked      = New-JpText 0x713C, 0x3044, 0x305F, 0x8A71, 0x8005   # "baked voices"
-    LatentRef  = New-JpText 0x6F5C, 0x5728, 0x53C2, 0x7167           # "latent reference"
+    # v2.0 stage C: "baked voices" -> "voices already prepared"; "latent reference" -> "prepared".
+    Baked      = New-JpText 0x4E0B, 0x3054, 0x3057, 0x3089, 0x3048, 0x6E08, 0x307F, 0x306E, 0x58F0
+    LatentRef  = New-JpText 0x4E0B, 0x3054, 0x3057, 0x3089, 0x3048, 0x6E08, 0x307F
     Measured   = New-JpText 0x5B9F, 0x6E2C                           # "measured"
     Provision  = New-JpText 0x5B9F, 0x6E2C, 0x524D, 0x306E, 0x6982, 0x7B97  # "estimate, not measured"
-    PerVoice   = New-JpText 0x540D, 0x3042, 0x305F, 0x308A           # "per voice"
-    Preset     = New-JpText 0x30D7, 0x30EA, 0x30BB, 0x30C3, 0x30C8   # "preset" (the kind column)
-    ServerDown = New-JpText 0x30B5, 0x30FC, 0x30D0, 0x304C, 0x843D, 0x3061, 0x307E, 0x3057, 0x305F
-    CannotSee  = New-JpText 0x3092, 0x898B, 0x3089, 0x308C, 0x307E, 0x305B, 0x3093  # "cannot see"
+    PerVoice   = New-JpText 0x4EBA, 0x3042, 0x305F, 0x308A           # "per voice" (counter changed)
+    Preset     = New-JpText 0x540C, 0x68B1                           # "bundled" (the kind column)
+    # "the reading engine stopped" -- what the try tab prints when the child dies (stage C wording).
+    ServerDown = New-JpText 0x8AAD, 0x307F, 0x4E0A, 0x3052, 0x306E, 0x7528, 0x610F, 0x304C, 0x6B62, 0x307E, 0x308A, 0x307E, 0x3057, 0x305F
+    # NOTE (v2.0 stage C, correction): StatusReasonText now carries the BAND's three part line
+    # (BandText.For), not the engine's own sentence, so "cannot see" is the LOG spelling only.
+    # What the screen says is "could not FIND this machine's GPU" -- anchor on that.
+    CannotSee  = New-JpText 0x3092, 0x898B, 0x3089, 0x308C, 0x307E, 0x305B, 0x3093  # "cannot see" (log only)
+    CannotFind = New-JpText 0x898B, 0x3064, 0x3051, 0x3089, 0x308C, 0x307E, 0x305B, 0x3093  # "could not find"
     Unsupported = New-JpText 0x672A, 0x5BFE, 0x5FDC                  # "not supported"
     Dash       = New-JpText 0x2014                                   # the em dash used for "unknown"
     # A line long enough that a 40 step shot is still running when the kill lands (e-2).
@@ -171,10 +189,9 @@ $T = [ordered]@{
     AppFile    = New-JpText 0x30A2, 0x30D7, 0x30EA, 0x306E, 0x30D5, 0x30A1, 0x30A4, 0x30EB  # "the app's files" (W2)
     Finished   = New-JpText 0x4F7F, 0x3048, 0x307E, 0x3059, 0x3002   # "it works." (the last page's title)
     ToTry      = New-JpText 0x3057, 0x3083, 0x3079, 0x3089, 0x305B, 0x3066, 0x307F, 0x308B  # "let it say something" (last press)
-    # "rebuild the runtime" -- the one move decisions 91 asks for when the ledger stops matching.
-    Rebuild    = New-JpText 0x5B9F, 0x884C, 0x7CFB, 0x3092, 0x7D44, 0x307F, 0x76F4, 0x3059
-    # "delete the download cache" -- the button of decisions 90 Q-E2 (3).
-    ClearCache = New-JpText 0x53D6, 0x5F97, 0x30AD, 0x30E3, 0x30C3, 0x30B7, 0x30E5, 0x3092, 0x6D88, 0x3059
+    # NOTE (v2.0 stage C): the "rebuild the runtime" and "delete the download cache" keys are GONE.
+    # Stage A-0 moved both presses to id lookups (Invoke-ButtonById), and stage C rewrote both
+    # labels, so a name-based anchor here would only rot. Do not add one back.
 }
 
 $script:Failures = @()
@@ -286,6 +303,53 @@ function Open-YwkRunControls {
         Write-Host ('[run-controls] the settings tab could not be selected: ' + $_.Exception.Message)
     }
     return (Open-YwkFold -Root $Window -Id 'SettingsAdvancedExpander')
+}
+
+function Get-YwkVariantName {
+    <#
+      .SYNOPSIS
+        The name the SCREEN gives a way of running, for a ledger spelling.
+      .DESCRIPTION
+        v2.0 stage C stopped printing the ledger spelling (cu130 / rocm-gfx1151) anywhere a user
+        can see: BandText.VariantName and RuntimeVariants.ShortDisplayName both answer with the
+        four plain names below (charter 6-1, appendix 5 -- the gfx1151 spelling is dropped). A step
+        that asserts on the ledger spelling would fail on a build that is behaving correctly, so
+        every screen assertion about a variant goes through this map. ASCII on purpose.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][string]$Variant)
+    switch ($Variant) {
+        'cu130'         { return 'CUDA 13.0' }
+        'cu126'         { return 'CUDA 12.6' }
+        'rocm-gfx1151'  { return 'ROCm' }
+        'cpu'           { return 'CPU' }
+        default         { return $Variant }
+    }
+}
+
+function Open-YwkStatusDetails {
+    <#
+      .SYNOPSIS
+        Put the detailed status rows on screen: the status tab, then its details fold.
+      .DESCRIPTION
+        v2.0 stage C moved THIRTEEN elements of the status page, ELEMENT AND ID INTACT, into
+        StatusAdvancedExpander (IsExpanded="False"): StatusGpuText / StatusDeviceText /
+        StatusVariantText / StatusWarmupText / StatusPrecomputeText / StatusMemoryPanel /
+        StatusMemoryText / StatusLatentCacheText / StatusVoiceMemoryText /
+        StatusUpstreamMismatchText / StatusNoticesText / StatusEndpointText / StatusLogBox.
+        A collapsed WPF Expander is INVISIBLE to UI Automation, so a step that only selected the
+        tab read $null from every one of them (correction, stage C review). Use this instead of a
+        bare Select-YwkTab wherever a Status* value is read next. Idempotent, and a build without
+        the fold walks on (Open-YwkFold returns $true when the fold is not there).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$Window)
+    try {
+        $null = Select-YwkTab -Window $Window -TabId 'TabStatus'
+    } catch {
+        Write-Host ('[status-details] the status tab could not be selected: ' + $_.Exception.Message)
+    }
+    return (Open-YwkFold -Root $Window -Id 'StatusAdvancedExpander')
 }
 
 function Invoke-Shot {
@@ -539,7 +603,7 @@ function Start-AndWaitReady {
     # press, then come back to the status page, which every caller reads next.
     $null = Open-YwkRunControls -Window $Window
     $null = Invoke-ButtonById -Root $Window -Id 'MainStartButton'
-    $null = Select-YwkTab -Window $Window -TabId 'TabStatus'
+    $null = Open-YwkStatusDetails -Window $Window
     $ready = Wait-ForPattern -Root $Window -Id 'MainStateText' `
         -Pattern ($T.Ready + '|' + $T.Warming) -TimeoutSeconds $TimeoutSeconds -IntervalMilliseconds 400
     Write-Host ('[restart] state=' + $ready.text + ' after ' + [math]::Round($ready.elapsed, 1) + ' s')
@@ -617,24 +681,30 @@ function Invoke-GateProbe {
         $null = New-LauncherFixture -DataDir $DataDir -Variant $Variant -Port $Port -HfHome $HfHome
         $proc = Start-Launcher -Exe $Exe -AppDir $AppDir -RuntimeRoot $RuntimeRoot -DataDir $DataDir
         $win = Get-MainWindow -Proc $proc -TimeoutSeconds 60
-        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+        $null = Open-YwkStatusDetails -Window $win
         Write-Host ('[gate] variant = ' + (Get-TextById -Root $win -Id 'StatusVariantText'))
 
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         $null = Open-YwkRunControls -Window $win
         $null = Invoke-ButtonById -Root $win -Id 'MainStartButton'
-        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+        $null = Open-YwkStatusDetails -Window $win
         $failed = Wait-ForPattern -Root $win -Id 'MainStateText' -Pattern $T.Failed -TimeoutSeconds 60 -IntervalMilliseconds 200
         $sw.Stop()
 
+        # v2.0 stage C (correction): the refusal reaches the user in THREE places and the engine's
+        # own sentence is in none of them -- StatusReasonText and the band both carry BandText.For's
+        # rewrite, and the "what to do next" half is the band button's label. Read all three.
         $reason = Get-TextById -Root $win -Id 'StatusReasonText'
         $notices = Get-TextById -Root $win -Id 'StatusNoticesText'
+        $action = Get-TextById -Root $win -Id 'MainBandActionButton' -TimeoutSeconds 3
         if ($null -eq $reason) { $reason = '' }
         if ($null -eq $notices) { $notices = '' }
-        $band = ($reason + ' ' + $notices).Trim()
+        if ($null -eq $action) { $action = '' }
+        $band = ($reason + ' ' + $notices + ' ' + $action).Trim()
         Write-Host ('[gate] state   = ' + $failed.text + ' after ' + [math]::Round($sw.Elapsed.TotalSeconds, 2) + ' s')
         Write-Host ('[gate] reason  = ' + $reason)
         Write-Host ('[gate] notices = ' + $notices)
+        Write-Host ('[gate] action  = ' + $action)
         # The log band is the only place a refusal that never reached the state band would show.
         foreach ($line in @((Get-TextById -Root $win -Id 'StatusLogBox') -split "`r?`n")) {
             if (-not [string]::IsNullOrWhiteSpace($line)) { Write-Host ('[gate] log     = ' + $line) }
@@ -642,11 +712,16 @@ function Invoke-GateProbe {
 
         Add-Step 'the gate refuses a variant that cannot see a GPU' $failed.ok (
             'state=' + $failed.text + ' in ' + [math]::Round($sw.Elapsed.TotalSeconds, 2) + ' s')
+        # It names the WAY TO RUN (CUDA 13.0), never the ledger spelling (cu130) -- see
+        # Get-YwkVariantName. "what it cannot do" is now "could not find this machine's GPU".
+        $wayName = Get-YwkVariantName -Variant $Variant
         Add-Step 'the refusal names the variant and what it cannot do' (
-            ($band -like ('*' + $Variant + '*')) -and ($band -like ('*' + $T.CannotSee + '*'))) $band
+            ($band -like ('*' + $wayName + '*')) -and ($band -like ('*' + $T.CannotFind + '*'))) (
+            $band + '   (expected ' + $wayName + ')')
         if (-not [string]::IsNullOrEmpty($ExpectSuggestion)) {
+            $suggestName = Get-YwkVariantName -Variant $ExpectSuggestion
             Add-Step 'the refusal suggests the variant this machine can run' (
-                $band -like ('*' + $ExpectSuggestion + '*')) ('expected ' + $ExpectSuggestion)
+                $band -like ('*' + $suggestName + '*')) ('expected ' + $suggestName)
         }
 
         # The whole point of the gate (decisions 83): nothing is started, so nothing can die on the
@@ -1301,7 +1376,7 @@ function Test-RebuildOffer {
         'StatusRuntimeMismatchText', 'MainRebuildRuntimeButton', 'SettingsRebuildRuntimeButton')
     # The offer sits on the status page, which is behind the gear from v2.0 on (A-3).
     try {
-        $null = Select-YwkTab -Window $Window -TabId 'TabStatus'
+        $null = Open-YwkStatusDetails -Window $Window
     } catch {
         Write-Host ('[ledger] the status page could not be selected: ' + $_.Exception.Message)
     }
@@ -1320,7 +1395,7 @@ function Test-RebuildOffer {
         $null = Select-YwkTab -Window $Window -TabId 'TabSettings'
         $null = Open-YwkFold -Root $Window -Id 'SettingsAdvancedExpander'
         $el = Find-ByIdAny -Root $Window -Id $ids -TimeoutSeconds 1
-        $null = Select-YwkTab -Window $Window -TabId 'TabStatus'
+        $null = Open-YwkStatusDetails -Window $Window
         return $el
     } catch {
         Write-Host ('[ledger] the settings page could not be swept: ' + $_.Exception.Message)
@@ -1490,13 +1565,13 @@ function Invoke-BadPythonProbe {
         $null = New-LauncherFixture -DataDir $DataDir -Variant $Variant -Port $Port
         $proc = Start-Launcher -Exe $Exe -AppDir $AppDir -RuntimeRoot $RuntimeRootPath -DataDir $DataDir
         $win = Get-MainWindow -Proc $proc -TimeoutSeconds 60
-        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+        $null = Open-YwkStatusDetails -Window $win
         Write-Host ('[badpython] variant = ' + (Get-TextById -Root $win -Id 'StatusVariantText'))
 
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         $null = Open-YwkRunControls -Window $win
         $null = Invoke-ButtonById -Root $win -Id 'MainStartButton'
-        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+        $null = Open-YwkStatusDetails -Window $win
         $told = $false
         $state = ''
         $reason = ''
@@ -1819,7 +1894,13 @@ try {
     # 'the port answers /health 200 within 10 s of the press' (section 105), where the server is up.
     Add-Step 'the endpoint is not printed on the main screen' (
         [string]::IsNullOrWhiteSpace($endpoint)) ('"' + $endpoint + '"')
-    Add-Step 'state starts at stopped' ($state0 -eq $T.Stopped) $state0
+    # v2.0 stage C: the six state words became three, and stage A took the start button away, so a
+    # fresh launch auto-starts (AutoStartServer defaults to true). "stopped" is therefore NOT the
+    # opening state any more -- the band opens on "getting ready" and walks to "it works". The row
+    # that still matters is that the app does not open RED. The "it is stopped" word is checked at
+    # the end of the run instead (section 8), where the probe presses stop itself.
+    Add-Step 'the app does not open on a failure' (
+        (-not [string]::IsNullOrWhiteSpace($state0)) -and ($state0 -notmatch $T.Failed)) $state0
 
     # ========================================================= g. the presets arrive (88 (5))
     #
@@ -1920,12 +2001,18 @@ try {
         ($blocked -like ('*' + $T.DefVoice + '*'))) ([string]$blocked)
     Add-Step 'the blocked remove button is not pressable' (-not $removeEnabled) (
         'enabled=' + $removeEnabled)
-    $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+    $null = Open-YwkStatusDetails -Window $win
 
     # ============================================================= 2. settings / GPU (D-2)
     Write-Host ''
     Write-Host '=== 2. settings and GPU enumeration (D-2) ==='
-    $null = Select-YwkTab -Window $win -TabId 'TabSettings'
+    # v2.0 stage C: SettingsGpuCombo / SettingsRefreshGpuButton / SettingsGpuMessageText /
+    # SettingsDriverText moved, ELEMENT AND ID INTACT, from the top of the settings page into
+    # SettingsAdvancedExpander (IsExpanded="False"), the same way stage A moved MainStartButton.
+    # A collapsed Expander is invisible to UIA, so the tab alone is no longer enough: without this
+    # Invoke-ButtonById would throw "Button not found: SettingsRefreshGpuButton" and, since the run
+    # body has no catch, the whole probe would abort here (correction, stage C review).
+    $null = Open-YwkRunControls -Window $win
     $swGpu = [System.Diagnostics.Stopwatch]::StartNew()
     $null = Invoke-ButtonById -Root $win -Id 'SettingsRefreshGpuButton'
     $gpuNames = @()
@@ -1961,7 +2048,7 @@ try {
         # The status band shows what the settings hold. If applying does not refresh it, the band
         # keeps saying "not chosen" right after the operator chose a GPU (found on this machine).
         $bandGpu = Get-TextById -Root $win -Id 'MainStateText' -TimeoutSeconds 2
-        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+        $null = Open-YwkStatusDetails -Window $win
         $bandGpu = Get-TextById -Root $win -Id 'StatusGpuText' -TimeoutSeconds 5
         Write-Host ('[status] gpu band = ' + $bandGpu)
         Add-Step 'the status band follows the applied GPU' (
@@ -2063,7 +2150,7 @@ try {
     Write-Host '=== 3. start the server (D-6) ==='
     $null = Open-YwkRunControls -Window $win
     $null = Invoke-ButtonById -Root $win -Id 'MainStartButton'
-    $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+    $null = Open-YwkStatusDetails -Window $win
 
     # Watch the state AND keep every log line that passes through the 20 line tail. The tail is a
     # window, not a transcript: on this machine the upstream emits about 20 lines of MIOpen / pydub /
@@ -2203,8 +2290,10 @@ try {
     # formatting choice. Each half is judged on ITS OWN slice of the band -- the torch half up to the
     # slash that opens the OS group, the OS group from there on -- so a missing torch number cannot
     # fail the OS step and an adapter name that happens to contain an em dash cannot fail the torch
-    # one. The word "torch " in front of "used" is checked on purpose: relabelling those two numbers
-    # as torch's own view is the point of decisions 110.
+    # one. (v2.0 stage C: the "torch " prefix in front of "used" is GONE -- the two numbers are now
+    # named in plain Japanese and live inside the "detailed status" fold, which is where charter
+    # 6-1 puts RTF and GiB. decisions 110 still holds: these two are torch's own view and the OS
+    # group next to them is the Windows counter, which is why they are judged on separate slices.)
     #
     # The OS group is NOT an unconditional step. decisions 110 D5 says a machine that cannot read the
     # Windows counters (no pdh.dll, no counter set, PDH_NO_DATA, a CPU variant) degrades to NO ROWS,
@@ -2212,7 +2301,7 @@ try {
     # absent the probe says so and moves on; when it is there, it must be complete.
     Write-Host ''
     Write-Host '=== a. the GPU memory band carries numbers (decisions 87 (1) / 67 (3) / 110) ==='
-    $mem = Wait-ForPattern -Root $win -Id 'StatusMemoryText' -Pattern ('torch ' + $T.Used + ' \d') -TimeoutSeconds 20 -IntervalMilliseconds 500
+    $mem = Wait-ForPattern -Root $win -Id 'StatusMemoryText' -Pattern ($T.Used + ' \d') -TimeoutSeconds 20 -IntervalMilliseconds 500
     Write-Host ('[memory] ' + $mem.text)
     $memText = [string]$mem.text
     $osAt = $memText.IndexOf($T.ThisProc, [System.StringComparison]::Ordinal)
@@ -2226,7 +2315,7 @@ try {
         $osPart = ''
     }
     $memOk = $mem.ok `
-        -and ($memText -match ('torch ' + $T.Used + ' \d')) `
+        -and ($memText -match ($T.Used + ' \d')) `
         -and ($torchPart -match ($T.Reserved + ' \d')) `
         -and ($memText -notlike ('*' + $T.Unsupported + '*')) `
         -and ($torchPart -notlike ('*' + $T.Dash + '*'))
@@ -2359,6 +2448,10 @@ try {
             # /ywk/status.memory.latents[<voice id>]. Adding a voice starts that bake by itself
             # (VoicesViewModel.AddAsync posts the precompute for the new voice), so this step only
             # has to wait for it and refresh the list -- latent/latent_stale come from /ywk/voices.
+            # v2.0 stage C (correction): VoicesSelectedMemoryText moved into
+            # VoicesAdvancedExpander, because this line spells MiB / GiB and the charter only lets
+            # those into a "details" fold. Open the fold before reading it (idempotent).
+            $null = Open-YwkFold -Root $win -Id 'VoicesAdvancedExpander'
             $null = Select-GridRow -Root $win -Id 'VoicesGrid' -CellText $T.NewVoice
             $memBefore = Get-TextById -Root $win -Id 'VoicesSelectedMemoryText'
             if ($null -eq $memBefore) { $memBefore = '' }
@@ -2369,6 +2462,7 @@ try {
             for ($i = 0; $i -lt 30; $i++) {
                 $null = Invoke-ButtonById -Root $win -Id 'VoicesRefreshButton'
                 Start-Sleep -Milliseconds 1500
+                $null = Open-YwkFold -Root $win -Id 'VoicesAdvancedExpander'
                 $null = Select-GridRow -Root $win -Id 'VoicesGrid' -CellText $T.NewVoice
                 $memAfter = Get-TextById -Root $win -Id 'VoicesSelectedMemoryText'
                 if ($null -eq $memAfter) { $memAfter = '' }
@@ -2407,7 +2501,7 @@ try {
                 ($memAfter -match '\d')) (
                 $memAfter + ' in ' + [math]::Round($bakeSeconds, 1) + ' s')
 
-            $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+            $null = Open-YwkStatusDetails -Window $win
             $cacheAfter = Get-TextById -Root $win -Id 'StatusLatentCacheText'
             if ($null -eq $cacheAfter) { $cacheAfter = '' }
             Write-Host ('[latent] after the bake = ' + $cacheAfter)
@@ -2442,12 +2536,12 @@ try {
     # ============================================================= 8. dump and stop
     Write-Host ''
     Write-Host '=== 8. stop ==='
-    $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+    $null = Open-YwkStatusDetails -Window $win
     $null = Write-UiaTree -Root $win -OutFile (Join-Path $outDir 'd-launch-probe-tree.txt')
 
     $null = Open-YwkRunControls -Window $win
     $null = Invoke-ButtonById -Root $win -Id 'MainStopButton'
-    $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+    $null = Open-YwkStatusDetails -Window $win
     $stopped = Wait-ForTextById -Root $win -Id 'MainStateText' -Pattern $T.Stopped -TimeoutSeconds 30
     Write-Host ('[stop] state=' + $stopped.text + ' after ' + [math]::Round($stopped.elapsed, 1) + ' s')
     Add-Step 'the server stops on request' $stopped.ok ('stopped in ' + [math]::Round($stopped.elapsed, 1) + ' s')
@@ -2516,7 +2610,7 @@ try {
             Add-Step 'a synthesis is told at once that the server went down' (
                 $told.ok -and ($told.elapsed -lt [math]::Min(20, $ReadyTimeoutSeconds))) (
                 'told in ' + [math]::Round($told.elapsed, 2) + ' s (deadline was ' + $ReadyTimeoutSeconds + ' s) :: ' + $told.text)
-            $null = Select-YwkTab -Window $win -TabId 'TabStatus'
+            $null = Open-YwkStatusDetails -Window $win
         }
     }
 } finally {

@@ -66,7 +66,7 @@ public static class AcquisitionCheck
     public const int MaxNamedFiles = 3;
 
     /// <summary>取得へ導く 1 文（<b>逐語</b>＝理由 1 行の末尾に必ずこれが付く）。</summary>
-    public const string Hint = "上の「初回取得をやり直す」から取得してください。";
+    public const string Hint = "〔はじめの準備をする〕を押してください。";
 
     /// <summary>いまの設定の変種で見る。</summary>
     public static AcquisitionState Check(AppPaths paths, LauncherSettings settings)

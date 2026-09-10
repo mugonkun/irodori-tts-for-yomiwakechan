@@ -105,7 +105,7 @@ public sealed class ServerStateMachineTests
 
         Assert.False(machine.ApplyReadiness(false, false, false));
         Assert.Equal(ServerState.Listening, machine.State);
-        Assert.Contains(reasons, r => r is not null && r.Contains("応答しなく", StringComparison.Ordinal));
+        Assert.Contains(reasons, r => r is not null && r.Contains("反応がなくなりました", StringComparison.Ordinal));
 
         // 戻ってくれば待機に上がり直す（自力復帰の路は残す）
         Assert.True(machine.ApplyReadiness(true, true, false));
@@ -308,7 +308,7 @@ public sealed class ServerStateMachineTests
 
         Assert.Equal(ServerState.Failed, machine.State);
         Assert.Contains("18088", machine.FailureReason!, StringComparison.Ordinal);
-        Assert.Contains("自動では別のポートを探しません", machine.FailureReason!, StringComparison.Ordinal);
+        Assert.Contains("読み上げの用意ができません", machine.FailureReason!, StringComparison.Ordinal);
     }
 
     [Fact]

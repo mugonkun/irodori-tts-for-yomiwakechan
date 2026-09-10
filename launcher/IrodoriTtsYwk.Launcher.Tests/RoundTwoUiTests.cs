@@ -134,12 +134,12 @@ public sealed class RoundTwoStatusBandTests
             true,
             rows);
 
-        Assert.Contains("使用量 1.00 GiB", text, StringComparison.Ordinal);
-        Assert.Contains("占有量 2.00 GiB", text, StringComparison.Ordinal);
+        Assert.Contains(UiStrings.StatusMemoryUsed + " 1.00 GiB", text, StringComparison.Ordinal);
+        Assert.Contains(UiStrings.StatusMemoryReserved + " 2.00 GiB", text, StringComparison.Ordinal);
         Assert.Contains("GPU 全体 3.00 GiB / 4.00 GiB", text, StringComparison.Ordinal);
-        Assert.True(text.IndexOf("使用量", StringComparison.Ordinal)
-            < text.IndexOf("占有量", StringComparison.Ordinal));
-        Assert.True(text.IndexOf("占有量", StringComparison.Ordinal)
+        Assert.True(text.IndexOf(UiStrings.StatusMemoryUsed, StringComparison.Ordinal)
+            < text.IndexOf(UiStrings.StatusMemoryReserved, StringComparison.Ordinal));
+        Assert.True(text.IndexOf(UiStrings.StatusMemoryReserved, StringComparison.Ordinal)
             < text.IndexOf("GPU 全体", StringComparison.Ordinal));
     }
 
@@ -151,7 +151,7 @@ public sealed class RoundTwoStatusBandTests
             true,
             [new OsGpuMemoryRow("luid_0x00000000_0x000137d0", "GPU A", 1024, null, null)]);
 
-        Assert.Contains("占有量 " + UiText.Missing, text, StringComparison.Ordinal);
+        Assert.Contains(UiStrings.StatusMemoryReserved + " " + UiText.Missing, text, StringComparison.Ordinal);
         Assert.Contains("GPU 全体 " + UiText.Missing + " / " + UiText.Missing, text, StringComparison.Ordinal);
         Assert.DoesNotContain("0 B", text, StringComparison.Ordinal);
     }
@@ -197,7 +197,7 @@ public sealed class RoundTwoStatusBandTests
         };
 
         var on = StatusViewModel.DescribeLatentCache(true, memory, null);
-        Assert.StartsWith("ON（焼いた話者 2 名・合計 2.0 MiB", on, StringComparison.Ordinal);
+        Assert.StartsWith("ON（下ごしらえ済みの声 2 人・合計 2.0 MiB", on, StringComparison.Ordinal);
 
         var off = StatusViewModel.DescribeLatentCache(false, memory, null);
         Assert.StartsWith("OFF（", off, StringComparison.Ordinal);
@@ -213,7 +213,7 @@ public sealed class RoundTwoStatusBandTests
         };
 
         var text = StatusViewModel.DescribeLatentCache(true, null, rows);
-        Assert.Contains("焼いた話者 1 名", text, StringComparison.Ordinal);
+        Assert.Contains("下ごしらえ済みの声 1 人", text, StringComparison.Ordinal);
         Assert.Contains("合計 " + UiText.Missing, text, StringComparison.Ordinal);
     }
 
@@ -251,9 +251,9 @@ public sealed class RoundTwoStatusBandTests
 
         var text = StatusViewModel.DescribeVoiceMemory(rows[1], rows);
 
-        Assert.StartsWith("1 名あたり「あかね」＝", text, StringComparison.Ordinal);
+        Assert.StartsWith("1 人あたり「あかね」＝", text, StringComparison.Ordinal);
         Assert.Contains("実測前の概算", text, StringComparison.Ordinal);
-        Assert.Contains("全員分＝全部を同時に載せたときの上限 "
+        Assert.Contains("全員ぶん＝"
             + UiText.Bytes(MemoryEstimate.WavReferenceBytes * 2), text, StringComparison.Ordinal);
     }
 
@@ -265,7 +265,7 @@ public sealed class RoundTwoStatusBandTests
             IsInTable: true, LatentBytes: 102400);
 
         Assert.Equal(102400L, row.MemoryBytes);
-        Assert.Contains("潜在参照（実測 100.0 KiB）", row.MemoryText, StringComparison.Ordinal);
+        Assert.Contains("下ごしらえ済み（実測 100.0 KiB）", row.MemoryText, StringComparison.Ordinal);
         Assert.DoesNotContain("概算", row.MemoryText, StringComparison.Ordinal);
     }
 
@@ -275,8 +275,8 @@ public sealed class RoundTwoStatusBandTests
         var rows = new[] { new VoiceRow("あ", "あ", "a.wav", false, false, false, false, null) };
         var text = StatusViewModel.DescribeVoiceMemory(null, rows);
 
-        Assert.Contains("話者を選ぶと出ます", text, StringComparison.Ordinal);
-        Assert.Contains("全部を同時に載せたときの上限", text, StringComparison.Ordinal);
+        Assert.Contains("声を選ぶと出ます", text, StringComparison.Ordinal);
+        Assert.Contains("全員ぶん＝", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -295,7 +295,7 @@ public sealed class RoundTwoStatusBandTests
 
         vm.ApplySelectedVoice(rows[0]);
         Assert.Contains("「デフォルト」", vm.VoiceMemoryText, StringComparison.Ordinal);
-        Assert.Contains("参照なし（増えません）", vm.VoiceMemoryText, StringComparison.Ordinal);
+        Assert.Contains("増えません", vm.VoiceMemoryText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -329,17 +329,41 @@ public sealed class RoundTwoStatusBandTests
     }
 
     [Fact]
-    public void 門で断られた理由は状態と重ならない形で出る()
+    public void 門で断られた内部の理由は告知に混ぜない()
     {
-        // 裁定 88 ⑴＝理由 1 行（勧める変種を含む）。Reason に出ていれば二重に出さない。
+        // 是正・段 C の検分＝1 巡目はここが「Reason と食い違えば告知の先頭へ足す」形で、
+        // その道で VariantGate の工学の 1 行（検分・実行系・裁定 83）が
+        // StatusNoticesText へそのまま流れていた（憲章 原則 6）。断られた事実は帯
+        // （BandReasonText＝BandText.For の 3 部品）が必ず出すので、告知は告知だけを運ぶ。
         const string Reason = "cu130 はこの機体で GPU を見られません（ドライバ 537.58・CUDA 12.2）。"
             + "cu126 か cpu の変種に切り替えてください。";
 
-        Assert.Equal(Reason, StatusViewModel.ComposeStartOutcome(false, Reason, null, null));
+        Assert.Null(StatusViewModel.ComposeStartOutcome(false, Reason, null, null));
         Assert.Null(StatusViewModel.ComposeStartOutcome(false, Reason, null, Reason));
 
         var both = StatusViewModel.ComposeStartOutcome(false, Reason, ["未実測の帯です。"], Reason);
         Assert.Equal("未実測の帯です。", both);
+    }
+
+    /// <summary>
+    /// <b>帯は断られた事実を必ず出す</b>（上の錠の相方）＝告知から外した 1 行が
+    /// どこからも出なくなっていないことを、同じ内部の綴りで確かめる。
+    /// </summary>
+    [Fact]
+    public void 門で断られた事実は帯の3部品で必ず出る()
+    {
+        const string Reason = "cu130 はこの機体で GPU を見られません（ドライバ 537.58・CUDA 12.2）。"
+            + "cu126 か cpu の変種に切り替えてください。";
+
+        var vm = Create();
+        vm.ApplySettings(new LauncherSettings { Variant = RuntimeVariants.Cu130 });
+        vm.ApplyState(ServerState.Failed, Reason);
+
+        Assert.True(vm.HasBandReason);
+        Assert.Contains("グラフィックスが使えませんでした。", vm.BandReasonText, StringComparison.Ordinal);
+        Assert.Contains("CUDA 13.0", vm.BandReasonText, StringComparison.Ordinal);
+        Assert.DoesNotContain("cu130", vm.BandReasonText, StringComparison.Ordinal);
+        Assert.DoesNotContain("変種", vm.BandReasonText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -359,7 +383,7 @@ public sealed class RoundTwoStatusBandTests
         });
 
         Assert.True(vm.MemorySupported);
-        Assert.Contains("焼いた話者 1 名", vm.LatentCacheText, StringComparison.Ordinal);
+        Assert.Contains("下ごしらえ済みの声 1 人", vm.LatentCacheText, StringComparison.Ordinal);
 
         vm.ApplyState(ServerState.Stopped, null);
 
@@ -415,10 +439,10 @@ public sealed class RoundTwoVoicesTests : IDisposable
 
         Assert.False(mp3.CanPreview);
         Assert.Contains("MP3", mp3.PreviewBlockedReason!, StringComparison.Ordinal);
-        Assert.Contains("試聴は wav だけ", mp3.PreviewBlockedReason!, StringComparison.Ordinal);
+        Assert.Contains("追加としゃべらせるには使えます", mp3.PreviewBlockedReason!, StringComparison.Ordinal);
 
         Assert.False(noRef.CanPreview);
-        Assert.Contains("参照なし", noRef.PreviewBlockedReason!, StringComparison.Ordinal);
+        Assert.Contains("試聴できる音がありません", noRef.PreviewBlockedReason!, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -428,10 +452,10 @@ public sealed class RoundTwoVoicesTests : IDisposable
         vm.Selected = new VoiceRow("い", "い", "ywk-bbbb.mp3", false, false, false, false, null);
 
         Assert.False(vm.PreviewCommand.CanExecute(null));
-        Assert.Contains("試聴は wav だけ", vm.PreviewBlockedText, StringComparison.Ordinal);
+        Assert.Contains("追加としゃべらせるには使えます", vm.PreviewBlockedText, StringComparison.Ordinal);
 
         vm.Preview();
-        Assert.Contains("試聴は wav だけ", vm.Message, StringComparison.Ordinal);
+        Assert.Contains("追加としゃべらせるには使えます", vm.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -451,16 +475,16 @@ public sealed class RoundTwoVoicesTests : IDisposable
         await vm.RefreshAsync();
 
         Assert.DoesNotContain(vm.Rows, r => r.Id == "サーバの話者");
-        Assert.Contains("HTTP 500", vm.Message, StringComparison.Ordinal);
-        Assert.Contains("台帳だけで一覧を出しています", vm.Message, StringComparison.Ordinal);
+        // v2.0 段 C＝**番号つきの状態は画面に出さない**（憲章 原則 6・v2-copy.md §3-2 の書き方の規則）。
+        Assert.Equal(UiStrings.VoicesPartialList, vm.Message);
     }
 
     [Fact]
     public void 読めなかった理由は状態番号つきの1行()
     {
-        Assert.Equal("サーバの話者一覧が読めませんでした（HTTP 500）。台帳だけで一覧を出しています。",
-            VoicesViewModel.DescribeVoicesFailure(500));
-        Assert.Contains("応答なし", VoicesViewModel.DescribeVoicesFailure(0), StringComparison.Ordinal);
+        // 状態番号は記録の側に残る＝画面には利用者の言葉 1 文だけを出す（段 C）。
+        Assert.Equal(UiStrings.VoicesPartialList, VoicesViewModel.DescribeVoicesFailure(500));
+        Assert.Equal(UiStrings.VoicesPartialList, VoicesViewModel.DescribeVoicesFailure(0));
     }
 
     [Fact]
@@ -472,7 +496,7 @@ public sealed class RoundTwoVoicesTests : IDisposable
 
         vm.Selected = Assert.Single(vm.Rows, r => r.Id == VoiceIds.Default);
         Assert.False(vm.RemoveCommand.CanExecute(null));
-        Assert.Contains("常在するので消せません", vm.RemoveBlockedText, StringComparison.Ordinal);
+        Assert.Contains("いつでも使える声なので消せません", vm.RemoveBlockedText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -543,7 +567,7 @@ public sealed class RoundTwoVoicesTests : IDisposable
 
         var raw = Assert.Single(rows, r => r.Id == "未焼き");
         Assert.Null(raw.LatentBytes);
-        Assert.Contains("wav 参照", raw.MemoryText, StringComparison.Ordinal);
+        Assert.Contains("元の音声から読む", raw.MemoryText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -648,10 +672,12 @@ public sealed class RoundTwoTryTests
     {
         // 裁定 88 ⑶ の逐語（0xC0000005＝−1073741819 が見分けの手がかり）
         var text = TryViewModel.DescribeServerDown(-1073741819, "サーバが異常終了した（終了コード -1073741819）。");
+        // v2.0 段 C＝**画面には利用者の言葉 1 文だけ**（`v2-copy.md` §1-8 の :443-444）。
+        // 終了コードと内部の 1 行は記録と帯の ⑵（`BandContext.ExitCode`）に残る。
 
-        Assert.StartsWith("サーバが落ちました（exit -1073741819）。", text, StringComparison.Ordinal);
-        Assert.Contains("サーバが異常終了した", text, StringComparison.Ordinal);
-        Assert.Equal("サーバが落ちました。", TryViewModel.DescribeServerDown(null, null));
+        Assert.Equal(UiStrings.TryServerDown, text);
+        Assert.Equal(UiStrings.TryServerDown, text);
+        Assert.Equal(UiStrings.TryServerDown, TryViewModel.DescribeServerDown(null, null));
     }
 
     [Fact]
@@ -670,7 +696,7 @@ public sealed class RoundTwoTryTests
         vm.NotifyServerFailed(-1073741819, "サーバが異常終了した（終了コード -1073741819）。");
         await shot.WaitAsync(TimeSpan.FromSeconds(5));
 
-        Assert.Contains("サーバが落ちました（exit -1073741819）", vm.Message, StringComparison.Ordinal);
+        Assert.Contains(UiStrings.TryServerDown, vm.Message, StringComparison.Ordinal);
         Assert.False(vm.HasAudio);
     }
 
@@ -680,7 +706,7 @@ public sealed class RoundTwoTryTests
         var vm = new TryViewModel(static () => null, new FakeAudioPlayer(), new LauncherSettings());
         vm.NotifyServerFailed(2, "起動前の検査で止まった。");
 
-        Assert.Contains("サーバが落ちました（exit 2）", vm.Message, StringComparison.Ordinal);
+        Assert.Contains(UiStrings.TryServerDown, vm.Message, StringComparison.Ordinal);
     }
 
     /// <summary>取消されるまで返らない合成（実 HTTP には触れない）。</summary>

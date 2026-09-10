@@ -1281,7 +1281,15 @@ public sealed class FirstRunViewModel : ObservableObject
         // 突き合わせていなかったころは、空きが足りない機体が 4.8 GiB を落とし切ってから
         // 展開の段で落ちた（インストーラ側の門＝裁定 89 は導入の時点の話で、初回取得は別の日である）。
         var text = EstimateSizeText(_paths, _variant, _skipVcRedist);
-        var plan = TryPlan(_paths, _variant, _skipVcRedist, out _);
+        var plan = TryPlan(_paths, _variant, _skipVcRedist, out var planReason);
+
+        // 見積りが立たなかった理由は**記録にだけ**残す（是正・段 C の検分）＝
+        // 画面の 1 行は「必要な大きさが分かりませんでした。」で、工学の綴りは檔へ落ちる。
+        if (plan is null && !string.IsNullOrWhiteSpace(planReason))
+        {
+            Log(planReason);
+        }
+
         var shortfall = plan is null
             ? null
             : FreeSpaceShortfall(plan.EstimatedPeakDiskBytes, FreeBytes(_paths.DataDir));
@@ -1351,9 +1359,12 @@ public sealed class FirstRunViewModel : ObservableObject
             // **理由を添える**（是正・便 D（2））＝low 6 で `FetchPlanner` が sha256 の無い item を
             // 投げて弾くようになったのに、ここは「読めない」としか言えなかった（実際は
             // 例外がそのまま UI スレッドへ抜けていた＝下の TryPlan の註）。
-            return reason is null
-                ? "不明（取得台帳が読めません）"
-                : "不明（取得台帳が読めません：" + reason + "）";
+            // **読めなかった理由は画面に出さない**（是正・段 C の検分）＝「取得台帳」は
+            // 憲章 §6-1 の隠す語で、`sha256 の無い item …` のような工学の 1 行が
+            // FirstRunSizeText（はじめの準備 段 2）にそのまま載っていた。
+            // 理由は呼ぶ側が `TryPlan(… out reason)` で取り、記録へ落とす。
+            _ = reason;
+            return UiStrings.WizardSizeUnknown;
         }
 
         var runtime = plan.Steps
@@ -1362,12 +1373,13 @@ public sealed class FirstRunViewModel : ObservableObject
         var models = plan.ModelBytes;
         var vc = plan.Steps.Where(static s => s.Stage is FetchStage.VcRedist).Sum(static s => s.Bytes);
 
+        // 内訳の札は利用者の語で綴る（`v2-copy.md` §1-8 の :814-832＝実数は詳細の中に `GiB` のまま）。
         var text = plan.Summary()
-            + "（実行系 " + FetchPlanner.FormatBytes(runtime)
-            + "・モデル " + FetchPlanner.FormatBytes(models);
+            + "（" + UiStrings.WizardSizeRuntime + FetchPlanner.FormatBytes(runtime)
+            + UiStrings.WizardSizeModels + FetchPlanner.FormatBytes(models);
         if (vc > 0)
         {
-            text += "・vc_redist " + FetchPlanner.FormatBytes(vc);
+            text += UiStrings.WizardSizeVcRedist + FetchPlanner.FormatBytes(vc);
         }
 
         return text + "）";
@@ -1909,7 +1921,7 @@ public sealed class FirstRunViewModel : ObservableObject
         try
         {
             PhaseText = PhaseLine(FirstRunStep.Start);
-            ProgressDetailText = "サーバを起こしています…";
+            ProgressDetailText = UiStrings.WizardVerifyingRun;
             var ok = await _startServer(_cancel.Token).ConfigureAwait(true);
             if (_cancel.IsCancellationRequested)
             {

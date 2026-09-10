@@ -576,7 +576,7 @@ public sealed class AcquisitionGuidanceTests : IDisposable
         Assert.True(main.NeedsAcquisition);
         Assert.Contains("モデル", main.AcquisitionSummary, StringComparison.Ordinal);
         Assert.Contains(
-            "実行系／モデルが揃っていないため、取得からやり直します（不足＝",
+            UiStrings.AcquisitionRestart,
             MainViewModel.AcquisitionNotice(main.AcquisitionSummary),
             StringComparison.Ordinal);
     }

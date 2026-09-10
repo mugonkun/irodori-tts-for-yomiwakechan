@@ -16,6 +16,13 @@ namespace IrodoriTtsYwk.Launcher.ViewModels;
 /// 段の秒に上限を設けない、という便 C の申し送り（裁定 60）は<b>射 1 本の所要</b>のことで、
 /// 段そのものの上限（60 秒）は契約の検査である。混ぜない。
 /// </para>
+/// <para>
+/// <b><paramref name="error"/> に返す 1 行は記録にしか出ない</b>（段 C・是正）＝
+/// この設定の欄は退役し（<c>SettingsWarmupStagesBox</c>／<c>SettingsWarmupVoicesBox</c>）、
+/// 値は <c>settings.json</c> を手で書いた機体でだけ変わる。だから理由は
+/// <b>その鍵の名で</b>綴る（画面の語彙ではない＝憲章 §6-1 の「暖機」「話者」は出さない）。
+/// <c>SettingsViewModel.Apply</c> はこの 1 行で〔適用〕を止めず、記録へ落として先へ進む。
+/// </para>
 /// </summary>
 public static class WarmupStagesText
 {
@@ -57,13 +64,14 @@ public static class WarmupStagesText
         {
             if (!double.TryParse(part.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
             {
-                error = "暖機の段は数（秒）をカンマで区切って入れてください：「" + part.Trim() + "」が読めません。";
+                error = "settings.json の warmupStages は数（秒）をカンマで区切って書きます：「"
+                    + part.Trim() + "」が読めません。";
                 return false;
             }
 
             if (value <= 0 || value > MaxSeconds || double.IsNaN(value))
             {
-                error = "暖機の段は 0 より大きく "
+                error = "settings.json の warmupStages は 0 より大きく "
                     + MaxSeconds.ToString("0", CultureInfo.InvariantCulture) + " 秒以下です。";
                 return false;
             }
@@ -73,7 +81,8 @@ public static class WarmupStagesText
 
         if (values.Count > MaxStages)
         {
-            error = "暖機の段は " + MaxStages.ToString(CultureInfo.InvariantCulture) + " 段までです。";
+            error = "settings.json の warmupStages は "
+                + MaxStages.ToString(CultureInfo.InvariantCulture) + " 個までです。";
             return false;
         }
 
@@ -81,7 +90,7 @@ public static class WarmupStagesText
         return true;
     }
 
-    /// <summary>暖機で撃つ話者の 1 行（カンマ区切り・最大 64 件＝契約 ⑺ 7-2）。</summary>
+    /// <summary>先に準備しておく声の 1 行（カンマ区切り・最大 64 件＝契約 ⑺ 7-2）。</summary>
     public static bool TryParseVoices(string? text, out IReadOnlyList<string> voices, out string? error)
     {
         voices = [];
@@ -100,7 +109,7 @@ public static class WarmupStagesText
 
         if (parts.Length > 64)
         {
-            error = "暖機で撃つ話者は 64 件までです。";
+            error = "settings.json の warmupVoices は 64 件までです。";
             return false;
         }
 

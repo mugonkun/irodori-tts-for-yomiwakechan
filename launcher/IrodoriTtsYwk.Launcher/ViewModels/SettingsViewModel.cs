@@ -78,7 +78,7 @@ public sealed class SettingsViewModel : ObservableObject
         ClearCacheCommand = new RelayCommand(ClearCache, () => CacheBytes > 0);
 
         // 捕れなかった例外を握り潰さない（§20-5 ⑴）。
-        RefreshGpusCommand.Faulted += (_, line) => GpuMessage = "GPU を数えられませんでした：" + line;
+        RefreshGpusCommand.Faulted += (_, line) => GpuMessage = TryViewModel.Fold(UiStrings.SettingsGpuNotFound, line);
 
         UpdateDriverText();
         RefreshCache();
@@ -94,7 +94,7 @@ public sealed class SettingsViewModel : ObservableObject
     public ObservableCollection<GpuInfo> Gpus { get; } = [];
 
     /// <summary>精度の選択肢（上級者・null＝device 連動に任せる＝裁定 7）。</summary>
-    public static IReadOnlyList<string> PrecisionChoices => ["（device 連動・既定）", "bf16", "fp16", "fp32"];
+    public static IReadOnlyList<string> PrecisionChoices => ["（おまかせ・既定）", "bf16", "fp16", "FP32"];
 
     public AsyncRelayCommand RefreshGpusCommand { get; }
 
@@ -229,8 +229,8 @@ public sealed class SettingsViewModel : ObservableObject
     public bool PrecisionEnabled => RuntimeVariants.AllowsPrecisionOverride(_draft.Variant);
 
     public string PrecisionNote => PrecisionEnabled
-        ? "上級者向け。既定は device 連動（GPU→bf16・CPU→fp32）です。"
-        : "この変種は bf16 固定です（fp32 を載せるとサーバが起動前に止まります）。";
+        ? UiStrings.SettingsPrecisionAuto
+        : UiStrings.SettingsPrecisionFixed;
 
     /// <summary>精度の選択（「（device 連動・既定）」＝載せない）。</summary>
     public string PrecisionChoice
@@ -269,8 +269,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     /// <summary>ポートの注記（裁定 2・52）。</summary>
     public string PortNote => _draft.Port == LauncherSettings.DefaultPort
-        ? "既定 18088。塞がっていたら次を探さずに止まって告げます。"
-        : "既定（18088）から変えています。本体（読み分けちゃん2）の接続先も同じ値にしてください。";
+        ? "ふつうは触りません（" + LauncherSettings.DefaultPort.ToString(CultureInfo.InvariantCulture) + "）。"
+        : "ふつうと違う番号にしています。読み分けちゃん2 の側も同じ番号にしてください。";
 
     public bool WarmupOnStart
     {
@@ -338,10 +338,10 @@ public sealed class SettingsViewModel : ObservableObject
         {
             var effective = _draft.EffectivePrecomputeOnStart();
             var head = _draft.PrecomputeOnStart is null
-                ? "変種の既定（" + (RuntimeVariants.PrecomputeOnStartDefault(_draft.Variant) ? "ON" : "OFF") + "）に従います。"
-                : "明示しています。";
-            return head + " いまの実効値＝" + (effective ? "ON" : "OFF")
-                + "。ON にすると話者の登録時に参照潜在を焼き、話者を切り替えるときの待ちが減ります。";
+                ? "おまかせ（いまは " + (RuntimeVariants.PrecomputeOnStartDefault(_draft.Variant) ? "ON" : "OFF") + "）。"
+                : "自分で決めています。";
+            return head + " いまは " + (effective ? "ON" : "OFF")
+                + "。ON にすると、声を切り替えるときの待ちが減ります。";
         }
     }
 
@@ -438,8 +438,8 @@ public sealed class SettingsViewModel : ObservableObject
     /// <b>空なら押せない</b>ことが文言からも判るようにする。
     /// </summary>
     public string ClearCacheText => _cacheBytes > 0
-        ? "取得キャッシュを消す（" + FetchPlanner.FormatBytes(_cacheBytes) + "）"
-        : "取得キャッシュを消す（空です）";
+        ? "一時ファイルを消す（" + FetchPlanner.FormatBytes(_cacheBytes) + "）"
+        : UiStrings.SettingsCacheEmpty;
 
     /// <summary>消した結果・消せない理由の 1 行。</summary>
     public string CacheMessage
@@ -514,11 +514,11 @@ public sealed class SettingsViewModel : ObservableObject
     {
         if (_gpuEnumerator is null)
         {
-            GpuMessage = "GPU の列挙系がまだ組み込まれていません（便 D・起動席の実装待ち）。";
+            GpuMessage = UiStrings.SettingsNotYet;
             return;
         }
 
-        GpuMessage = "GPU を数えています…";
+        GpuMessage = UiStrings.SettingsGpuSearching;
         var pythonExe = _paths.ResolvePythonExe(_draft.Variant);
         try
         {
@@ -560,44 +560,58 @@ public sealed class SettingsViewModel : ObservableObject
             }
 
             GpuMessage = result.Gpus.Count == 0
-                ? result.FailureReason ?? "GPU が見つかりませんでした。"
+                ? result.FailureReason ?? UiStrings.SettingsGpuNotFound
                 : (wasMissing
                     ? GpuResolver.NotFoundMessage(previousName, previousUuid)
-                    : result.Gpus.Count.ToString(CultureInfo.InvariantCulture) + " 台見つかりました（"
-                      + UiText.Milliseconds(result.Elapsed.TotalMilliseconds) + "）。");
+                    : result.Gpus.Count.ToString(CultureInfo.InvariantCulture) + " 台見つかりました。");
 
             UpdateDriverText();
         }
         catch (OperationCanceledException)
         {
-            GpuMessage = "GPU の列挙が期限内に終わりませんでした。";
+            GpuMessage = UiStrings.SettingsGpuTimedOut;
         }
     }
+
+    /// <summary>
+    /// 記録へ 1 行落とす口（窓が <c>Status.AppendLog</c> を差す。差されていなければ何もしない）。
+    /// <para>
+    /// <b>画面に出せない事情を捨てないため</b>に在る（是正・段 C の検分）＝
+    /// 段 C で欄ごと消した設定（準備運転の段・使う声）の検分は、もう画面に出す先が無い。
+    /// </para>
+    /// </summary>
+    public Action<string>? Log { get; set; }
 
     /// <summary>写しを本物へ書く（原子的保存）。</summary>
     public void Apply()
     {
-        if (!WarmupStagesText.TryParse(_warmupStagesText, out var stages, out var stageError))
+        // **消えた欄の検分で〔適用〕を止めない**（是正・段 C の検分）。
+        // 段 C は準備運転の段（SettingsWarmupStagesBox）と使う声（SettingsWarmupVoicesBox）を
+        // 退役させたが、`settings.json` の鍵は残してある（手で書けば効く＝`v2-copy.md` §4 末尾）。
+        // 1 巡目はここが読めない値で `Message` に「暖機の段が読めません。」を出して return していた＝
+        // ⑴ 隠す語（暖機・話者）が画面に出る ⑵ **利用者に見えない欄のせいで〔適用〕が永久に失敗する**。
+        // いまは読めた回だけ写しへ載せ、読めない回は**元の値をそのまま持ち越して**理由は記録へ落とす。
+        var stagesOk = WarmupStagesText.TryParse(_warmupStagesText, out var stages, out var stageError);
+        if (!stagesOk && stageError is not null)
         {
-            Message = stageError ?? "暖機の段が読めません。";
-            return;
+            Log?.Invoke(stageError);
         }
 
-        if (!WarmupStagesText.TryParseVoices(_warmupVoicesText, out var voices, out var voiceError))
+        var voicesOk = WarmupStagesText.TryParseVoices(_warmupVoicesText, out var voices, out var voiceError);
+        if (!voicesOk && voiceError is not null)
         {
-            Message = voiceError ?? "暖機の話者が読めません。";
-            return;
+            Log?.Invoke(voiceError);
         }
 
         if (_draft.Port is < 1 or > 65535)
         {
-            Message = "ポートは 1〜65535 です。";
+            Message = UiStrings.SettingsPortRange;
             return;
         }
 
         if (!VariantChoices.Contains(_draft.Variant, StringComparer.Ordinal))
         {
-            Message = "この配布物には変種「" + _draft.Variant + "」の取得台帳がありません。";
+            Message = UiStrings.SettingsVariantUnsupported;
             return;
         }
 
@@ -610,14 +624,21 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
-        _draft.WarmupStages = [.. stages];
-        _draft.WarmupVoices = [.. voices];
+        if (stagesOk)
+        {
+            _draft.WarmupStages = [.. stages];
+        }
+
+        if (voicesOk)
+        {
+            _draft.WarmupVoices = [.. voices];
+        }
 
         CopyInto(_draft, _live);
         _store.Save(_live);
         _draft = _live.Clone();
         IsDirty = false;
-        Message = "設定を保存しました。変種・GPU・ポートを変えたときは、サーバを起動し直すと効きます。";
+        Message = UiStrings.SettingsSaved;
 
         // 変種が変われば cache の勘定も変わる（消す対象はその変種の台帳の item）。
         RefreshCache();
@@ -641,7 +662,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         Resync();
         IsDirty = false;
-        Message = "変更を取り消しました。";
+        Message = UiStrings.SettingsReverted;
     }
 
     /// <summary>
@@ -690,7 +711,7 @@ public sealed class SettingsViewModel : ObservableObject
         DriverText = verdict.Message
             + (verdict.SuggestedVariant is null
                 ? string.Empty
-                : "（勧め＝" + RuntimeVariants.DisplayName(verdict.SuggestedVariant) + "・自動では切り替えません）");
+                : "（このパソコンには " + RuntimeVariants.ShortDisplayName(verdict.SuggestedVariant) + " が合います）");
     }
 
     private void RaiseAll()

@@ -373,7 +373,7 @@ public sealed class GpuEnumerator : IGpuEnumerator
         {
             return new GpuEnumerationResult(
                 [], GpuSource.None, Stopwatch.GetElapsedTime(started),
-                "GPU を列挙できませんでした（nvidia-smi が無く、実行系もまだ取得できていません）。");
+                "グラフィックスを調べられませんでした（動かすための一式がまだ入っていません）。");
         }
 
         var probe = await TryTorchAsync(request.PythonExe, request.Timeout, cancellationToken)

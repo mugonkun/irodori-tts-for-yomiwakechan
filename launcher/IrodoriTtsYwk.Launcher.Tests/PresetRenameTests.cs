@@ -309,7 +309,7 @@ public sealed class PresetRenameTests : IDisposable
         Assert.Contains(NewId, table.Voices.Keys);
         Assert.DoesNotContain(OldId, table.Voices.Keys);
         Assert.Equal("落ち着いた声", table.Voices[NewId].Caption);
-        Assert.Contains("名を改めた 1 名（" + OldId + "→" + NewId + "）", vm.Message, StringComparison.Ordinal);
+        Assert.Contains("名前が変わった声が 1 人います（" + OldId + "→" + NewId + "）", vm.Message, StringComparison.Ordinal);
 
         // 入れ直す物が無かった回に「既に全員居ます」を添えない（改名と噛み合わない＝是正）。
         Assert.DoesNotContain("既に全員居ます", vm.Message, StringComparison.Ordinal);

@@ -121,9 +121,9 @@ public sealed class MemoryEstimateTests
     [Fact]
     public void 説明はどの種類かを言う()
     {
-        Assert.Contains("参照なし", MemoryEstimate.Describe(true, false), StringComparison.Ordinal);
-        Assert.Contains("潜在参照", MemoryEstimate.Describe(false, true), StringComparison.Ordinal);
-        Assert.Contains("wav 参照", MemoryEstimate.Describe(false, false), StringComparison.Ordinal);
+        Assert.Contains("増えません", MemoryEstimate.Describe(true, false), StringComparison.Ordinal);
+        Assert.Contains("下ごしらえ済み", MemoryEstimate.Describe(false, true), StringComparison.Ordinal);
+        Assert.Contains("元の音声から読む", MemoryEstimate.Describe(false, false), StringComparison.Ordinal);
     }
 }
 
@@ -446,7 +446,7 @@ public sealed class VoiceRowTests
 
         Assert.True(row.HasLatent);
         Assert.True(row.IsLatentStale);
-        Assert.Equal("要・焼き直し", row.LatentText);
+        Assert.Equal("やり直しが要る", row.LatentText);
         // 焼いてあるので概算メモリは増えない（裁定 67 ⑵）
         Assert.Equal(0, MemoryEstimate.ForVoice(row.IsNoRef, row.HasLatent));
     }
@@ -459,7 +459,7 @@ public sealed class VoiceRowTests
 
         Assert.True(row.HasLatent);
         Assert.False(row.IsLatentStale);
-        Assert.Equal("焼き済み", row.LatentText);
+        Assert.Equal("済み", row.LatentText);
     }
 
     [Fact]
@@ -775,12 +775,22 @@ public sealed class StatusViewModelTests
     [Fact]
     public void 状態は日本語で出る()
     {
-        Assert.Equal("停止", StatusViewModel.StateLabel(ServerState.Stopped));
-        Assert.Equal("起動中", StatusViewModel.StateLabel(ServerState.Starting));
-        Assert.Equal("読込中", StatusViewModel.StateLabel(ServerState.Listening));
-        Assert.Equal("待機", StatusViewModel.StateLabel(ServerState.Ready));
-        Assert.Equal("暖機中", StatusViewModel.StateLabel(ServerState.Warming));
-        Assert.Equal("失敗", StatusViewModel.StateLabel(ServerState.Failed));
+        // v2.0 段 C＝**名乗るのは 3 語だけ**（`v2-plan.md` C-3・憲章 §3 根 3）。
+        // 内部の ServerState 6 値は 1 つも触っていない＝畳んだのは**表示だけ**である。
+        Assert.Equal(BandText.StoppedByUser, StatusViewModel.StateLabel(ServerState.Stopped));
+        Assert.Equal(BandText.Preparing, StatusViewModel.StateLabel(ServerState.Starting));
+        Assert.Equal(BandText.Preparing, StatusViewModel.StateLabel(ServerState.Listening));
+        Assert.Equal(BandText.Ready, StatusViewModel.StateLabel(ServerState.Ready));
+        Assert.Equal(BandText.Ready, StatusViewModel.StateLabel(ServerState.Warming));
+        Assert.Equal(BandText.Failed, StatusViewModel.StateLabel(ServerState.Failed));
+
+        // 6 値が**丸 3 色**へ畳まれている＝綴りは 4 つ（灰が「準備しています…」と
+        // 「止まっています」に割れる＝`v2-copy.md` §3-1 の表）。5 つ目が生えたらここで気づく。
+        Assert.Equal(4, new[]
+        {
+            ServerState.Stopped, ServerState.Starting, ServerState.Listening,
+            ServerState.Ready, ServerState.Warming, ServerState.Failed,
+        }.Select(StatusViewModel.StateLabel).Distinct(StringComparer.Ordinal).Count());
     }
 
     [Fact]
@@ -855,9 +865,13 @@ public sealed class StatusViewModelTests
             },
         });
 
-        Assert.Contains("cuda:0", vm.DeviceText, StringComparison.Ordinal);
-        Assert.Contains("gfx1151", vm.DeviceText, StringComparison.Ordinal);
+        // 是正・段 C の検分＝**製品名だけを出す**（`v2-copy.md` §1-2 の 40 行目は
+        // 「デバイス＝削除」・`v2-spec.md` §2-2 の 2 は「`cuda:0` の綴りは出さない」、
+        // 憲章 附録 5 は「`gfx1151` という綴りだけを落とす」）。bf16 は残る（§6-2）。
+        Assert.Contains("AMD Radeon(TM) 8060S Graphics", vm.DeviceText, StringComparison.Ordinal);
         Assert.Contains("bf16", vm.DeviceText, StringComparison.Ordinal);
+        Assert.DoesNotContain("cuda:0", vm.DeviceText, StringComparison.Ordinal);
+        Assert.DoesNotContain("gfx1151", vm.DeviceText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -885,7 +899,11 @@ public sealed class StatusViewModelTests
             Port = 18094,
         });
 
-        Assert.Contains("717a36", vm.GpuText, StringComparison.Ordinal);
+        // v2.0 段 C＝**UUID の下 6 桁は文から落とした**（`v2-copy.md` §1-2 の 116 行目・
+        // `v2-spec.md` §2-2 の 1）＝出すのは製品名だけである。UUID は設定に残り、
+        // 起動のたびに番号へ解決する（裁定 34）＝振る舞いは変わらない。
+        Assert.Equal("AMD Radeon(TM) 8060S Graphics", vm.GpuText);
+        Assert.DoesNotContain("717a36", vm.GpuText, StringComparison.Ordinal);
         Assert.DoesNotContain("19adfe89", vm.GpuText, StringComparison.Ordinal);
         Assert.Equal("http://127.0.0.1:18094", vm.EndpointText);
     }
@@ -911,7 +929,7 @@ public sealed class StatusViewModelTests
             new VoiceRow("b", "b", "b.wav", false, false, true, false, null),
         ]);
 
-        Assert.Contains("全部を同時に載せたときの上限 "
+        Assert.Contains("全員ぶん＝"
             + UiText.Bytes(MemoryEstimate.WavReferenceBytes), vm.VoiceMemoryText, StringComparison.Ordinal);
     }
 
@@ -1269,17 +1287,24 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
-    public void 綴り違いの暖機の段は保存させない()
+    public void 綴り違いの準備運転の段は保存されず適用も止めない()
     {
+        // 是正・段 C の検分＝この欄は退役した（SettingsWarmupStagesBox）。読めない値で
+        // 〔適用〕を止めると、**利用者に見えない欄のせいで永久に保存できない**機体ができる
+        // （手で書いた settings.json＝`v2-copy.md` §4 末尾「鍵は残す」）。
+        // だから⑴ 元の値を持ち越し ⑵ 画面には出さず ⑶ 理由は記録へ落とし ⑷ 先へ進む。
         var live = new LauncherSettings();
         var vm = Create(live, out _);
+        var logged = new List<string>();
+        vm.Log = logged.Add;
 
         vm.WarmupStagesInput = "4, あ";
         vm.Apply();
 
-        Assert.True(vm.IsDirty);
-        Assert.NotEmpty(vm.Message);
-        Assert.Equal([4.0, 8.0, 12.0], live.WarmupStages);
+        Assert.False(vm.IsDirty);                       // 保存は通った
+        Assert.Equal([4.0, 8.0, 12.0], live.WarmupStages); // 読めない値は載せていない
+        Assert.DoesNotContain("暖機", vm.Message, StringComparison.Ordinal);
+        Assert.Contains(logged, line => line.Contains("warmupStages", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -1714,9 +1739,10 @@ public sealed class FirstRunViewModelTests : IDisposable
     [Fact]
     public void 台帳が読めなければ見積りは不明と名乗る()
     {
-        // 推測の数字を出さない（裁定 18 の作法）
+        // 推測の数字を出さない（裁定 18 の作法）。是正・段 C の検分＝理由の綴り
+        // （「取得台帳が読めません」）は画面に出さず記録へ落とすので、1 行は平語になった。
         var text = FirstRunViewModel.EstimateSizeText(MakePaths(), RuntimeVariants.Cu130);
-        Assert.Contains("不明", text, StringComparison.Ordinal);
+        Assert.Equal(UiStrings.WizardSizeUnknown, text);
     }
 
     [Fact]
@@ -1928,14 +1954,14 @@ public sealed class AboutViewModelTests
     public void 透かしは切れないと明記する()
     {
         // 裁定 9＝既定 ON・切る経路を持たない
-        Assert.Contains("切る経路はありません", AboutViewModel.WatermarkNotice, StringComparison.Ordinal);
+        Assert.Contains("外す方法はありません", AboutViewModel.WatermarkNotice, StringComparison.Ordinal);
     }
 
     [Fact]
     public void 開発ビルドはそう名乗る()
     {
         Assert.Contains("開発ビルド", AboutViewModel.UpstreamText, StringComparison.Ordinal);
-        Assert.StartsWith("版 ", AboutViewModel.VersionText, StringComparison.Ordinal);
+        Assert.Equal(AppVersion.Display, AboutViewModel.VersionText);
     }
 
     [Fact]

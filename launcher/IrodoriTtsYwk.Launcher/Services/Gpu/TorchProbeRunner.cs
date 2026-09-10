@@ -103,7 +103,7 @@ public sealed class TorchProbeRunner : ITorchProbe
 
             if (!run.Started)
             {
-                return Failed("実行系を起こせませんでした：" + (run.FailureReason ?? string.Empty));
+                return Failed("動かすための一式を起こせませんでした：" + (run.FailureReason ?? string.Empty));
             }
 
             if (run.TimedOut)

@@ -474,6 +474,101 @@ B-4（要約 `FirstRunNoticesSummaryText` ＋〔全文を見る〕`FirstRunNotic
 **検分の目**＝原則 1 の検分文（2 段）を**語ごとに**当てる＝⑴ 検索して他所の解説が出るか ⑵ その場の判断に直結するか。
 `WordLintTests` が落ちない限り、この検分は自動で回る。
 
+#### 段 C の記帳（2026-09-11・実装 1 席・Opus 5）
+
+**入れた物**＝C-1（`ViewModels/UiStrings.cs` 新設＝**利用者に見える文字列の唯一の出所**。
+`UiText`（数）は 1 字も触らない。`Views/*.xaml` 7 枚の可視属性を**全部** `{x:Static vm:UiStrings.…}` へ寄せた）・
+C-2（`WordLintTests.cs` 新設＝4 本。**先に落として**から通した＝初回は隠す語 41 件・直書き 100 件超で赤）・
+C-3（`StatusViewModel.StateLabel` の 6 語 → 帯の語。`enum ServerState` は据え置き）・
+C-4（台本 `$T` の書き替え＝`Ready`／`Warming` を同語へ畳み、`Stopped`＝止まっています・`Failed`＝止まりました・
+`Used`／`Reserved`／`Baked`／`LatentRef`／`PerVoice`／`Preset`／`ServerDown` を新しい綴りへ。
+`Rebuild`／`ClearCache` は**鍵ごと廃した**。`state starts at stopped` は期待値ごと書き直した）・
+**A-4／A-5 の積み残し**（`StatusAdvancedExpander`／`TryAdvancedExpander`／`VoicesAdvancedExpander`／
+`AboutAdvancedExpander` の 4 枚と、設定 › 詳細への畳み込み）。
+
+**行数**＝詳しい状態の詳細 **11 行**・設定の詳細 **7 行**（上限 12・憲章 原則 7）。
+設定が 10 行でなく 7 行である内訳（是正で数え直した）＝⒜ 6 行目「更新のとき、新しくなった分だけ
+取り直す」（`SettingsDifferentialUpdateCheck`）は**段 E の持ち物**でまだ無い ⒝ 9 行目「記録」は
+ふだんの設定 の `SettingsOpenLogButton` 1 つに寄せた（同じ 1 手を 2 箇所に置かない）
+⒞ 10 行目「変えた設定は、次にアプリを開いたときから効きます。」＋〔適用〕〔取り消し〕は
+**畳みの外**（画面の下端）に置いた＝ふだんの設定 4 つを変えた利用者が、保存するのに
+「詳細（上級者向け）」を開かねばならない形にしないため。**段 E が入れば 8 行**になる。
+
+**id**＝新設 13（`StatusAdvancedExpander`・`TryAdvancedExpander`・`VoicesAdvancedExpander`・
+`AboutAdvancedExpander`・`AboutGuideButton`・`AboutSaveLogButton`・`SettingsOpenLogButton`
+＋仕様の表に無いが押す物・読む値の 4 つ＝`TryDetailText`・`VoicesCountText`・
+`SettingsOpenVoicesDirButton`・`SettingsOpenDataDirButton`
+＋是正で足した 2 つ＝`AboutSavedLogText`・`AboutOpenReportFolderButton`）。
+**退役 7**（`SettingsShowMemoryCheck`・`SettingsWarmupStagesBox`・`SettingsWarmupVoicesBox`・
+`SettingsEmptyCacheBox`・`SettingsEmptyCacheNoteText`・`SettingsReadyTimeoutBox`・`SettingsReadyTimeoutNoteText`）＝
+`v2-copy.md` §4 末尾／`v2-spec.md` §2-5 の「入らなかったので消した物（移さない）」そのもの。
+**台本はこの 7 つを 1 度も押さず 1 度も読んでいない**ので台本の書き替えは要らなかった。
+`AutomationIdsTests` の下敷きを 139 → **132** に改め、退役が本当に消えていることを見る 1 本を足した。
+**`settings.json` の鍵は 1 つも減らしていない。**
+
+**据え置き・積み残し**（次の席へ）＝
+⑴ `ReleaseFlavors.FlavorLabel`／`Decorate`／`WizardTitle` は**段 F の持ち物**なので触っていない＝
+〔このアプリについて〕の「バージョン」は番号だけで、` － RTX（CUDA）` はまだ付かない。
+**番号そのものもまだ `v1.1.0` である**（`launcher/Directory.Build.props` の `AppDisplayVersion`）＝
+`v2-copy.md` §1-1 の 33 行目と §1-8 の :296／§8 は `v2.0.0` を書くので、この 2 行は**まだ満たしていない**。
+版を繰り上げるのは `server/ywk_server.py` の `YWK_VERSION` と門 A-6 と対の仕事＝**段 F**（この檔の冒頭の並び）。
+⑵ `Services/Ledger/RuntimeStamp.cs` は**段 E の席が触っている檔**なので触っていない＝
+`StatusRebuildRuntimeText` に出る 1 行はまだ「実行系を組み直してください」と綴る。
+⑶ `MainViewModel.RebuildRuntimeText` に添える量の 1 行（「取得キャッシュに原檔が …」）と
+`CacheCleaner` の断り 3 本も同じ理由（`RuntimeStamp` と対で読む文）で据え置いた。
+⑷ 詳しい状態の詳細に〔ログを開く〕は置いていない＝帯の `MainOpenLogButton` が常時見えており、
+`MainOpenLogButton` を 2 度綴ると id が重複する。
+⑸ ~~`StatusDeviceText` の値はまだ `cuda:0` を含みうる~~＝**是正で当て込んだ**（下の「是正」）。
+
+**実測**＝`dotnet build launcher -c Release --no-incremental` が **0 警告 0 エラー**／
+`dotnet test launcher -c Release --nologo` が **818 合格＋1 スキップ**（工事前 809＋1・追加 9・削除 0）／
+契約テスト **372 passed**（`upstream/` clean）／`probe/d-launch-probe.ps1`・`probe/wizard-probe.ps1` は
+構文 0 エラー・`-DryRun` が「nothing was touched.」で終わる。**アプリは 1 度も起こしていない**（実射は段 H）。
+
+#### 段 C の是正（同日・検分 22 件・Opus 5）
+
+**当て込んだ 22 件**（却下 0）。まとめると 5 つの筋である＝
+
+⑴ **画面に出る文と記録に落とす文を割った**（`v2-copy.md` §1-8 の `VariantGate.cs:102-165`
+「画面に出す文とログに落とす文を分ける」）＝`GateDecision` に `Trail` を、
+`ServerStartResult` に `NoticeTrail` を足した。`StatusReasonText` の束縛先を内部の `Reason` から
+**帯の言い直し** `BandReasonText` へ替え（`v2-spec.md` §2-2＝§2-1a の 3 部品を帯と共用する）、
+`ComposeStartOutcome` は内部の理由を告知へ混ぜなくなった。これで
+「…（裁定 83）」「実行系が見つかりません」「実行系を起こす段が …」が画面に載る道が全部閉じた。
+
+⑵ **行ごとの当て込みで拾えなかった隠す語を潰した**＝`VoicesViewModel.DropLatentAsync` の
+「参照潜在」2 本・`FirstRunViewModel` の「サーバを起こしています…」と「取得台帳」「実行系」・
+`SettingsViewModel.Apply` の「暖機」2 本・`VoiceNameValidator` の 5 本（この檔は §1-8 に行が無かった）・
+`SpeechRequestBuilder.DescribeError` の「サーバ」2 本。
+`StatusDeviceText` は**製品名だけ**にした（`cuda:0`／`gfx1151` を落とす＝§1-2 の 40 行目・憲章 附録 5）。
+
+⑶ **語の検分が本当に効くようにした**＝`WordLintTests` に ⑶ `ViewModels/*.cs` の文字列リテラルと
+XAML の**要素の本文**を足した。1 巡目は UiStrings と可視属性しか見ておらず、上の 6 本が
+「0 件」の報告の裏を素通りしていた。免除は `LogOnly` の名指し 1 枚（見分けの標識・記録の 1 行・
+`UiText` の数の書式）で、**載っているのに 1 度も現れない綴りが在ると落ちる**（表を化石にしない）。
+
+⑷ **台本が歩けなくなっていた 2 箇所を直した**＝節 2（設定と GPU）は `SettingsAdvancedExpander` を
+開かずに `SettingsRefreshGpuButton` を押しており、`Invoke-ButtonById` が投げると本体に `catch` が
+無いので**そこで走行ごと終わる**形だった。詳しい状態の 13 個も畳みの中なのに 1 度も開いていなかった。
+助手 `Open-YwkStatusDetails` を足し、`TabStatus` を選ぶ 15 箇所を全部これに替えた。
+門の段の期待値も直した（画面はもう `cu130` の綴りを出さない＝`Get-YwkVariantName` で読み替え）。
+**同じ事故を次段で繰り返さないための錠**として `AutomationIdsTests` に
+「台本が触る畳みの中の id は台本が開けるようになっている」を足した
+（`.csproj` が `probe/*.ps1` と `ViewModels/*.cs` も試験の出力へ写す）。
+
+⑸ **同じ操作に 2 つの名・2 つの動きを残さない**＝帯の ⑶ の札を `UiStrings.StatusRebuildButton`
+（「動かすための一式を**入れ直す**」）に寄せた（`v2-spec.md` §2-2 の「新しくする」は copy に揃える）。
+〔報告用のログを保存〕は〔ログを開く〕と同じ動きだったのを、**記録を 1 檔にまとめて路を出す**
+（`v2-copy.md` §8・`v2-spec.md` §2-6）に直した＝新 id `AboutSavedLogText`／`AboutOpenReportFolderButton`。
+`VoicesSelectedMemoryText`（`MiB` を綴る 1 行）は `VoicesAdvancedExpander` の中へ**要素ごと**移した
+（`v2-copy.md` §1-8 の `UiText` の行＝「置き場を 詳細 に限る」）。
+
+**是正でも残した物**（次の席へ）＝
+⒜ `SpeechRequestBuilder.DescribeError` はまだ「HTTP 500」の番号と「話者」を綴る
+（`v2-spec.md` §2-4 は「うまく作れませんでした。…」＋〔ログを開く〕を求める）。
+番号を落とすと記録にも残らないので、落とす先（`AppendLog`）を足す仕事と対で直すこと。
+⒝ 版の番号 `v1.1.0`（上の ⑴）。
+
 ---
 
 ### 段 D — 本体が使っている間は譲る（決裁 130 Q4・契約に欄 1 つ）

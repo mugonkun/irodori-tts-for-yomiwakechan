@@ -90,9 +90,9 @@ public sealed class VoicesViewModel : ObservableObject
         PrecomputeCommand = new AsyncRelayCommand(PrecomputeAsync, () => PrecomputeSupported);
 
         // 捕れなかった例外を握り潰さない（§20-5 ⑴）。
-        RefreshCommand.Faulted += (_, line) => Message = "一覧を読み直せませんでした：" + line;
-        RemoveCommand.Faulted += (_, line) => Message = "削除できませんでした：" + line;
-        PrecomputeCommand.Faulted += (_, line) => Message = "事前計算を始められませんでした：" + line;
+        RefreshCommand.Faulted += (_, line) => Message = TryViewModel.Fold(UiStrings.VoicesRefreshFailed, line);
+        RemoveCommand.Faulted += (_, line) => Message = TryViewModel.Fold(UiStrings.VoicesRemoveFailed, line);
+        PrecomputeCommand.Faulted += (_, line) => Message = TryViewModel.Fold(UiStrings.VoicesPrecomputeFailed, line);
     }
 
     /// <summary>
@@ -156,8 +156,16 @@ public sealed class VoicesViewModel : ObservableObject
     /// 焼いてあれば <c>/ywk/status.memory.latents[id]</c> の実サイズを出す。
     /// </summary>
     public string SelectedMemoryText => Selected is null
-        ? UiText.Missing
-        : "1 名あたり＝" + Selected.MemoryText;
+        ? UiStrings.VoicesSelectedNone
+        : "1 人あたり＝" + Selected.MemoryText;
+
+    /// <summary>
+    /// 一覧の下の薄字（`v2-copy.md` §1-4 の 65 行目）＝<b>いま何人ぶんの声を用意しているか</b>。
+    /// <b>合計のバイト数は出さない</b>（憲章 §4「数字の 1 枚表」の 3 つ以外を利用者向けの面に書かない）＝
+    /// GB の合計は 詳しい状態 › 詳細 の「GPU メモリ」の行にだけ置く（`v2-spec.md` §2-3）。
+    /// </summary>
+    public string CountText =>
+        "いま " + Rows.Count.ToString(CultureInfo.InvariantCulture) + " 人ぶんの声を用意しています。";
 
     /// <summary>
     /// 試聴が押せない理由 1 行（押せるなら空＝low 11）。<b>UIA から読める</b>ように、
@@ -190,9 +198,7 @@ public sealed class VoicesViewModel : ObservableObject
 
     /// <summary>参照ボイスの但し書き（README §4＝Ethical Restrictions 1・No Impersonation）。</summary>
     public static string ImpersonationNotice =>
-        "参照ボイスは、権利者の許諾がある音声だけを使ってください。"
-        + "実在の人物の声を本人の許諾なく模倣することは、上流 Irodori-TTS の利用条件"
-        + "（Ethical Restrictions 1・No Impersonation）で禁じられています。";
+        UiStrings.ImpersonationNotice;
 
     /// <summary>
     /// 参照 wav の推奨の長さと、受ける形式の但し書き（設計書 §4）。
@@ -200,7 +206,7 @@ public sealed class VoicesViewModel : ObservableObject
     /// 検分が同じ 1 つの定数を見る（是正・2026-09-05）。
     /// </summary>
     public static string ReferenceLengthNotice =>
-        "参照 wav は 10〜30 秒を勧めます（" + VoiceIds.ExtensionsText + "）。";
+        UiStrings.VoicesLengthAdvice + "（" + VoiceIds.ExtensionsText + "）。";
 
     /// <summary>台帳を読み直して一覧を組む（サーバが止まっていても出る）。</summary>
     public void Reload()
@@ -296,10 +302,10 @@ public sealed class VoicesViewModel : ObservableObject
                     if (_precomputeRetryFailures >= MaxAutoRetries)
                     {
                         Forget(ids);
-                        Message = "覚えていた " + ids.Length.ToString(CultureInfo.InvariantCulture)
-                            + " 名の事前計算を "
+                        Message = ids.Length.ToString(CultureInfo.InvariantCulture)
+                            + " 人ぶんの下ごしらえを "
                             + MaxAutoRetries.ToString(CultureInfo.InvariantCulture)
-                            + " 回試しても始められませんでした（「参照潜在を焼く」を押してください）。";
+                            + " 回試しても始められませんでした。〔" + UiStrings.VoicesPrecomputeButton + "〕を押してください。";
                     }
 
                     break;
@@ -362,7 +368,7 @@ public sealed class VoicesViewModel : ObservableObject
                     _live = result.Value;
                     if (!string.IsNullOrWhiteSpace(result.Value.Error))
                     {
-                        Message = "サーバの話者一覧に問題があります：" + result.Value.Error.Trim();
+                        Message = UiStrings.VoicesPartialList;
                     }
                 }
                 else
@@ -376,7 +382,7 @@ public sealed class VoicesViewModel : ObservableObject
             catch (OperationCanceledException)
             {
                 _live = null;
-                Message = "サーバの話者一覧が期限内に返りませんでした。台帳だけで一覧を出しています。";
+                Message = UiStrings.VoicesPartialList;
             }
         }
         else
@@ -391,12 +397,13 @@ public sealed class VoicesViewModel : ObservableObject
     /// <c>/ywk/voices</c> が読めなかったときの 1 行（<b>純関数</b>＝low 12）。
     /// <b>台帳だけで一覧を出している</b>ことを必ず言う（黙って古い写しを見せない）。
     /// </summary>
-    public static string DescribeVoicesFailure(int statusCode) =>
-        statusCode > 0
-            ? "サーバの話者一覧が読めませんでした（HTTP "
-              + statusCode.ToString(CultureInfo.InvariantCulture)
-              + "）。台帳だけで一覧を出しています。"
-            : "サーバの話者一覧が読めませんでした（応答なし）。台帳だけで一覧を出しています。";
+    public static string DescribeVoicesFailure(int statusCode)
+    {
+        // 番号つきの状態（HTTP 500 ほか）は**画面に出さない**（憲章 原則 6・§3-2 の書き方の規則）。
+        // 記録には残る＝呼び手が AppendLog へ落とす道は塞いでいない。
+        _ = statusCode;
+        return UiStrings.VoicesPartialList;
+    }
 
     /// <summary>
     /// 追加＝wav を写して台帳に足し、<c>voices.json</c> を書き換える（受け入れ条件 D-3）。
@@ -425,7 +432,7 @@ public sealed class VoicesViewModel : ObservableObject
 
         if (_store is null || _writer is null)
         {
-            Message = "話者の登録系がまだ組み込まれていません（便 D・話者席の実装待ち）。";
+            Message = UiStrings.VoicesNotYet;
             return false;
         }
 
@@ -437,7 +444,7 @@ public sealed class VoicesViewModel : ObservableObject
             Rebuild();
 
             var advice = AdviseLength(sourcePath);
-            Message = "「" + displayName.Trim() + "」を追加しました（再起動は要りません）。"
+            Message = "「" + displayName.Trim() + "」を追加しました。すぐ使えます。"
                 + (advice is null ? string.Empty : " " + advice);
 
             // 裁定 65＝Radeon 版は登録のたびに焼く。口が無ければ黙って飛ばす。
@@ -450,12 +457,12 @@ public sealed class VoicesViewModel : ObservableObject
         }
         catch (IOException ex)
         {
-            Message = "参照 wav を写せませんでした：" + ex.Message;
+            Message = TryViewModel.Fold(UiStrings.VoicesCopyFailed, ex.Message);
             return false;
         }
         catch (UnauthorizedAccessException ex)
         {
-            Message = "参照 wav を写せませんでした：" + ex.Message;
+            Message = TryViewModel.Fold(UiStrings.VoicesCopyFailed, ex.Message);
             return false;
         }
         finally
@@ -486,13 +493,13 @@ public sealed class VoicesViewModel : ObservableObject
         if (!row.CanRemove)
         {
             // 押せない理由は行が持つ（画面の 1 行・ボタンの HelpText と同じ文言＝low 14）
-            Message = row.RemoveBlockedReason ?? "この話者は消せません。";
+            Message = row.RemoveBlockedReason ?? UiStrings.VoicesCannotRemove;
             return;
         }
 
         if (_store is null || _writer is null)
         {
-            Message = "話者の登録系がまだ組み込まれていません（便 D・話者席の実装待ち）。";
+            Message = UiStrings.VoicesNotYet;
             return;
         }
 
@@ -521,16 +528,16 @@ public sealed class VoicesViewModel : ObservableObject
             Rebuild();
 
             Message = removal.WasKnown
-                ? "「" + row.DisplayName + "」を削除しました。"
-                : "「" + row.DisplayName + "」は台帳にありませんでした（何も消していません）。";
+                ? "「" + row.DisplayName + "」を消しました。"
+                : "「" + row.DisplayName + "」は見つかりませんでした（何も消していません）。";
         }
         catch (IOException ex)
         {
-            Message = "削除できませんでした：" + ex.Message;
+            Message = TryViewModel.Fold(UiStrings.VoicesRemoveFailed, ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            Message = "削除できませんでした：" + ex.Message;
+            Message = TryViewModel.Fold(UiStrings.VoicesRemoveFailed, ex.Message);
         }
     }
 
@@ -565,15 +572,18 @@ public sealed class VoicesViewModel : ObservableObject
             // 409＝事前計算が走っている。いま消すと走行が別名を書き戻す＝待ってもらう。
             if (result.Code == WrapperErrorCodes.PrecomputeRunning)
             {
-                return "参照潜在の事前計算が走っています。終わってから削除してください。";
+                return UiStrings.VoicesPrecomputeRunning;
             }
 
-            return "参照潜在を外せませんでした"
-                + Suffix(result.Error?.Message ?? result.FailureReason);
+            // 隣の枝と同じ語彙で綴る（是正・段 C の検分）＝「参照潜在」は憲章 §6-1 の隠す語で、
+            // §1-4／§1-8 が「下ごしらえ」に替えると決めた物。詳しい字は〔ログを開く〕へ。
+            return TryViewModel.Fold(
+                UiStrings.VoicesLatentDetachFailed,
+                result.Error?.Message ?? result.FailureReason);
         }
         catch (OperationCanceledException)
         {
-            return "参照潜在を外す要求が期限内に返りませんでした。";
+            return UiStrings.VoicesLatentDetachTimedOut;
         }
     }
 
@@ -590,7 +600,7 @@ public sealed class VoicesViewModel : ObservableObject
     {
         if (_store is not VoiceStore store || _writer is null)
         {
-            Message = "話者の登録系がまだ組み込まれていません（便 D・話者席の実装待ち）。";
+            Message = UiStrings.VoicesNotYet;
             return;
         }
 
@@ -609,21 +619,21 @@ public sealed class VoicesViewModel : ObservableObject
             Rebuild();
 
             Message = (restored > 0
-                ? "同梱のプリセットを " + restored.ToString(CultureInfo.InvariantCulture) + " 名入れ直しました。"
+                ? "最初から入っている声を " + restored.ToString(CultureInfo.InvariantCulture) + " 人ぶん入れ直しました。"
                 : renamed.Count > 0
                     // 改名だけが起きた回に「プリセットが無いか、既に全員居ます」を添えると、
                     // 名が変わった当人には 2 つの半分が噛み合わない（是正・検分 low）。
-                    ? "入れ直すプリセットはありませんでした。"
-                    : "入れ直すプリセットはありませんでした（配布物にプリセットが無いか、既に全員居ます）。")
+                    ? UiStrings.VoicesNothingToRestore
+                    : UiStrings.VoicesNothingToRestore)
                 + DescribeRenames(renamed);
         }
         catch (IOException ex)
         {
-            Message = "プリセットを入れ直せませんでした：" + ex.Message;
+            Message = TryViewModel.Fold(UiStrings.VoicesRestoreFailed, ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            Message = "プリセットを入れ直せませんでした：" + ex.Message;
+            Message = TryViewModel.Fold(UiStrings.VoicesRestoreFailed, ex.Message);
         }
     }
 
@@ -644,7 +654,7 @@ public sealed class VoicesViewModel : ObservableObject
             pairs.Add(rename.OldId + "→" + rename.NewId);
         }
 
-        return "名を改めた " + renames.Count.ToString(CultureInfo.InvariantCulture) + " 名（"
+        return "名前が変わった声が " + renames.Count.ToString(CultureInfo.InvariantCulture) + " 人います（"
             + string.Join("・", pairs) + "）。";
     }
 
@@ -662,13 +672,13 @@ public sealed class VoicesViewModel : ObservableObject
 
         if (!row.CanPreview || row.FileName is null)
         {
-            Message = row.PreviewBlockedReason ?? "この話者は試聴できません。";
+            Message = row.PreviewBlockedReason ?? UiStrings.VoicesCannotPreview;
             return;
         }
 
         var result = _player.PlayFile(Path.Combine(_paths.ReferenceWavDir, row.FileName));
         Message = result.Ok
-            ? "「" + row.DisplayName + "」を試聴中（" + UiText.Seconds(result.DurationSeconds) + "）。"
+            ? "「" + row.DisplayName + "」を試聴しています。"
             : result.FailureReason ?? "試聴できませんでした。";
     }
 
@@ -703,14 +713,14 @@ public sealed class VoicesViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(ids);
         if (ids.Count == 0)
         {
-            Message = "焼き直しが要る話者はありません。";
+            Message = UiStrings.VoicesNothingStale;
             return PrecomputeOutcome.Nothing;
         }
 
         var client = _wrapper();
         if (client is null)
         {
-            Message = "サーバが動いていないので、参照潜在の事前計算はできません。";
+            Message = UiStrings.VoicesPrecomputeNotReady;
             return PrecomputeOutcome.Failed;
         }
 
@@ -724,14 +734,14 @@ public sealed class VoicesViewModel : ObservableObject
             if (!result.Available)
             {
                 PrecomputeSupported = false;
-                Message = "このサーバは参照潜在の事前計算に対応していません。";
+                Message = UiStrings.VoicesNotYet;
                 return PrecomputeOutcome.Unsupported;
             }
 
             PrecomputeSupported = true;
             if (result.Ok)
             {
-                Message = "参照潜在の事前計算を始めました（"
+                Message = "下ごしらえを始めました（"
                     + UiText.Progress(0, result.Value?.Total ?? ids.Count) + " 件）。";
                 return PrecomputeOutcome.Started;
             }
@@ -748,17 +758,17 @@ public sealed class VoicesViewModel : ObservableObject
                     }
                 }
 
-                Message = "いま別の事前計算が走っているので、終わり次第この "
-                    + ids.Count.ToString(CultureInfo.InvariantCulture) + " 名を焼きます。";
+                Message = "いま別の下ごしらえが走っているので、終わり次第この "
+                    + ids.Count.ToString(CultureInfo.InvariantCulture) + " 人ぶんを始めます。";
                 return PrecomputeOutcome.Deferred;
             }
 
-            Message = "事前計算を始められませんでした" + Suffix(result.Error?.Message);
+            Message = TryViewModel.Fold(UiStrings.VoicesPrecomputeFailed, result.Error?.Message);
             return PrecomputeOutcome.Failed;
         }
         catch (OperationCanceledException)
         {
-            Message = "事前計算の要求が期限内に返りませんでした。";
+            Message = UiStrings.VoicesPrecomputeFailed;
             return PrecomputeOutcome.Failed;
         }
     }
@@ -779,6 +789,7 @@ public sealed class VoicesViewModel : ObservableObject
             ?? rows.FirstOrDefault();
 
         RaisePropertyChanged(nameof(Rows));
+        RaisePropertyChanged(nameof(CountText));
         RowsChanged?.Invoke(this, rows);
     }
 
@@ -795,12 +806,12 @@ public sealed class VoicesViewModel : ObservableObject
         }
         catch (IOException ex)
         {
-            Message = "話者台帳が読めませんでした：" + ex.Message;
+            Message = TryViewModel.Fold(UiStrings.VoicesTableUnreadable, ex.Message);
             return _file;
         }
         catch (UnauthorizedAccessException ex)
         {
-            Message = "話者台帳が読めませんでした：" + ex.Message;
+            Message = TryViewModel.Fold(UiStrings.VoicesTableUnreadable, ex.Message);
             return _file;
         }
     }
@@ -843,6 +854,4 @@ public sealed class VoicesViewModel : ObservableObject
         }
     }
 
-    private static string Suffix(string? message) =>
-        string.IsNullOrWhiteSpace(message) ? "。" : "：" + message.Trim();
 }

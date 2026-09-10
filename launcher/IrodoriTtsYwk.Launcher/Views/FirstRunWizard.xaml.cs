@@ -68,10 +68,8 @@ public partial class FirstRunWizard : Window
     {
         var answer = MessageBox.Show(
             this,
-            "Microsoft の部品を 1 つ入れます。"
-            + "Windows の許可の窓が 1 度出るので「はい」を押してください。\n"
-            + "入れないと、しゃべらせられないことがあります。",
-            "Windows の許可について",
+            UiStrings.WizardUacBody,
+            UiStrings.WizardUacCaption,
             MessageBoxButton.YesNoCancel,
             MessageBoxImage.Question);
 
@@ -89,8 +87,8 @@ public partial class FirstRunWizard : Window
         {
             var answer = MessageBox.Show(
                 this,
-                "準備の途中です。やめて閉じますか。次に開いたときは、続きから始めます。",
-                "はじめの準備",
+                UiStrings.WizardCloseBody,
+                UiStrings.WizardCloseCaption,
                 MessageBoxButton.OKCancel,
                 MessageBoxImage.Question);
 

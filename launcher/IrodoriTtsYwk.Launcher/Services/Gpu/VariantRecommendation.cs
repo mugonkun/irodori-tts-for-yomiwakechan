@@ -171,7 +171,7 @@ public static class VariantRecommendation
 
         var alternative = Recommend(choices, new DriverProbe(driverVersion, 1, true));
         return string.Equals(alternative, variant?.Trim(), StringComparison.OrdinalIgnoreCase)
-            ? Head(variant!, driverVersion!) + "取得からやり直して別の変種を選んでください。"
+            ? Head(variant!, driverVersion!) + ViewModels.UiStrings.SwitchInFirstRun + "。"
             : Head(variant!, driverVersion!) + RuntimeVariants.ShortDisplayName(alternative)
               + " に切り替えて取得します。";
     }
@@ -184,16 +184,16 @@ public static class VariantRecommendation
 
     /// <summary>ドライバの版が読めなかったときの 1 行（<b>止めはしない</b>＝そう名乗るだけ）。</summary>
     public const string UnknownDriverNote =
-        "ドライバの版が読めませんでした。この構成で進められますが、"
-        + "起動できないときは CPU の変種を選んでください。";
+        "グラフィックスドライバの版が読めませんでした。このまま進められますが、"
+        + "動かないときは" + ViewModels.UiStrings.SwitchInSettings + "。";
 
     /// <summary>
     /// <b>見た上で GPU が 0 台だった</b>ときの 1 行（＝<see cref="Recommend"/> が <c>cpu</c> を選ぶ回）。
     /// 「CPU を選べ」と勧めない＝もう選んでいる（是正・検分）。
     /// </summary>
     public const string NoGpuNote =
-        "GPU を 1 台も見つけられませんでした。CPU の変種を選んでいます"
-        + "（GPU で動かすときは選び直してください）。";
+        "このパソコンには対応する GPU が見つかりませんでした。"
+        + "とても遅い方法（CPU）で試すこともできますが、配信には使えません。";
 
     /// <summary>
     /// 検分の結果を 1 行で名乗る（<b>純関数</b>・名乗る物が無ければ null）。

@@ -15,6 +15,12 @@ namespace IrodoriTtsYwk.Launcher.ViewModels;
 /// 掛からない。ただし<b>上流の話者 id は表示名そのもの</b>なので、⑴ 空 ⑵ 参照なしの別名
 /// （<c>none</c> 等）⑶ 既にある名 ⑷ 制御文字は弾く。
 /// </para>
+/// <para>
+/// <b>返す 1 行はすべて画面に出る</b>（<c>VoicesViewModel.Message</c> →
+/// <c>VoicesMessageText</c>＝声を足すいちばん普通の道）。だから綴りは
+/// <see cref="UiStrings"/> に置く（是正・段 C の検分）＝1 巡目はここに「話者」「参照」「檔」が
+/// 直に書いてあり、`v2-copy.md` §1-8 にこの檔の行が無かったので行ごとの当て込みで拾えなかった。
+/// </para>
 /// </summary>
 public static class VoiceNameValidator
 {
@@ -27,32 +33,34 @@ public static class VoiceNameValidator
         var trimmed = name?.Trim();
         if (string.IsNullOrEmpty(trimmed))
         {
-            return "話者の名前を入れてください。";
+            return UiStrings.VoiceNameRequired;
         }
 
         if (trimmed.Length > MaxLength)
         {
-            return "名前が長すぎます（上限 " + MaxLength.ToString(CultureInfo.InvariantCulture) + " 字）。";
+            return UiStrings.VoiceNameTooLongHead
+                + MaxLength.ToString(CultureInfo.InvariantCulture)
+                + UiStrings.VoiceNameTooLongTail;
         }
 
         foreach (var c in trimmed)
         {
             if (char.IsControl(c))
             {
-                return "名前に制御文字は使えません。";
+                return UiStrings.VoiceNameControlChar;
             }
         }
 
         // 「デフォルト」と参照なしの別名は、意味が二重になるので取れない（契約 ⑷ 4-2）。
         if (VoiceIds.IsNoRef(trimmed))
         {
-            return "「" + trimmed + "」は参照なしの話者の名前として予約されています。";
+            return "「" + trimmed + UiStrings.VoiceNameReservedTail;
         }
 
         if (existingIds is not null
             && existingIds.Any(id => string.Equals(id, trimmed, StringComparison.Ordinal)))
         {
-            return "その名前の話者は既にあります。";
+            return UiStrings.VoiceNameTaken;
         }
 
         return null;
@@ -66,14 +74,16 @@ public static class VoiceNameValidator
     {
         if (string.IsNullOrWhiteSpace(path))
         {
-            return "参照する音声の檔を選んでください。";
+            return UiStrings.VoiceSourceRequired;
         }
 
         var extension = Path.GetExtension(path);
         if (string.IsNullOrEmpty(extension)
             || !VoiceIds.WavExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
         {
-            return "この形式は参照に使えません（" + string.Join("・", VoiceIds.WavExtensions) + "）。";
+            return UiStrings.VoiceSourceUnsupportedHead
+                + string.Join("・", VoiceIds.WavExtensions)
+                + UiStrings.VoiceSourceUnsupportedTail;
         }
 
         return null;
@@ -94,16 +104,18 @@ public static class VoiceNameValidator
         var max = VoiceIds.RecommendedRefMax.TotalSeconds;
         if (seconds.Value < min)
         {
-            return "参照が短めです（" + UiText.Seconds(seconds) + "）。"
+            return UiStrings.VoiceSourceShortHead + UiText.Seconds(seconds) + "）。"
                 + min.ToString("0", CultureInfo.InvariantCulture) + "〜"
-                + max.ToString("0", CultureInfo.InvariantCulture) + " 秒を勧めます。";
+                + max.ToString("0", CultureInfo.InvariantCulture)
+                + UiStrings.VoiceSourceLengthTail;
         }
 
         if (seconds.Value > max)
         {
-            return "参照が長めです（" + UiText.Seconds(seconds) + "）。"
+            return UiStrings.VoiceSourceLongHead + UiText.Seconds(seconds) + "）。"
                 + min.ToString("0", CultureInfo.InvariantCulture) + "〜"
-                + max.ToString("0", CultureInfo.InvariantCulture) + " 秒を勧めます。";
+                + max.ToString("0", CultureInfo.InvariantCulture)
+                + UiStrings.VoiceSourceLengthTail;
         }
 
         return null;

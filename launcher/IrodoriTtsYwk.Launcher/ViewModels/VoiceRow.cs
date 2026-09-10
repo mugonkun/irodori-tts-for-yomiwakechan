@@ -36,8 +36,8 @@ public sealed record VoiceRow(
 {
     /// <summary>種別の 1 語（プリセット／利用者／参照なし／サーバ側）。</summary>
     public string KindText => IsNoRef
-        ? "参照なし"
-        : !IsInTable ? "サーバ側" : IsPreset ? "プリセット" : "利用者";
+        ? "なし"
+        : !IsInTable ? "このアプリの外" : IsPreset ? "同梱" : "自分で追加";
 
     /// <summary>
     /// 潜在キャッシュの状態（裁定 65・67）。<b>焼き直しを促す印を落とさない</b>＝
@@ -45,7 +45,7 @@ public sealed record VoiceRow(
     /// </summary>
     public string LatentText => IsNoRef
         ? UiText.Missing
-        : IsLatentStale ? "要・焼き直し" : HasLatent ? "焼き済み" : "未";
+        : IsLatentStale ? "やり直しが要る" : HasLatent ? "済み" : "未";
 
     /// <summary>
     /// 消費メモリ（裁定 67 ⑵・low 13）＝<b>1 名あたり</b>。焼いてあれば実サイズ、無ければ概算。
@@ -76,8 +76,8 @@ public sealed record VoiceRow(
             }
 
             return IsNoRef
-                ? "「" + DisplayName + "」は一覧に常在するので消せません。"
-                : "「" + DisplayName + "」は配布版の台帳にありません（サーバ側の走査で見えている檔です）。";
+                ? "「" + DisplayName + "」はいつでも使える声なので消せません。"
+                : "「" + DisplayName + "」はこのアプリが管理していない声なので消せません。";
         }
     }
 
@@ -106,17 +106,17 @@ public sealed record VoiceRow(
 
             if (IsNoRef)
             {
-                return "「" + DisplayName + "」は参照なしの話者なので試聴する音がありません。";
+                return "「" + DisplayName + "」には試聴できる音がありません。";
             }
 
             if (string.IsNullOrWhiteSpace(FileName))
             {
-                return "「" + DisplayName + "」には配布版が写した参照音声がありません（サーバ側の檔です）。";
+                return "「" + DisplayName + "」には試聴できる音がありません。";
             }
 
-            return "「" + DisplayName + "」の参照音声は "
+            return "「" + DisplayName + "」の元の音声は "
                 + System.IO.Path.GetExtension(FileName).TrimStart('.').ToUpperInvariant()
-                + " なので試聴できません（試聴は wav だけ。登録と合成には使えます）。";
+                + " なので試聴できません（追加としゃべらせるには使えます）。";
         }
     }
 }

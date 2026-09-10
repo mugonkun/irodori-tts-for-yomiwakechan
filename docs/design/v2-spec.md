@@ -337,7 +337,7 @@
 | 大きな 1 行 | `StatusStateText` | 据え置き。帯と同じ 3 語＋活動の 1 行（`StatusViewModel` に純関数 `ActivityLine` を 1 本足す・新しい HTTP の口は要らない） |
 | 止まった理由 | `StatusReasonText` | 据え置き。**§2-1a の表を共用**（同じ 3 部品） |
 | 準備が要る | `StatusAcquisitionText`／`StatusAcquireButton` | 据え置き（札＝「はじめの準備をする」） |
-| 一式を新しくする | `StatusRebuildRuntimeText`／`StatusRebuildRuntimeButton`／`StatusRebuildProgressText`／`StatusRebuildProgressBar`／`StatusRebuildCancelButton` | 据え置き。札を「**動かすための一式を新しくする**」に（§11 ⑵ で差分になる） |
+| 一式を新しくする | `StatusRebuildRuntimeText`／`StatusRebuildRuntimeButton`／`StatusRebuildProgressText`／`StatusRebuildProgressBar`／`StatusRebuildCancelButton` | 据え置き。札を「**動かすための一式を入れ直す**」に（§11 ⑵ で差分になる）。**`v2-copy.md` §1-2 の 88 行目と §3-2 E-04 に揃えた**（2026-09-11・段 C の是正）＝1 稿目はここだけ「新しくする」と書いており、同じ操作に 2 つの名が出ていた。綴りは `UiStrings.StatusRebuildButton` の 1 箇所だけが持つ |
 | 設定の保留・GPU の食い違い | `StatusSettingsPendingText`／`StatusGpuMismatchText` | 据え置き（「動かない」に直結するので畳みの外） |
 
 **「詳細（上級者向け）」の畳み**（`Expander`・新 id `StatusAdvancedExpander`・既定は閉）

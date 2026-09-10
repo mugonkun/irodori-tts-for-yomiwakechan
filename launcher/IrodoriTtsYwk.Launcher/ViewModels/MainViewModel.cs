@@ -137,7 +137,12 @@ public sealed class MainViewModel : ObservableObject
         Try = new TryViewModel(static () => AppServices.Wrapper, player, settings);
 
         Settings = new SettingsViewModel(
-            settings, store, paths, AppServices.GpuEnumerator, AppServices.DriverCheck);
+            settings, store, paths, AppServices.GpuEnumerator, AppServices.DriverCheck)
+        {
+            // 段 C で欄ごと消した設定（準備運転の段・使う声）の検分は、画面に出す先が無い＝
+            // 手で書いた settings.json が読めない回の理由は記録へ落とす（是正・段 C の検分）。
+            Log = line => Status.AppendLog(line),
+        };
 
         About = new AboutViewModel(paths);
 
@@ -239,8 +244,8 @@ public sealed class MainViewModel : ObservableObject
     /// ウィザードを自動で出すときに Trail とログへ残す 1 行（<b>純関数</b>）。
     /// </summary>
     public static string AcquisitionNotice(string summary) =>
-        "実行系／モデルが揃っていないため、取得からやり直します（不足＝"
-        + (string.IsNullOrWhiteSpace(summary) ? "不明" : summary.Trim()) + "）。";
+        UiStrings.AcquisitionRestart
+        + (string.IsNullOrWhiteSpace(summary) ? string.Empty : "（" + summary.Trim() + "）");
 
     /// <summary>取得の済み具合を見直す（構築時と、ウィザードを閉じた後）。</summary>
     private void RefreshAcquisition()
@@ -339,7 +344,7 @@ public sealed class MainViewModel : ObservableObject
             var pythonExe = paths.ResolvePythonExe(vm.Variant);
             if (pythonExe is null)
             {
-                progress.Report("変種の実行系がまだありません（展開の段をやり直してください）。");
+                progress.Report(UiStrings.NotPreparedYet);
                 return false;
             }
 
@@ -577,11 +582,14 @@ public sealed class MainViewModel : ObservableObject
 
         Status.HasProcess = AppServices.Server.ProcessId is not null;
 
-        // 裁定 88 ⑴⑵＝門で断られた理由 1 行と告知（「未実測の帯」など）を**そのまま**状態帯に出す。
+        // 裁定 88 ⑴⑵＝門の告知（「未実測の帯」など）を**そのまま**状態帯に出す。
+        // **画面は利用者の言葉・記録は工学の 1 行**（是正・段 C の検分＝`v2-copy.md` §1-8 の
+        // `VariantGate.cs:102-165`「画面に出す文とログに落とす文を分ける」）＝
+        // 出すのは `Notices`、落とすのは `NoticeTrail`（検分の観測と実行系の在否）。
         Status.ApplyStartOutcome(result.Ok, result.FailureReason, result.Notices);
-        foreach (var notice in result.Notices)
+        foreach (var line in result.NoticeTrail)
         {
-            Status.AppendLog(notice);
+            Status.AppendLog(line);
         }
 
         if (!result.Ok && result.FailureReason is string failure)

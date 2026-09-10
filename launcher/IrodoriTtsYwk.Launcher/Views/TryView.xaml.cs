@@ -48,8 +48,8 @@ public partial class TryView : UserControl
         {
             MessageBox.Show(
                 Window.GetWindow(this),
-                "保存する音がありません。先に合成してください。",
-                "保存",
+                UiStrings.TryNothingToSave,
+                UiStrings.TrySaveDialogCaption,
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
             return;
@@ -57,8 +57,8 @@ public partial class TryView : UserControl
 
         var dialog = new Win32.SaveFileDialog
         {
-            Title = "合成した音声を保存する",
-            Filter = "WAV（*.wav）|*.wav",
+            Title = UiStrings.TrySaveDialogTitle,
+            Filter = UiStrings.TrySaveFilter,
             FileName = model.SuggestedFileName(),
             DefaultExt = ".wav",
             AddExtension = true,

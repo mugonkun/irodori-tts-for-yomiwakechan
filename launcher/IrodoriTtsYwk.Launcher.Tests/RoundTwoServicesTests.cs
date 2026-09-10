@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Services.Gpu;
+using IrodoriTtsYwk.Launcher.ViewModels;
 using IrodoriTtsYwk.Launcher.Services.Ledger;
 using IrodoriTtsYwk.Launcher.Services.Server;
 using Xunit;
@@ -72,7 +73,7 @@ public sealed class RoundTwoServicesTests(Xunit.Abstractions.ITestOutputHelper o
         Assert.Contains("GPU を見られません", decision.Reason!, StringComparison.Ordinal);
         Assert.Contains("is_available=False", decision.Reason!, StringComparison.Ordinal);
         Assert.Contains("device_count=0", decision.Reason!, StringComparison.Ordinal);
-        Assert.Contains("rocm-gfx1151 か cpu の変種に切り替えてください", decision.Reason!, StringComparison.Ordinal);
+        Assert.Contains("ROCm に切り替えるか、" + UiStrings.SwitchInSettings, decision.Reason!, StringComparison.Ordinal);
         Assert.Empty(decision.Notices);
     }
 
@@ -80,15 +81,15 @@ public sealed class RoundTwoServicesTests(Xunit.Abstractions.ITestOutputHelper o
     public void 門_537_58でcu130は起こさずcu126を勧める()
     {
         // 裁定 83・88 ⑴ の例文の形＝「cu130 はこの機体で GPU を見られません（…）。
-        // cu126 か cpu の変種に切り替えてください」。
+        // CUDA 12.6 に切り替えるか、設定の「詳細」で動かし方を変えてください」。
         var decision = VariantGate.Decide(
             RuntimeVariants.Cu130, CudaProbe(usable: false), "537.58", CudaRelease);
 
         Assert.False(decision.Allow);
         Assert.Equal(RuntimeVariants.Cu126, decision.SuggestedVariant);
-        Assert.StartsWith("cu130 はこの機体で GPU を見られません（", decision.Reason, StringComparison.Ordinal);
+        Assert.StartsWith("CUDA 13.0 はこの機体で GPU を見られません（", decision.Reason, StringComparison.Ordinal);
         Assert.Contains("ドライバ 537.58", decision.Reason!, StringComparison.Ordinal);
-        Assert.EndsWith("cu126 か cpu の変種に切り替えてください。", decision.Reason, StringComparison.Ordinal);
+        Assert.EndsWith("CUDA 12.6 に切り替えるか、" + UiStrings.SwitchInSettings + "。", decision.Reason, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -112,10 +113,17 @@ public sealed class RoundTwoServicesTests(Xunit.Abstractions.ITestOutputHelper o
 
         Assert.True(decision.Allow);
         Assert.Null(decision.Reason);
+
+        // 是正・段 C の検分＝**画面の半分と記録の半分**に割れた。画面はドライバの版と
+        // 次の 1 手だけ、実射の下限（537.58／528.33）と「未実測の帯」の綴りは記録の側。
         var notice = Assert.Single(decision.Notices);
-        Assert.Contains("未実測の帯", notice, StringComparison.Ordinal);
-        Assert.Contains("537.58", notice, StringComparison.Ordinal);
-        Assert.Contains("528.33", notice, StringComparison.Ordinal);
+        Assert.Contains("530", notice, StringComparison.Ordinal);
+        Assert.DoesNotContain("未実測の帯", notice, StringComparison.Ordinal);
+
+        var logged = Assert.Single(decision.LogLines);
+        Assert.Contains("未実測の帯", logged, StringComparison.Ordinal);
+        Assert.Contains("537.58", logged, StringComparison.Ordinal);
+        Assert.Contains("528.33", logged, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -140,7 +148,7 @@ public sealed class RoundTwoServicesTests(Xunit.Abstractions.ITestOutputHelper o
 
         Assert.False(decision.Allow);
         Assert.Equal(RuntimeVariants.Cpu, decision.SuggestedVariant);
-        Assert.Contains("cpu の変種に切り替えてください", decision.Reason!, StringComparison.Ordinal);
+        Assert.Contains(UiStrings.SwitchInSettings, decision.Reason!, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -174,8 +182,10 @@ public sealed class RoundTwoServicesTests(Xunit.Abstractions.ITestOutputHelper o
         var decision = VariantGate.Decide(RuntimeVariants.RocmGfx1151, null, null, RadeonRelease);
 
         Assert.True(decision.Allow);
-        Assert.Single(decision.Notices);
-        Assert.Contains("検分ができませんでした", decision.Notices[0], StringComparison.Ordinal);
+        // 是正・段 C の検分＝画面は「確かめられませんでした」＋次の 1 手、
+        // 「検分ができませんでした（実行系が見つかりません）」は記録の側。
+        Assert.Equal(UiStrings.GateProbeUnavailable, Assert.Single(decision.Notices));
+        Assert.Contains("検分ができませんでした", Assert.Single(decision.LogLines), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -187,7 +197,8 @@ public sealed class RoundTwoServicesTests(Xunit.Abstractions.ITestOutputHelper o
         var decision = VariantGate.Decide(RuntimeVariants.RocmGfx1151, broken, null, RadeonRelease);
 
         Assert.True(decision.Allow);
-        Assert.Contains("ImportError", Assert.Single(decision.Notices), StringComparison.Ordinal);
+        Assert.Equal(UiStrings.GateProbeUnreadable, Assert.Single(decision.Notices));
+        Assert.Contains("ImportError", Assert.Single(decision.LogLines), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -41,8 +41,9 @@ public partial class VoicesView : UserControl
         var pattern = string.Join(";", Array.ConvertAll(VoiceIds.WavExtensions, static x => "*" + x));
         var dialog = new Win32.OpenFileDialog
         {
-            Title = "参照する音声を選ぶ",
-            Filter = "音声（" + pattern + "）|" + pattern + "|すべての檔（*.*）|*.*",
+            Title = UiStrings.VoicesBrowseDialogTitle,
+            Filter = UiStrings.VoicesBrowseFilterAudio + "（" + pattern + "）|" + pattern
+                     + "|" + UiStrings.VoicesBrowseFilterAll + "|*.*",
             CheckFileExists = true,
         };
 
@@ -85,14 +86,13 @@ public partial class VoicesView : UserControl
 
         // プリセットとそれ以外で文言を分ける（設計書 §4＝プリセットは入れ直せる）。
         var tail = row.IsPreset
-            ? "写した参照 wav と焼いた参照潜在も消えます。"
-              + "同梱のプリセットは「同梱のプリセットを入れ直す」でいつでも戻せます。"
-            : "写した参照 wav と焼いた参照潜在も消えます。元の音声檔からもう 1 度登録できます。";
+            ? UiStrings.VoicesRemoveConfirmTail + UiStrings.VoicesRemoveConfirmPreset
+            : UiStrings.VoicesRemoveConfirmTail;
 
         return MessageBox.Show(
             Window.GetWindow(this),
-            "「" + row.DisplayName + "」を削除します。" + tail + "よろしいですか。",
-            "話者の削除",
+            "「" + row.DisplayName + "」を消します。" + tail + "よろしいですか。",
+            UiStrings.VoicesRemoveDialogCaption,
             MessageBoxButton.OKCancel,
             MessageBoxImage.Question) == MessageBoxResult.OK;
     }

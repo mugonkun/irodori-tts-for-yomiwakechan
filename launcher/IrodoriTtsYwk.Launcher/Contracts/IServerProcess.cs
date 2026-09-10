@@ -382,6 +382,13 @@ public sealed record ServerStartResult(
     /// </para>
     /// </summary>
     public IReadOnlyList<string> Notices { get; init; } = [];
+
+    /// <summary>
+    /// 同じ告知の<b>記録に落とす半分</b>（是正・段 C の検分＝`v2-copy.md` §1-8 の
+    /// 「画面に出す文とログに落とす文を分ける」）。<see cref="Notices"/> が利用者の言葉、
+    /// こちらが検分の観測を並べた工学の 1 行である。既定は空（<b>null にはならない</b>）。
+    /// </summary>
+    public IReadOnlyList<string> NoticeTrail { get; init; } = [];
 }
 
 public sealed class ServerStateChangedEventArgs(ServerState previous, ServerState current, string? reason)

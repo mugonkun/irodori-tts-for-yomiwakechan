@@ -115,10 +115,28 @@ pwsh ... -File probe/d-launch-probe.ps1 -GateOnly          # 変種の門だけ
 **便 D（3）で足した段**（設計書 §22）＝**h** 初回取得ウィザードの**押下数**（裁定 94 ⑴・既定は台帳を壊した
 私設の配布樹で**外へ 1 バイトも出さずに**失敗段まで＝押下 4・`-WizardFullRun` は**本当に取得する**ので E2E 席専用）／
 **i** 発話テストの 200 の後に取得キャッシュが消える（**バイトで読む**・種は台本が播く）／**j** `settings.json` の
-`runtimeLedgerSha256`・`installedAppVersion` と、台帳を壊したときの「実行系を組み直す」／**k** 起こせない
-`python.exe`（テキスト檔）を指した実行系で「サーバ起動」→ **10 s 以内**に理由 1 行（設計書 §20-5 ⑴ の再現・旧は 60 s 黙る）／
-**l**「取得キャッシュを消す」ボタン。**h／j／k／l は 1 走ごとに窓を 1 枚ずつ起こし、模型を載せず・ポートを開かず・
+`runtimeLedgerSha256`・`installedAppVersion` と、台帳を壊したときの〔動かすための一式を入れ直す〕（`StatusRebuildRuntimeButton`＝v2.0 段 C で札が変わった。台本は id で掴む）／**k** 起こせない
+`python.exe`（テキスト檔）を指した実行系で〔もう一度動かす〕（`MainStartButton`＝v2.0 段 A で 設定 › 詳細 へ移り、段 C で札が変わった）→ **10 s 以内**に理由 1 行（設計書 §20-5 ⑴ の再現・旧は 60 s 黙る）／
+**l**〔一時ファイルを消す〕ボタン（`SettingsClearCacheButton`）。**h／j／k／l は 1 走ごとに窓を 1 枚ずつ起こし、模型を載せず・ポートを開かず・
 取得もしない**（私設ポート 18097／18098）。
+
+**v2.0 の畳みと、台本の助手 4 本**（段 A-0 ＋ 段 C の是正）＝v2.0 は画面を「ふだん出す物」と
+「詳細（上級者向け）」に割った。**畳んだ `Expander` の中と、`Visibility=Collapsed` の層の中は
+UI Automation から見えない**ので、台本は必ず先に開く。助手は `d-launch-probe.ps1` の中に在る＝
+
+| 助手 | 何をするか |
+|---|---|
+| `Open-YwkFold -Id <畳み>` | 畳みを 1 枚開く。**無い版では何もせず真**（古い建てでも落ちない） |
+| `Open-YwkGear`／`Close-YwkGear`／`Select-YwkTab` | 歯車の層（`TabStatus`／`TabAbout`）と、ふだんの 3 枚を選び分ける |
+| `Open-YwkRunControls` | 設定タブ＋`SettingsAdvancedExpander`＝〔いったん止める〕〔もう一度動かす〕〔はじめの準備をやり直す〕と**グラフィックスの 4 つ**（`SettingsGpuCombo`／`SettingsRefreshGpuButton`／`SettingsGpuMessageText`／`SettingsDriverText`）を出す |
+| `Open-YwkStatusDetails` | 状態タブ＋`StatusAdvancedExpander`＝詳しい状態の 13 個（`StatusGpuText`・`StatusDeviceText`・`StatusVariantText`・`StatusWarmupText`・`StatusPrecomputeText`・`StatusMemoryPanel`／`StatusMemoryText`・`StatusLatentCacheText`・`StatusVoiceMemoryText`・`StatusUpstreamMismatchText`・`StatusNoticesText`・`StatusEndpointText`・`StatusLogBox`）を出す |
+
+**声のタブの 1 人あたりの量**（`VoicesSelectedMemoryText`）も `VoicesAdvancedExpander` の中なので、
+読む前に `Open-YwkFold -Id 'VoicesAdvancedExpander'` を撃つこと。
+この対応は試験でも見ている＝`AutomationIdsTests` の「台本が触る畳みの中の id は台本が開けるようになっている」。
+
+**門の段の期待値は「動かし方の名」で書く**（段 C）＝画面はもう台帳の綴り（`cu130`・`rocm-gfx1151`）を
+出さない。台本は `Get-YwkVariantName` で `CUDA 13.0`／`CUDA 12.6`／`ROCm`／`CPU` に読み替えてから比べる。
 
 **便 E（インストーラの UIA 検分）の前提として、便 D の実機で判った 2 つをここに残す**（設計書 §13-3・§14-3）＝
 

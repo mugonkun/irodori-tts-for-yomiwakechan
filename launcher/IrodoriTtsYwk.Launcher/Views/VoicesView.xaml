@@ -1,11 +1,17 @@
 <UserControl x:Class="IrodoriTtsYwk.Launcher.Views.VoicesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:IrodoriTtsYwk.Launcher.ViewModels"
              AutomationProperties.AutomationId="VoicesView">
   <!--
-    話者（受け入れ条件 D-3＝wav を選ぶ→名前を付ける の 2 操作で追加・再起動なしで一覧に反映）。
-    「デフォルト」は先頭に常在し、消せない（契約 ⑷ 4-2）。
-    latent／latent_stale は裁定 65 の参照潜在＝走っているサーバだけが知る。
+    声（旧「話者」・受け入れ条件 D-3＝音声ファイルを選ぶ→名前を付ける の 2 操作で追加・
+    入れ直しなしで一覧に反映）。「デフォルト」は先頭に常在し、消せない（契約 ⑷ 4-2）。
+    latent／latent_stale は裁定 65 の下ごしらえ＝走っている個体だけが知る。
+
+    v2.0 段 C／A-5＝列は 5→4（1 名あたりのメモリの列は**消した**＝合計は 詳しい状態の
+    「GPU メモリ」の行にだけ置く＝v2-spec.md §2-3）。滅多に押さない 2 釦は
+    VoicesAdvancedExpander の中へ**要素ごと**移した（id は 1 字も替えない）。
+    文言は ViewModels/UiStrings.cs が唯一の出所である。
   -->
   <UserControl.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -21,113 +27,120 @@
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <!-- 但し書き（README §4＝Ethical Restrictions 1・No Impersonation） -->
+    <!-- 但し書き（README §4＝Ethical Restrictions 1・No Impersonation）＝短縮しない -->
     <Border Grid.Row="0" Grid.ColumnSpan="2" Padding="10,8" Background="#FFF6E5" CornerRadius="4">
       <TextBlock x:Name="EthicsText" TextWrapping="Wrap" Foreground="#7A5200"
                  AutomationProperties.AutomationId="VoicesEthicsText" />
     </Border>
 
     <!-- 一覧 -->
-    <DataGrid Grid.Row="1" Grid.Column="0" Margin="0,10,10,0"
-              x:Name="VoicesGrid"
-              AutomationProperties.AutomationId="VoicesGrid"
-              ItemsSource="{Binding Rows}"
-              SelectedItem="{Binding Selected, Mode=TwoWay}"
-              AutoGenerateColumns="False" IsReadOnly="True"
-              CanUserAddRows="False" CanUserDeleteRows="False"
-              HeadersVisibility="Column" GridLinesVisibility="Horizontal"
-              SelectionMode="Single">
-      <DataGrid.Columns>
-        <!--
-          low 14＝**id は表示名の列**である（本体はこの名前で話者を選ぶ）。
-          檔名の列は「参照 wav の檔名」＝配布版が voices\refs\ へ写した ASCII の檔名で、
-          話者 id ではない。見出しを取り違えると、利用者は檔名を本体に渡そうとする。
-        -->
-        <DataGridTextColumn Header="表示名（＝話者 id）" Binding="{Binding DisplayName}" Width="*">
-          <!-- HeaderTemplate で吊る＝見出しの既定の見た目（枠・余白）を落とさずに ToolTip を足す -->
-          <DataGridTextColumn.HeaderTemplate>
-            <DataTemplate>
-              <TextBlock Text="{Binding}"
-                         ToolTip="この列が話者 id です（本体・発話テストはこの名前で話者を選びます）。日本語で構いません。" />
-            </DataTemplate>
-          </DataGridTextColumn.HeaderTemplate>
-        </DataGridTextColumn>
-        <DataGridTextColumn Header="参照 wav の檔名" Binding="{Binding FileName}" Width="180">
-          <DataGridTextColumn.HeaderTemplate>
-            <DataTemplate>
-              <TextBlock Text="{Binding}"
-                         ToolTip="配布版が voices\refs\ へ写した檔の名前です（話者 id ではありません）。" />
-            </DataTemplate>
-          </DataGridTextColumn.HeaderTemplate>
-        </DataGridTextColumn>
-        <DataGridTextColumn Header="種別" Binding="{Binding KindText}" Width="90" />
-        <DataGridTextColumn Header="参照潜在" Binding="{Binding LatentText}" Width="100" />
-        <DataGridTextColumn Header="メモリ（1 名あたり）" Binding="{Binding MemoryText}" Width="220" />
-      </DataGrid.Columns>
-    </DataGrid>
+    <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,10,10,0">
+      <TextBlock DockPanel.Dock="Bottom" Margin="0,6,0,0" TextWrapping="Wrap"
+                 Foreground="#666666" FontSize="11"
+                 AutomationProperties.AutomationId="VoicesCountText"
+                 Text="{Binding CountText, Mode=OneWay}" />
+      <DataGrid x:Name="VoicesGrid"
+                AutomationProperties.AutomationId="VoicesGrid"
+                ItemsSource="{Binding Rows}"
+                SelectedItem="{Binding Selected, Mode=TwoWay}"
+                AutoGenerateColumns="False" IsReadOnly="True"
+                CanUserAddRows="False" CanUserDeleteRows="False"
+                HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                SelectionMode="Single">
+        <DataGrid.Columns>
+          <!--
+            low 14＝**名前の列が話者 id である**（本体はこの名前で声を選ぶ）。
+            音声ファイルの列は、アプリが voices\refs\ へ写した ASCII の檔名で、
+            声の名前ではない。見出しを取り違えると、利用者は檔名を本体に渡そうとする。
+          -->
+          <DataGridTextColumn Header="{x:Static vm:UiStrings.VoicesNameColumn}"
+                              Binding="{Binding DisplayName}" Width="*">
+            <!-- HeaderTemplate で吊る＝見出しの既定の見た目（枠・余白）を落とさずに ToolTip を足す -->
+            <DataGridTextColumn.HeaderTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" ToolTip="{x:Static vm:UiStrings.VoicesNameColumnTip}" />
+              </DataTemplate>
+            </DataGridTextColumn.HeaderTemplate>
+          </DataGridTextColumn>
+          <DataGridTextColumn Header="{x:Static vm:UiStrings.VoicesFileColumn}"
+                              Binding="{Binding FileName}" Width="180">
+            <DataGridTextColumn.HeaderTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}" ToolTip="{x:Static vm:UiStrings.VoicesFileColumnTip}" />
+              </DataTemplate>
+            </DataGridTextColumn.HeaderTemplate>
+          </DataGridTextColumn>
+          <DataGridTextColumn Header="{x:Static vm:UiStrings.VoicesKindColumn}"
+                              Binding="{Binding KindText}" Width="110" />
+          <DataGridTextColumn Header="{x:Static vm:UiStrings.VoicesLatentColumn}"
+                              Binding="{Binding LatentText}" Width="120" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </DockPanel>
 
-    <!-- 追加（2 操作＝檔を選ぶ／名前を付ける） -->
+    <!-- 追加（2 操作＝音声ファイルを選ぶ／名前を付ける） -->
     <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,10,0,0">
-      <TextBlock Text="話者を追加する" FontWeight="Bold" Margin="0,0,0,6" />
+      <TextBlock Text="{x:Static vm:UiStrings.VoicesAddHeader}" FontWeight="Bold" Margin="0,0,0,6" />
       <TextBlock x:Name="LengthNoticeText" TextWrapping="Wrap" Foreground="#666666"
                  FontSize="11" Margin="0,0,0,8" />
 
-      <TextBlock Text="① 参照する音声" />
+      <TextBlock Text="{x:Static vm:UiStrings.VoicesSourceLabel}" TextWrapping="Wrap" />
       <DockPanel Margin="0,2,0,8">
-        <Button DockPanel.Dock="Right" Content="選ぶ…" Padding="10,3" Margin="6,0,0,0"
+        <Button DockPanel.Dock="Right" Content="{x:Static vm:UiStrings.VoicesBrowseButton}"
+                Padding="10,3" Margin="6,0,0,0"
                 AutomationProperties.AutomationId="VoicesBrowseButton"
                 Click="OnBrowseClick" />
         <!--
-          読むだけにしない＝檔の場所を貼り付けても登録できる（「選ぶ…」の窓を出せない場面と、
+          読むだけにしない＝ファイルの場所を貼り付けても登録できる（「選ぶ…」の窓を出せない場面と、
           無人検分（probe/d-launch-probe.ps1）の両方がここを通る）。中身の検分は追加のときに
-          VoicesViewModel が行う＝ここに入れた文字が檔でなければ理由 1 行が出る。
+          VoicesViewModel が行う＝ここに入れた文字がファイルでなければ理由 1 行が出る。
         -->
         <TextBox x:Name="SourcePathBox"
-                 ToolTip="「選ぶ…」で選ぶか、檔の場所をそのまま貼り付けてください。"
+                 ToolTip="{x:Static vm:UiStrings.VoicesSourceTip}"
                  AutomationProperties.AutomationId="VoicesSourcePathBox" />
       </DockPanel>
 
-      <TextBlock Text="② 話者の名前（日本語可）" />
+      <TextBlock Text="{x:Static vm:UiStrings.VoicesNameLabel}" TextWrapping="Wrap" />
       <TextBox x:Name="NewNameBox" Margin="0,2,0,8"
                AutomationProperties.AutomationId="VoicesNewNameBox" />
 
-      <TextBlock Text="演技指示の既定（任意）" />
+      <TextBlock Text="{x:Static vm:UiStrings.VoicesCaptionLabel}" TextWrapping="Wrap" />
       <TextBox x:Name="NewCaptionBox" Margin="0,2,0,8" TextWrapping="Wrap"
                AcceptsReturn="True" Height="52" VerticalScrollBarVisibility="Auto"
                AutomationProperties.AutomationId="VoicesNewCaptionBox" />
 
-      <Button Content="この内容で追加する" Padding="10,5"
+      <Button Content="{x:Static vm:UiStrings.VoicesAddButton}" Padding="10,5"
               AutomationProperties.AutomationId="VoicesAddButton"
               Click="OnAddClick" />
 
       <Separator Margin="0,14,0,10" />
 
-      <TextBlock Text="選んでいる話者" FontWeight="Bold" Margin="0,0,0,6" />
-      <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"
-                 AutomationProperties.AutomationId="VoicesSelectedMemoryText"
-                 Text="{Binding SelectedMemoryText, Mode=OneWay}" />
+      <TextBlock Text="{x:Static vm:UiStrings.VoicesSelectedHeader}" FontWeight="Bold" Margin="0,0,0,6" />
       <WrapPanel>
         <!--
           low 11＝試聴は wav のときだけ押せる。押せない理由は HelpText（UIA から読める）と
           下の 1 行の両方に出す＝「押せるのに必ず失敗する」形を作らない。
         -->
-        <Button Content="試聴" Padding="12,4" Margin="0,0,6,6"
+        <Button Content="{x:Static vm:UiStrings.VoicesPreviewButton}" Padding="12,4" Margin="0,0,6,6"
                 AutomationProperties.AutomationId="VoicesPreviewButton"
                 AutomationProperties.HelpText="{Binding PreviewBlockedText, Mode=OneWay}"
                 ToolTip="{Binding PreviewBlockedText, Mode=OneWay}"
                 Command="{Binding PreviewCommand}" />
-        <Button Content="停止" Padding="12,4" Margin="0,0,6,6"
+        <Button Content="{x:Static vm:UiStrings.VoicesStopPreviewButton}" Padding="12,4" Margin="0,0,6,6"
                 AutomationProperties.AutomationId="VoicesStopPreviewButton"
                 Click="OnStopPreviewClick" />
         <!--
           low 14＝削除は Command に寄せる（押せる・押せないを 1 箇所で決める）。
           確認窓は窓が要る仕事なので View が VoicesViewModel.ConfirmRemove に差す。
         -->
-        <Button Content="削除" Padding="12,4" Margin="0,0,6,6"
+        <Button Content="{x:Static vm:UiStrings.VoicesRemoveButton}" Padding="12,4" Margin="0,0,6,6"
                 AutomationProperties.AutomationId="VoicesRemoveButton"
                 AutomationProperties.HelpText="{Binding RemoveBlockedText, Mode=OneWay}"
                 ToolTip="{Binding RemoveBlockedText, Mode=OneWay}"
                 Command="{Binding RemoveCommand}" />
+        <Button Content="{x:Static vm:UiStrings.VoicesRefreshButton}" Padding="12,4" Margin="0,0,6,6"
+                AutomationProperties.AutomationId="VoicesRefreshButton"
+                Command="{Binding RefreshCommand}" />
       </WrapPanel>
       <TextBlock Margin="0,2,0,0" TextWrapping="Wrap" Foreground="#7A5200" FontSize="11"
                  AutomationProperties.AutomationId="VoicesPreviewBlockedText"
@@ -136,26 +149,42 @@
                  AutomationProperties.AutomationId="VoicesRemoveBlockedText"
                  Text="{Binding RemoveBlockedText, Mode=OneWay}" />
 
-      <Separator Margin="0,10,0,10" />
-
-      <WrapPanel>
-        <Button Content="一覧を更新" Padding="12,4" Margin="0,0,6,6"
-                AutomationProperties.AutomationId="VoicesRefreshButton"
-                Command="{Binding RefreshCommand}" />
-        <!-- 口がまだ無い個体では伏せる（便 C（2）が /ywk/voices/precompute を追加中） -->
-        <Button x:Name="PrecomputeButton" Content="参照潜在を焼く" Padding="12,4" Margin="0,0,6,6"
-                AutomationProperties.AutomationId="VoicesPrecomputeButton"
-                Visibility="{Binding PrecomputeSupported, Converter={StaticResource BoolToVis}}"
-                Command="{Binding PrecomputeCommand}" />
-        <!--
-          設計書 §4「プリセットの削除は再インストールで戻る」の実装。
-          利用者データはアプリを入れ直しても消えないので、戻す口が UI に要る。
-          既に在る話者は飛ばすので、名付け直した話者や自分で足した話者には触れない。
-        -->
-        <Button Content="同梱のプリセットを入れ直す" Padding="12,4" Margin="0,0,6,6"
-                AutomationProperties.AutomationId="VoicesRestorePresetsButton"
-                Click="OnRestorePresetsClick" />
-      </WrapPanel>
+      <!--
+        詳細（上級者向け）＝滅多に押さない 2 つ ＋ 選んでいる声 1 人あたりの量。
+        **要素ごと**移した（id は 1 字も替えない）。
+        台本は Open-YwkFold -Id 'VoicesAdvancedExpander' の 1 手で開ける。
+      -->
+      <Expander Margin="0,14,0,0" IsExpanded="False"
+                AutomationProperties.AutomationId="VoicesAdvancedExpander"
+                Header="{x:Static vm:UiStrings.AdvancedHeader}">
+        <StackPanel Margin="8,6,0,0">
+          <!--
+            1 人あたりの量（是正・段 C の検分）＝この 1 行は UiText.Bytes を通って
+            `MiB`／`GiB` を綴る。`v2-copy.md` §1-8 の `UiText.cs:17,91-125` は
+            「1 文字も触らない＝**置き場を 詳細 に限る**」と決めているので、
+            畳みの外（声のタブの本面）から**要素ごと**ここへ移した（id は据え置き）。
+            一覧の下の薄字（VoicesCountText）は数を出さない 1 行で、あちらが畳みの外に残る。
+          -->
+          <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"
+                     AutomationProperties.AutomationId="VoicesSelectedMemoryText"
+                     Text="{Binding SelectedMemoryText, Mode=OneWay}" />
+          <!-- 口がまだ無い個体では伏せる（便 C（2）が /ywk/voices/precompute を追加中） -->
+          <Button x:Name="PrecomputeButton" Content="{x:Static vm:UiStrings.VoicesPrecomputeButton}"
+                  Padding="12,4" Margin="0,0,0,6" HorizontalAlignment="Left"
+                  AutomationProperties.AutomationId="VoicesPrecomputeButton"
+                  Visibility="{Binding PrecomputeSupported, Converter={StaticResource BoolToVis}}"
+                  Command="{Binding PrecomputeCommand}" />
+          <!--
+            設計書 §4「同梱の声の削除は入れ直しで戻る」の実装。
+            利用者データはアプリを入れ直しても消えないので、戻す口が UI に要る。
+            既に在る声は飛ばすので、名付け直した声や自分で足した声には触れない。
+          -->
+          <Button Content="{x:Static vm:UiStrings.VoicesRestorePresetsButton}"
+                  Padding="12,4" HorizontalAlignment="Left"
+                  AutomationProperties.AutomationId="VoicesRestorePresetsButton"
+                  Click="OnRestorePresetsClick" />
+        </StackPanel>
+      </Expander>
     </StackPanel>
 
     <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Margin="0,10,0,0" TextWrapping="Wrap"

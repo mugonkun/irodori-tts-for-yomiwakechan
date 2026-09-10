@@ -81,7 +81,7 @@ public sealed class CorrectionSeatVoicesTests : IDisposable
         Assert.False(store.Load().Voices.ContainsKey("テスト話者"));
         Assert.Empty(Directory.GetFiles(paths.ReferenceWavDir, "*.wav"));
         Assert.DoesNotContain("テスト話者", File.ReadAllText(paths.VoicesJsonPath), StringComparison.Ordinal);
-        Assert.Contains("削除しました", vm.Message, StringComparison.Ordinal);
+        Assert.Contains("を消しました", vm.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public sealed class CorrectionSeatVoicesTests : IDisposable
 
         await vm.RemoveSelectedAsync();
 
-        Assert.Contains("事前計算", vm.Message, StringComparison.Ordinal);
+        Assert.Contains("下ごしらえ", vm.Message, StringComparison.Ordinal);
         // 1 檔も消えていない
         Assert.True(store.Load().Voices.ContainsKey("テスト話者"));
         Assert.Single(Directory.GetFiles(paths.ReferenceWavDir, "*.wav"));
@@ -146,7 +146,7 @@ public sealed class CorrectionSeatVoicesTests : IDisposable
 
         await vm.RemoveSelectedAsync();
 
-        Assert.Contains("台帳にありません", vm.Message, StringComparison.Ordinal);
+        Assert.Contains("このアプリが管理していない声", vm.Message, StringComparison.Ordinal);
         Assert.Empty(wrapper.DroppedLatents);
     }
 

@@ -34,7 +34,12 @@ public enum BandActionKind
     /// <summary>はじめの準備（ウィザードを開く＝窓が要る仕事）。</summary>
     FirstRun,
 
-    /// <summary>動かすための一式を新しくする（<c>RebuildRuntimeCommand</c>）。</summary>
+    /// <summary>
+    /// 動かすための一式を<b>入れ直す</b>（<c>RebuildRuntimeCommand</c>）。
+    /// 札は <see cref="UiStrings.StatusRebuildButton"/> の 1 箇所だけが綴る（是正・段 C の検分）＝
+    /// `v2-copy.md` §1-2 の 88 行目と §3-2 E-04 が正で、`v2-spec.md` §2-2 の
+    /// 「新しくする」は copy に揃える（同じ操作に 2 つの名を出さない）。
+    /// </summary>
     RebuildRuntime,
 
     /// <summary>設定の詳細を開く（設定のタブへ移り、畳みを開く）。</summary>
@@ -161,11 +166,11 @@ public static class BandText
     private const string ModelsMissingMarker = "モデルがまだありません（不足＝";
     private const string GpuNotFoundMarker = " が見つかりません。設定で GPU を選び直してください。";
     private const string DriverRefusalMarker = "このドライバ（";
-    private const string DriverRefusalNoAlternative = "取得からやり直して別の変種を選んでください。";
+    private const string DriverRefusalNoAlternative = UiStrings.SwitchInFirstRun + "。";
     private const string GateCannotSeeMarker = "この機体で GPU を見られません（";
     private const string GateProbeFailedMarker = " GPU 検分ができませんでした（";
     private const string GateBelowMinimumMarker = " に届きません。";
-    private const string PortInUseMarker = " は既に使われています。";
+    private const string PortInUseMarker = "このアプリのつなぎ口（";
     private const string SpawnStalledMarker = "実行系を起こす段が ";
     private const string SpawnFailedMarker = "サーバのプロセスを起こせませんでした";
     private const string PythonFailedMarker = "python.exe を起こせませんでした（";
@@ -355,7 +360,7 @@ public static class BandText
             return Fail(
                 "動かすための一式を起こせませんでした。",
                 "一式のファイルが壊れているようです。",
-                "動かすための一式を新しくする",
+                UiStrings.StatusRebuildButton,
                 BandActionKind.RebuildRuntime);
         }
 

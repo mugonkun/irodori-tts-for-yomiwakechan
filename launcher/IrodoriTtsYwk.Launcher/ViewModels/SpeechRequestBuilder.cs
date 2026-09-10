@@ -202,7 +202,9 @@ public static class SpeechRequestBuilder
             WrapperErrorCodes.VoiceAndReference => "話者の指定と参照波形は同時に使えません。",
             WrapperErrorCodes.UnsupportedResponseFormat => "wav 以外の形式は扱えません。",
             WrapperErrorCodes.UpstreamError => "合成の途中で失敗しました。",
-            WrapperErrorCodes.ServerError => "サーバの内部で失敗しました。",
+            // 「サーバ」は憲章 §6-1 の隠す語（是正・段 C の検分）＝この 1 行は
+            // TryMessageText（発話テスト）に出る。番号つきの状態は出さず、記録へ落とす。
+            WrapperErrorCodes.ServerError => "読み上げの用意の中で失敗しました。",
             _ => null,
         };
 
@@ -215,7 +217,7 @@ public static class SpeechRequestBuilder
         var head = statusCode > 0
             ? "合成に失敗しました（HTTP "
               + statusCode.ToString(CultureInfo.InvariantCulture) + "）。"
-            : "サーバに届きませんでした。";
+            : "読み上げの用意に届きませんでした。";
         return detail is null ? head : head + " " + detail;
     }
 

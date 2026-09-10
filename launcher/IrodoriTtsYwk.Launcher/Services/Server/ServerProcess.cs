@@ -285,7 +285,7 @@ public sealed class ServerProcess : IServerProcess
             {
                 ProcessRunner.Abandon(process, spawn);
                 return Fail(started, ProcessRunner.StartStalledMessage(request.PythonExe, SpawnTimeout))
-                    with { Notices = gate.Notices };
+                    with { Notices = gate.Notices, NoticeTrail = gate.LogLines };
             }
 
             if (!await spawn.ConfigureAwait(false))
@@ -294,7 +294,8 @@ public sealed class ServerProcess : IServerProcess
                 // 門の告知は「起こしたが伝える」1 行だが、**起こし損ねた経路でも落とさない**
                 // （是正・便 D（2）＝low。cu126 で「未実測の帯」を告げつつ python.exe の起動に
                 // 失敗した機体で、その 1 行が画面に 1 度も出なかった）。
-                return Fail(started, "サーバのプロセスを起こせませんでした。") with { Notices = gate.Notices };
+                return Fail(started, "サーバのプロセスを起こせませんでした。")
+                    with { Notices = gate.Notices, NoticeTrail = gate.LogLines };
             }
 
             process.BeginOutputReadLine();
@@ -304,12 +305,12 @@ public sealed class ServerProcess : IServerProcess
         {
             // 実行系が無い・壊れている（絶対パスは出さない＝檔名だけ）
             return Fail(started, "python.exe を起こせませんでした（" + ex.Message + "）。")
-                with { Notices = gate.Notices };
+                with { Notices = gate.Notices, NoticeTrail = gate.LogLines };
         }
         catch (InvalidOperationException ex)
         {
             return Fail(started, "サーバのプロセスを起こせませんでした（" + ex.Message + "）。")
-                with { Notices = gate.Notices };
+                with { Notices = gate.Notices, NoticeTrail = gate.LogLines };
         }
 
         // **公開の時点でもう 1 度、世代と後始末を見る**（是正・検分＝裁定 124 の A）。
@@ -342,6 +343,7 @@ public sealed class ServerProcess : IServerProcess
                 "起動を中止しました。")
             {
                 Notices = gate.Notices,
+                NoticeTrail = gate.LogLines,
             };
         }
 
@@ -370,10 +372,11 @@ public sealed class ServerProcess : IServerProcess
                 "起動を中止しました。")
             {
                 Notices = gate.Notices,
+                NoticeTrail = gate.LogLines,
             };
         }
 
-        result = result with { Notices = gate.Notices };
+        result = result with { Notices = gate.Notices, NoticeTrail = gate.LogLines };
 
         if (result.Ok)
         {

@@ -606,7 +606,7 @@ public sealed class RoundThreeStampAndCacheTests : IDisposable
             settings, new JsonSettingsStore(paths.SettingsPath), paths, null, new DriverRequirement());
 
         Assert.Equal(1100, vm.CacheBytes);
-        Assert.Contains("取得キャッシュを消す（", vm.ClearCacheText, StringComparison.Ordinal);
+        Assert.Contains("一時ファイルを消す（", vm.ClearCacheText, StringComparison.Ordinal);
         Assert.Contains(FetchPlanner.FormatBytes(1100), vm.ClearCacheText, StringComparison.Ordinal);
         Assert.True(vm.ClearCacheCommand.CanExecute(null));
 
@@ -739,13 +739,13 @@ public sealed class RoundThreeLowSixTests
             GpuUsedBytes = 3_221_225_472,
         });
 
-        Assert.Contains("使用量 1.00 GiB（最大 3.00 GiB）", text, StringComparison.Ordinal);
+        Assert.Contains(UiStrings.StatusMemoryUsed + " 1.00 GiB（最大 3.00 GiB）", text, StringComparison.Ordinal);
         Assert.True(text.IndexOf("（最大", StringComparison.Ordinal)
-            < text.IndexOf("占有量", StringComparison.Ordinal));
+            < text.IndexOf(UiStrings.StatusMemoryReserved, StringComparison.Ordinal));
 
         // 裁定 110（2026-09-08）＝torch の gpu_used／gpu_total はもう帯に出さない＝
         // 行の末尾は占有量になり、「GPU 全体」は Windows の計数の組にだけ出る。
-        Assert.EndsWith("占有量 2.00 GiB", text, StringComparison.Ordinal);
+        Assert.EndsWith(UiStrings.StatusMemoryReserved + " 2.00 GiB", text, StringComparison.Ordinal);
         Assert.DoesNotContain("GPU 全体", text, StringComparison.Ordinal);
     }
 
@@ -806,8 +806,8 @@ public sealed class RoundThreeLowSixTests
         Assert.Empty(memory.EffectiveLatents);
 
         // 状態帯の 3 欄がどれも落ちない（見張りの標本ごとに描き直す路）
-        Assert.Contains("使用量", StatusViewModel.DescribeMemory(memory), StringComparison.Ordinal);
-        Assert.StartsWith("ON（焼いた話者 0 名",
+        Assert.Contains(UiStrings.StatusMemoryUsed, StatusViewModel.DescribeMemory(memory), StringComparison.Ordinal);
+        Assert.StartsWith("ON（下ごしらえ済みの声 0 人",
             StatusViewModel.DescribeLatentCache(true, memory, null), StringComparison.Ordinal);
     }
 

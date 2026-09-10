@@ -170,13 +170,13 @@ launcher/IrodoriTtsYwk.Launcher/
 
 | 画面 | 拾える id（抜粋） |
 |---|---|
-| 窓 | `MainWindow`・`MainTabs`・`MainStartButton`・`MainStopButton`・`MainFirstRunButton`・`MainStateText`・`MainEndpointText`・`MainVersionText`・`MainHeaderText` |
-| タブ | `TabStatus`・`TabVoices`・`TabTry`・`TabSettings`・`TabAbout` |
-| 状態 | `StatusStateText`・`StatusReasonText`・`StatusGpuText`・`StatusVariantText`・`StatusEndpointText`・`StatusDeviceText`・`StatusWarmupText`・`StatusPrecomputeText`・`StatusMemoryPanel`／`StatusMemoryText`・**`StatusLatentCacheText`**・`StatusVoiceMemoryText`・**`StatusNoticesText`**・`StatusLogBox`・`StatusUpstreamMismatchText` |
-| 話者 | `VoicesGrid`・`VoicesBrowseButton`・`VoicesSourcePathBox`・`VoicesNewNameBox`・`VoicesNewCaptionBox`・`VoicesAddButton`・`VoicesPreviewButton`・`VoicesStopPreviewButton`・`VoicesRemoveButton`・`VoicesRefreshButton`・`VoicesPrecomputeButton`・`VoicesSelectedMemoryText`・**`VoicesPreviewBlockedText`**・**`VoicesRemoveBlockedText`**・`VoicesMessageText` |
-| 発話テスト | `TryInputBox`・`TryInputLengthText`・`TryVoiceCombo`・`TryStepsPreset10`／`TryStepsPreset40`／`TryStepsBox`・`TryCaptionBox`・`TryCfgTextBox`／`TryCfgCaptionBox`／`TryCfgSpeakerBox`・`TrySpeedBox`・`TrySeedBox`・`TrySynthesizeButton`・`TryReplayButton`・`TryStopButton`・`TrySaveButton`・`TryResultText`・`TryMessageText` |
-| 設定 | `SettingsGpuCombo`・`SettingsRefreshGpuButton`・`SettingsDriverText`・`SettingsVariantCombo`・`SettingsPrecisionCombo`・`SettingsPortBox`・`SettingsWarmupCheck`／`SettingsWarmupStagesBox`／`SettingsWarmupVoicesBox`・`SettingsPrecomputeCheck`・`SettingsEmptyCacheBox`・`SettingsAutoStartCheck`・`SettingsShowMemoryCheck`・`SettingsReadyTimeoutBox`・`SettingsDataDirText`／`SettingsModelDirText`／`SettingsVoicesDirText`／`SettingsRuntimeRootText`／`SettingsAppDirText`・`SettingsApplyButton`／`SettingsRevertButton`・`SettingsMessageText` |
-| このアプリについて | `AboutDisclaimerText`・`AboutVersionText`・`AboutUpstreamText`・`AboutWatermarkText`・`AboutEthicsText`・`AboutLicensesDirText`・`AboutNoticesPathText`・`AboutLicenseList` |
+| 窓 | `MainWindow`・`MainTabs`・`MainStateText`・`MainEndpointText`（**本文は空**）・`MainVersionText`・`MainHeaderText`（開発ビルドだけ本文が入る）　＋ **v2.0 段 A の新設 10**＝`MainBandStateText`・`MainBandReasonText`・`MainBandActionButton`・`MainBandHostText`・`MainOpenLogButton`・`MainGearButton`・`MainDetailOverlay`・`MainDetailTabs`・`MainDetailCloseButton`・`SettingsAdvancedExpander`。**`MainStartButton`・`MainStopButton`・`MainFirstRunButton` は 設定 › 詳細 へ要素ごと移した**（id は 1 字も替えていない） |
+| タブ | `TabTry`（**先頭＝既定**）・`TabVoices`・`TabSettings`　＋ 歯車の層の中に `TabStatus`・`TabAbout`（`MainGearButton` を押してから探すこと） |
+| 詳しい状態 | 畳みの外＝`StatusStateText`・`StatusReasonText`・`StatusGpuMismatchText`・`StatusSettingsPendingText`。**`StatusAdvancedExpander`（新設・既定は閉）の中**＝`StatusGpuText`・`StatusDeviceText`・`StatusVariantText`・`StatusWarmupText`・`StatusPrecomputeText`・`StatusMemoryPanel`／`StatusMemoryText`・`StatusLatentCacheText`・`StatusVoiceMemoryText`・`StatusUpstreamMismatchText`・`StatusNoticesText`・`StatusLogBox`・`StatusEndpointText`（**要素と id は残すが本文を常時は出さない**＝18088 を出す面は帯 1 つだけ） |
+| 声 | `VoicesGrid`（列は 5→**4**＝1 名あたりのメモリの列を消した）・`VoicesBrowseButton`・`VoicesSourcePathBox`・`VoicesNewNameBox`・`VoicesNewCaptionBox`・`VoicesAddButton`・`VoicesPreviewButton`・`VoicesStopPreviewButton`・`VoicesRemoveButton`・`VoicesRefreshButton`・`VoicesPreviewBlockedText`・`VoicesRemoveBlockedText`・`VoicesMessageText`・**`VoicesCountText`**（新設・一覧の下の薄字＝数は出さない）。**`VoicesAdvancedExpander`（新設）の中**＝**`VoicesSelectedMemoryText`**（是正・段 C の検分で**要素ごと**ここへ移した＝この 1 行は `MiB`／`GiB` を綴るので、置き場は 詳細 に限る＝`v2-copy.md` §1-8 の `UiText` の行）・`VoicesPrecomputeButton`・`VoicesRestorePresetsButton` |
+| 発話テスト | ふだん＝`TryInputBox`・`TryInputLengthText`・`TryVoiceCombo`・`TryStepsPreset10`／`TryStepsPreset40`（札は「はやい」「きれい」）・`TryCaptionBox`・`TrySpeedBox`・`TrySynthesizeButton`・`TryReplayButton`・`TryStopButton`・`TrySaveButton`・`TryResultText`・`TryMessageText`・`TryConcurrencyText`。**`TryAdvancedExpander`（新設）の中**＝`TryStepsBox`・`TryCfgTextBox`・`TryCfgCaptionBox`・`TryCfgSpeakerBox`・`TrySeedBox`・**`TryDetailText`**（新設＝所要 ms・RTF・seed の内訳） |
+| 設定 | ふだんの 4 つ＝`SettingsAutoStartCheck`・`SettingsWarmupCheck`・`SettingsVoicesDirText`＋**`SettingsOpenVoicesDirButton`**・**`SettingsOpenLogButton`**（3 つとも新設）。**`SettingsAdvancedExpander` の中**＝`SettingsGpuCombo`／`SettingsRefreshGpuButton`／`SettingsGpuMessageText`／`SettingsDriverText`・`SettingsVariantCombo`／`SettingsVariantNameText`／`SettingsVariantBlockText`・`SettingsPrecisionCombo`／`SettingsPrecisionNoteText`・`SettingsPrecomputeCheck`／`SettingsPrecomputeNoteText`・`MainStopButton`／`MainStartButton`／`MainFirstRunButton`・`SettingsDataDirText`＋**`SettingsOpenDataDirButton`**（新設）／`SettingsAppDirText`（`SettingsModelDirText`・`SettingsRuntimeRootText` は「データ」に畳んで伏せた・id は据え置き）・`SettingsClearCacheButton`／`SettingsCacheMessageText`・`SettingsPortBox`／`SettingsPortNoteText`（**伏せてある**）。畳みの外の下端＝`SettingsApplyButton`／`SettingsRevertButton`／`SettingsMessageText`。**退役 7**＝`SettingsShowMemoryCheck`・`SettingsWarmupStagesBox`・`SettingsWarmupVoicesBox`・`SettingsEmptyCacheBox`・`SettingsEmptyCacheNoteText`・`SettingsReadyTimeoutBox`・`SettingsReadyTimeoutNoteText` |
+| このアプリについて | 畳みの外＝`AboutTitleText`・`AboutDisclaimerText`・`AboutVersionText`・`AboutWatermarkText`・`AboutEthicsText`・`AboutLicensesDirText`・**`AboutGuideButton`**／**`AboutSaveLogButton`**（新設）＋**`AboutSavedLogText`**／**`AboutOpenReportFolderButton`**（是正・段 C の検分で新設＝〔報告用のログを保存〕を押した後だけ出る 1 行と、その檔を開く釦）。**`AboutAdvancedExpander`（新設）の中**＝`AboutUpstreamText`・`AboutNoticesPathText`・`AboutLicenseList` |
 | 初回取得（v2.0＝はじめの準備） | `FirstRunWizard`・`FirstRunStepTitle`・`FirstRunStepNumber`・`FirstRunNoticesBox`・`FirstRunAcceptCheck`・`FirstRunVariantCombo`・`FirstRunVariantNoteText`・`FirstRunDriverText`・`FirstRunSizeText`・`FirstRunProgressBar`／`FirstRunProgressText`・`FirstRunTrailList`・`FirstRunBackButton`／`FirstRunNextButton`／`FirstRunCancelButton`・`FirstRunMessageText`　＋ **v2.0 段 B の新設 12**＝`FirstRunNoticesSummaryText`・`FirstRunNoticesFullButton`・`FirstRunNoticesExpander`・`FirstRunDecisionText`・`FirstRunPlanText`・`FirstRunPhaseText`・`FirstRunProgressDetailText`・`FirstRunUacNoticeText`・`FirstRunDoneText`・`FirstRunAdvancedExpander`・`FirstRunNoticesUnreadableText`（お知らせの全文が読めない回だけ出る 1 行）・`FirstRunWhyText`（段 2 の「なぜ落ちるのか」） |
 
 **タブの中身は選ぶまで作られない**（WPF の `TabControl` は遅延生成）＝台本は `SelectionItemPattern`
@@ -193,8 +193,11 @@ UIA からは見えない。はじめの準備で動かし方を自分で選ぶ�
 `FirstRunNoticesUnreadableText` が出る。
 
 **「発話テスト」のタブは裁定 116（2026-09-09）まで「試し撃ち」と名乗っていた**＝変えたのは利用者の目に入る札
-（タブの Header・ウィザードの完了文と「発話テストへ」の札・話者一覧のツールチップ）だけで、id（`TabTry`・`Try*`）と
+（タブの Header・ウィザードの完了文と「しゃべらせてみる」の札・声の一覧のツールチップ）だけで、id（`TabTry`・`Try*`）と
 内部名（`TryView`・`TryViewModel`・設定の `lastTest*`）は据え置き。台本は名前ではなく id で掴むこと。
+**v2.0 段 C で札がもう 1 度動いた**（下の §14）＝タブ「話者」→「**声**」・「状態」→「**詳しい状態**」・
+釦「合成して再生」→「**しゃべらせる**」・「wav に保存…」→「**音声ファイルに保存…**」ほか。
+**id と内部名は 1 つも動いていない。**
 
 ### 7-4 ライセンスの索引（裁定 51 の記帳先）
 
@@ -533,3 +536,117 @@ dotnet test launcher -c Release --nologo    # 743 合格・1 skip（総数 744�
 
 **窓は立てていない**（UIA 実射なし）。`installer-build.ps1` も走らせていない＝
 VRAM が実際に返ることは**プロセスを殺す意味**でしか確かめていない（実機の実射は未了）。
+
+---
+
+## 14. 文言を 1 箇所に集めた（2026-09-11・v2.0 段 C＋段 A の A-4／A-5）
+
+**裁可された正本**＝`docs/design/charter.md`（憲章）・`docs/design/v2-copy.md`（文字）・
+`docs/design/v2-spec.md`（画面）・`docs/design/v2-plan.md`（入れる順）。この節はその当て込みの記帳である。
+
+### 14-1 `ViewModels/UiStrings.cs`＝利用者に見える文字列の唯一の出所
+
+- **`UiStrings` は文・`UiText` は数**。`UiText`（`GiB`・`ms`・桁区切り・`Bytes`）は**1 字も触っていない**＝
+  同じ値が記録と画面で違って見えない、という決め事はそのまま。
+- `Views/*.xaml` の `Text=`／`Content=`／`Header=`／`ToolTip=`／`AutomationProperties.Name=`／
+  `…HelpText=` は**すべて `{x:Static vm:UiStrings.…}`**。**画面に日本語を直に書かない。**
+- **寄せない物**＝ログへ落とす文・例外の文・JSON の鍵・契約の欄名（`v2-plan.md` §3 の表）。
+  工学側の語彙は資産なので触らない。
+
+### 14-2 `WordLintTests.cs`＝語の検分が試験として毎度回る
+
+舐めるのは **3 つ**（是正・段 C の検分で ⑶ を足した）＝⑴ `UiStrings` の public な文字列（リフレクション）
+⑵ 試験の出力へ写した `Views/*.xaml` の可視属性**と要素の本文**（XML の註は除く）
+⑶ 同じく写した `ViewModels/*.cs` の文字列リテラル（`//`・`///` の行は読まない）。
+⑶ が無かった 1 巡目は「ViewModel が組み立てて束縛に載せる 1 行」が 1 つも見えず、
+`VariantGate`／`VoicesViewModel`／`FirstRunViewModel`／`SettingsViewModel` の隠す語 6 本が
+「0 件」の報告の裏を素通りしていた。**免除は `LogOnly` の名指し 1 枚だけ**（見分けの標識・
+記録へ落とす 1 行・`UiText` の数の書式）＝新しい直書きは必ずここで落ちる。
+この 2 つに憲章 §6-1 の隠す語（変種・実行系・台帳・潜在・焼き・暖機・サーバ・ポート・接続先・裁定・
+配布版／配布物・逐語・試し撃ち・`sha256`・`GiB`・`RTF`・`18088` ほか）が 1 つでも現れたら落ちる。
+**技術語は弾かない**（CUDA・ROCm・GPU・NVIDIA・AMD・Radeon・bf16・FP32・Windows・wav・Python）。
+`Services/` と `Contracts/` は**舐めない**＝舐めると内部の識別子（`Ledger.cs` の `"sha256"` の鍵名ほか）を巻き込む。
+
+### 14-3 状態の語は 6 → 3（内部の `ServerState` は据え置き）
+
+`StatusViewModel.StateLabel` が `BandText` の語を返すようになった＝
+**準備しています…／使えます／止まっています／止まりました**（丸は灰・緑・赤の 3 色）。
+`enum ServerState` の 6 値・状態機械・契約は 1 つも動いていない＝**畳んだのは表示だけ**である。
+台本（`probe/d-launch-probe.ps1`）の `$T` も同じ回に直した＝`Ready`／`Warming` は同語に畳み、
+`Stopped` は「止まっています」、`Failed` は「止まりました」。
+**`state starts at stopped` の 1 本は期待値ごと書き直した**＝起動釦が無くなった機体は開いた瞬間に
+準備が走るので「止まっています」を通らない（いまは「赤で開かないこと」を見る）。
+`$T.Rebuild`／`$T.ClearCache` は**鍵ごと廃した**（段 A-0 が id 引きへ移した）。
+
+### 14-4 畳み 4 枚と、消した 7 件
+
+| 画面 | 畳み | ふだん出す物 | 畳みの中 |
+|---|---|---|---|
+| 詳しい状態 | `StatusAdvancedExpander` | 大きな 1 行・止まった理由・準備が要る／一式を入れ直す・食い違いの告知 | **11 行**（上限 12＝憲章 原則 7） |
+| 発話テスト | `TryAdvancedExpander` | 声・話し方の指示・速さ・品質の 2 択 | 歩数・3 つの効き・乱数の種・所要 ms と RTF |
+| 声 | `VoicesAdvancedExpander` | 一覧（列 4）・一覧の下の薄字・追加の 3 欄・試聴／停止／削除／更新 | 1 人あたりの量・下ごしらえ・最初から入っている声を入れ直す |
+| 設定 | `SettingsAdvancedExpander` | 4 つ（自動で読み上げ・よく使う声を先に準備・声のファイルの場所・ログを開く）＋**畳みの外の下端**に〔適用〕〔取り消し〕 | **7 行**（上限 12・是正で数え直した） |
+
+**設定の 詳細 が 7 行であること**（是正・段 C の検分で数え直した）＝グラフィックス／動かし方／
+音質と速さ／声の下ごしらえ／読み上げの動作／ファイルの場所／一時ファイル。`v2-copy.md` §4 の
+10 行との差は 3 つ＝⒜ 6 行目「更新のとき、新しくなった分だけ取り直す」は**段 E の持ち物**でまだ無い
+⒝ 9 行目「記録」は ふだんの設定 の `SettingsOpenLogButton` 1 つに寄せた ⒞ 10 行目「変えた設定は…」＋
+〔適用〕〔取り消し〕は**畳みの外**に置いた（ふだんの 4 つを保存するのに「詳細」を開かせないため）。
+段 E が入れば 8 行になる。
+
+**入らなかったので消した 7 件**（移さずに消す＝原則 7 の検分文）＝
+`SettingsShowMemoryCheck`・`SettingsWarmupStagesBox`・`SettingsWarmupVoicesBox`・
+`SettingsEmptyCacheBox`／`SettingsEmptyCacheNoteText`・`SettingsReadyTimeoutBox`／`SettingsReadyTimeoutNoteText`。
+**`settings.json` の鍵は 1 つも減らしていない**＝手で書けば従来どおり効く（`WarmupStagesText` の
+検分もそのまま生きている）。台本はこの 7 つを 1 度も押さず 1 度も読んでいないので、台本の書き替えは要らなかった。
+錠は `AutomationIdsTests`（生存 132・重複 0・段 A／B／C の新設・**退役 7 が本当に消えている**・
+**畳みの中の id を台本が開けるか**）。最後の 1 本は是正・段 C の検分で足した＝
+畳んだ `Expander` の中は **UI Automation から見えない**ので、id が在るだけでは台本は触れない。
+台本の `-Id '…'` を全部拾い、その id が `IsExpanded="False"` の畳みの中に居るなら、
+台本が同じ畳みを `Open-YwkFold` で開いているかを見る。
+
+### 14-5 検分（この機体・2026-09-11・窓は 1 度も立てていない）
+
+```powershell
+dotnet build launcher -c Release --no-incremental   # 0 警告 0 エラー
+dotnet test  launcher -c Release --nologo           # 818 合格・1 skip（工事前 809＋1）
+powershell -File build\run-tests.ps1                 # 契約テスト 372 passed・upstream/ clean
+powershell -File probe\d-launch-probe.ps1 -DryRun    # 構文 0 エラー・「nothing was touched.」で終わる
+```
+
+**`installer-build.ps1` は走らせていない**（この席の持ち場ではない）。**アプリは 1 度も起こしていない**（実射は段 H）。
+
+### 14-6 是正（同日・検分 22 件の当て込み）
+
+**画面に出る文と記録に落とす文を割った**＝門（`VariantGate`）の告知は
+`GateDecision.Notices`（画面・利用者の言葉）と `GateDecision.Trail`（記録・検分の観測）に分かれ、
+`ServerStartResult.NoticeTrail` で窓まで届く。`StatusReasonText` の束縛先は内部の `Reason` から
+**帯の言い直し** `BandReasonText` に替えた（`v2-spec.md` §2-2＝§2-1a の 3 部品を帯と共用する）＝
+「実行系を起こす段が …」「…（裁定 83）」が画面に載る道を塞いだ。
+`StatusViewModel.ComposeStartOutcome` も内部の理由を告知へ混ぜなくなった。
+
+**「いま動いている場所」は製品名だけ**＝`cuda:0` と `gfx1151` の綴りを落とした
+（`v2-copy.md` §1-2 の 40 行目・憲章 附録 5）。名が読めない回は `GPU`／`CPU（GPU を使いません）`。
+
+**〔適用〕が退役した欄で止まらなくなった**＝準備運転の段・使う声が読めない `settings.json` でも
+元の値を持ち越して先へ進み、理由は記録へ落ちる（`SettingsViewModel.Log`）。
+`WarmupStagesText` の文言も鍵の名（`warmupStages`／`warmupVoices`）で綴り直した＝記録専用だから。
+
+**〔報告用のログを保存〕が〔ログを開く〕と別の仕事になった**＝`AppPaths.LogDir` の記録を
+新しい順に 5 日ぶん 1 檔（`report-<日時>.log`）へまとめ、「記録をまとめました。〈路〉」を
+`AboutSavedLogText` に出し、脇の `AboutOpenReportFolderButton` でその檔を開く（`v2-copy.md` §8）。
+
+**帯の 1 手の札を 1 つに寄せた**＝`BandText` の ⑶ が `UiStrings.StatusRebuildButton`
+（「動かすための一式を**入れ直す**」）を引く。`v2-spec.md` §2-2 の「新しくする」は copy に揃える。
+
+**声の名付けの 5 行と、下ごしらえを外せなかった 2 行を `UiStrings` へ**＝
+`VoiceNameValidator` は `VoicesMessageText` に直に出るのに `v2-copy.md` §1-8 に行が無く、
+行ごとの当て込みで拾えていなかった（話者・参照・檔が残っていた）。
+
+**台本の穴を 2 つ塞いだ**（`probe/d-launch-probe.ps1`）＝
+⑴ 節 2（設定と GPU）が `SettingsAdvancedExpander` を開かずに `SettingsRefreshGpuButton` を押していた＝
+`Invoke-ButtonById` が投げ、本体に `catch` が無いので**そこで走行ごと終わる**形だった。
+⑵ 詳しい状態の 13 個が `StatusAdvancedExpander` の中へ移ったのに、台本は 1 度も開いていなかった＝
+新しい助手 `Open-YwkStatusDetails`（タブ＋畳み）を足し、`TabStatus` を選ぶ 15 箇所を全部これに替えた。
+併せて門の段の期待値も直した＝画面はもう台帳の綴り（`cu130`）を出さないので、
+`Get-YwkVariantName` で「CUDA 13.0」に読み替え、「見られません」→「**見つけられません**」に。

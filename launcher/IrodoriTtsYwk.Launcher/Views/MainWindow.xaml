@@ -112,11 +112,11 @@
 
         <Button Grid.Row="0" Grid.Column="5" x:Name="OpenLogButton" Padding="10,3"
                 AutomationProperties.AutomationId="MainOpenLogButton"
-                Content="ログを開く" Click="OnOpenLogClick" />
+                Content="{x:Static vm:UiStrings.OpenLogButton}" Click="OnOpenLogClick" />
 
         <Button Grid.Row="0" Grid.Column="6" Margin="8,0,0,0" Padding="10,3"
                 AutomationProperties.AutomationId="MainGearButton"
-                AutomationProperties.Name="詳しい状態とこのアプリについて"
+                AutomationProperties.Name="{x:Static vm:UiStrings.GearName}"
                 Content="⚙" Click="OnGearClick" />
 
         <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="7" Margin="18,4,0,0"
@@ -133,7 +133,7 @@
         <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7" Margin="0,4,0,0"
                    HorizontalAlignment="Right" TextWrapping="Wrap"
                    FontSize="11" Foreground="#666666"
-                   Text="うまくいかないときは、このファイルを添えて X の @yomiwakechan までお知らせください。"
+                   Text="{x:Static vm:UiStrings.ReportHint}"
                    Visibility="{Binding ElementName=OpenLogButton, Path=Visibility, Mode=OneWay}" />
       </Grid>
     </Border>
@@ -147,13 +147,13 @@
 
       <TabControl x:Name="MainTabs"
                   AutomationProperties.AutomationId="MainTabs">
-        <TabItem Header="発話テスト" AutomationProperties.AutomationId="TabTry">
+        <TabItem Header="{x:Static vm:UiStrings.TabTry}" AutomationProperties.AutomationId="TabTry">
           <views:TryView DataContext="{Binding Try}" />
         </TabItem>
-        <TabItem Header="話者" AutomationProperties.AutomationId="TabVoices">
+        <TabItem Header="{x:Static vm:UiStrings.TabVoices}" AutomationProperties.AutomationId="TabVoices">
           <views:VoicesView DataContext="{Binding Voices}" />
         </TabItem>
-        <TabItem x:Name="SettingsTab" Header="設定" AutomationProperties.AutomationId="TabSettings">
+        <TabItem x:Name="SettingsTab" Header="{x:Static vm:UiStrings.TabSettings}" AutomationProperties.AutomationId="TabSettings">
           <views:SettingsView x:Name="SettingsPage" DataContext="{Binding Settings}" />
         </TabItem>
       </TabControl>
@@ -164,14 +164,14 @@
           <Border DockPanel.Dock="Top" Padding="0,0,0,6">
             <Button HorizontalAlignment="Right" Padding="12,3"
                     AutomationProperties.AutomationId="MainDetailCloseButton"
-                    Content="閉じる" Click="OnDetailCloseClick" />
+                    Content="{x:Static vm:UiStrings.CloseButton}" Click="OnDetailCloseClick" />
           </Border>
           <TabControl AutomationProperties.AutomationId="MainDetailTabs">
-            <TabItem Header="状態" AutomationProperties.AutomationId="TabStatus">
+            <TabItem Header="{x:Static vm:UiStrings.TabStatus}" AutomationProperties.AutomationId="TabStatus">
               <views:StatusView x:Name="StatusPage" DataContext="{Binding Status}" />
             </TabItem>
-            <TabItem Header="このアプリについて" AutomationProperties.AutomationId="TabAbout">
-              <views:AboutView DataContext="{Binding About}" />
+            <TabItem Header="{x:Static vm:UiStrings.TabAbout}" AutomationProperties.AutomationId="TabAbout">
+              <views:AboutView x:Name="AboutPage" DataContext="{Binding About}" />
             </TabItem>
           </TabControl>
         </DockPanel>
