@@ -2907,3 +2907,12 @@ Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/
 **この回の実測**＝xUnit **674**＋1 skip（新設 25）・契約テスト 369・門 20／0 失敗・WARN 0・setup cuda **83,264,616 B** `6c60b396…`／radeon **83,279,491 B** `885b7ed5…`・tag は commit `7fc16e6`・公開 2026-09-10 11:19:42Z（20:19 JST）・N: `sha256sum -c` OK。
 **引き渡し木に添えた物**＝`wizard-probe.ps1`（scratchpad 由来・repo には入れていない）＝UIA で `FirstRunWizard` の窓を探し `session: probe=<n> launcher=<n> same=<bool>` と `launcher=pid <n> wizard=OPEN|none …` を返す読むだけの台本。本機の実測＝wizard=none／EXIT 1（窓ありの側は RTX 機の ⒝ が最初の実射）。
 **RTX 機の実射**＝別席が ⒜⒝⒞ を撃ち 3 段とも合格（裁定 122・20:3x）。`wizard-probe.ps1` は最初の実射で誤報した（窓は MainWindow の子孫＝`Descendants` で拾う・直して `probe/wizard-probe.ps1` に置いた）。**未実射**＝v1.0.2 を本機で撃っていない（走っている個体は止めない・許可待ち）。
+
+## 21. v1.1.0 のリリース（裁定 124〜126・2026-09-10）＝§18 の手順を 4 度目に通した記帳（主席）
+
+正典＝`decisions.md` 124（司令官の製品評価・逐語）・125（配布ページの中身）・126（v1.1.0 の設計と実測）。Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/v1.1.0・**配布ページ**＝https://mugonkun.github.io/irodori-tts-for-yomiwakechan/（`gh-pages` 枝の根・`site/index.html` の写し・GitHub Pages を API で有効化＝`source.branch=gh-pages, path=/`・`.nojekyll` を添えた）。
+
+**§18 の手順との差**＝⑴ 段 2 のリリース文は裁定 125 で sha256／バイトの欄を持たない（`SHA256SUMS.txt` は Release に置くだけ）ので段 5 の穴埋めが無い ⑵ 段 6 のあとに **gh-pages の更新**が入る＝`site/index.html` が変わった回だけ、scratchpad に `git worktree add --orphan -b gh-pages`（初回）／`git worktree add <path> gh-pages`（2 度目から）で枝を出し `index.html` を写して commit・push（`main` は触らない・`site/README.md` の手順と同じ結果）。⑶ 配布樹は `server/ywk_server.py` の版の字だけ（長さ同じ）＝A-1 不動。ランチャ exe は WinForms（トレイ）を外したぶん小さくなる。
+
+**この回の実測**＝xUnit **743**＋1 skip・契約テスト 369・門 20／0 失敗・WARN 0・setup cuda **75,475,640 B** `ef3f11d8…`／radeon **75,490,540 B** `2688b09e…`・tag は commit `f4cec17`・公開 2026-09-10 13:57:37Z（22:57 JST）・Latest・N: `sha256sum -c` OK。
+**未実射**＝本機・RTX 機とも v1.1.0 を撃っていない（RTX 機の 2 段の検分＝既存の cu130 の扱い → cu126 で 1 射して × で終了し VRAM が返るか、は別席の実射待ち・裁定 126 ⑽）。
