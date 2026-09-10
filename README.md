@@ -140,7 +140,7 @@ https://mugonkun.github.io/irodori-tts-for-yomiwakechan/
 ### Ethical Restrictions（上流の重みの利用条件・原文）
 
 以下は `Aratako/Irodori-TTS-v4.1-Small` モデルカード（README.md:69-82）および
-`Aratako/Irodori-TTS-v4-Small` モデルカード（README.md:183-196）の逐語です（両者は sha256 一致＝
+`Aratako/Irodori-TTS-v4-Small` モデルカード（README.md:183-196）をそのまま写したものです（両者は sha256 一致＝
 `research/lab/notes/16-verify-license.md` §3）。**日本語訳は添えません**（訳による意味の揺れを避ける）。
 
 > ## 📜 License & Ethical Restrictions
