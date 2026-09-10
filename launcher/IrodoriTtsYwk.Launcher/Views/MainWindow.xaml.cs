@@ -1,8 +1,11 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using IrodoriTtsYwk.Launcher.Audio;
 using IrodoriTtsYwk.Launcher.Contracts;
+using IrodoriTtsYwk.Launcher.Services.Logging;
 using IrodoriTtsYwk.Launcher.ViewModels;
 
 namespace IrodoriTtsYwk.Launcher.Views;
@@ -54,8 +57,12 @@ public partial class MainWindow : Window
         // 樹が読めないときも DetectFrom は投げず ReleaseFlavor.Cuda を返す＝「（CUDA 版）」と名乗る。
         Title = ReleaseFlavors.AppTitle(ReleaseFlavors.DetectFrom(paths.LedgerDir));
 
-        HeaderText.Text = "変種 " + RuntimeVariants.DisplayName(AppServices.Settings.Variant)
-            + (paths.DeveloperMode ? "／開発モード（" + paths.AppDir + "）" : string.Empty);
+        // **開発ビルドのときだけ本文を入れる**（v2.0 段 A-1）＝要素と id（MainHeaderText）は残す。
+        // 出来上がりの配布物では 1 文字も出ない＝主画面から「変種」の語が消える。
+        HeaderText.Text = AppVersion.IsReleaseBuild
+            ? string.Empty
+            : "変種 " + RuntimeVariants.DisplayName(AppServices.Settings.Variant)
+              + (paths.DeveloperMode ? "／開発モード（" + paths.AppDir + "）" : string.Empty);
 
         if (AppServices.SettingsStore.LastLoadError is string loadError)
         {
@@ -71,6 +78,20 @@ public partial class MainWindow : Window
 
         // 状態帯の「取得へ進む」（裁定 121）＝ウィザードを開けるのは窓だけなので、ここで繋ぐ。
         StatusPage.AcquireRequested += (_, _) => ShowFirstRun();
+
+        // 「初回取得をやり直す」は設定 › 詳細へ要素ごと移った（v2.0 段 A-1）。
+        // **ウィザードは窓が要る仕事**なので、押された事実だけを受け取って窓側で開く。
+        SettingsPage.FirstRunRequested += (_, _) => ShowFirstRun();
+
+        RefreshLogButton();
+
+        // **檔が生えた瞬間に釦を出す**（是正・検分）＝当日のログ檔を作るのは
+        // `Status.LogSink`（＝`LauncherLogFile.Append`）が書く**最初の 1 行**で、それは
+        // サーバの記録行とは限らない。清潔導入の初回起動で起こす前に断った回（A1〜A4・
+        // つなぎ口の塞がり）は子が 1 行も吐かないので、`OnServerLogLine` だけを頼りにすると
+        // **いちばん報告が要る回でだけ〔ログを開く〕が消えた**。`LogText` は画面に出た 1 行ごとに
+        // 必ず動くので、そこに相乗りする。
+        _model.Status.PropertyChanged += OnStatusPropertyChanged;
 
         // **下限に届かない変種で保存されている機体を取得へ連れて行く**（裁定 126 ⑽）＝
         // 判断も文言も ViewModel の側に在り、窓は求めに応じて 1 枚開くだけである。
@@ -103,6 +124,7 @@ public partial class MainWindow : Window
         AppServices.Server.StateChanged -= OnServerStateChanged;
         AppServices.Server.LogLine -= OnServerLogLine;
         AppServices.Server.StatusSampled -= OnStatusSampled;
+        _model.Status.PropertyChanged -= OnStatusPropertyChanged;
         _model.WizardRequested -= OnWizardRequested;
         _player.Dispose();
         base.OnClosing(e);
@@ -136,8 +158,6 @@ public partial class MainWindow : Window
             _ = _model.StartServerAsync();
         }
     }
-
-    private void OnFirstRunClick(object sender, RoutedEventArgs e) => ShowFirstRun();
 
     /// <summary>
     /// <b>ViewModel がウィザードを求めた</b>（裁定 126 ⑽＝保存された変種がドライバの下限に
@@ -181,8 +201,198 @@ public partial class MainWindow : Window
     private void OnServerStateChanged(object? sender, ServerStateChangedEventArgs e) =>
         Dispatcher.BeginInvoke(() => _model.ApplyServerState(e.Current, e.Reason));
 
+    /// <summary>
+    /// 画面に出た 1 行が増えた＝当日のログ檔が生まれた（かもしれない）＝〔ログを開く〕を見直す。
+    /// <b>ここは在否を見るだけ</b>で、檔を開きはしない。
+    /// </summary>
+    private void OnStatusPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(StatusViewModel.LogText))
+        {
+            return;
+        }
+
+        // 1 行は UI の糸から積むのが常だが、**釦は UI の糸でしか触れない**ので念のため渡す。
+        if (Dispatcher.CheckAccess())
+        {
+            RefreshLogButton();
+            return;
+        }
+
+        Dispatcher.BeginInvoke(() => RefreshLogButton());
+    }
+
     private void OnServerLogLine(object? sender, ServerLogLineEventArgs e) =>
-        Dispatcher.BeginInvoke(() => _model.AppendLog(e.Event.Line));
+        Dispatcher.BeginInvoke(() =>
+        {
+            _model.AppendLog(e.Event.Line);
+            RefreshLogButton();
+        });
+
+    // ===================== 状態の帯と歯車の層（v2.0 段 A・v2-spec.md §2-1）=====================
+
+    /// <summary>
+    /// 歯車＝「詳しい状態」と「このアプリについて」の層を開け閉てする。
+    /// <b>別窓にしない</b>＝同じ窓の中の層なので、無人検分の root は主窓のままである。
+    /// </summary>
+    private void OnGearClick(object sender, RoutedEventArgs e) =>
+        DetailOverlay.Visibility = DetailOverlay.Visibility == Visibility.Visible
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+    private void OnDetailCloseClick(object sender, RoutedEventArgs e) =>
+        DetailOverlay.Visibility = Visibility.Collapsed;
+
+    /// <summary>
+    /// 帯の「次の 1 手」（憲章 原則 6 の ⑶）。<b>何をするかは純関数が決め</b>
+    /// （<see cref="BandText.For"/> が返す <see cref="BandActionKind"/>）、
+    /// <b>窓はそれを実行するだけ</b>である。
+    /// </summary>
+    private async void OnBandActionClick(object sender, RoutedEventArgs e)
+    {
+        // **投げ捨てにしない**＝async void の中で漏れた例外はアプリごと落とす。
+        // ここは 1 手を撃つだけの席なので、落ちた理由は帯とログに残して窓は生かす。
+        try
+        {
+            await RunBandActionAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _model.AppendLog("次の 1 手が失敗しました：" + Mvvm.AsyncRelayCommand.Describe(ex));
+        }
+    }
+
+    private async System.Threading.Tasks.Task RunBandActionAsync()
+    {
+        switch (_model.Status.BandAction)
+        {
+            case BandActionKind.Start:
+                await _model.StartServerAsync().ConfigureAwait(true);
+                break;
+
+            case BandActionKind.Restart:
+                await _model.StopServerAsync().ConfigureAwait(true);
+                await _model.StartServerAsync().ConfigureAwait(true);
+                break;
+
+            case BandActionKind.FirstRun:
+                ShowFirstRun();
+                break;
+
+            case BandActionKind.RebuildRuntime:
+                await _model.RebuildRuntimeAsync().ConfigureAwait(true);
+                break;
+
+            case BandActionKind.OpenSettings:
+                OpenSettingsAdvanced();
+                break;
+
+            case BandActionKind.OpenLog:
+                OpenLog();
+                break;
+
+            case BandActionKind.OpenDriverPage:
+                OpenExternal(BandText.DriverPageUrl);
+                break;
+
+            case BandActionKind.OpenGuide:
+                OpenGuide();
+                break;
+
+            case BandActionKind.None:
+            default:
+                break;
+        }
+    }
+
+    private void OnOpenLogClick(object sender, RoutedEventArgs e) => OpenLog();
+
+    /// <summary>
+    /// 設定 › 詳細を開く＝タブを選び、畳みを開く（釦を移した先へ利用者を連れて行く）。
+    /// </summary>
+    private void OpenSettingsAdvanced()
+    {
+        DetailOverlay.Visibility = Visibility.Collapsed;
+        MainTabs.SelectedItem = SettingsTab;
+        SettingsPage.OpenAdvanced();
+    }
+
+    /// <summary>
+    /// 当日のログを<b>在り処ごと</b>開く（関連付けの無い機体でも必ず開く）。
+    /// 檔が無い回は釦を出さないので、ここへは来ない。
+    /// </summary>
+    private void OpenLog()
+    {
+        var path = CurrentLogPath();
+        if (path is null || !File.Exists(path))
+        {
+            _model.AppendLog("まだ記録がありません。");
+            RefreshLogButton();
+            return;
+        }
+
+        StartShell("explorer.exe", "/select,\"" + path + "\"");
+    }
+
+    /// <summary>困ったときの手引き（配布物の <c>docs\</c>）を開く。</summary>
+    private void OpenGuide()
+    {
+        var docs = Path.Combine(AppServices.Paths.AppDir, "docs");
+        if (Directory.Exists(docs))
+        {
+            StartShell("explorer.exe", "\"" + docs + "\"");
+            return;
+        }
+
+        OpenLog();
+    }
+
+    private void OpenExternal(string url) => StartShell(url, null);
+
+    private void StartShell(string target, string? arguments)
+    {
+        try
+        {
+            var info = new ProcessStartInfo(target) { UseShellExecute = true };
+            if (arguments is not null)
+            {
+                info.Arguments = arguments;
+            }
+
+            using var started = Process.Start(info);
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            _model.AppendLog("開けませんでした：" + ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _model.AppendLog("開けませんでした：" + ex.Message);
+        }
+    }
+
+    private static string? CurrentLogPath()
+    {
+        try
+        {
+            return LauncherLogFile.PathFor(AppServices.Paths.LogDir, DateTimeOffset.Now);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// <b>開けない釦は出さない</b>（v2-spec.md §2-1a）＝当日の記録が無い回は
+    /// <c>IsEnabled=false</c> ではなく <c>Visibility</c> で消す。
+    /// </summary>
+    private void RefreshLogButton()
+    {
+        var path = CurrentLogPath();
+        var exists = path is not null && File.Exists(path);
+        OpenLogButton.Visibility = exists ? Visibility.Visible : Visibility.Collapsed;
+    }
 
     /// <summary>
     /// 見張りが採った <c>/ywk/status</c> の標本（窓は読むだけ＝low 3）。

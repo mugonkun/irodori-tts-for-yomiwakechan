@@ -25,4 +25,22 @@
     <ProjectReference Include="..\IrodoriTtsYwk.Launcher\IrodoriTtsYwk.Launcher.csproj" />
   </ItemGroup>
 
+  <!--
+    AutomationId 生存（v2.0 段 A）＝画面の檔そのものを試験の出力へ写す。
+    AppContext.BaseDirectory から読むので、試験がリポの路を探し歩かない。
+
+    **写す前に棚を空にする**（是正・検分）＝`PreserveNewest` は写すだけで消さないので、
+    Views から画面の檔を 1 枚落としても出力には前の写しが残り、
+    「id が 1 つも消えていない」錠が**古い写しで素通りする**。7 枚だけを毎度写し直す。
+  -->
+  <Target Name="CleanCopiedViews" BeforeTargets="PrepareForBuild">
+    <RemoveDir Directories="$(OutputPath)Views" />
+  </Target>
+
+  <ItemGroup>
+    <None Include="..\IrodoriTtsYwk.Launcher\Views\*.xaml"
+          CopyToOutputDirectory="PreserveNewest"
+          LinkBase="Views" />
+  </ItemGroup>
+
 </Project>

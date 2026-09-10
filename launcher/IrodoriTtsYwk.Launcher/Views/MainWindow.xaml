@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:IrodoriTtsYwk.Launcher.Views"
+        xmlns:vm="clr-namespace:IrodoriTtsYwk.Launcher.ViewModels"
         Title="irodori-TTS for 読み分けちゃん"
         Height="760" Width="1100"
         MinHeight="520" MinWidth="820"
@@ -12,10 +13,39 @@
     MainWindow.xaml.cs が ReleaseFlavors.AppTitle で「（CUDA 版）」「（ROCm 版）」を足して
     差し替える＝裁定 109（樹が読めないときは CUDA 版と名乗る＝DetectFrom は投げない）。
 
-    主窓＝5 つのタブ（状態・話者・発話テスト・設定・このアプリについて）と、
-    どのタブからでも押せる起動／停止の帯。窓の × はアプリを終え、サーバも一緒に落ちる（裁定 124）。
+    主窓＝**タブ 3 枚（発話テスト・話者・設定）＋歯車の層**（v2.0 段 A・v2-spec.md §2-0）。
+    「状態」と「このアプリについて」は**要素ごと歯車の層（MainDetailOverlay）へ移した**＝
+    AutomationId（TabStatus／TabAbout）は 1 字も変えない（無人検分の錨）。
+    起動／停止の帯は廃し、3 釦は設定 › 詳細へ**要素ごと移した**（MainStartButton／MainStopButton／
+    MainFirstRunButton）＝振る舞いは変わらない（AutoStartServer の既定は真のまま）。
+    代わりにタブの上に**状態の帯**（MainBandStateText ほか）が常時 1 行で立つ。
+    窓の × はアプリを終え、サーバも一緒に落ちる（裁定 124）。
     束縛先は Views/MainWindow.xaml.cs が組み立てる ViewModel 群。
   -->
+  <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+    <!--
+      帯の丸（v2-spec.md §2-1）＝灰／緑／赤の 3 色だけ。色そのものはここに置き、
+      どの色になるかは純関数 BandText.For が返す BandSeverity が決める。
+    -->
+    <Style x:Key="BandDot" TargetType="Ellipse">
+      <Setter Property="Width" Value="10" />
+      <Setter Property="Height" Value="10" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Fill" Value="#9E9E9E" />
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Status.BandSeverity}" Value="{x:Static vm:BandSeverity.Ok}">
+          <Setter Property="Fill" Value="#2E7D32" />
+        </DataTrigger>
+        <DataTrigger Binding="{Binding Status.BandSeverity}" Value="{x:Static vm:BandSeverity.Bad}">
+          <Setter Property="Fill" Value="#C62828" />
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+  </Window.Resources>
+
   <DockPanel>
 
     <StatusBar DockPanel.Dock="Bottom">
@@ -25,8 +55,13 @@
       </StatusBarItem>
       <Separator />
       <StatusBarItem>
-        <TextBlock AutomationProperties.AutomationId="MainEndpointText"
-                   Text="{Binding Status.EndpointText, Mode=OneWay}" />
+        <!--
+          **本文は空**（v2.0 段 A-4・v2-copy.md §1-1 の 28 行目）＝要素と id は残す。
+          つなぎ口の番号 18088 を出す面は 1 つだけ＝**埋まって起動できないときの帯**
+          （憲章 原則 5 の唯一の例外・v2-spec.md §2-1a C1／D1）。番号そのものは
+          StatusViewModel.EndpointText に残る（詳しい状態の側が読む）。
+        -->
+        <TextBlock AutomationProperties.AutomationId="MainEndpointText" />
       </StatusBarItem>
       <Separator />
       <StatusBarItem HorizontalAlignment="Right">
@@ -34,40 +69,115 @@
       </StatusBarItem>
     </StatusBar>
 
-    <Border DockPanel.Dock="Top" Padding="12,10" Background="#F3F3F3">
-      <StackPanel Orientation="Horizontal">
-        <Button Content="サーバ起動" Padding="14,4"
-                AutomationProperties.AutomationId="MainStartButton"
-                Command="{Binding Status.StartCommand}" />
-        <Button Content="サーバ停止" Padding="14,4" Margin="8,0,0,0"
-                AutomationProperties.AutomationId="MainStopButton"
-                Command="{Binding Status.StopCommand}" />
-        <Button Content="初回取得をやり直す" Padding="10,4" Margin="16,0,0,0"
-                AutomationProperties.AutomationId="MainFirstRunButton"
-                Click="OnFirstRunClick" />
-        <TextBlock x:Name="HeaderText" Margin="16,0,0,0" VerticalAlignment="Center"
+    <!-- 状態の帯（新設・v2-spec.md §2-1）＝どのタブからも見える 1 行。 -->
+    <Border DockPanel.Dock="Top" Padding="12,8" Background="#FAFAFA"
+            BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Ellipse Grid.Row="0" Grid.Column="0" Style="{StaticResource BandDot}" />
+
+        <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" FontWeight="Bold"
+                   AutomationProperties.AutomationId="MainBandStateText"
+                   Text="{Binding Status.BandStateText, Mode=OneWay}" />
+
+        <Button Grid.Row="0" Grid.Column="2" Margin="12,0,0,0" Padding="12,3"
+                AutomationProperties.AutomationId="MainBandActionButton"
+                Content="{Binding Status.BandActionText, Mode=OneWay}"
+                Visibility="{Binding Status.HasBandAction, Converter={StaticResource BoolToVis}}"
+                Click="OnBandActionClick" />
+
+        <!-- 開発ビルドのときだけ本文が入る（要素と id は残す＝裁定 109 の註）。 -->
+        <TextBlock Grid.Row="0" Grid.Column="3" x:Name="HeaderText" Margin="16,0,0,0"
+                   VerticalAlignment="Center" Foreground="#666666"
                    AutomationProperties.AutomationId="MainHeaderText" />
-      </StackPanel>
+
+        <TextBlock Grid.Row="0" Grid.Column="4" Margin="16,0,8,0" VerticalAlignment="Center"
+                   HorizontalAlignment="Right" TextTrimming="CharacterEllipsis"
+                   AutomationProperties.AutomationId="MainBandHostText"
+                   Text="{Binding Status.BandHostText, Mode=OneWay}" />
+
+        <Button Grid.Row="0" Grid.Column="5" x:Name="OpenLogButton" Padding="10,3"
+                AutomationProperties.AutomationId="MainOpenLogButton"
+                Content="ログを開く" Click="OnOpenLogClick" />
+
+        <Button Grid.Row="0" Grid.Column="6" Margin="8,0,0,0" Padding="10,3"
+                AutomationProperties.AutomationId="MainGearButton"
+                AutomationProperties.Name="詳しい状態とこのアプリについて"
+                Content="⚙" Click="OnGearClick" />
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="7" Margin="18,4,0,0"
+                   TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="MainBandReasonText"
+                   Text="{Binding Status.BandReasonText, Mode=OneWay}"
+                   Visibility="{Binding Status.HasBandReason, Converter={StaticResource BoolToVis}}" />
+
+        <!--
+          報告の受け皿（裁定 131・v2-copy.md §3-1 の逐語）＝〔ログを開く〕の脇に置く薄字 1 行。
+          **釦と一緒に畳む**＝檔が無い回は釦ごと出さないので、この 1 行も一緒に消える
+          （釦の Visibility は窓が檔の在否で決める＝MainWindow.xaml.cs の RefreshLogButton）。
+        -->
+        <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7" Margin="0,4,0,0"
+                   HorizontalAlignment="Right" TextWrapping="Wrap"
+                   FontSize="11" Foreground="#666666"
+                   Text="うまくいかないときは、このファイルを添えて X の @yomiwakechan までお知らせください。"
+                   Visibility="{Binding ElementName=OpenLogButton, Path=Visibility, Mode=OneWay}" />
+      </Grid>
     </Border>
 
-    <TabControl x:Name="MainTabs" Margin="8"
-                AutomationProperties.AutomationId="MainTabs">
-      <TabItem Header="状態" AutomationProperties.AutomationId="TabStatus">
-        <views:StatusView x:Name="StatusPage" DataContext="{Binding Status}" />
-      </TabItem>
-      <TabItem Header="話者" AutomationProperties.AutomationId="TabVoices">
-        <views:VoicesView DataContext="{Binding Voices}" />
-      </TabItem>
-      <TabItem Header="発話テスト" AutomationProperties.AutomationId="TabTry">
-        <views:TryView DataContext="{Binding Try}" />
-      </TabItem>
-      <TabItem Header="設定" AutomationProperties.AutomationId="TabSettings">
-        <views:SettingsView DataContext="{Binding Settings}" />
-      </TabItem>
-      <TabItem Header="このアプリについて" AutomationProperties.AutomationId="TabAbout">
-        <views:AboutView DataContext="{Binding About}" />
-      </TabItem>
-    </TabControl>
+    <!--
+      タブ 3 枚と、その上に重なる歯車の層。**別窓にしない**＝UIA の root は主窓のままなので、
+      無人検分の台本は「歯車を押す 1 手」を足すだけで済む。層は Collapsed で畳む
+      （Hidden にすると UIA には見え続け、押せない要素が見つかってしまう）。
+    -->
+    <Grid Margin="8">
+
+      <TabControl x:Name="MainTabs"
+                  AutomationProperties.AutomationId="MainTabs">
+        <TabItem Header="発話テスト" AutomationProperties.AutomationId="TabTry">
+          <views:TryView DataContext="{Binding Try}" />
+        </TabItem>
+        <TabItem Header="話者" AutomationProperties.AutomationId="TabVoices">
+          <views:VoicesView DataContext="{Binding Voices}" />
+        </TabItem>
+        <TabItem x:Name="SettingsTab" Header="設定" AutomationProperties.AutomationId="TabSettings">
+          <views:SettingsView x:Name="SettingsPage" DataContext="{Binding Settings}" />
+        </TabItem>
+      </TabControl>
+
+      <Grid x:Name="DetailOverlay" Visibility="Collapsed" Background="White"
+            AutomationProperties.AutomationId="MainDetailOverlay">
+        <DockPanel>
+          <Border DockPanel.Dock="Top" Padding="0,0,0,6">
+            <Button HorizontalAlignment="Right" Padding="12,3"
+                    AutomationProperties.AutomationId="MainDetailCloseButton"
+                    Content="閉じる" Click="OnDetailCloseClick" />
+          </Border>
+          <TabControl AutomationProperties.AutomationId="MainDetailTabs">
+            <TabItem Header="状態" AutomationProperties.AutomationId="TabStatus">
+              <views:StatusView x:Name="StatusPage" DataContext="{Binding Status}" />
+            </TabItem>
+            <TabItem Header="このアプリについて" AutomationProperties.AutomationId="TabAbout">
+              <views:AboutView DataContext="{Binding About}" />
+            </TabItem>
+          </TabControl>
+        </DockPanel>
+      </Grid>
+
+    </Grid>
 
   </DockPanel>
 </Window>

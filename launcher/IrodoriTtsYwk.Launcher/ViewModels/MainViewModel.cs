@@ -225,6 +225,17 @@ public sealed class MainViewModel : ObservableObject
     public event EventHandler<FirstRunRequest>? WizardRequested;
 
     /// <summary>
+    /// <b>実行系がまだ無い</b>ときの断りの 1 行の頭（<c>BandText</c> が前方一致で読む標識＝
+    /// `v2-spec.md` §2-1a の A1。<b>綴りはここ 1 箇所</b>）。
+    /// </summary>
+    public const string RuntimeMissingPrefix = "変種「";
+
+    /// <summary>
+    /// <b>モデルがまだ無い</b>ときの断りの 1 行の頭（同上＝§2-1a の A2）。
+    /// </summary>
+    public const string ModelsMissingPrefix = "モデルがまだありません（不足＝";
+
+    /// <summary>
     /// ウィザードを自動で出すときに Trail とログへ残す 1 行（<b>純関数</b>）。
     /// </summary>
     public static string AcquisitionNotice(string summary) =>
@@ -366,6 +377,11 @@ public sealed class MainViewModel : ObservableObject
         // 起こした個体が台帳に居る間は「停止」を押せる（Failed でも＝是正・2026-09-05）。
         Status.HasProcess = AppServices.Server.ProcessId is not null;
 
+        // 帯の D6 は終了コードの数を ⑵ に差す（`v2-spec.md` §2-1a）＝利用者が報告に書ける
+        // 唯一の手がかりである。**内部の 1 行から掻き回して取らない**（§2-1b）ので、
+        // 数を持っている側（見張り）の値をここで渡す（起こす前に断った回は null＝括弧ごと落ちる）。
+        Status.ApplyExitCode(state is ServerState.Failed ? AppServices.Server.ExitCode : null);
+
         // 裁定 88 ⑶＝合成中に子が消えたら、HTTP の期限を待たずに「試す」画面へ理由 1 行。
         if (state is ServerState.Failed)
         {
@@ -421,7 +437,8 @@ public sealed class MainViewModel : ObservableObject
         if (pythonExe is null)
         {
             // **断るだけで終わらせない**（裁定 121）＝どこから取れるかを同じ 1 行に書く。
-            FailBeforeStart("変種「" + _settings.Variant + "」の実行系がまだありません（初回取得が未了です）。"
+            Status.ApplyMissingModels(null);
+            FailBeforeStart(RuntimeMissingPrefix + _settings.Variant + "」の実行系がまだありません（初回取得が未了です）。"
                 + AcquisitionCheck.Hint);
             return false;
         }
@@ -431,8 +448,9 @@ public sealed class MainViewModel : ObservableObject
         var acquisition = AcquisitionCheck.Check(_paths, _settings);
         if (!acquisition.ModelsReady)
         {
+            Status.ApplyMissingModels(acquisition.MissingModelFiles.Count);
             FailBeforeStart(
-                "モデルがまだありません（不足＝"
+                ModelsMissingPrefix
                 + AcquisitionCheck.Describe(acquisition.MissingModelFiles) + "）。"
                 + AcquisitionCheck.Hint);
             return false;
@@ -512,6 +530,15 @@ public sealed class MainViewModel : ObservableObject
             Status.AppendLog("起動を中止しました。");
             return false;
         }
+
+        // 帯の理由 1 行はドライバの版を名指す（`v2-spec.md` §2-1a の B 群）＝読めた値をここで渡す。
+        // **内部の 1 行から掻き回して取らない**（§2-1b）ので、判っている側が渡すのが筋である。
+        //
+        // **勧める先もここで渡す**（是正・検分）＝門の断り（B1／B3）はこの下の StartAsync の中で
+        // 起きるので、null を渡していたころは帯の ⑶ が本番では必ず「設定の詳細を開く」に落ち、
+        // §2-1a が求める〔CUDA 12.6 で準備しなおす〕には**絶対にならなかった**。
+        // 勧める先が今の動かし方と同じときだけ null＝いま断られた当人を勧めない。
+        Status.ApplyDriverFacts(driverVersion, RecommendedAlternative(driverVersion));
 
         // **下限に届かない変種で保存されている機体を、失敗の理由だけで放り出さない**（裁定 126 ⑽）。
         if (RefuseBelowMinimumVariant(driverVersion))
@@ -599,6 +626,11 @@ public sealed class MainViewModel : ObservableObject
         // 断った版を覚える＝ウィザードを取得せずに閉じても帯の 1 手を消さない（是正・検分）。
         _refusedDriverVersion = driverVersion;
 
+        // 帯の ⑵ と ⑶ が名指す「切り替えれば動く動かし方」＝勧める先を渡す（§2-1a A4）。
+        // **勧める先が自分自身なら null**＝A4' の「このパソコンで使える別の動かし方がありません」
+        // へ落ちる（ウィザードへ渡す先は従来どおり `recommended` のまま＝振る舞いは変えない）。
+        Status.ApplyDriverFacts(driverVersion, RecommendedAlternative(driverVersion));
+
         // ⑴⑵＝理由 1 行を状態帯とログ（LauncherLogFile）へ流し、状態機械を Failed にする。
         FailBeforeStart(reason);
 
@@ -613,6 +645,25 @@ public sealed class MainViewModel : ObservableObject
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// <b>切り替えれば動く動かし方</b>（`v2-spec.md` §2-1a の A4／B1／B3 の ⑵⑶ が名指す先）。
+    /// <para>
+    /// 勧める先は<b>ウィザードが出す一覧と同じ物</b>から選ぶ（＝開いた先の初期値と食い違わない）。
+    /// <b>いまの動かし方と同じときは null</b>＝帯が「いま断られた当人で準備しなおす」と言わない。
+    /// </para>
+    /// </summary>
+    private string? RecommendedAlternative(string? driverVersion)
+    {
+        var ledgerNames = ReleaseFlavors.LedgerNames(_paths.LedgerDir);
+        var choices = ReleaseFlavors.AvailableChoices(ReleaseFlavors.Detect(ledgerNames), ledgerNames);
+        var recommended = VariantRecommendation.Recommend(
+            choices, new DriverProbe(driverVersion, 1, Probed: true));
+
+        return string.Equals(recommended, _settings.Variant, StringComparison.Ordinal)
+            ? null
+            : recommended;
     }
 
     /// <summary>

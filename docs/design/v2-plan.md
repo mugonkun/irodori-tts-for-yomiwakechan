@@ -198,6 +198,51 @@ MainDetailOverlay（新 id・既定は非表示・MainGearButton で開閉）
 **検分の目**＝「**ふだんの起動で押す釦は〔しゃべらせる〕1 つだけか**」（憲章 原則 2 の検分文）と
 「**詳細は 12 行以内か**」（原則 7 の検分文）。この 2 つだけを当てる。
 
+#### 段 A の記帳（2026-09-11・実装 1 席＋検分 3 席＋是正・Opus 5）
+
+**入れた物**＝A-0（台本の助手 5 本＝`Open-YwkFold`／`Open-YwkGear`／`Close-YwkGear`／`Select-YwkTab`／
+`Open-YwkRunControls`。18 箇所の `Select-Tab` を `Select-YwkTab` へ通し、釦を出す 1 手を 7 箇所に置き、
+`$T.Rebuild`／`$T.ClearCache` の名前引きを id 引きへ替えた）・A-1（上の起動／停止の帯を廃し、3 釦を
+**要素ごと** 設定 › 詳細へ。`MainHeaderText` は要素と id を残し本文は開発ビルドだけ）・
+A-2（純関数 `ViewModels/BandText.cs` の `BandText.For`＝3 語と失敗の 3 部品・`HostLine`・
+〔ログを開く〕）・A-3（タブ 3 枚＋歯車の層 `MainDetailOverlay`。`TabStatus`／`TabAbout` は要素ごと中へ）。
+
+**A-4／A-5 は入れていない**（`SettingsAdvancedExpander` だけは A-1 の移設先として作った）＝
+`StatusAdvancedExpander`／`TryAdvancedExpander`／`VoicesAdvancedExpander` と 12 行／10 行への畳み込みは
+**次の便**。理由＝A-5 の「入らない物は移さずに消す」が §0 の錠・`v2-spec.md` §2-0 の「削除 0」・
+緑の定義（139 id 生存）と正面から衝突するので**決めが要る**。台本の `Open-YwkFold` は 5 つとも受けるので、
+後から入れても台本は直さなくてよい。
+**A-4 のうち `MainEndpointText` の本文を空にする 1 件だけは入れた**＝台本 `:1789` を先に
+「the endpoint is not printed on the main screen」へ割り直した（私設の口が本当に答えるかは、
+下の `the port answers /health 200 within 10 s of the press` が引き続き見る）。
+
+**id**＝139 は 1 つも改名・削除していない（移設のみ）。新設 10＝`MainBandStateText`・`MainBandReasonText`・
+`MainBandActionButton`・`MainBandHostText`・`MainOpenLogButton`・`MainGearButton`・`MainDetailOverlay`・
+`MainDetailTabs`・`MainDetailCloseButton`・`SettingsAdvancedExpander`（XAML 実測 139 → 149・重複 0）。
+錠は `AutomationIdsTests.cs`（生存・重複・新設・**写しの 7 檔を名前で釘付け**＋`.csproj` の
+`CleanCopiedViews` が毎度の建てで写しの棚を掃除する＝古い写しで素通りさせない）。
+
+**検分の所見 13 件**（重複 2 組を畳んで 11 件）＝**10 件当て込み・1 件は段 C へ申し送り**。
+当て込んだ物＝⑴ 帯が `RuntimeVariants.ShortDisplayName` を呼ぶのをやめ、
+帯専用の 4 語（CUDA 13.0／CUDA 12.6／ROCm／CPU・知らない綴りは「いまの動かし方」）にした
+＝`gfx1151`・「CUDA 版」が主画面に出る道を塞いだ ⑵ D2 の ⑵ から `runtime.error` の生の 1 行を落とし、
+`v2-copy.md` §3-2 E-07 の固定文にした（元の 1 行はログと `StatusReasonText` に残る）
+⑶ D6 の ⑵ に終了コードの数を戻した（`BandContext.ExitCode`・判らない回は括弧ごと落とす）
+⑷ D7 は理由の行を出さない（見出しと同じ文を 2 度並べない）⑸ 門の断り（B1／B3）でも勧める先を渡す
+（`MainViewModel.RecommendedAlternative`＝勧める先が自分自身なら null）⑹ Failed から停めた回も
+「止まっています」＋〔もう一度動かす〕（`wasRunning = IsRunning || IsFailed`）
+⑺ 〔ログを開く〕を `Status.LogText` の変化で見直す＝**起こす前に断った回**（サーバの記録行が 1 行も来ない）でも釦が出る
+⑻ 帯に報告の受け皿の薄字 1 行（裁定 131・釦と一緒に畳む）⑼ `MainEndpointText` の本文を空に
+⑽ `AutomationId` 生存の錠が bin に残った古い写しで素通りする穴を塞いだ（上記）。
+**据え置き 1 件**＝移した 3 釦の札（サーバ停止／サーバ起動／初回取得をやり直す）は段 A の錠
+（「文字列は 1 つも替えない」）に従い触らず、**C-3 の表へ申し送った**。
+
+**実測**＝`dotnet test launcher -c Release --nologo` が **781 合格＋1 スキップ**（工事前 743＋1・
+追加 38・削除 0）／契約テスト **369 passed**（HTTP の口も JSON の欄も触っていない）／
+`dotnet build launcher -c Release --no-incremental` が **0 警告 0 エラー**／
+`probe/d-launch-probe.ps1` の構文解析 **0 エラー**・`-DryRun` が「nothing was touched.」で終わる。
+**アプリは 1 度も起こしていない**（実射は段 H）。
+
 ---
 
 ### 段 B — はじめの準備（自動決定・見える 3 段・1 本のバー・同意は 1 度）
@@ -311,6 +356,8 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
 | `WarmupCoordinator.cs`（暖機 13・潜在 11・焼 7） | 画面へ出る 4 本だけ平語へ（準備運転／声の下ごしらえ） | **ログへ出る文は従来のまま**＝画面用と記録用を分ける |
 | `GpuEnumerator.cs:376`・`TorchProbeRunner.cs:106` | 「実行系もまだ取得できていません」 | 「動かすための一式がまだ入っていません」 |
 | `CacheCleaner.cs:229`・`:235`・`RuntimeStamp.cs:122` | 「取得台帳」「配布物」 | 画面に出る側だけ平語へ（**檔とログの文はそのまま**） |
+| `SettingsView.xaml:213`／`:217`／`:221`（**段 A で移した 3 釦**・申し送り） | サーバ停止／サーバ起動／初回取得をやり直す | **いったん止める**／**もう一度動かす**／**はじめの準備をやり直す**（`v2-copy.md` §1-1 の 39／42／45 行目）。**急ぎの理由**＝段 A の帯が既に「もう一度動かす」「はじめの準備をやり直す」を綴っているので、段 C まで**同じ操作に 2 つの名が同時に画面へ出る**。台本は id 引き（`Invoke-ButtonById`）なので札を替えても落ちない |
+| `Contracts/RuntimeVariants.cs:105-113`（`ShortDisplayName`・申し送り） | `rocm-gfx1151`＝「Radeon gfx1151」／`cuda`＝「CUDA 版」 | `v2-copy.md` §1-8 の値へ。**帯は段 A でこの関数を離れている**（`BandText.VariantName` が CUDA 13.0／CUDA 12.6／ROCm／CPU の 4 語を持つ）＝残る呼び手は `VariantRecommendation` の 3 箇所 |
 
 #### C-4 台本の語表（`probe/d-launch-probe.ps1:124-176` の `$T`）
 

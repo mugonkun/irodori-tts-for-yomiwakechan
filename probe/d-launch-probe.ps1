@@ -174,6 +174,114 @@ $T = [ordered]@{
 $script:Failures = @()
 $script:Steps = @()
 
+# ---------------------------------------------------------------------------------------------
+# v2.0 stage A helpers (v2-plan.md A-0). The screen becomes "three tabs plus a gear layer", so two
+# things that used to be one press away are now one press deeper:
+#   * "status" (TabStatus) and "about" (TabAbout) move, ELEMENT AND ID INTACT, into the gear layer
+#     (MainDetailOverlay), which is Collapsed -- and a Collapsed subtree is INVISIBLE to UIA.
+#   * the start / stop / redo buttons move, ELEMENT AND ID INTACT, into settings > details
+#     (SettingsAdvancedExpander); a collapsed WPF Expander is invisible to UIA for the same reason.
+# Every helper below is written so it also passes on the CURRENT build (nothing found = walk on),
+# which is the whole point of landing A-0 before the implementation.
+# ---------------------------------------------------------------------------------------------
+
+function Open-YwkFold {
+    <#
+      .SYNOPSIS
+        Expand a fold (WPF Expander) by AutomationId. A MISSING fold is not a failure: a screen that
+        does not have it yet simply carries its contents on the page already.
+      .DESCRIPTION
+        The five folds of v2.0 are StatusAdvancedExpander / SettingsAdvancedExpander /
+        TryAdvancedExpander / VoicesAdvancedExpander / FirstRunAdvancedExpander.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]$Root,
+        [Parameter(Mandatory = $true)][string]$Id,
+        [int]$TimeoutSeconds = 1
+    )
+    $el = Find-ById -Root $Root -Id $Id -TimeoutSeconds $TimeoutSeconds
+    if ($null -eq $el) { return $true }
+    try {
+        $pattern = $el.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+        if ($pattern.Current.ExpandCollapseState -ne 'Expanded') {
+            $pattern.Expand()
+            Start-Sleep -Milliseconds 400
+        }
+    } catch {
+        Write-Host ('[fold] ' + $Id + ' could not be opened: ' + $_.Exception.Message)
+        return $false
+    }
+    return $true
+}
+
+function Open-YwkGear {
+    <#
+      .SYNOPSIS
+        Open the gear layer that holds TabStatus / TabAbout. IDEMPOTENT: the gear button is a
+        toggle, so the layer is only pressed open when its close button is not on screen yet.
+        No gear on this build = nothing to do.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$Window)
+    if ($null -ne (Find-ById -Root $Window -Id 'MainDetailCloseButton' -TimeoutSeconds 1)) { return $true }
+    $gear = Find-ById -Root $Window -Id 'MainGearButton' -TimeoutSeconds 1
+    if ($null -eq $gear) { return $true }
+    $null = Invoke-ButtonById -Root $Window -Id 'MainGearButton' -TimeoutSeconds 5
+    Start-Sleep -Milliseconds 300
+    return $true
+}
+
+function Close-YwkGear {
+    <#
+      .SYNOPSIS
+        Close the gear layer so the three ordinary tabs are on top again. Idempotent, and a build
+        without the layer walks on.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$Window)
+    if ($null -eq (Find-ById -Root $Window -Id 'MainDetailCloseButton' -TimeoutSeconds 1)) { return $true }
+    $null = Invoke-ButtonById -Root $Window -Id 'MainDetailCloseButton' -TimeoutSeconds 5
+    Start-Sleep -Milliseconds 300
+    return $true
+}
+
+function Select-YwkTab {
+    <#
+      .SYNOPSIS
+        Select-Tab that knows where the tab lives: TabStatus / TabAbout are inside the gear layer,
+        the other three are the ordinary tab strip underneath it.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]$Window,
+        [Parameter(Mandatory = $true)][string]$TabId
+    )
+    if (($TabId -eq 'TabStatus') -or ($TabId -eq 'TabAbout')) {
+        $null = Open-YwkGear -Window $Window
+    } else {
+        $null = Close-YwkGear -Window $Window
+    }
+    return (Select-Tab -Window $Window -TabId $TabId)
+}
+
+function Open-YwkRunControls {
+    <#
+      .SYNOPSIS
+        Put the three moved buttons (MainStartButton / MainStopButton / MainFirstRunButton) on
+        screen: settings tab, then the details fold. On the current build the settings tab is
+        selected and the fold is simply not there, which changes nothing.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$Window)
+    try {
+        $null = Select-YwkTab -Window $Window -TabId 'TabSettings'
+    } catch {
+        Write-Host ('[run-controls] the settings tab could not be selected: ' + $_.Exception.Message)
+    }
+    return (Open-YwkFold -Root $Window -Id 'SettingsAdvancedExpander')
+}
+
 function Invoke-Shot {
     <#
       .SYNOPSIS
@@ -421,7 +529,11 @@ function Start-AndWaitReady {
         [Parameter(Mandatory = $true)]$Window,
         [int]$TimeoutSeconds = 120
     )
+    # v2.0 stage A: the start button lives in settings > details now (A-1). Open the fold,
+    # press, then come back to the status page, which every caller reads next.
+    $null = Open-YwkRunControls -Window $Window
     $null = Invoke-ButtonById -Root $Window -Id 'MainStartButton'
+    $null = Select-YwkTab -Window $Window -TabId 'TabStatus'
     $ready = Wait-ForPattern -Root $Window -Id 'MainStateText' `
         -Pattern ($T.Ready + '|' + $T.Warming) -TimeoutSeconds $TimeoutSeconds -IntervalMilliseconds 400
     Write-Host ('[restart] state=' + $ready.text + ' after ' + [math]::Round($ready.elapsed, 1) + ' s')
@@ -499,10 +611,13 @@ function Invoke-GateProbe {
         $null = New-LauncherFixture -DataDir $DataDir -Variant $Variant -Port $Port -HfHome $HfHome
         $proc = Start-Launcher -Exe $Exe -AppDir $AppDir -RuntimeRoot $RuntimeRoot -DataDir $DataDir
         $win = Get-MainWindow -Proc $proc -TimeoutSeconds 60
+        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
         Write-Host ('[gate] variant = ' + (Get-TextById -Root $win -Id 'StatusVariantText'))
 
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $null = Open-YwkRunControls -Window $win
         $null = Invoke-ButtonById -Root $win -Id 'MainStartButton'
+        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
         $failed = Wait-ForPattern -Root $win -Id 'MainStateText' -Pattern $T.Failed -TimeoutSeconds 60 -IntervalMilliseconds 200
         $sw.Stop()
 
@@ -1159,11 +1274,16 @@ function Test-RebuildOffer {
     $ids = @(
         'StatusRebuildRuntimeButton', 'StatusRebuildButton', 'StatusLedgerMismatchText',
         'StatusRuntimeMismatchText', 'MainRebuildRuntimeButton', 'SettingsRebuildRuntimeButton')
+    # The offer sits on the status page, which is behind the gear from v2.0 on (A-3).
+    try {
+        $null = Select-YwkTab -Window $Window -TabId 'TabStatus'
+    } catch {
+        Write-Host ('[ledger] the status page could not be selected: ' + $_.Exception.Message)
+    }
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ($true) {
+        # Looked up BY ID only (A-0 (3)): the label is rewritten in stage C, the id is not.
         $el = Find-ByIdAny -Root $Window -Id $ids -TimeoutSeconds 1
-        if ($null -ne $el) { return $el }
-        $el = Find-ByNameLike -Root $Window -Text $T.Rebuild -TimeoutSeconds 1
         if ($null -ne $el) { return $el }
         if ((Get-Date) -ge $deadline) { break }
         Start-Sleep -Milliseconds 500
@@ -1172,10 +1292,10 @@ function Test-RebuildOffer {
     # not "not there": sweep the settings page once before saying no. This also makes the NEGATIVE
     # step (a matching ledger offers nothing) mean what it says.
     try {
-        $null = Select-Tab -Window $Window -TabId 'TabSettings'
+        $null = Select-YwkTab -Window $Window -TabId 'TabSettings'
+        $null = Open-YwkFold -Root $Window -Id 'SettingsAdvancedExpander'
         $el = Find-ByIdAny -Root $Window -Id $ids -TimeoutSeconds 1
-        if ($null -eq $el) { $el = Find-ByNameLike -Root $Window -Text $T.Rebuild -TimeoutSeconds 1 }
-        $null = Select-Tab -Window $Window -TabId 'TabStatus'
+        $null = Select-YwkTab -Window $Window -TabId 'TabStatus'
         return $el
     } catch {
         Write-Host ('[ledger] the settings page could not be swept: ' + $_.Exception.Message)
@@ -1345,10 +1465,13 @@ function Invoke-BadPythonProbe {
         $null = New-LauncherFixture -DataDir $DataDir -Variant $Variant -Port $Port
         $proc = Start-Launcher -Exe $Exe -AppDir $AppDir -RuntimeRoot $RuntimeRootPath -DataDir $DataDir
         $win = Get-MainWindow -Proc $proc -TimeoutSeconds 60
+        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
         Write-Host ('[badpython] variant = ' + (Get-TextById -Root $win -Id 'StatusVariantText'))
 
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $null = Open-YwkRunControls -Window $win
         $null = Invoke-ButtonById -Root $win -Id 'MainStartButton'
+        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
         $told = $false
         $state = ''
         $reason = ''
@@ -1436,9 +1559,10 @@ function Invoke-CacheButtonProbe {
             'SettingsDeleteCacheButton', 'StatusClearCacheButton', 'MainClearCacheButton')
         $button = $null
         foreach ($tab in @('TabSettings', 'TabStatus')) {
-            $null = Select-Tab -Window $win -TabId $tab
+            $null = Select-YwkTab -Window $win -TabId $tab
+            $null = Open-YwkFold -Root $win -Id 'SettingsAdvancedExpander'
+            # Looked up BY ID only (A-0 (3)): the label is rewritten in stage C, the id is not.
             $button = Find-ByIdAny -Root $win -Id $ids -TimeoutSeconds 1
-            if ($null -eq $button) { $button = Find-ByNameLike -Root $win -Text $T.ClearCache -TimeoutSeconds 2 }
             if ($null -ne $button) {
                 Write-Host ('[cache] found on ' + $tab + ' :: ' + (Get-ElementLabel $button))
                 break
@@ -1662,7 +1786,14 @@ try {
     $endpoint = Get-TextById -Root $win -Id 'MainEndpointText'
     $version = Get-TextById -Root $win -Id 'MainVersionText'
     Write-Host ('[ui] state=' + $state0 + '  endpoint=' + $endpoint + '  version=' + $version)
-    Add-Step 'endpoint shows the private port' ($endpoint -like ('*:' + $Port)) $endpoint
+    # v2.0 stage A-4: the main screen no longer prints the endpoint. The port number is allowed on
+    # exactly one surface -- the band, when 18088 is taken and the server cannot start (charter
+    # principle 5, the single exception). So this row is now the opposite assertion: MainEndpointText
+    # keeps its element and its id, and its text must be empty. The half of the old row that actually
+    # mattered -- the private port really answers -- lives on unchanged further down as
+    # 'the port answers /health 200 within 10 s of the press' (section 105), where the server is up.
+    Add-Step 'the endpoint is not printed on the main screen' (
+        [string]::IsNullOrWhiteSpace($endpoint)) ('"' + $endpoint + '"')
     Add-Step 'state starts at stopped' ($state0 -eq $T.Stopped) $state0
 
     # ========================================================= g. the presets arrive (88 (5))
@@ -1739,7 +1870,7 @@ try {
         ($inAlias -eq $presetNames.Count) -and ($presetNames.Count -gt 0)) (
         'in voices.json = ' + $inAlias + '/' + $presetNames.Count)
 
-    $null = Select-Tab -Window $win -TabId 'TabVoices'
+    $null = Select-YwkTab -Window $win -TabId 'TabVoices'
     $presetRows = @(Get-GridRows -Root $win -Id 'VoicesGrid')
     $presetKind = @($presetRows | Where-Object { $_.cells -contains $T.Preset })
     Write-Host ('[presets] rows on screen = ' + $presetRows.Count + '  marked preset = ' + $presetKind.Count)
@@ -1764,12 +1895,12 @@ try {
         ($blocked -like ('*' + $T.DefVoice + '*'))) ([string]$blocked)
     Add-Step 'the blocked remove button is not pressable' (-not $removeEnabled) (
         'enabled=' + $removeEnabled)
-    $null = Select-Tab -Window $win -TabId 'TabStatus'
+    $null = Select-YwkTab -Window $win -TabId 'TabStatus'
 
     # ============================================================= 2. settings / GPU (D-2)
     Write-Host ''
     Write-Host '=== 2. settings and GPU enumeration (D-2) ==='
-    $null = Select-Tab -Window $win -TabId 'TabSettings'
+    $null = Select-YwkTab -Window $win -TabId 'TabSettings'
     $swGpu = [System.Diagnostics.Stopwatch]::StartNew()
     $null = Invoke-ButtonById -Root $win -Id 'SettingsRefreshGpuButton'
     $gpuNames = @()
@@ -1805,12 +1936,12 @@ try {
         # The status band shows what the settings hold. If applying does not refresh it, the band
         # keeps saying "not chosen" right after the operator chose a GPU (found on this machine).
         $bandGpu = Get-TextById -Root $win -Id 'MainStateText' -TimeoutSeconds 2
-        $null = Select-Tab -Window $win -TabId 'TabStatus'
+        $null = Select-YwkTab -Window $win -TabId 'TabStatus'
         $bandGpu = Get-TextById -Root $win -Id 'StatusGpuText' -TimeoutSeconds 5
         Write-Host ('[status] gpu band = ' + $bandGpu)
         Add-Step 'the status band follows the applied GPU' (
             ($null -ne $bandGpu) -and ($bandGpu -match 'UUID')) ([string]$bandGpu)
-        $null = Select-Tab -Window $win -TabId 'TabSettings'
+        $null = Select-YwkTab -Window $win -TabId 'TabSettings'
     }
 
     # ============================================================= 2b. first run wizard (D-5 ports)
@@ -1826,7 +1957,7 @@ try {
     #     write null into acceptedNoticesSha256.
     Write-Host ''
     Write-Host '=== 2b. first run wizard: the size line and the consent gate (D-5) ==='
-    $null = Select-Tab -Window $win -TabId 'TabStatus'
+    $null = Open-YwkRunControls -Window $win
     $null = Invoke-ButtonById -Root $win -Id 'MainFirstRunButton'
     $wizard = Get-DialogWindow -Proc $proc -TimeoutSeconds 20
     if ($null -eq $wizard) {
@@ -1874,8 +2005,9 @@ try {
     # ============================================================= 3. start (D-6)
     Write-Host ''
     Write-Host '=== 3. start the server (D-6) ==='
-    $null = Select-Tab -Window $win -TabId 'TabStatus'
+    $null = Open-YwkRunControls -Window $win
     $null = Invoke-ButtonById -Root $win -Id 'MainStartButton'
+    $null = Select-YwkTab -Window $win -TabId 'TabStatus'
 
     # Watch the state AND keep every log line that passes through the 20 line tail. The tail is a
     # window, not a transcript: on this machine the upstream emits about 20 lines of MIOpen / pydub /
@@ -2093,7 +2225,7 @@ try {
         # ========================================================= 5. one shot with the default voice
         Write-Host ''
         Write-Host '=== 5. try tab, default voice ==='
-        $null = Select-Tab -Window $win -TabId 'TabTry'
+        $null = Select-YwkTab -Window $win -TabId 'TabTry'
         $null = Set-TextById -Root $win -Id 'TryInputBox' -Text $T.Sentence
         $null = Invoke-ButtonById -Root $win -Id 'TryStepsPreset10'
         $voices0 = @(Get-ComboItemNames -Root $win -Id 'TryVoiceCombo')
@@ -2128,7 +2260,7 @@ try {
         # ========================================================= 6. add a voice, shoot with it (D-3)
         Write-Host ''
         Write-Host '=== 6. voices tab, add one reference wav (D-3) ==='
-        $null = Select-Tab -Window $win -TabId 'TabVoices'
+        $null = Select-YwkTab -Window $win -TabId 'TabVoices'
         $before = @(Get-GridRows -Root $win -Id 'VoicesGrid')
         Write-Host ('[voices] rows before = ' + $before.Count)
 
@@ -2219,7 +2351,7 @@ try {
                 ($memAfter -match '\d')) (
                 $memAfter + ' in ' + [math]::Round($bakeSeconds, 1) + ' s')
 
-            $null = Select-Tab -Window $win -TabId 'TabStatus'
+            $null = Select-YwkTab -Window $win -TabId 'TabStatus'
             $cacheAfter = Get-TextById -Root $win -Id 'StatusLatentCacheText'
             if ($null -eq $cacheAfter) { $cacheAfter = '' }
             Write-Host ('[latent] after the bake = ' + $cacheAfter)
@@ -2227,12 +2359,12 @@ try {
             if ($cacheAfter -match ($T.Baked + ' (\d+)')) { $bakedCount = [int]$Matches[1] }
             Add-Step 'the latent cache line counts the baked voices' ($bakedCount -ge 1) (
                 'baked = ' + $bakedCount + ' :: ' + $cacheAfter)
-            $null = Select-Tab -Window $win -TabId 'TabVoices'
+            $null = Select-YwkTab -Window $win -TabId 'TabVoices'
 
             # ===================================================== 7. one shot with the new voice
             Write-Host ''
             Write-Host '=== 7. try tab, the voice we just added ==='
-            $null = Select-Tab -Window $win -TabId 'TabTry'
+            $null = Select-YwkTab -Window $win -TabId 'TabTry'
             $voices1 = @(Get-ComboItemNames -Root $win -Id 'TryVoiceCombo')
             Write-Host ('[try] voices = ' + ($voices1 -join ' | '))
             if ($voices1 -contains $T.NewVoice) {
@@ -2254,10 +2386,12 @@ try {
     # ============================================================= 8. dump and stop
     Write-Host ''
     Write-Host '=== 8. stop ==='
-    $null = Select-Tab -Window $win -TabId 'TabStatus'
+    $null = Select-YwkTab -Window $win -TabId 'TabStatus'
     $null = Write-UiaTree -Root $win -OutFile (Join-Path $outDir 'd-launch-probe-tree.txt')
 
+    $null = Open-YwkRunControls -Window $win
     $null = Invoke-ButtonById -Root $win -Id 'MainStopButton'
+    $null = Select-YwkTab -Window $win -TabId 'TabStatus'
     $stopped = Wait-ForTextById -Root $win -Id 'MainStateText' -Pattern $T.Stopped -TimeoutSeconds 30
     Write-Host ('[stop] state=' + $stopped.text + ' after ' + [math]::Round($stopped.elapsed, 1) + ' s')
     Add-Step 'the server stops on request' $stopped.ok ('stopped in ' + [math]::Round($stopped.elapsed, 1) + ' s')
@@ -2305,7 +2439,7 @@ try {
             'ready in ' + [math]::Round($third.elapsed, 1) + ' s, state=' + $third.text)
 
         if ($third.ok -and (-not $SkipSynthesis)) {
-            $null = Select-Tab -Window $win -TabId 'TabTry'
+            $null = Select-YwkTab -Window $win -TabId 'TabTry'
             $null = Select-ComboItemById -Root $win -Id 'TryVoiceCombo' -ItemText $T.DefVoice
             $null = Set-TextById -Root $win -Id 'TryInputBox' -Text $T.LongLine
             # 40 steps on a long line: the shot must still be running when the kill lands.
@@ -2326,7 +2460,7 @@ try {
             Add-Step 'a synthesis is told at once that the server went down' (
                 $told.ok -and ($told.elapsed -lt [math]::Min(20, $ReadyTimeoutSeconds))) (
                 'told in ' + [math]::Round($told.elapsed, 2) + ' s (deadline was ' + $ReadyTimeoutSeconds + ' s) :: ' + $told.text)
-            $null = Select-Tab -Window $win -TabId 'TabStatus'
+            $null = Select-YwkTab -Window $win -TabId 'TabStatus'
         }
     }
 } finally {

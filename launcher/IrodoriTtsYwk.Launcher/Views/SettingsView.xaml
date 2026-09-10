@@ -190,6 +190,41 @@
         <TextBlock Style="{StaticResource Note}"
                    Text="消すのはこの変種の取得台帳に載っている原檔だけです。実行系が組み上がっていて、展開に使った台帳と配布物の台帳が一致するときにだけ消します（取り直しが要る機体からは消しません）。" />
 
+        <!--
+          詳細（上級者向け）＝v2.0 段 A-1。主窓の上に在った起動／停止の帯を廃し、3 釦を
+          **要素ごと**ここへ移した（AutomationId は 1 字も替えない＝MainStartButton／
+          MainStopButton／MainFirstRunButton）。**振る舞いは変わらない**＝AutoStartServer の
+          既定は真のままなので、ふだんは誰もこの畳みを開かない。
+          `autoStartServer:false` を明示している機体は、帯の〔もう一度動かす〕と
+          下の 1 行からここへ辿れる（v2-spec.md §2-5 末尾）。
+
+          束縛の註＝この画面の DataContext は SettingsViewModel なので `Status.StartCommand` は
+          当たらない。窓まで登って主 ViewModel の手を取る（Stop も同じ）。
+        -->
+        <Expander x:Name="AdvancedExpander" Margin="0,18,0,0" IsExpanded="False"
+                  AutomationProperties.AutomationId="SettingsAdvancedExpander"
+                  Header="詳細（上級者向け）">
+          <StackPanel Margin="12,8,0,0">
+            <TextBlock Style="{StaticResource Note}"
+                       Text="ここは、うまく動かないときに中を見るための欄です。ふだんは見なくてかまいません。" />
+
+            <TextBlock Text="読み上げの動作" Style="{StaticResource Head}" />
+            <WrapPanel>
+              <Button Content="サーバ停止" Padding="14,4" Margin="0,0,8,0"
+                      AutomationProperties.AutomationId="MainStopButton"
+                      Command="{Binding DataContext.Status.StopCommand,
+                                        RelativeSource={RelativeSource AncestorType=Window}}" />
+              <Button Content="サーバ起動" Padding="14,4" Margin="0,0,8,0"
+                      AutomationProperties.AutomationId="MainStartButton"
+                      Command="{Binding DataContext.Status.StartCommand,
+                                        RelativeSource={RelativeSource AncestorType=Window}}" />
+              <Button Content="初回取得をやり直す" Padding="10,4"
+                      AutomationProperties.AutomationId="MainFirstRunButton"
+                      Click="OnFirstRunClick" />
+            </WrapPanel>
+          </StackPanel>
+        </Expander>
+
       </StackPanel>
     </ScrollViewer>
   </DockPanel>

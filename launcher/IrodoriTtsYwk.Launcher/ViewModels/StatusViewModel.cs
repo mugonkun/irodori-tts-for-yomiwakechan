@@ -516,6 +516,112 @@ public sealed class StatusViewModel : ObservableObject
         _ => state.ToString(),
     };
 
+    // ===================== 状態の帯（v2.0・`v2-spec.md` §2-1）=====================
+    //
+    // **名乗るのは 3 語だけ**（準備しています…／使えます／止まりました）。上の StateLabel の
+    // 6 語は 1 字も触らない＝MainStateText（下の StatusBar）に残る無人検分の錨である。
+    // 文を組むのは純関数 BandText.For で、ここはその材料を集めて結果を配るだけ。
+
+    private BandLine _band = BandText.For(ServerState.Stopped, null);
+    private string _bandHostText = string.Empty;
+    private bool _runtimeLoaded;
+    private bool _userStopped;
+    private string? _driverVersion;
+    private string? _alternativeVariant;
+    private int? _missingModelCount;
+    private int? _exitCode;
+
+    /// <summary>帯の丸の色（灰／緑／赤）。</summary>
+    public BandSeverity BandSeverity => _band.Severity;
+
+    /// <summary>帯が名乗る 1 語（3 語だけ）。</summary>
+    public string BandStateText => _band.Headline;
+
+    /// <summary>帯の理由 1 行（⑴＋⑵・ふだんは空）。</summary>
+    public string BandReasonText => _band.Reason ?? string.Empty;
+
+    /// <summary>理由の行を出すか。</summary>
+    public bool HasBandReason => _band.Reason is not null;
+
+    /// <summary>帯の 1 手の札（⑶）。</summary>
+    public string BandActionText => _band.ActionLabel ?? string.Empty;
+
+    /// <summary>出せる 1 手が在るか（<b>無いときは釦ごと出さない</b>）。</summary>
+    public bool HasBandAction => _band.Action is not BandActionKind.None;
+
+    /// <summary>帯の 1 手の種類（押したときに何をするかは窓が決める）。</summary>
+    public BandActionKind BandAction => _band.Action;
+
+    /// <summary>連携の 1 行（§2-1c）。</summary>
+    public string BandHostText
+    {
+        get => _bandHostText;
+        private set => SetProperty(ref _bandHostText, value);
+    }
+
+    /// <summary>
+    /// 帯が文を組むのに使う事実を渡す（<b>内部の 1 行から掻き回して取らない</b>＝
+    /// 判っている側＝<see cref="MainViewModel"/> が起動のたびに渡す）。
+    /// </summary>
+    /// <param name="driverVersion">読めたドライバの版（読めなければ null）。</param>
+    /// <param name="alternativeVariant">切り替えれば動く動かし方（無ければ null）。</param>
+    public void ApplyDriverFacts(string? driverVersion, string? alternativeVariant)
+    {
+        _driverVersion = driverVersion;
+        _alternativeVariant = alternativeVariant;
+        RefreshBand();
+    }
+
+    /// <summary>足りない声のデータの数（判らない回は null）。</summary>
+    public void ApplyMissingModels(int? count)
+    {
+        _missingModelCount = count;
+        RefreshBand();
+    }
+
+    /// <summary>
+    /// 落ちた子プロセスの終了コード（`v2-spec.md` §2-1a の D6＝⑵ に差す数）。
+    /// <b>内部の 1 行から掻き回して取らない</b>（§2-1b）＝<see cref="IServerProcess.ExitCode"/> を
+    /// 読んでいる側（<see cref="MainViewModel.ApplyServerState"/>）が渡す。落ちていない回は null。
+    /// </summary>
+    public void ApplyExitCode(int? exitCode)
+    {
+        _exitCode = exitCode;
+        RefreshBand();
+    }
+
+    /// <summary>いま集まっている材料で帯を組み直す。</summary>
+    private void RefreshBand()
+    {
+        var context = new BandContext(
+            RuntimeLoaded: _runtimeLoaded,
+            UserStopped: _userStopped,
+            AutoStartDisabled: _desired is not null && !_desired.AutoStartServer,
+            DriverVersion: _driverVersion,
+            Variant: _running?.Variant ?? _desired?.Variant,
+            AlternativeVariant: _alternativeVariant,
+            GpuName: _running?.GpuName ?? _desired?.GpuName,
+            MissingModelCount: _missingModelCount,
+            ExitCode: _exitCode);
+
+        var next = BandText.For(State, Reason, context);
+        if (!Equals(_band, next))
+        {
+            _band = next;
+            RaisePropertyChanged(nameof(BandSeverity));
+            RaisePropertyChanged(nameof(BandStateText));
+            RaisePropertyChanged(nameof(BandReasonText));
+            RaisePropertyChanged(nameof(HasBandReason));
+            RaisePropertyChanged(nameof(BandActionText));
+            RaisePropertyChanged(nameof(HasBandAction));
+            RaisePropertyChanged(nameof(BandAction));
+        }
+
+        // 走行数の欄はまだ契約に無い（段 D で足す）＝古い個体と同じ扱いで
+        //「読み分けちゃん2 から使えます」だけを出す（§2-1c＝嘘にならない）。
+        BandHostText = BandText.HostLine(State, hostFieldPresent: false, hostSeen: false, hostBusy: false);
+    }
+
     /// <summary>
     /// 設定から出せる欄（サーバが止まっていても出る）を入れ直す。
     /// <para>
@@ -588,6 +694,7 @@ public sealed class StatusViewModel : ObservableObject
 
         SettingsPendingText = DescribePending(_running, settings);
         RepaintMemory();
+        RefreshBand();
     }
 
     /// <summary>
@@ -638,6 +745,13 @@ public sealed class StatusViewModel : ObservableObject
     /// </summary>
     public void ApplyState(ServerState state, string? reason)
     {
+        // 帯は「まだ起こしていない」と「利用者が止めた」を別の語で名乗る（`v2-spec.md` §2-1）。
+        // 一度でも起こした後に Stopped へ戻った回だけ「止まっています」＋〔もう一度動かす〕を出す。
+        // **Failed も「一度は起こした後」に数える**（是正・検分）＝子が生きたまま Failed に落ちる態
+        // （D2 ほか＝CanStop は真）で〔サーバ停止〕を押すと、IsRunning だけで見ていたころは
+        // Stopped＋「準備しています…」＋釦なしの行き止まりになった。
+        var wasRunning = IsRunning || IsFailed;
+
         State = state;
         if (!string.IsNullOrWhiteSpace(reason))
         {
@@ -660,10 +774,17 @@ public sealed class StatusViewModel : ObservableObject
             _memory = null;
             _osGpuRows = [];
             _serverAnswered = false;
+            _runtimeLoaded = false;
+            _userStopped = wasRunning;
             RepaintMemory();
+        }
+        else
+        {
+            _userStopped = false;
         }
 
         RebuildRuntimeCommand.RaiseCanExecuteChanged();
+        RefreshBand();
     }
 
     /// <summary>
@@ -783,12 +904,15 @@ public sealed class StatusViewModel : ObservableObject
             _memory = null;
             _osGpuRows = [];
             _serverAnswered = false;
+            _runtimeLoaded = false;
             RepaintMemory();
             GpuMismatch = null;
+            RefreshBand();
             return;
         }
 
         _serverAnswered = true;
+        _runtimeLoaded = status.IsReady;
         DeviceText = Compose(status.Device);
         WarmupText = Compose(status.Warmup);
         PrecomputeText = Compose(status.Precompute);
@@ -797,6 +921,7 @@ public sealed class StatusViewModel : ObservableObject
         RepaintMemory();
         UpstreamMismatch = DescribeUpstreamMismatch(status.Upstream);
         GpuMismatch = DescribeGpuMismatch(_running?.GpuUuid ?? _desired?.GpuUuid, status.Device);
+        RefreshBand();
     }
 
     /// <summary>
