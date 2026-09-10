@@ -102,7 +102,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = 'C:\Windows\System3
 ## 5. 戻す
 
 - vc_redist が入って `msvcp140.dll` が戻っていれば **`.e1-bak` は消してよい**（同じ VC 再頒布の実体。版が 2-2 と違えば両方の版を記録）。**戻っていなければ**設計席が管理者窓で `Rename-Item msvcp140.dll.e1-bak msvcp140.dll`。
-- ランチャを止め（トレイ→終了、または `taskkill /IM IrodoriTtsYwk.Launcher.exe /T /F`）、無人でアンインストール：
+- ランチャを止め（窓を閉じる＝アプリが終わる〔裁定 124〕、または `taskkill /IM IrodoriTtsYwk.Launcher.exe /T /F`）、無人でアンインストール：
 
 ```
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$u = Join-Path $env:LOCALAPPDATA 'Programs\irodori-tts-ywk-cuda\unins000.exe'; $p = Start-Process -FilePath $u -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/LOG=C:\ywk\logs\e1-uninstall.log') -Wait -PassThru; Write-Host ('EXIT=' + $p.ExitCode); Write-Host ('programs left = ' + ((Get-ChildItem -LiteralPath (Join-Path $env:LOCALAPPDATA 'Programs') -Directory -ErrorAction SilentlyContinue | Where-Object Name -like 'irodori*' | Measure-Object).Count)); Write-Host ('key left = ' + (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{F228543A-DCF9-45A3-8826-7485C81E1757}_is1'))"

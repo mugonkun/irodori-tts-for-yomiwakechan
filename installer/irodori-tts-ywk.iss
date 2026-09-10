@@ -2,7 +2,7 @@
 ; 設計＝docs/design/ben-e-installer.md §1・§2・§5・§6-3。裁定＝decisions.md 89・90・91。
 ; 是正＝同 §11-8（敵対検分の medium 6 件・low 4 件・2026-09-05・是正席 opus）。
 ; 呼び方＝build/installer-build.ps1 が ISCC に /D を 7 本渡す。この檔に版・路・上流 pin を書き写さない。
-;   /DAppVersion=v1.0.2 /DAppVersionNumeric=1.0.2 /DFlavor=cuda|radeon
+;   /DAppVersion=v1.1.0 /DAppVersionNumeric=1.1.0 /DFlavor=cuda|radeon
 ;   /DSrcApp=<build/out/app> /DSrcExe=<build/out/launcher/win-x64> /DRepo=<リポの根> /DOutDir=<出力先>
 ; 檔の形＝UTF-8 BOM 付き・CRLF（.gitattributes:7 の *.iss text eol=crlf）。日本語はこの檔にだけ置く。
 

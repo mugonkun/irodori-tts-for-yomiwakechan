@@ -89,7 +89,7 @@
         <TextBlock Margin="0,12,0,0" TextWrapping="Wrap"
                    AutomationProperties.AutomationId="FirstRunDriverText"
                    Text="{Binding DriverText, Mode=OneWay}" />
-        <!-- ドライバの下限に届かない変種を選んでいる間の 1 行（裁定 125 の B）＝
+        <!-- ドライバの下限に届かない変種を選んでいる間の 1 行（裁定 126 の B）＝
              この間は「この構成で取得を始める」が押せない（CanGoNext）。 -->
         <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontWeight="Bold" Foreground="#B00020"
                    AutomationProperties.AutomationId="FirstRunVariantBlockText"

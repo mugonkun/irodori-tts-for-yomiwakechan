@@ -175,6 +175,11 @@ public sealed class RoundTwoIntegrationTests : IDisposable
     {
         // 載せないと門は env の YWK_VARIANT（cu130 と cu126 が "cuda" に畳まれた名）で
         // 代用する＝断ることはできても「どちらを勧めるか」が cpu に落ちる。
+        //
+        // **ドライバは下限を越えた版で撃つ**（裁定 126 ⑽）＝下限に届かない組み合わせ
+        // （cu130・537.58）は、いまは主窓が起こす前に断って取得へ導くので、要求そのものが
+        // 組まれない（その路は Decision126BelowMinimumTests が見る）。ここで見たいのは
+        // 「起こす回に 3 つとも載っているか」なので、門まで届く版で撃つ。
         var paths = MakePaths("cu130", "cu126", "rocm-gfx1151", "cpu");
         MakeRuntime("cu130");
         var server = new CapturingServer();
@@ -186,13 +191,13 @@ public sealed class RoundTwoIntegrationTests : IDisposable
             paths,
             new FakeEnumerator(new GpuInfo(
                 "uuid-a", "NVIDIA GeForce RTX 3090", 0, 25L * 1024 * 1024 * 1024,
-                "1", null, "537.58", GpuSource.NvidiaSmi)));
+                "1", null, "591.86", GpuSource.NvidiaSmi)));
 
         Assert.False(await main.StartServerAsync());
 
         var request = Assert.IsType<ServerStartRequest>(server.Captured);
         Assert.Equal(RuntimeVariants.Cu130, request.Variant);          // 畳んだ "cuda" ではない
-        Assert.Equal("537.58", request.DriverVersion);                 // nvidia-smi の逐語
+        Assert.Equal("591.86", request.DriverVersion);                 // nvidia-smi の逐語
         Assert.Contains(RuntimeVariants.Cu126, request.InstalledVariants);
         Assert.Contains(RuntimeVariants.RocmGfx1151, request.InstalledVariants);
     }
@@ -200,7 +205,10 @@ public sealed class RoundTwoIntegrationTests : IDisposable
     [Fact]
     public async Task 載せた変種のおかげで門はcu130を断ってcu126を勧められる()
     {
-        // 裁定 80 の実射（RTX 3090・ドライバ 537.58）＝cu130 は数えられず cu126 は通る。
+        // 裁定 80 の実射（RTX 3090）＝cu130 は GPU を数えられず cu126 は通る。
+        // **ドライバは下限を越えた版で撃つ**（裁定 126 ⑽）＝下限未満の組み合わせは主窓が
+        // 起こす前に断るので門まで届かない。ここで見たいのは「門が要求の 3 つで判断できるか」
+        // であり、断る理由は閾ではなく検分（is_available=False）の側である。
         var paths = MakePaths("cu130", "cu126", "cpu");
         MakeRuntime("cu130");
         var server = new CapturingServer();
@@ -212,7 +220,7 @@ public sealed class RoundTwoIntegrationTests : IDisposable
             paths,
             new FakeEnumerator(new GpuInfo(
                 "uuid-a", "NVIDIA GeForce RTX 3090", 0, 25L * 1024 * 1024 * 1024,
-                "1", null, "537.58", GpuSource.NvidiaSmi)));
+                "1", null, "591.86", GpuSource.NvidiaSmi)));
 
         await main.StartServerAsync();
         var request = Assert.IsType<ServerStartRequest>(server.Captured);

@@ -249,15 +249,18 @@ public sealed class ServerProcess : IServerProcess
             return Fail(started, ServerBindFailure.Message(request.Port));
         }
 
+        // **世代の刻印は門より前に置く**（是正・検分）＝門の検分（`python -c import torch`）は
+        // 秒の単位で掛かり、その間に窓を閉じた利用者の `StopAsync` が入り得る。刻印が門の後だと、
+        // 検分から戻った所で刻み直してしまい「止められた」痕跡が消える＝下の publish の見直しが効かない。
+        var generation = new object();
+        _generation = generation;
+
         // ⑵ 変種の門（裁定 88 ⑴）＝GPU を見られない変種は**起こさない**。
         var gate = await DecideGateAsync(request, cancellationToken).ConfigureAwait(false);
         if (!gate.Allow)
         {
             return Fail(started, gate.Reason ?? "この変種はこの機体で起こせません。");
         }
-
-        var generation = new object();
-        _generation = generation;
 
         Process process;
         try
@@ -309,11 +312,37 @@ public sealed class ServerProcess : IServerProcess
                 with { Notices = gate.Notices };
         }
 
+        // **公開の時点でもう 1 度、世代と後始末を見る**（是正・検分＝裁定 124 の A）。
+        // `_generation` の刻印（上）から子が生まれるまでには門の検分（`python -c import torch`＝秒）と
+        // `ProcessRunner.StartAsync` が挟まり、その待ちは全部 `ConfigureAwait(false)`＝続きは
+        // **プールの糸**で走る。窓を閉じた利用者の `App.OnExit` は先に `StopAsync`（＝`KillChildAsync`）を
+        // 撃つが、そのとき `_process` はまだ null なので**何も殺さずに帰る**。ここで見直さないと、
+        // 直後に生まれた子が「誰も畳まない台帳」に載って親より長生きする＝VRAM を握り、
+        // 18088 を塞ぎ、次の起動が裁定 52 の告知で断られる（＝裁定 124 が終わらせたい形そのもの）。
+        bool stale;
         lock (_gate)
         {
-            _process = process;
-            _registry ??= new LaunchedProcessRegistry();
-            _registry.Register(new LaunchedProcess(process));
+            stale = !ReferenceEquals(_generation, generation) || _disposed;
+            if (!stale)
+            {
+                _process = process;
+                _registry ??= new LaunchedProcessRegistry();
+                _registry.Register(new LaunchedProcess(process));
+            }
+        }
+
+        if (stale)
+        {
+            KillOrphan(process);
+            ProcessId = null;
+            BaseAddress = null;
+            _machine.ApplyStopped();
+            return new ServerStartResult(
+                false, ServerState.Stopped, null, null, Stopwatch.GetElapsedTime(started),
+                "起動を中止しました。")
+            {
+                Notices = gate.Notices,
+            };
         }
 
         ProcessId = process.Id;
@@ -872,6 +901,42 @@ public sealed class ServerProcess : IServerProcess
 
         return new ServerStartResult(
             false, _machine.State, ProcessId, ExitCode, Stopwatch.GetElapsedTime(started), reason);
+    }
+
+    /// <summary>
+    /// <b>台帳に載せられなかった子を、その場でツリー kill する</b>（是正・検分）。
+    /// 起こしている最中に停止／破棄が入った回にだけ通る路で、<b>投げない</b>
+    /// （終了の路から呼ばれることが在る＝ここで上げると残りの後始末が走らない）。
+    /// </summary>
+    private static void KillOrphan(Process process)
+    {
+        try
+        {
+            if (!HasExited(process))
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // もう消えている
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // 落とし切れなかった（権限・既に終了中）
+        }
+        catch (NotSupportedException)
+        {
+            // 遠隔のプロセス（実路では起きない）
+        }
+        catch (AggregateException)
+        {
+            // ツリーの子の 1 つが落ちなかっただけ
+        }
+        finally
+        {
+            process.Dispose();
+        }
     }
 
     private static bool HasExited(Process process)

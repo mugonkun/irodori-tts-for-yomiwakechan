@@ -67,7 +67,7 @@
         <TextBlock Style="{StaticResource Note}"
                    AutomationProperties.AutomationId="SettingsVariantNameText"
                    Text="{Binding VariantDisplayName, Mode=OneWay}" />
-        <!-- 下限に届かないドライバの変種を選んでいる間の 1 行（裁定 125 の B）＝「適用」が断る。 -->
+        <!-- 下限に届かないドライバの変種を選んでいる間の 1 行（裁定 126 の B）＝「適用」が断る。 -->
         <TextBlock Style="{StaticResource Note}" FontWeight="Bold" Foreground="#B00020"
                    AutomationProperties.AutomationId="SettingsVariantBlockText"
                    Visibility="{Binding VariantBlocked, Converter={StaticResource BoolToVis}}"

@@ -12,10 +12,11 @@
 1. **初回取得**＝台帳（`ledger/*.json`）を読み、実行系（埋め込み Python＋wheel）とモデルと
    `vc_redist.x64.exe` を取得し、sha256 で検証して `%LOCALAPPDATA%\irodori-tts-ywk\` に展開する。
    進捗は `server/ywk_fetch_models.py` の**進捗 JSON 行**を読んで出す。
-2. **常駐**＝env を組んで
+2. **サーバの親**＝env を組んで
    `runtime\<variant>\python.exe -m ywk_server --host 127.0.0.1 --port 18088` を子プロセスで起こし、
    stderr を取り込んで状態を判定する。**bat は使わない**（文字コード事故の反面教師＝
-   `research/local-additions/`）。
+   `research/local-additions/`）。**窓を閉じればアプリが終わり、子もツリー kill される**
+   （裁定 124＝トレイには常駐しない・§13）。
 3. **単体 TTS の UI**＝利用者が自環境で GPU・CUDA 版・パラメータ・参照ボイスを試す
    （配信外の読み上げテスト＝`decisions.md` 15）。**本体からの読み上げ司令は、ここで指定した
    GPU・CUDA 版を暗黙に使う**（device は Server プロセスの env でしか決まらない＝1 プロセス 1 デバイス）。
@@ -86,7 +87,7 @@ gradio を依存から外すと配布サイズも 43〜82 MB 減る。
 |---|---|
 | `IrodoriTtsYwk.sln` | 2 プロジェクト（本体＋テスト） |
 | `Directory.Build.props` | net10.0-windows・nullable・**ImplicitUsings=disable**・版の一元定義（`AppDisplayVersion`） |
-| `IrodoriTtsYwk.Launcher/App.xaml(.cs)` | 単一起動（Mutex）・トレイ（開く／サーバ起動／停止／終了）・終了時にツリー kill |
+| `IrodoriTtsYwk.Launcher/App.xaml(.cs)` | 単一起動（Mutex）・2 個目の起動で窓を前に出す合図・終了時にツリー kill（裁定 124 でトレイは消えた＝§13） |
 | `IrodoriTtsYwk.Launcher/AppServices.cs` | **組み立ての 1 箇所**。実装席はここへ自分の実装を差す |
 | `IrodoriTtsYwk.Launcher/Views/MainWindow.xaml(.cs)` | **空の枠**（`MainTabs` に TabItem を足す） |
 | `IrodoriTtsYwk.Launcher/Contracts/` | 共有の型 9 群（下） |
@@ -360,7 +361,7 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 ```json
 { "runtimeLedgers":       { "rocm-gfx1151": "<ledger/runtime-rocm-gfx1151.json の sha256（小文字 hex 64 字）>",
                             "cu126":        "<ledger/runtime-cu126.json の sha256>" },
-  "installedAppVersions": { "rocm-gfx1151": "v1.0.2", "cu126": "v1.0.2" } }
+  "installedAppVersions": { "rocm-gfx1151": "v1.1.0", "cu126": "v1.1.0" } }
 ```
 
 **鍵は変種**（是正・便 D（3）の 3 巡目）。1 巡目は `runtimeLedgerSha256`／`installedAppVersion` の
@@ -447,3 +448,78 @@ dotnet test launcher -c Release --nologo    # 674 合格・1 skip（総数 675�
 ```
 
 **窓は立てていない**（UIA 実射なし＝走っている個体は止めない）。`installer-build.ps1` も走らせていない。
+
+## 13. ただの TTS エンジンにする（2026-09-10・裁定 124・126＝v1.1.0）
+
+司令官の評価（逐語・RTX 3090・ドライバ 537.58・v1.1.0 の前の版を清潔導入した後）＝
+「**このアプリは開発者向けではない。ただのTTSエンジンとしてvoiceroid2のような動作を期待している。
+アプリ終了でサーバーを落とし、VRAMを開放せよ。**」設計＝`docs/design/ben-d-launcher.md` §30。
+
+### 13-1 窓を閉じたらアプリが終わる（裁定 6 の反転）
+
+- `App.xaml` の `ShutdownMode` を **`OnLastWindowClose`** にし、`MainWindow.OnClosing` は
+  **取り消さない**（隠さない）＝鳴っている音を止め、見張りの購読を外して閉じる。
+- 終了の後始末は **`Services/Server/ShutdownSequence`**（WPF に触れない＝xUnit から撃てる）＝
+  `StopServerTree(server, 15 秒)` が **どの状態からでも** `StopAsync`（ツリー kill）を待ち切り、
+  `DisposeAsync` まで通してから返る。期限切れは理由 1 行を返して諦める（終われないアプリを作らない）。
+- **トレイは無くなった**＝`NotifyIcon`・トレイのメニュー（開く／サーバ起動／停止／終了）・
+  `ReleaseFlavors.TrayText`／`App.StateLabel` は消えた。`.csproj` の `UseWindowsForms` も落としてある
+  （WinForms を 1 行も使わない＝発行の 1 exe がその分小さくなる。**配布樹の外**なので A-1 は動かない）。
+  最小化は**タスクバー**へ。単一起動の錠と「2 個目の起動で 1 個目の窓を前に出す」合図はそのまま。
+- 本体（読み分けちゃん2）の一括起動は従来どおり引数なしでこの exe を起こしてよい（裁定 103）＝
+  窓が出たまま残り、閉じるのは利用者である。
+
+### 13-2 ドライバに合わない変種は選べない
+
+- **`Services/Gpu/VariantRecommendation`**（新設・純関数）＝`Recommend`（ドライバの帯から勧める変種）・
+  `IsBelowMinimum`（下限に届かない GPU 変種か）・`BlockReason`（断る 1 行）。下限の定義は
+  `DriverRequirement`（cu130 ≥ 580.00・cu126 ≥ 528.33）1 箇所のまま＝門（`VariantGate`）と同じ数字。
+- 初回取得ウィザードは窓が開いたところで **`RefreshDriverAsync`** を 1 度撃ち（`nvidia-smi` 経路）、
+  **まだ利用者が選んでいなければ**勧める変種へ選び直す。下限に届かない変種を選んでいる間は
+  「この構成で取得を始める」が**押せない**（`CanGoNext`）＝理由 1 行が変種の段に出る。
+- 設定頁の「適用」も同じ規則で断る（`SettingsViewModel.VariantBlockReason`）。
+  **`cpu` はいつでも選べる**・**ドライバの版が読めない機体では止めない**（読めなかったと名乗るだけ）。
+- **もう保存されている変種がドライバに合わないときは、断って終わらせず取得へ連れて行く**（裁定 126 ⑽）。
+  前の版（v1.0.2）で `cu130` のまま取得を通した機体には `settings.json` の `variant` と
+  その実行系が残るので、選ばせない規則だけでは直らない＝起動のたびに断られ続ける。
+  そこで `MainViewModel.StartServerAsync` は、GPU の列挙で読めたドライバの版が
+  保存された変種の下限に届かないとき（`VariantRecommendation.IsBelowMinimum`）、
+  **起こす前に**次の 4 つを出す。
+  1. サーバを起こさない。
+  2. 理由 1 行を状態帯とログ檔へ（`VariantRecommendation.StartRefusalReason`＝
+     「このドライバ（537.58）では CUDA 13.0 は動きません（下限 580.00）。CUDA 12.6 に切り替えて取得します。」）。
+  3. 状態帯に `取得が未了です。` と「取得へ進む」（§12-2 と同じ仕掛け＝`StatusViewModel.ApplyAcquisition`）。
+  4. **初回取得ウィザードをこの走行で 1 度だけ自動で開く**（`MainViewModel.WizardRequested` →
+     `MainWindow` が開く＝ViewModel は WPF に触れない）。開いたウィザードには理由が Trail に入り、
+     勧める変種が初期値に入る（`FirstRunViewModel.Preselect`）。**選び直す口は開いたまま**＝
+     利用者が自分で選べばそちらが正本になる（裁定 4）。取得が終われば普通の路
+     （実行系を取り寄せ、モデルは在るので飛ばし、「起動の確認」）へ続く。
+  - **この扱いは下限未満の 1 つだけ**＝GPU が見つからない・検分が読めないといった門の断りは
+    今まで通り理由 1 行で終わり、ウィザードは開かない。**ドライバの版が読めない機体も今まで通り**。
+  - **取得を始めずにウィザードを閉じても「取得へ進む」は消えない**＝閉じた後の見直しが見るのは
+    檔（`AcquisitionCheck`）だけで、そこにはドライバが写らない（この機体では実行系もモデルも
+    「揃っている」）。断ったドライバの版を覚えておき、変種が下限未満のままの間は状態帯の 1 手を
+    出し続ける。変種を替えて取得を通せば自分で消える。
+  - **ウィザードは渡されたドライバの版を捨てない**＝ウィザード自身の検分は `nvidia-smi` の 1 本
+    だけなので、落ちた回・期限切れの回に版を失うと勧める変種が断られた方へ戻ってしまう。
+    自分が読めなかった回だけ主窓の版を使う（読めた回はそちらが新しい）。
+
+### 13-3 ログ檔・`voices.json`・GPU の焼き付け
+
+- **ログ檔**＝状態帯に出た 1 行**と初回取得ウィザードの 1 行**は `<データ樹>\logs\launcher-<yyyyMMdd>.log`（UTF-8・日ごとに 1 檔・
+  `HH:mm:ss 本文`）にも落ちる（`Services/Logging/LauncherLogFile`＝1 行ごとに開いて足して閉じる・
+  **IO の失敗は投げない**）。継ぎ目は `StatusViewModel.LogSink` と `FirstRunViewModel.LogSink` の 2 つで、
+  差さっていなければ檔には残らない（ウィザード側は清潔導入で詰まる回＝状態帯を 1 度も通らない回のために在る）。
+- **`voices.json` は起動のたびに書く**（`LauncherComposition.PrepareVoices`）＝サーバを止めている間に
+  台帳を直した回も別名表に届く。書き手は既に在る檔を読み直して `ref_latent` を残す（契約 ⑷ 4-3）。
+- **GPU の焼き付け**＝GPU 変種の起動が通った回に、設定に `gpuUuid` が無ければ解決した個体を
+  `SettingsDefaults.ApplyGpu` で焼いて保存する（既に選んである設定は上書きしない）。
+
+### 13-4 検分（この機体・2026-09-10）
+
+```powershell
+dotnet test launcher -c Release --nologo    # 743 合格・1 skip（総数 744。裁定 126＝新設 45 本＋是正 14 本＋⑽ の 12 本）
+```
+
+**窓は立てていない**（UIA 実射なし）。`installer-build.ps1` も走らせていない＝
+VRAM が実際に返ることは**プロセスを殺す意味**でしか確かめていない（実機の実射は未了）。

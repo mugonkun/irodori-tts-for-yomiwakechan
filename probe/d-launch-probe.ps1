@@ -1034,6 +1034,23 @@ function Invoke-WizardPressProbe {
         Write-Host ('[wizard] picked = ' + $picked)
 
         # press 4 -- "start fetching with this build"
+        # decisions 126 (B): a variant whose driver minimum is not met CANNOT start the fetch --
+        # the button is disabled and the variant step carries a one line reason. Invoke-ButtonById
+        # throws on a disabled control, so an unattended run with -Variant cu130 on a 537.58 seat
+        # would die here instead of measuring. Record the refusal as the expected outcome.
+        $blockText = Get-TextById -Root $wizard -Id 'FirstRunVariantBlockText' -TimeoutSeconds 2
+        $nextEl = Find-ById -Root $wizard -Id 'FirstRunNextButton' -TimeoutSeconds 15
+        $nextEnabled = $false
+        if ($null -ne $nextEl) { $nextEnabled = [bool]$nextEl.Current.IsEnabled }
+        if (-not $nextEnabled) {
+            Write-Host ('[wizard] refused = ' + $blockText)
+            # The reason has to name the driver version (digits.digits) and a variant to pick.
+            $reasonOk = ($null -ne $blockText) -and ($blockText -match '\d+\.\d+') -and
+                ($blockText -match 'CUDA|CPU|Radeon')
+            Add-Step 'a variant below the driver minimum cannot start the fetch' $reasonOk (
+                'picked=' + $picked + ' reason=' + $blockText)
+            return
+        }
         $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'start fetching with this build'
 
         if ($FullRun) {

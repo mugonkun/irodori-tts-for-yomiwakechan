@@ -175,8 +175,15 @@ $SizeExemptExeName = 'IrodoriTtsYwk.Launcher.exe'
 # +/-5 % of that mean is 80,743,771-89,243,115 B, so the band below (77.0-85.0 MiB) is that band
 # rounded to whole MiB. It is the last net that stops an empty setup (the .iss seat measured
 # 2,096,479 B for one) from being shipped.
-$SetupMinBytes = [int64]80740352   # 77.0 MiB
-$SetupMaxBytes = [int64]89128960   # 85.0 MiB
+# Re-based 2026-09-10 (v1.1.0, decisions.md 126): the launcher dropped UseWindowsForms with the tray
+# (decision 124), so the self-contained exe went 69,641,096 -> 61,743,055 B and the first v1.1.0
+# run measured cuda 75,475,640 B / radeon 75,490,540 B (71.98 / 71.99 MiB) -- 5.3 MiB below the old
+# floor, so B-2 stopped both setups. +/-5 % of that mean (75,483,090 B) is 71,708,936-79,257,245 B;
+# the band below (68.0-76.0 MiB) is that band rounded to whole MiB. The old band was 77.0-85.0 MiB
+# (80,740,352-89,128,960 B) and is kept here only as history.
+$SetupMinBytes = [int64]71303168   # 68.0 MiB
+$SetupMaxBytes = [int64]79691776   # 76.0 MiB
+$SetupBandLabel = '68.0-76.0 MiB'
 
 # Ledgers. The .iss names them one by one per flavour (it cannot use a wildcard: a rocm ledger in a
 # CUDA install makes ReleaseFlavor.cs:32-34 report "Radeon" and cu130/cu126 vanish from the UI).
@@ -438,7 +445,7 @@ if ($versionHits.Count -ne 1) {
         ' AppDisplayVersion tags (expected exactly 1 -- the version has one definition).')
 }
 $appVersion = $versionHits[0].Matches[0].Groups[1].Value
-# The trap: AppDisplayVersion is 'v1.0.2' (Directory.Build.props:31). [Setup] AppVersion= and
+# The trap: AppDisplayVersion is 'v1.1.0' (Directory.Build.props:31). [Setup] AppVersion= and
 # VersionInfoVersion= take digits only, so the .iss is handed BOTH forms as separate /D switches.
 $appVersionNumeric = $appVersion.TrimStart('v')
 Write-YwkLog -Message ('AppVersion = ' + $appVersion + ' / AppVersionNumeric = ' + $appVersionNumeric)
@@ -865,7 +872,7 @@ if (Test-Path -LiteralPath $setupPath) {
 }
 $b2ok = (($setupBytes -ge $SetupMinBytes) -and ($setupBytes -le $SetupMaxBytes))
 $b2detail = $setupName + ' = ' + $setupBytes + ' B (' + [math]::Round($setupBytes / 1MB, 2) +
-    ' MiB); band ' + $SetupMinBytes + '-' + $SetupMaxBytes + ' B (77.0-85.0 MiB)'
+    ' MiB); band ' + $SetupMinBytes + '-' + $SetupMaxBytes + ' B (' + $SetupBandLabel + ')'
 Add-YwkGateResult -FlavorName $fl -Id 'B-2' -Title 'the setup is inside the measured size band' -Ok $b2ok -Detail $b2detail
 
 # ------------------------------------------------------------------ GATE B-3: sha256

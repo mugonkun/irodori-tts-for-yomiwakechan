@@ -189,31 +189,9 @@ public sealed class ReleaseFlavorTests
         Assert.Equal("初回取得（ROCm 版）", ReleaseFlavors.WizardTitle(ReleaseFlavor.Radeon));
     }
 
-    [Fact]
-    public void トレイの吹き出しは版を名乗る()
-    {
-        Assert.Equal(
-            "irodori-TTS（ROCm 版） v0.1.0／待機",
-            ReleaseFlavors.TrayText(ReleaseFlavor.Radeon, "v0.1.0", App.StateLabel(ServerState.Ready)));
-        Assert.Equal(
-            "irodori-TTS（CUDA 版） v0.1.0／待機",
-            ReleaseFlavors.TrayText(ReleaseFlavor.Cuda, "v0.1.0", App.StateLabel(ServerState.Ready)));
-    }
-
-    [Fact]
-    public void トレイの吹き出しはどの状態でも63字を超えない()
-    {
-        // Win32 の NotifyIcon.szTip は 63 字まで（App.xaml.cs:UpdateTray の注釈）。
-        // 組み立てはアプリと同じ純関数を通す＝ここが通れば実機でも切られない。
-        foreach (var flavor in new[] { ReleaseFlavor.Cuda, ReleaseFlavor.Radeon })
-        {
-            foreach (var state in Enum.GetValues<ServerState>())
-            {
-                var text = ReleaseFlavors.TrayText(flavor, AppVersion.Display, App.StateLabel(state));
-                Assert.True(text.Length <= 63, text + " = " + text.Length + " 字");
-            }
-        }
-    }
+    // トレイの吹き出しの 2 本（`TrayText` の版の名札と 63 字の枠）は裁定 124 で消えた＝
+    // 常駐しないので NotifyIcon が無い（App.xaml.cs から丸ごと落ちた）。
+    // 窓題の名札は上の 2 本（AppTitle／WizardTitle）が引き続き釘付けする。
 
     [Fact]
     public void 樹が読めなくてもDetectFromは投げずCUDA版と読む()

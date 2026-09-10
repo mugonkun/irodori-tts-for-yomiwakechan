@@ -57,7 +57,7 @@
 
 ```json
 {"engine":"irodori-ywk",
- "version":"1.0.2",
+ "version":"1.1.0",
  "variant":"cuda|cpu|rocm-gfx1151",
  "upstream":{"irodori_tts":"8224daf","server":"841fb7c"},
  "host":"127.0.0.1","port":18088,
@@ -76,7 +76,7 @@
 本体が読むのは太字の 6 つだけでよい：
 
 - **`engine`**＝`"irodori-ywk"`（`ywk_params.ENGINE`）。**これが配布版の名乗り**。
-- **`version`**＝配布版の版（実装の `YWK_VERSION` は現在 **`"1.0.2"`**）。
+- **`version`**＝配布版の版（実装の `YWK_VERSION` は現在 **`"1.1.0"`**）。
 - **`upstream`**＝上流 pin（`{"irodori_tts":"8224daf","server":"841fb7c"}`）。
 - **`device.actual`**＝**モデル読込後に実測した値**（`next(model.parameters()).device`）。
   **設定値の echo ではない・未読込なら `null`**。`device.configured` の方が echo。
@@ -118,7 +118,7 @@
 3. **`pid` が変わったら「別個体になった」と読む**＝`pid` は毎回の `/ywk/status` に載る。
    **欄が無い個体（古い wrapper・上流の素の Server）とは突合しない**
    （`docs/design/ben-d-launcher.md` §20-5 ⑵「`pid` の突合は『欄が在るときだけ』」）。
-   本体は**プロセスの所有者ではない**（常駐と後始末はランチャ＝`decisions.md` 6・一括起動で起こすのは可＝103）ので、
+   本体は**プロセスの所有者ではない**（起こすのも後始末もランチャ＝`decisions.md` 6→124・一括起動で起こすのは可＝103）ので、
    exit code は取れない＝**pid の変化と接続断が本体に見える全部**である。
 
 ### 1-4 ready 待ち
@@ -158,7 +158,7 @@
 ### 2-2 応答の骨（**実装で確認した最上位 9 欄**）
 
 ```json
-{"schema": 1, "engine": "irodori-ywk", "version": "1.0.2", "model_loaded": false,
+{"schema": 1, "engine": "irodori-ywk", "version": "1.1.0", "model_loaded": false,
  "checkpoint": {"hf": "Aratako/Irodori-TTS-v4.1-Small",
                 "max_text_len": null, "max_caption_len": null, "ref_max_seconds": null},
  "request": { … 6 欄（下） … },
@@ -591,7 +591,7 @@ VOICEROID2 参照で **14.8 s**＝`decisions.md` 40）。**CUDA では同じ罰�
    **同時に動かしてよい**（`decisions.md` 2・`docs/acceptance.md` の追加行＝
    「配布版を起こした状態で 8088 の既存個体を起こし、両方の `/health` が 200 になること」）。
    **本体の 9 番目のアダプタ（`irodori`・8088 固定）はそのまま**で、配布版は**10 番目のエンジン**として別に建つ。
-5. **常駐と後始末はランチャ**（`decisions.md` 6）＝**本体の一括起動は引数なしで `IrodoriTtsYwk.Launcher.exe` を起こしてよい**（`decisions.md` 103・従来型 TTS と同じ扱い・`LaunchKind.ExePath`・終了時は放置）。本体はサーバのプロセスを持たない。
+5. **起こすのも後始末もランチャ**（`decisions.md` 6→**124＝常駐はやめた**・ランチャの窓を閉じるとサーバも落ちて VRAM が返る）＝**本体の一括起動は引数なしで `IrodoriTtsYwk.Launcher.exe` を起こしてよい**（`decisions.md` 103・従来型 TTS と同じ扱い・`LaunchKind.ExePath`・終了時は放置＝起こした窓はそのまま残る）。本体はサーバのプロセスを持たない。
    見つからなければ理由つき失敗で、**他エンジンの読み上げは無傷**（本体 §0-3 の掟 1・掟 2）。
 6. **上流の書き込み 3 口は外してある**＝本体が叩けば 404／405（§3-6）。
 7. **上流の機能は殺さない**（`decisions.md` 47）＝SSE の枠はそのまま通す。**本体は使わない**。

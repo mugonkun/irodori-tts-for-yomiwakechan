@@ -80,7 +80,7 @@ public sealed class FirstRunViewModel : ObservableObject
     private bool _lastStepOk = true;
     private bool _skipVcRedist;
 
-    /// <summary>ドライバの検分（裁定 125 の B）。既定＝まだ何も見ていない。</summary>
+    /// <summary>ドライバの検分（裁定 126 の B）。既定＝まだ何も見ていない。</summary>
     private DriverProbe _probe = DriverProbe.Unknown;
 
     /// <summary>利用者が変種を<b>自分で選んだ</b>か（真なら勧めで上書きしない）。</summary>
@@ -134,7 +134,7 @@ public sealed class FirstRunViewModel : ObservableObject
     }
 
     /// <summary>
-    /// <b>ドライバの検分の手</b>（裁定 125 の B）＝<c>nvidia-smi</c>／torch 列挙を 1 度撃って
+    /// <b>ドライバの検分の手</b>（裁定 126 の B）＝<c>nvidia-smi</c>／torch 列挙を 1 度撃って
     /// <see cref="DriverProbe"/> を返す。null＝撃たない（試験・列挙系が差さっていない配布）。
     /// <para>
     /// 窓が <see cref="RefreshDriverAsync"/> を呼ぶ。ここが <see cref="IGpuEnumerator"/> を
@@ -144,7 +144,7 @@ public sealed class FirstRunViewModel : ObservableObject
     public Func<CancellationToken, Task<DriverProbe>>? DriverProbeAsync { get; set; }
 
     /// <summary>
-    /// ドライバを見て、<b>勧める変種を選び直す</b>（裁定 125 の B）。
+    /// ドライバを見て、<b>勧める変種を選び直す</b>（裁定 126 の B）。
     /// <para>
     /// <b>投げない</b>＝列挙が落ちても「判らない」（<see cref="DriverProbe.Unknown"/> のまま）で進む。
     /// <b>利用者が既に自分で選んでいれば上書きしない</b>（裁定 4＝自動切替はしない。勧めるのは
@@ -157,6 +157,9 @@ public sealed class FirstRunViewModel : ObservableObject
         {
             return;
         }
+
+        // 主窓が渡した版（裁定 126 ⑽の Preselect）。こちらが読めなかった回に残す。
+        var seeded = _probe.DriverVersion;
 
         try
         {
@@ -171,6 +174,17 @@ public sealed class FirstRunViewModel : ObservableObject
 #pragma warning restore CA1031
         {
             _probe = DriverProbe.Unknown;
+        }
+
+        // **渡された版を捨てない**（裁定 126 ⑽・是正・検分）＝ここの検分は主窓のより弱い
+        // （実行系がまだ無い変種の python.exe しか渡せないので nvidia-smi の 1 本だけ）。
+        // 期限切れ・nvidia-smi の一時の失敗で版が消えると <see cref="VariantRecommendation.Recommend"/>
+        // は「判らない」に落ちて<b>並びの先頭＝断られた変種</b>を勧め直し、Trail の
+        // 「CUDA 12.6 に切り替えて取得します。」と選びが食い違う（＝また数 GB 落として、
+        // 次の起動でまた断られる）。**新しく読めた回はそちらが勝つ**＝上書きはしない。
+        if (string.IsNullOrWhiteSpace(_probe.DriverVersion) && !string.IsNullOrWhiteSpace(seeded))
+        {
+            _probe = _probe with { DriverVersion = seeded };
         }
 
         if (!_variantChosen)
@@ -309,14 +323,14 @@ public sealed class FirstRunViewModel : ObservableObject
                 return;
             }
 
-            // 利用者が自分で選んだ＝以後は勧めで上書きしない（裁定 4・125 の B）。
+            // 利用者が自分で選んだ＝以後は勧めで上書きしない（裁定 4・126 の B）。
             _variantChosen = true;
             UpdateVariantNotes();
         }
     }
 
     /// <summary>
-    /// <b>いま選んでいる変種はこのドライバでは動かない</b>（裁定 125 の B）＝
+    /// <b>いま選んでいる変種はこのドライバでは動かない</b>（裁定 126 の B）＝
     /// 真の間は「この構成で取得を始める」を押せない（<see cref="CanGoNext"/>）。
     /// <c>cpu</c> はいつでも偽（GPU を見ない）。ドライバの版が読めない機体も偽＝止めない。
     /// </summary>
@@ -352,10 +366,21 @@ public sealed class FirstRunViewModel : ObservableObject
         private set => SetProperty(ref _driverText, value);
     }
 
+    /// <summary>
+    /// いま画面に出ている 1 行。<b>変わった行はそのまま檔へも落ちる</b>
+    /// （裁定 126 の C（1）＝<see cref="LogSink"/>）。<see cref="Record"/> もここを通る。
+    /// 進捗（<see cref="ProgressText"/>）は 1 秒に何度も動くので落とさない。
+    /// </summary>
     public string Message
     {
         get => _message;
-        private set => SetProperty(ref _message, value);
+        private set
+        {
+            if (SetProperty(ref _message, value))
+            {
+                Log(value);
+            }
+        }
     }
 
     /// <summary>取得の進捗の 1 行（bytes／ETA＝受け入れ条件 D-5）。</summary>
@@ -403,6 +428,15 @@ public sealed class FirstRunViewModel : ObservableObject
     /// </summary>
     public async Task NextAsync()
     {
+        // **変種の門は何より先に見る**（是正・検分）＝下の「失敗した段をやり直す」枝は
+        // `AdvanceAsync(Step)` へ直に入るので、変種の段で `NextCommand.Faulted` が立った状態
+        // （例＝`_store.Save` が投げた）だと、下限未満の変種のまま取得へ抜けられた。
+        if (Step is FirstRunStep.Variant && VariantBlockReason is string blockedFirst)
+        {
+            Message = blockedFirst;
+            return;
+        }
+
         // 失敗した段は、同じ段からもう 1 度走らせる（通れば続きも自動で進む）。
         if (!_lastStepOk)
         {
@@ -425,13 +459,7 @@ public sealed class FirstRunViewModel : ObservableObject
                 break;
 
             case FirstRunStep.Variant:
-                // 押せないはずだが、束縛の外（試験・台本）から呼ばれても通さない（裁定 125 の B）。
-                if (VariantBlockReason is string blocked)
-                {
-                    Message = blocked;
-                    return;
-                }
-
+                // 門はこの手の頭でもう見た（束縛の外＝試験・台本から呼ばれても通さない＝裁定 126 の B）。
                 _settings.Variant = _variant;
                 _store.Save(_settings);
                 Record("変種＝" + RuntimeVariants.DisplayName(_variant) + " を選びました。");
@@ -569,7 +597,7 @@ public sealed class FirstRunViewModel : ObservableObject
     /// 「次へ」を押せるか。
     /// <para>
     /// 通知の段＝同意の印と、読めた通知文の sha256 が要る（裁定 46）。
-    /// <b>変種の段＝下限に届かないドライバの GPU 変種は押せない</b>（裁定 125 の B）＝
+    /// <b>変種の段＝下限に届かないドライバの GPU 変種は押せない</b>（裁定 126 の B）＝
     /// 数 GB 落としてから <see cref="Services.Gpu.VariantGate"/> に断られる形を作らない。
     /// </para>
     /// </summary>
@@ -578,10 +606,41 @@ public sealed class FirstRunViewModel : ObservableObject
         && (Step is not FirstRunStep.Notices || (Accepted && CanAcceptNotices))
         && (Step is not FirstRunStep.Variant || !VariantBlocked);
 
+    /// <summary>
+    /// <b>ウィザードの 1 行を檔にも残す口</b>（裁定 126 の C（1）・是正・検分）。
+    /// <para>
+    /// <b>なぜ要るか</b>＝切符の元になった実射は<b>清潔導入</b>で、そこで詰まる回（取得・展開・
+    /// モデル）は主窓の状態帯を 1 度も通らない＝<c>StatusViewModel.LogSink</c> だけを差した形では
+    /// <c>logs\</c> が<b>まさにその場合に空のまま</b>だった。ここも同じ檔へ落とす。
+    /// null＝檔には残さない（試験の既定）。<b>投げても止めない</b>（下で包む）。
+    /// </para>
+    /// </summary>
+    public Action<string>? LogSink { get; set; }
+
     private void Record(string line)
     {
         Trail.Add(line);
         Message = line;
+    }
+
+    /// <summary>檔に 1 行落とす（<b>ウィザードを止めない</b>＝IO の失敗は握り潰す）。</summary>
+    private void Log(string? line)
+    {
+        if (LogSink is not { } sink || string.IsNullOrWhiteSpace(line))
+        {
+            return;
+        }
+
+        try
+        {
+            sink(line);
+        }
+#pragma warning disable CA1031 // ログが書けないことでウィザードを止めない
+        catch (Exception)
+#pragma warning restore CA1031
+        {
+            // 画面には出ている（Trail／Message は上で足し終えている）
+        }
     }
 
     /// <summary>
@@ -598,6 +657,38 @@ public sealed class FirstRunViewModel : ObservableObject
         {
             Record(line.Trim());
         }
+    }
+
+    /// <summary>
+    /// <b>主窓が自動で開いた回の初期値を入れる</b>（裁定 126 ⑽）＝勧める変種と、
+    /// 主窓の列挙が読んだドライバの版。
+    /// <para>
+    /// <b>「利用者が選んだ」ことにはしない</b>（<c>_variantChosen</c> は立てない）＝
+    /// 窓が続けて撃つ <see cref="RefreshDriverAsync"/> の結果で勧め直せる。どちらも
+    /// <see cref="VariantRecommendation.Recommend"/> の同じ判断なので<b>食い違わない</b>。
+    /// 利用者が自分で選び直せば（<see cref="Variant"/> の setter）そちらが正本になる。
+    /// </para>
+    /// <para>
+    /// ドライバの版は<b>まだ読めていないときだけ</b>入れる＝この画面自身の検分が
+    /// 済んでいれば、そちらの方が新しい。
+    /// </para>
+    /// </summary>
+    /// <param name="variant">初期値にする変種（一覧に無い名は無視する）。</param>
+    /// <param name="driverVersion">主窓の列挙が読んだドライバの版（null＝渡さない）。</param>
+    public void Preselect(string? variant, string? driverVersion = null)
+    {
+        if (!string.IsNullOrWhiteSpace(driverVersion) && string.IsNullOrWhiteSpace(_probe.DriverVersion))
+        {
+            _probe = new DriverProbe(driverVersion.Trim(), GpuCount: 1, Probed: true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(variant)
+            && VariantChoices.Contains(variant, StringComparer.Ordinal))
+        {
+            SetProperty(ref _variant, variant, nameof(Variant));
+        }
+
+        UpdateVariantNotes();
     }
 
     private void LoadNotices()
@@ -640,12 +731,14 @@ public sealed class FirstRunViewModel : ObservableObject
         RaisePropertyChanged(nameof(VariantBlockReason));
         NextCommand.RaiseCanExecuteChanged();
 
-        // ドライバの版は**検分で読めた物**を渡す（裁定 125 の B）。1 巡目はここが常に null で、
+        // ドライバの版は**検分で読めた物**を渡す（裁定 126 の B）。1 巡目はここが常に null で、
         // 検査は「読めませんでした」しか言えず、下限に届かない変種でも「始める」が押せた
         // （司令官の実射＝RTX 3090・537.58・cu130 のまま取得が最後まで通り、起動で門に断られた）。
+        // 検分の 1 行は**結果ごとに言い分ける**（是正・検分）＝見た上で 0 台なら「CPU を選んでいる」、
+        // 列挙が落ちた回は「読めなかった」＋**列挙が返した理由**（捨てない）。
         var verdict = _driverCheck.Check(_variant, _probe.DriverVersion);
-        DriverText = _probe.DriverVersion is null && _probe.Probed
-            ? verdict.Message + " " + VariantRecommendation.UnknownDriverNote
+        DriverText = VariantRecommendation.ProbeNote(_probe) is string note
+            ? verdict.Message + " " + note
             : verdict.Message;
 
         // 「必要な空き」は**実際の空きと突き合わせて**から出す（是正・便 D（3）の 3 巡目）。

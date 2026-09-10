@@ -40,6 +40,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string _driverText = UiText.Missing;
     private string _gpuMessage = string.Empty;
     private GpuInfo? _selectedGpu;
+    private string? _knownDriverVersion;
     private bool _dirty;
     private int _cacheFiles;
     private long _cacheBytes;
@@ -185,15 +186,44 @@ public sealed class SettingsViewModel : ObservableObject
     public string VariantDisplayName => RuntimeVariants.DisplayName(_draft.Variant);
 
     /// <summary>
-    /// <b>いま選んでいる変種はこのドライバでは動かない</b>（裁定 125 の B）＝
-    /// 真の間は「適用」が断る（<see cref="Apply"/>）。ドライバの版は<b>選んでいる GPU</b>から読む
-    /// （<c>nvidia-smi</c> 経路でだけ埋まる＝AMD 機・未列挙では読めず、読めなければ止めない）。
+    /// <b>いま選んでいる変種はこのドライバでは動かない</b>（裁定 126 の B）＝
+    /// 真の間は「適用」が断る（<see cref="Apply"/>）。ドライバの版は<b>選んでいる GPU</b>＝
+    /// 「数え直す」を押した回の値、押していなければ<see cref="KnownDriverVersion"/>＝
+    /// ウィザードの検分と起動時の列挙で読めた値から読む（<c>nvidia-smi</c> 経路でだけ埋まる＝
+    /// AMD 機では読めず、<b>読めなければ止めない</b>）。
     /// </summary>
     public bool VariantBlocked => VariantBlockReason is not null;
 
     /// <summary>断る理由の 1 行（通るなら null）。</summary>
     public string? VariantBlockReason => VariantRecommendation.BlockReason(
-        VariantChoices, _draft.Variant, _selectedGpu?.DriverVersion);
+        VariantChoices, _draft.Variant, _selectedGpu?.DriverVersion ?? KnownDriverVersion);
+
+    /// <summary>
+    /// <b>ランチャが既に知っているドライバの版</b>（<see cref="MainViewModel"/> が差す・
+    /// 読めていなければ null）。
+    /// <para>
+    /// <b>なぜ要るか</b>（是正・検分）＝<see cref="Gpus"/>／<see cref="SelectedGpu"/> は
+    /// 「数え直す」の釦を押した回にしか埋まらない。つまり<b>設定頁を開いただけの利用者には
+    /// ドライバが 1 度も読まれず</b>、下限未満の変種（司令官の機体なら 537.58 の cu130）が
+    /// そのまま「適用」できてしまい、次の「サーバ起動」で門に断られる＝裁定 126 の B が
+    /// 塞いだはずの行き止まりが設定頁に残っていた。ウィザードの検分と起動時の列挙で読めた版を
+    /// ここへ渡し、選んだ GPU が在ればそちらを優先する。
+    /// </para>
+    /// </summary>
+    public string? KnownDriverVersion
+    {
+        get => _knownDriverVersion;
+        set
+        {
+            if (string.Equals(_knownDriverVersion, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _knownDriverVersion = value;
+            UpdateDriverText();
+        }
+    }
 
     /// <summary>精度を触らせるか（Radeon 版は bf16 固定＝裁定 5・36）。</summary>
     public bool PrecisionEnabled => RuntimeVariants.AllowsPrecisionOverride(_draft.Variant);
@@ -571,7 +601,7 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
-        // **下限に届かない GPU 変種は書かせない**（裁定 125 の B）。書けてしまうと、次の
+        // **下限に届かない GPU 変種は書かせない**（裁定 126 の B）。書けてしまうと、次の
         // 「サーバ起動」で門（VariantGate）が断るだけの設定が settings.json に残る
         // （司令官の実射＝ドライバ 537.58 の機体に cu130 が刺さったまま）。cpu はいつでも通る。
         if (VariantBlockReason is string blocked)
@@ -654,7 +684,8 @@ public sealed class SettingsViewModel : ObservableObject
         RaisePropertyChanged(nameof(VariantBlocked));
         RaisePropertyChanged(nameof(VariantBlockReason));
 
-        var driver = _selectedGpu?.DriverVersion;
+        // 選んだ GPU が在ればその版・無ければランチャが既に読めている版（是正・検分）。
+        var driver = _selectedGpu?.DriverVersion ?? KnownDriverVersion;
         var verdict = _driverCheck.Check(_draft.Variant, driver);
         DriverText = verdict.Message
             + (verdict.SuggestedVariant is null

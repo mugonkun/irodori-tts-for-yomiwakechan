@@ -16,6 +16,18 @@ using IrodoriTtsYwk.Launcher.Services.Server;
 namespace IrodoriTtsYwk.Launcher.ViewModels;
 
 /// <summary>
+/// <b>初回取得ウィザードを自動で開いてほしい</b>という求め（裁定 126 ⑽・
+/// <see cref="MainViewModel.WizardRequested"/> の引数）。
+/// <para>
+/// 窓はこの 3 つを受けて開くだけで、<b>判断も文言も ViewModel の側に在る</b>。
+/// </para>
+/// </summary>
+/// <param name="Notice">なぜ勝手に開いたかの 1 行（ウィザードの Trail の先頭に置く）。</param>
+/// <param name="Variant">初期値にする変種（ウィザードの一覧から選んだ勧め）。</param>
+/// <param name="DriverVersion">その判断に使ったドライバの版（読めていなければ null）。</param>
+public sealed record FirstRunRequest(string Notice, string Variant, string? DriverVersion);
+
+/// <summary>
 /// 5 つの画面を 1 つに束ねる（<b>組み立てはここ 1 箇所</b>）。
 /// <para>
 /// 各画面は互いを知らない。話者一覧が変われば試し撃ちの候補と状態帯の概算メモリが変わる、
@@ -47,6 +59,29 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>「実行系を組み直す」の取消（走っていなければ null）。</summary>
     private CancellationTokenSource? _rebuildCancel;
+
+    /// <summary>
+    /// ウィザードの求め（<see cref="WizardRequested"/>）を<b>もう上げたか</b>（裁定 126 ⑽）。
+    /// 1 走行に 1 度だけ＝「サーバ起動」を押し直しても 2 枚目は開かない。
+    /// </summary>
+    private bool _wizardRequested;
+
+    /// <summary>
+    /// <b>下限に届かないと断ったときのドライバの版</b>（裁定 126 ⑽・是正・検分）。
+    /// <para>
+    /// <b>要る理由</b>＝断った回のウィザードを<b>取得を始めずに閉じた</b>利用者では、
+    /// 檔の検分（<see cref="AcquisitionCheck"/>）は「揃っている」と答える
+    /// （<c>runtime\cu130</c> もモデルも在る＝檔はドライバを知らない）。そのまま
+    /// <see cref="StatusViewModel.ApplyAcquisition"/> に偽を渡すと、帯には
+    /// 「CUDA 12.6 に切り替えて取得します。」の 1 行だけが残り、<b>「取得へ進む」が消える</b>＝
+    /// ウィザードも 2 枚目は開かないので、⑽ が無くそうとした袋小路がそのまま戻る。
+    /// </para>
+    /// <para>
+    /// <b>自分で消える</b>＝ウィザードが cu126（ないし cpu）を保存すれば
+    /// <see cref="VariantRecommendation.IsBelowMinimum"/> が偽になり、帯は黙る。
+    /// </para>
+    /// </summary>
+    private string? _refusedDriverVersion;
 
     /// <param name="paths">場所（導入先と利用者データ）。</param>
     /// <param name="settings">いまの設定（<b>この個体を全画面で共有する</b>）。</param>
@@ -83,7 +118,7 @@ public sealed class MainViewModel : ObservableObject
             RebuildRuntimeAsync,
             CancelRebuildRuntime);
 
-        // **画面に出た 1 行を檔にも残す**（裁定 125 の C（1））＝<データ樹>\logs\launcher-<日>.log。
+        // **画面に出た 1 行を檔にも残す**（裁定 126 の C（1））＝<データ樹>\logs\launcher-<日>.log。
         // 司令官の実射（v1.0.2 の清潔導入）では logs\ が空のままで、失敗の理由を後から読む路が
         // 1 本も無かった。書き手は投げない（LauncherLogFile が握り潰す）。
         LogFile = new LauncherLogFile(paths.LogDir);
@@ -155,7 +190,7 @@ public sealed class MainViewModel : ObservableObject
 
     public StatusViewModel Status { get; }
 
-    /// <summary>状態帯の 1 行を落とす檔（裁定 125 の C（1））。路は <c>AppPaths.LogDir</c> の下。</summary>
+    /// <summary>状態帯の 1 行を落とす檔（裁定 126 の C（1））。路は <c>AppPaths.LogDir</c> の下。</summary>
     public LauncherLogFile LogFile { get; }
 
     public VoicesViewModel Voices { get; }
@@ -183,6 +218,13 @@ public sealed class MainViewModel : ObservableObject
     public string AcquisitionSummary { get; private set; } = string.Empty;
 
     /// <summary>
+    /// <b>ウィザードを自動で開いてほしい</b>（裁定 126 ⑽）。窓だけが開けるので、
+    /// ViewModel は求めを上げるだけである（<b>WPF の型に触れない</b>＝§12-2 ⑴）。
+    /// この 1 走行で<b>1 度しか上がらない</b>（「サーバ起動」を押し直しても増えない）。
+    /// </summary>
+    public event EventHandler<FirstRunRequest>? WizardRequested;
+
+    /// <summary>
     /// ウィザードを自動で出すときに Trail とログへ残す 1 行（<b>純関数</b>）。
     /// </summary>
     public static string AcquisitionNotice(string summary) =>
@@ -205,7 +247,13 @@ public sealed class MainViewModel : ObservableObject
         AcquisitionSummary = state.Summary;
 
         // ウィザードを出さずに閉じた回でも帯に 1 手が残る（失敗を待たない）。
-        Status.ApplyAcquisition(NeedsAcquisition);
+        // **檔が揃っていても、下限に届かない変種で断った機体では 1 手を残す**（裁定 126 ⑽・是正・
+        // 検分）＝取得を始めずにウィザードを閉じた回に「取得へ進む」が消えないようにする。
+        // 広げるのは<b>帯だけ</b>で <see cref="NeedsAcquisition"/> は据え置く＝窓はそちらを見て
+        // 裁定 121 の別の註でウィザードを開くので、そこに混ぜると文言が食い違う。
+        Status.ApplyAcquisition(
+            NeedsAcquisition
+            || VariantRecommendation.IsBelowMinimum(_settings.Variant, _refusedDriverVersion));
     }
 
     /// <summary>
@@ -229,7 +277,12 @@ public sealed class MainViewModel : ObservableObject
             static () => AppServices.RuntimeInstaller,
             StartServerAsync);
 
-        // **ドライバを見てから変種を勧める**（裁定 125 の B）＝窓が RefreshDriverAsync を呼ぶ。
+        // **ウィザードの行も同じ檔へ落とす**（裁定 126 の C（1）・是正・検分）＝切符の元は
+        // 清潔導入で、そこで詰まる回（取得・展開・モデル）は状態帯を 1 度も通らない＝
+        // StatusViewModel.LogSink だけでは logs\ がまさにその場合に空のままだった。
+        vm.LogSink = LogFile.Append;
+
+        // **ドライバを見てから変種を勧める**（裁定 126 の B）＝窓が RefreshDriverAsync を呼ぶ。
         // 初回取得の時点では実行系がまだ無いので、読めるのは nvidia-smi 経路（＝NVIDIA 機の
         // driver_version）だけである。AMD 機・nvidia-smi の無い機体では「読めなかった」に落ち、
         // 止めずに 1 行だけ名乗る。
@@ -248,8 +301,12 @@ public sealed class MainViewModel : ObservableObject
                     cts.Token)
                 .ConfigureAwait(true);
 
-            return new DriverProbe(
-                GpuEnumerator.DriverVersionOf(gpus.Gpus), gpus.Gpus.Count, Probed: true);
+            // **列挙が返した理由も渡す**（是正・検分）＝「0 台」には「本当に無い」と
+            // 「nvidia-smi が無い・落ちた・期限切れ」が混ざる。理由つきの 0 台を「GPU 無し」と
+            // 読むと NVIDIA の機体に CPU 版を勧めてしまう（VariantRecommendation.Recommend）。
+            var driver = GpuEnumerator.DriverVersionOf(gpus.Gpus);
+            Settings.KnownDriverVersion = driver ?? Settings.KnownDriverVersion;
+            return new DriverProbe(driver, gpus.Gpus.Count, Probed: true, gpus.FailureReason);
         };
 
         // モデル＝変種の python.exe で server/ywk_fetch_models.py を子プロセス実行する
@@ -392,7 +449,7 @@ public sealed class MainViewModel : ObservableObject
         // 1 つも無く、ドライバ 500.00 でも通っていた）。だから 3 つとも載せる。
         string? driverVersion = null;
 
-        // **この起動で実際に使う GPU**（裁定 125 の C（3）＝settings に UUID が無ければ焼く）。
+        // **この起動で実際に使う GPU**（裁定 126 の C（3）＝settings に UUID が無ければ焼く）。
         GpuInfo? resolvedGpu = null;
 
         if (RuntimeVariants.UsesGpu(_settings.Variant) && AppServices.GpuEnumerator is { } enumerator)
@@ -406,6 +463,12 @@ public sealed class MainViewModel : ObservableObject
                     .ConfigureAwait(true);
 
                 driverVersion = GpuEnumerator.DriverVersionOf(gpus.Gpus);
+
+                // **設定頁にもドライバの版を渡す**（裁定 126 の B・是正・検分）＝設定頁は
+                // 「数え直す」を押すまで GPU を 1 台も持たないので、押さない利用者には
+                // 下限未満の変種が素通りで「適用」できた（＝次の起動を門が断る形が残った）。
+                Settings.KnownDriverVersion = driverVersion ?? Settings.KnownDriverVersion;
+
                 gpuIndex = GpuResolver.ResolveIndex(gpus.Gpus, _settings.GpuUuid);
 
                 // 焼くのは「いま解決した個体」＝保存した UUID が居ればそれ、
@@ -447,6 +510,12 @@ public sealed class MainViewModel : ObservableObject
         if (cancellationToken.IsCancellationRequested)
         {
             Status.AppendLog("起動を中止しました。");
+            return false;
+        }
+
+        // **下限に届かない変種で保存されている機体を、失敗の理由だけで放り出さない**（裁定 126 ⑽）。
+        if (RefuseBelowMinimumVariant(driverVersion))
+        {
             return false;
         }
 
@@ -492,7 +561,62 @@ public sealed class MainViewModel : ObservableObject
     }
 
     /// <summary>
-    /// <b>起きた個体が実際に掴んだ GPU を設定へ焼く</b>（裁定 125 の C（3））。
+    /// <b>ドライバの下限に届かない変種は起こさず、取得へ連れて行く</b>（裁定 126 ⑽）。
+    /// <para>
+    /// <b>なぜ要るか</b>（実射・2026-09-10＝RTX 3090・ドライバ 537.58）＝v1.0.2 の頃に
+    /// <c>cu130</c> で取得を通した機体には <c>settings.json</c> に <c>variant=cu130</c> と
+    /// <c>runtime\cu130</c> だけが残る。v1.1.0（裁定 126 の B）はウィザードと設定頁で
+    /// 下限未満の変種を選ばせなくなったが、<b>もう保存されている</b>その値は誰も直さない＝
+    /// 利用者が見るのは「起こせません」の 1 行だけで、そこから設定→ cu126 →取得へ、を
+    /// 自分で見つけるほかなかった。<b>この製品は利用者を導く TTS の器</b>なので、
+    /// 断ると同時に⑴ 理由 1 行 ⑵ 帯の「取得が未了です。」＋「取得へ進む」
+    /// ⑶ ウィザードを 1 度だけ自動で開く求め（<see cref="WizardRequested"/>）を出す。
+    /// </para>
+    /// <para>
+    /// <b>この枝に落ちるのは下限未満の 1 つだけ</b>＝GPU が見つからない・検分が読めない等の
+    /// 門の断り（<see cref="Services.Gpu.VariantGate"/>）は今まで通り理由 1 行で終える。
+    /// ドライバの版が読めなかった機体も同じ＝<see cref="VariantRecommendation.IsBelowMinimum"/> は
+    /// 「読めない」を「駄目」の側に倒さない。
+    /// </para>
+    /// </summary>
+    /// <returns>真＝断った（呼ぶ側はここで起動をやめる）。</returns>
+    private bool RefuseBelowMinimumVariant(string? driverVersion)
+    {
+        if (!VariantRecommendation.IsBelowMinimum(_settings.Variant, driverVersion))
+        {
+            return false;
+        }
+
+        // 勧める先は**ウィザードが出す一覧と同じ物**から選ぶ（＝開いた先の初期値と食い違わない）。
+        var ledgerNames = ReleaseFlavors.LedgerNames(_paths.LedgerDir);
+        var choices = ReleaseFlavors.AvailableChoices(ReleaseFlavors.Detect(ledgerNames), ledgerNames);
+        var recommended = VariantRecommendation.Recommend(
+            choices, new DriverProbe(driverVersion, 1, Probed: true));
+
+        var reason = VariantRecommendation.StartRefusalReason(choices, _settings.Variant, driverVersion)
+            ?? string.Empty;
+
+        // 断った版を覚える＝ウィザードを取得せずに閉じても帯の 1 手を消さない（是正・検分）。
+        _refusedDriverVersion = driverVersion;
+
+        // ⑴⑵＝理由 1 行を状態帯とログ（LauncherLogFile）へ流し、状態機械を Failed にする。
+        FailBeforeStart(reason);
+
+        // ⑶＝帯の取得への 1 手（裁定 121 と同じ仕掛け）。理由は上の 1 行がそのまま出ている。
+        Status.ApplyAcquisition(true);
+
+        // ⑷＝ウィザードは**この起動で 1 度だけ**（押し直しで何枚も開かない）。
+        if (!_wizardRequested)
+        {
+            _wizardRequested = true;
+            WizardRequested?.Invoke(this, new FirstRunRequest(reason, recommended, driverVersion));
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// <b>起きた個体が実際に掴んだ GPU を設定へ焼く</b>（裁定 126 の C（3））。
     /// <para>
     /// <b>なぜ要るか</b>（司令官の実射・2026-09-10＝v1.0.2 の清潔導入）＝設定頁を 1 度も開かずに
     /// ウィザードだけで通した機体では <c>gpuUuid</c>／<c>gpuName</c> が <c>null</c> のまま残った。

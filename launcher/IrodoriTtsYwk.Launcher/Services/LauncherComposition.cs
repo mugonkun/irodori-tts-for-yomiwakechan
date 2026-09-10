@@ -114,7 +114,7 @@ public static class LauncherComposition
     /// ⑴ 旧い置き場（<c>voices_dir</c> 直下）に残っている参照 wav を <c>refs/</c> へ移す
     /// （是正・2026-09-05＝直下に置くと上流の走査が檔名の幹を話者 id にして同じ話者が一覧に 2 件出る）。
     /// ⑵ 初回だけプリセットを利用者データへ写す（配布樹は読むだけ）。
-    /// ⑶ <b>いまの台帳を <c>voices.json</c> に書く</b>（統合席 §19・裁定 78 ⑴・<b>毎回</b>＝裁定 125 の C（2））。
+    /// ⑶ <b>いまの台帳を <c>voices.json</c> に書く</b>（統合席 §19・裁定 78 ⑴・<b>毎回</b>＝裁定 126 の C（2））。
     /// ⑷ <b>改名の引き継ぎ</b>（裁定 108）＝配布側が <c>display_name</c>（＝話者 id）を変えた分を
     /// 利用者の台帳へ写す（<see cref="Voices.PresetVoices.MigrateRenamed"/>）。
     /// </para>
@@ -178,7 +178,7 @@ public static class LauncherComposition
         var copied = PresetVoices.InstallIfFirstRun(paths, store);
         added = PresetVoices.InstallNew(paths, store);
 
-        // **毎回書く**（裁定 125 の C（2））。1 巡目は「この回で何かが動いたか、檔が無いか」を
+        // **毎回書く**（裁定 126 の C（2））。1 巡目は「この回で何かが動いたか、檔が無いか」を
         // 条件にしていたので、**サーバを止めている間に台帳を直した回**（話者一覧の編集・
         // 手で戻した voices.ywk.json・別名表を消してしまった機体）が別名表に届かず、
         // 起こし直しても `GET /v1/audio/voices` には古い顔ぶれが出た。ここは起動の前

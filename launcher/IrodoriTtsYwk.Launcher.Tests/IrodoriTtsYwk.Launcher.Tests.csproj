@@ -5,9 +5,9 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <RootNamespace>IrodoriTtsYwk.Launcher.Tests</RootNamespace>
-    <!-- 参照先が WPF／WinForms のアセンブリなので、同じ土台を引く -->
+    <!-- 参照先が WPF のアセンブリなので、同じ土台を引く
+         （WinForms は裁定 126 の A でトレイごと落とした＝ここも引かない） -->
     <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <!--

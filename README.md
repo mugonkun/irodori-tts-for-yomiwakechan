@@ -9,19 +9,17 @@
 
 ## 0. 最新版を落とす（配布ページ）
 
-**固定 URL（版の数字を含まない・つねに最新版へ飛ぶ）**
+**配布ページ（版の数字を含まない固定 URL・つねに最新版）**
 
-https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/latest
+https://mugonkun.github.io/irodori-tts-for-yomiwakechan/
 
-| 機体 | 落とす檔 |
-|---|---|
-| NVIDIA の GPU | `irodori-tts-ywk-setup-v<版>-cuda.exe`（CUDA 版） |
-| Radeon gfx1151（Ryzen AI MAX+ 395／Radeon 8060S） | `irodori-tts-ywk-setup-v<版>-radeon.exe`（ROCm 版） |
-| GPU 無し | どちらでもよい（CPU 変種を選べる・遅い） |
-
-- **署名はありません**＝実行する前に、同じページの `SHA256SUMS.txt` と突き合わせてください。
-- 導入・更新・修復・削除の確定手順＝`docs/install.md`。版ごとの差分＝各 Release の本文（`docs/release-notes/`）。
-- 過去の版の一覧＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases
+- **RTX など NVIDIA の機体 → CUDA 版**、**Radeon（gfx1151＝Ryzen AI MAX+ 395／Radeon 8060S）の機体 → ROCm 版**。
+  GPU が無い機体はどちらでもよい（CPU 変種を選べる・遅い）。
+- **初めて起動したときに、動かすための一式（実行系とモデル・数 GB）をネットから取り寄せます**（10 分程度）。
+  他の方が作ったプログラムやモデルは配布物に同梱しない方針（`decisions.md` 8）なので、そのぶんを初回にお使いの機体へ入れます。
+- Release の一覧（過去の版・`SHA256SUMS.txt`）＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases
+- 導入・更新・修復・削除の確定手順＝`docs/install.md`。版ごとの本文＝`docs/release-notes/`。
+- 着地頁の実体＝`site/index.html`（`gh-pages` 枝の根に写して GitHub Pages で出す・`site/README.md`）。
 ---
 
 ## 1. これは何をするアプリか
@@ -33,8 +31,9 @@ https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/latest
 - **単体の TTS として使える**＝付属のランチャ UI で、GPU・CUDA 版・パラメータ・参照ボイスを
   自分の環境で試せます（配信外の読み上げテスト＝`decisions.md` 15）。
 - **読み分けちゃん2（本体）の 10 番目のエンジンとしても使える**＝配布版は
-  `http://127.0.0.1:18088` で HTTP の口を開けて常駐し、本体は `/health` でそれを見つけるだけです
-  （常駐と後始末＝配布版のランチャ・`decisions.md` 6。本体の一括起動で exe を起こすのは可＝103）。
+  `http://127.0.0.1:18088` で HTTP の口を開けて待ち受け、本体は `/health` でそれを見つけるだけです
+  （常駐と後始末＝配布版のランチャ・`decisions.md` 6→**124＝常駐はやめた**＝ランチャの窓を閉じると
+  アプリが終わり、子のサーバも落ちて GPU のメモリが返る。本体の一括起動で exe を起こすのは可＝103）。
   **ポートは先に開きます**＝起動して数秒で `/health` が 200 を返し、モデルはその裏で載ります
   （`decisions.md` 105）。合成が撃てるかどうかは `/ywk/status` の `runtime.loaded` で判り、
   読込に失敗しても**プロセスは生きたまま** `runtime.error` に理由 1 行が出ます。本体が読み上げるときは、**ランチャで選んだ GPU と精度が
@@ -74,8 +73,10 @@ https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/latest
    - 実行系＝torch は `download.pytorch.org` の版固定 URL、依存は PyPI、いずれも sha256 で検証。
    - モデル＝Hugging Face（revision 固定）。
    - `vc_redist.x64.exe`（Microsoft 公式・≈25 MB）＝torch が `msvcp140.dll` を要求するため必須。
-4. ランチャで GPU と CUDA 版（既定 cu130／古いドライバなら cu126）を選ぶ。
-5. 「サーバ起動」を押すと `127.0.0.1:18088` で常駐する。読み上げの準備完了まで最長 120 秒。
+4. ランチャで GPU と CUDA 版を選ぶ（ドライバ 580 以上なら cu130・528.33 以上 580 未満なら cu126 を
+   最初から選ぶ＝`decisions.md` 126。下限に届かない変種は選べない）。
+5. 「サーバ起動」を押すと `127.0.0.1:18088` で待ち受ける。読み上げの準備完了まで最長 120 秒。
+   **ランチャの窓を閉じるとサーバも一緒に落ちる**（`decisions.md` 124）。
 6. 本体（読み分けちゃん2）側は、配布版のエンジンを有効にするだけ。
 
 **オフライン導入は用意しません**（`decisions.md` 8）。第三者バイナリ（wheel・exe・dll・モデル）を

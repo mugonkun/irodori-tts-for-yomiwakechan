@@ -5,9 +5,9 @@
 
 ## 0. 目的と範囲
 
-**目的**（decisions 15）＝利用者が自環境で GPU・CUDA 版・パラメータ・参照ボイスを試す UI。本体（yomiwakechan2）からの読み上げ司令は、ここで選んだ GPU・CUDA 版を暗黙に使う。配布版が常駐して Server（wrapper）を起こし、本体は `/health` で見つけるだけ（G-2）。
+**目的**（decisions 15）＝利用者が自環境で GPU・CUDA 版・パラメータ・参照ボイスを試す UI。本体（yomiwakechan2）からの読み上げ司令は、ここで選んだ GPU・CUDA 版を暗黙に使う。配布版が Server（wrapper）を起こし、本体は `/health` で見つけるだけ（G-2）。**常駐はしない**（裁定 6→**124**＝窓を閉じればアプリが終わり、サーバも落ちて VRAM が返る＝§30）。
 
-**MVP の範囲**（依頼文 §4 D）＝常駐（タスクトレイ）・設定→env→wrapper の起動／停止・GPU 列挙（UUID）・ドライバ検査・話者台帳→`voices.json`・暖機・ログ 2〜3 行で状態判定・**初回取得**（台帳から埋め込み Python＋wheel＋モデル＋vc_redist を取る＝便 E のインストーラは「ランチャを置くだけ」にする）・試し撃ち（本文＋話者＋主要パラメータ→再生／保存）。
+**MVP の範囲**（依頼文 §4 D）＝~~常駐（タスクトレイ）~~（裁定 124 で撤去＝§30）・設定→env→wrapper の起動／停止・GPU 列挙（UUID）・ドライバ検査・話者台帳→`voices.json`・暖機・ログ 2〜3 行で状態判定・**初回取得**（台帳から埋め込み Python＋wheel＋モデル＋vc_redist を取る＝便 E のインストーラは「ランチャを置くだけ」にする）・試し撃ち（本文＋話者＋主要パラメータ→再生／保存）。
 **範囲外**＝先読み UI（契約は予約のまま）・複数 GPU の同時起動（1 プロセス 1 デバイス）・自動更新。
 
 **受け入れ条件**（引き継ぎ §4 の「起動失敗」「GPU」「話者」「ログ」行・`docs/acceptance.md`）
@@ -27,7 +27,7 @@
 ```
 launcher/
   IrodoriTtsYwk.Launcher/            WPF・net10.0-windows・WinExe・SelfContained publish（.NET ランタイム非同梱の裁定 8 と衝突しない形＝SelfContained は自作分＋MS ランタイムを 1 exe に焼く。第三者物の「取得台帳で取る」原則の例外として decisions に記帳が要る→§7）
-    App.xaml(.cs)                     単一起動（Mutex）・トレイ常駐・終了時に wrapper をツリー kill
+    App.xaml(.cs)                     単一起動（Mutex）・2 個目の起動で窓を前に出す合図・終了時に wrapper をツリー kill（裁定 124 でトレイは消えた＝§30）
     Services/
       Ledger/  LedgerReader.cs・FetchPlanner.cs・Downloader.cs（HTTP・Range 再開・sha256・.part→Rename）・WheelInstaller.cs（zip 展開・.data/purelib 合流・sdist は System.Formats.Tar）・PthWriter.cs（python312._pth.template → 絶対パス）
       Models/  ModelFetcher.cs（runtime の python.exe で server/ywk_fetch_models.py を子プロセス実行・JSON 行の進捗を読む・refs/main は台本が書く）
@@ -49,15 +49,15 @@ build/
 
 - env（`docs/design/ben-a-skeleton-and-build.md` §2・wrapper が setdefault するので**ランチャが載せるのは差分だけ**）＝`IRODORI_MODEL_DEVICE`／`IRODORI_CODEC_DEVICE`（`cuda:N`・UUID→index 解決の結果）・`YWK_VARIANT`（cuda／rocm-gfx1151）・`YWK_DATA_DIR`・`HF_HOME`・`HF_HUB_OFFLINE=1`（取得完了後）・`IRODORI_VOICES_DIR`／`IRODORI_VOICE_ALIASES_FILE`・`IRODORI_PORT`・上級者設定の精度（既定は wrapper の device 連動に任せる）・`PYTHONUNBUFFERED=1`。
 - 状態機械＝`Stopped → Starting（stderr 1 行目 ywk_server <版>…）→ Listening（Uvicorn running on）→ Ready（runtime loaded in ＋ /health.runtime.loaded=true）→ Warming（/ywk/status.warmup.state=running）→ Ready`。`Failed`＝exit code 2（wrapper の事前検査）／3（上流の startup 失敗）／stderr の最終行を理由 1 行に。ready 待ち 120 s（CPU 変種は 300 s）。
-- 停止＝ツリー kill（上流に shutdown 路は無い）。終了時・変種／GPU／ポート変更時に再起動。
+- 停止＝ツリー kill（上流に shutdown 路は無い）。終了時・変種／GPU／ポート変更時に再起動。**窓を閉じる＝アプリの終了**（裁定 124＝§30）なので、閉じた回は必ずこのツリー kill を待ち切ってからプロセスが消える（上限 15 秒・どの状態からでも同じ 1 本＝`Services/Server/ShutdownSequence`）。
 - 本体との併存＝8088 の既存 Server とは無関係（別ポート）。本体は `/health`→`/ywk/status`→`/params`→`/v1/audio/voices` で発見（契約 ⑵）。
 
 ## 3. GPU と変種
 
 - 列挙＝NVIDIA なら `nvidia-smi -L`（`GPU-<uuid>` と名前）＋`--query-gpu=index,uuid,name,memory.total,driver_version`。AMD／不明なら runtime の python で `torch.cuda.get_device_properties(i)`（uuid・name・total_memory・gcnArchName）。保存は UUID（decisions 34）。起動時に index へ解決＝見つからなければ「前回の GPU が見つからない」告知と選び直し。
 - `CUDA_VISIBLE_DEVICES` に UUID を渡す経路は便 B の実射（B-4 で `CUDA_VISIBLE_DEVICES=GPU-xxxx` を 1 回試す）で採否を決める。採れれば index の揺れが消える。
-- 変種＝cu130（既定）／cu126（ドライバ < 580 のとき勧める）／rocm-gfx1151（Radeon 版のリリースだけが持つ・UI の CUDA 版の選択肢には出さない＝decisions 5）／cpu（上級者・「遅い」の注記）。変種の切替＝別ディレクトリの runtime（`runtime\<variant>\`）を並置し `._pth` を書き分ける＝切替 0 s・容量は足し算（cu130 3.2 GB＋cu126 4.5 GB）。
-- ドライバ検査＝cu130 ≥ 580／cu126 ≥ 560.76（便 B の U-14 の結果で cu126 の下限の謳い方を更新）。不足なら合成を撃たずに告知（受け入れ条件「ドライバ」行）。
+- 変種＝cu130（ドライバ 580.00 以上で**最初から選ぶ**）／cu126（528.33 以上 580.00 未満で最初から選ぶ。**下限に届かない変種は選べない**＝裁定 126 の B・§30-2）／rocm-gfx1151（Radeon 版のリリースだけが持つ・UI の CUDA 版の選択肢には出さない＝decisions 5）／cpu（上級者・「遅い」の注記）。変種の切替＝別ディレクトリの runtime（`runtime\<variant>\`）を並置し `._pth` を書き分ける＝切替 0 s・容量は足し算（cu130 3.2 GB＋cu126 4.5 GB）。
+- ドライバ検査＝cu130 ≥ 580.00／cu126 ≥ 528.33（`DriverRequirement` の 1 箇所が正本。便 B の U-14＝537.58 で cu126 を実射し、528.33〜537.58 は「未実測の帯」として許す）。不足なら合成を撃たずに告知（受け入れ条件「ドライバ」行）＝**選ばせる時点でも断る**（裁定 126 の B）。
 
 ## 4. 話者
 
@@ -80,7 +80,7 @@ build/
 
 ## 6. 初回取得（FirstRunWizard）
 
-1. 通知（`licenses/first-run-notices.md` を表示・同意）→ 2. 変種の選択（ドライバ検出・容量の見積り・「CPU（遅い）」）→ 3. 取得（台帳順・並列 2 本まで・進捗・中断／再開）→ 4. 展開（wheel＝zip・sdist＝tar・`._pth`）→ 5. モデル（`ywk_fetch_models.py` を runtime の python で・JSON 行の進捗）→ 6. 起動して `/health`→完了（「発話テスト」へ誘導＝裁定 116 までの札は「試し撃ちへ」）。
+1. 通知（`licenses/first-run-notices.md` を表示・同意）→ 2. 変種の選択（ドライバ検出で**勧める変種を先に選び**、下限に届かない変種の間は先へ進ませない＝裁定 126・§30-2／容量の見積り・「CPU（遅い）」）→ 3. 取得（台帳順・並列 2 本まで・進捗・中断／再開）→ 4. 展開（wheel＝zip・sdist＝tar・`._pth`）→ 5. モデル（`ywk_fetch_models.py` を runtime の python で・JSON 行の進捗）→ 6. 起動して `/health`→完了（「発話テスト」へ誘導＝裁定 116 までの札は「試し撃ちへ」）。
 - **出す条件は 2 つ**（裁定 121・2026-09-10）＝⑴ `firstRunCompleted` が偽（従来）⑵ 札は立っているのに**実体が無い**＝`AcquisitionCheck.Check` が実行系（変種の `python.exe`）かモデル（`HF_HOME/hub` の snapshot と `refs/main`）の不足を見つけた（`MainViewModel.NeedsAcquisition`）。⑵ の回は**自動起動をやめて**ウィザードを出し、Trail とログに `実行系／モデルが揃っていないため、取得からやり直します（不足＝…）` を残す。閉じれば主窓はそのまま使える（状態帯に 1 手が残る）。
 - 検証＝sha256 は全檔・不一致は破棄して再取得（最大 5 回）・`fallback_url` を持つ item は url→fallback の順。
 - `vc_redist`＝`ledger/vc_redist.json` の直リンク→sha256→**`/install /quiet /norestart`**（台帳の `silent_args` が正・旧稿の `/passive` は誤り＝裁定 87 ⑷。実装 `Services/Ledger/VcRedistInstaller.cs` は既に台帳を採っている）。管理者昇格が要る＝UAC・利用者操作 1 回。既に `msvcp140.dll` が System32 にあれば飛ばす（便 B の U-8 の逐語で判定文言を決める）。
@@ -2798,3 +2798,211 @@ v1.0.0 から使っているデータ樹の一覧に出ず、「同梱のプリ�
 **未実射**＝窓を立てての UIA 検分・実機での撃ち直し・setup の組み直しは**していない**
 （`installer-build.ps1` はこの席では走らせていない）。配布樹（`server/`・`voices/`・`licenses/`・`ledger/`）は
 `server/ywk_server.py` の `YWK_VERSION` の 1 字だけが動いた。
+
+## 30. ただの TTS エンジンにする（裁定 124・126＝v1.1.0・2026-09-10）の記帳（ランチャ席）
+
+司令官の評価（逐語・RTX 3090・ドライバ 537.58・清潔導入の後）＝「**このアプリは開発者向けではない。
+ただのTTSエンジンとしてvoiceroid2のような動作を期待している。アプリ終了でサーバーを落とし、VRAMを開放せよ。
+加えてwebページも開発者向けであり、気軽にダウンロードできるものではない。**」正典＝`decisions.md` 124・126（配布ページの中身は 125）。
+別席の所見（同じ機体）＝ウィザードが `cu130` を選んだまま「この構成で取得を始める」を通し、
+起動で `VariantGate` が断る＝**起こせない実行系を数 GB 落とさせて終わる**。
+配布ページ（D）は別席の仕事で、ここには**入っていない**。
+
+### 30-1 A＝窓を閉じたらアプリが終わる（裁定 6 の反転）
+
+| 物 | 改訂前（≦ v1.0.2） | 改訂後（v1.1.0） |
+|---|---|---|
+| `App.xaml` の `ShutdownMode` | `OnExplicitShutdown`（常駐） | **`OnLastWindowClose`** |
+| `MainWindow.OnClosing` | `e.Cancel = true` → `Hide()` | **取り消さない**（音を止め・購読を外して閉じる） |
+| トレイ（`NotifyIcon`・開く／サーバ起動／停止／終了） | 在る | **無い**（`ReleaseFlavors.TrayText`・`App.StateLabel` ごと撤去） |
+| `.csproj` | `UseWindowsForms=true`・`ApplicationHighDpiMode` | **どちらも落とした**（WinForms を 1 行も使わない） |
+| 終了の後始末 | `App.OnExit` が直に `StopAsync`＋`DisposeAsync` | **`Services/Server/ShutdownSequence`**（WPF に触れない純粋な 1 本） |
+
+- `ShutdownSequence.StopServerTree(server, 15 秒)`＝`StopAsync`（ツリー kill）を**待ち切って**から
+  `DisposeAsync` まで通し、結末（`Stopped`／`TimedOut`／理由 1 行）を返す。**例外は投げない**＝
+  終了の路で投げると Mutex の解放まで落ちる。期限切れは諦めて進む（終われないアプリを作らない）。
+- **どの状態から閉じても止める**（`StopsServerOnExit` は全 `ServerState` で真）＝
+  `Starting`／`Listening`／`Warming` の途中で閉じた回こそ、VRAM を握った子が残る。
+  `ServerProcess.StopAsync` は状態を見ずにツリー kill するので、状態機械の値に分岐を作っていない。
+- **最小化はタスクバー**へ。単一起動の錠（Mutex）と「2 個目の起動が 1 個目の窓を前に出す」合図は据え置き＝
+  本体（読み分けちゃん2）の一括起動（`BulkLaunchTests` が見ている形）は**引数なしで exe を起こすだけ**なので
+  振る舞いが変わらない＝起こせば窓が出たまま残り、閉じるのは利用者である（本体はプロセスを持たない＝裁定 103）。
+- **釘**（`Decision126ShutdownTests`）＝`窓を閉じてももう隠さない`・`どの状態から閉じてもサーバを止める`・
+  `終了はツリーkillを待ち切ってからDisposeする`・`起動中に閉じてもツリーkillを撃つ`・
+  `落ちない個体は期限で諦めて終わる`・`個体が無くても投げない`。
+
+### 30-2 B＝ドライバに合わない変種は選べない
+
+- **`Services/Gpu/VariantRecommendation`**（新設・純関数）＝
+  `Recommend(choices, DriverProbe)`（ROCm 樹なら `rocm-*`／580.00 以上なら `cu130`／528.33 以上なら `cu126`／
+  それ未満なら `cpu`／**理由なしで** GPU が 0 台なら `cpu`／**まだ撃っていない・判らない・理由つきの 0 台なら並びの先頭のまま**＝§30-5 ⑷）・
+  `IsBelowMinimum`・`BlockReason`（断る 1 行）。**閾の定義は増やしていない**＝`DriverRequirement` を読む。
+- ウィザードは窓が開いた回に `RefreshDriverAsync` を 1 度撃つ（`FirstRunWizard` の `Loaded`）。
+  検分の手は `DriverProbeAsync`（`MainViewModel.CreateFirstRun` が `IGpuEnumerator` を包んで差す）＝
+  ViewModel は列挙系を名前で持たない。初回取得の時点では実行系が無いので、読めるのは `nvidia-smi` 経路だけ。
+- **勧めで上書きするのは「まだ利用者が選んでいない」初期値だけ**（裁定 4＝自動切替はしない）。
+  下限に届かない変種を選んでいる間は `CanGoNext` が偽＝「この構成で取得を始める」が押せず、
+  変種の段に理由 1 行（`FirstRunVariantBlockText`）が出る。束縛の外から `NextAsync` を呼んでも通さない。
+- 設定頁も同じ規則＝`SettingsViewModel.VariantBlockReason`（ドライバは**選んでいる GPU**＝「数え直す」を押した回の値、押していなければ `KnownDriverVersion`＝ウィザードの検分と起動時の列挙で読めた版から読む＝§30-5 ⑶）が在る間は `Apply` が断り、`settings.json` は動かない（`SettingsVariantBlockText`）。
+- **`cpu` はいつでも通る**・**ドライバの版が読めない機体では止めない**（`VariantRecommendation.UnknownDriverNote`
+  を `DriverText` に足して名乗るだけ）。
+- **釘**（`Decision126VariantRecommendationTests`・`Decision126WizardVariantTests`・`Decision126SettingsVariantTests`）＝
+  `ドライバの帯で勧める変種が決まる`（6 帯）・`ROCm版の樹ではrocmを勧める`・`GPUが1台も見えなければcpuを勧める`・
+  `まだ撃っていなければ並びの先頭のまま`・`下限未満の判定`（7 通り）・`断る1行はドライバと勧める先を名指す`・
+  `ドライバ537_58ではcu126が選ばれる`・`ドライバ580以上ならcu130のまま`・`下限未満の変種を選ぶと取得を始められない`・
+  `cpuの変種はどのドライバでも選べる`・`ドライバが読めなくても進める`・`検分が落ちてもウィザードは止まらない`・
+  `利用者が選んだ変種は勧めで上書きしない`・`下限未満の変種は適用できない`・`cpuの変種は同じドライバでも適用できる`・
+  `ドライバが読めない機体では止めない`。
+
+### 30-3 C＝ログ檔・`voices.json`・GPU の焼き付け
+
+1. **ログ檔**（清潔導入で `logs\` が空だった）＝`Services/Logging/LauncherLogFile`。
+   `<データ樹>\logs\launcher-<yyyyMMdd>.log`（UTF-8・BOM なし・`HH:mm:ss 本文`・日ごとに 1 檔）。
+   1 行ごとに開いて足して閉じる（走る個体は 1 つ＝錠がある）。**IO の失敗は投げない**。
+   継ぎ目は 2 つ＝`StatusViewModel.LogSink`（`AppendLog` に来た全行＝サーバの stderr も、窓より前の控えも）と`FirstRunViewModel.LogSink`（ウィザードの `Message`／`Record`＝§30-5 ⑸）。`MainViewModel` が両方に差す。釘＝`檔名は日ごとに分かれる`・`足した行はUTF8で檔に残る`・
+   `日をまたぐと次の檔に移る`・`書けない置き場でも投げない`・`状態帯の1行は檔の書き手にも渡る`・
+   `檔に書けなくても画面のログは進む`・`起動の1行は檔のログにも落ちる`。
+2. **`voices.json` は毎回書く**＝`LauncherComposition.PrepareVoices` の条件（この回で何かが動いたか・檔が無いか）を
+   外した。サーバを止めている間に台帳を直した回が別名表に届かず、起こし直しても
+   `GET /v1/audio/voices` に古い顔ぶれが出た。ここは起動の**前**（サーバはまだ走っていない）なので
+   競合しない。書き手は在る檔を読み直して `ref_latent` を残す（契約 ⑷ 4-3）。
+   釘＝`何も動かない回でも書き直す`・`止めている間に直した台帳が別名表へ届く`。
+3. **GPU の焼き付け**＝`MainViewModel.PersistResolvedGpu`。GPU 変種の起動が**通った回**に、
+   設定に `gpuUuid` が無ければ解決した個体（保存 UUID が居ればそれ・まだ選んでいなければ列挙の先頭）を
+   `SettingsDefaults.ApplyGpu` で焼いて保存し、状態帯と設定頁の写しを引き直して 1 行残す。
+   **上書きはしない**（利用者の選択が正本）。釘＝`起動が通れば選んでいないGPUを設定に焼く`・
+   `既に選んである設定は上書きしない`・`cpuの変種では焼かない`。
+
+### 30-4 検分と、確かめていないこと
+
+```powershell
+dotnet test launcher -c Release --nologo        # 731 合格・1 skip（総数 732）
+.venv-dev\Scripts\python.exe -m pytest tests/contract -q   # 369 合格
+```
+
+- **実機の実射は 1 つも無い**＝窓を立てていない（UIA なし）・`installer-build.ps1` を走らせていない・
+  setup を撃っていない。**VRAM が返ることは「親が消える前に子をツリー kill し切る」という
+  プロセスの意味でしか確かめていない**（実測の GPU メモリの推移は未取得）。
+- ドライバ 537.58 の実機で「cu130 が選べない」ことも実射していない（釘は純関数と ViewModel の層まで）。
+- `.csproj` から WinForms を落としたので**発行の exe は小さくなる**が、その大きさを測っていない
+  （配布樹の外＝`installer-build` の A-1 の記録値は動かない＝裁定 51）。
+- 版は v1.0.2 → **v1.1.0**（`ben-e` §18 段 1 の 8 箇所）。リリース文と配布ページは別席。
+
+### 30-5 検分 2 席の所見の当て込み（同じ日・是正席）
+
+釘は `launcher/IrodoriTtsYwk.Launcher.Tests/Decision126CorrectionTests.cs`（14 本）。
+
+1. **終わりかけの個体に 2 個目の起動がぶつかると何も出ない**（`App.xaml.cs`）。× ＝終了になった今、
+   終了の路は `StopServerTree` で最大 15 秒 UI の糸を止める＝**窓はもう画面に無いのにプロセスは生きている**。
+   その間に起きた 2 個目は「1 個目が居る」と読んで合図を送り、止まった Dispatcher に積まれた
+   `ShowMainWindow` は誰にも実行されずに捨てられた（本体の一括起動＝裁定 103 でも `/health` が上がらない）。
+   直し＝⒜ `OnExit` は**合図の口を先に畳んでから**後始末に入る ⒝ 合図が届かなかった 2 個目は
+   `ShutdownSequence.SecondInstanceShouldWait` で錠を待ち（上限＝`SecondInstanceWait`＝後始末の上限＋5 秒。
+   `AbandonedMutexException` は「前の個体が殺された」＝自分が 1 個目になる）、空かなければ従来どおり退く。
+   釘＝`合図が届かなかった2個目は錠を待つ`・`錠を待つ上限は後始末の上限より長い`。
+2. **閉じた窓を後から `Show()` しない**（同）。窓が閉じてから `OnExit` が `_shuttingDown` を立てるまでの隙に
+   合図が届くと、閉じた窓に `Show()` を撃って `InvalidOperationException`＝受け口が無いので**終了が墜落に化ける**。
+   直し＝`Closed` で `_shuttingDown` を立てて `_window` を null にし、`ShowMainWindow` は**窓を作らない**
+   （合図 1 つで裁定 124 を覆せてしまう）。
+3. **起こしている最中に止められた子が残る**（`Services/Server/ServerProcess.cs`）。門の検分
+   （`python -c import torch`＝秒）と `ProcessRunner.StartAsync` の待ちは `ConfigureAwait(false)`＝続きは
+   プールの糸で走る。窓を閉じた `App.OnExit` の `StopAsync` はそのとき `_process` が null なので
+   **何も殺さずに帰り**、直後に生まれた子は「誰も畳まない台帳」に載って親より長生きした＝VRAM を握り
+   18088 を塞ぐ（次の起動は裁定 52 の告知で断られる）。直し＝⒜ 世代の刻印を**門より前**へ移す
+   ⒝ 子を台帳へ載せる `lock` で世代と `_disposed` を見直し、古ければ `KillOrphan`（ツリー kill・投げない）で
+   落として `Stopped`／「起動を中止しました。」で返す。釘＝`起こしている最中に止められた子は台帳に載らず自分で落ちる`・
+   `止められていなければ子はそのまま台帳に載る`。
+4. **列挙が落ちた「0 台」を GPU 無しと読まない**（`Services/Gpu/VariantRecommendation.cs`）。初回取得の時点では
+   実行系がまだ無く（`ResolvePythonExe` は null）、列挙は `nvidia-smi` しか試せない。それが無い・落ちた・
+   期限切れの回も**理由 1 行つきの 0 台**で返るので、理由を見ずに `cpu` へ倒すと NVIDIA の機体が黙って
+   CPU 版（数百分の一の速さ）を落とすことになる。直し＝`DriverProbe` に `FailureReason` を足し
+   （`MainViewModel.CreateFirstRun` が `GpuEnumerationResult.FailureReason` を渡す）、`cpu` の枝は
+   **理由が無いときだけ**通す。画面の 1 行も言い分ける＝`ProbeNote`（見た上で 0 台＝`NoGpuNote`／
+   落ちた＝`UnknownDriverNote`＋**列挙が返した理由**）。釘＝`理由つきの0台はGPU無しと読まない`・
+   `見た上での0台はこれまでどおりcpu`・`検分の1行は結果ごとに言い分ける`・`列挙が落ちた機体をCPUへ倒さない`。
+5. **ウィザードの行も同じ檔に残す**（`FirstRunViewModel.LogSink`）。切符の元は清潔導入で、そこで詰まる回
+   （取得・展開・モデル）は主窓の状態帯を 1 度も通らない＝`StatusViewModel.LogSink` だけでは
+   `logs\` が**まさにその場合に空のまま**だった。`Message` の setter を通った行（`Record` も通る）を落とす
+   （進捗は落とさない＝1 秒に何度も動く）。IO の失敗はここでも握り潰す。
+   釘＝`ウィザードの行も同じ檔に残る`・`檔に書けなくてもウィザードは進む`。
+6. **設定頁は「数え直す」を押さなくてもドライバを知っている**（`SettingsViewModel.KnownDriverVersion`）。
+   `Gpus`／`SelectedGpu` はその釦を押した回にしか埋まらないので、**設定頁を開いただけの利用者**には
+   下限未満の cu130 がそのまま適用でき、次の「サーバ起動」を門が断った＝B が塞いだはずの行き止まりが
+   設定頁に残っていた。`MainViewModel` がウィザードの検分と起動時の列挙で読めた版を差す。
+   釘＝`数え直していなくても知っている版で断る`・`知っている版でもcpuは通る`・`版を知らなければこれまでどおり止めない`。
+7. **失敗の札が立った変種の段が門を飛ばす**（`FirstRunViewModel.NextAsync`）。`_lastStepOk` が偽の枝は
+   `AdvanceAsync(Step)` へ直に入るので、変種の段で `NextCommand.Faulted` が立った状態（例＝`_store.Save` が投げた）
+   だけ門を通らずに取得へ抜けられた。直し＝門の検査を手の**頭**へ引き上げた。
+   釘＝`失敗の札が立っていても下限未満の変種では進めない`。
+8. **札と記帳**＝`RuntimeVariants.DisplayName(cu130)` から「既定」を落とした（帯が決めるので、札が cu130 を
+   既定と名乗ると門が断る側へ呼び戻す）。試験の `.csproj` から `UseWindowsForms` を落とした（本体が落とした後の
+   置き土産）。`README.md`（常駐の 2 行）・`probe/d-launch-probe.ps1`（変種の段で釦が押せない回を
+   **期待された拒み**として記録する＝`Invoke-ButtonById` は無効な釦で投げるので、無人の走行が
+   537.58 の席で press 4 に当たると計測前に落ちていた）。
+9. **配布ページとリリース文は裁定 125 に合わせた**（別席の成果への当て込み）＝`site/index.html` から
+   sha256／署名の段を削り、釦より**前**に「初回起動で一式を取り寄せる」ことと**その理由**
+   （他の方のプログラムやモデルを同梱しない＝裁定 8）を置いた。`docs/release-notes/v1.1.0.md` も同じ規則で
+   「落とす物」の表から sha256／バイトの欄と `SHA256SUMS.txt` の行、および「署名はありません＝sha256 と
+   突き合わせて」の 1 文を落とし、頭に初回取得の 2 行を足した（**`ben-e` §18 段 5 の穴埋めはこの版では不要**）。
+10. **確かめていないことは増えている**＝⑴ 2 個目の起動が錠を待つ路は**実窓で撃っていない**（純関数の層まで）
+    ⑵ 起こし中に止める競走も実 GPU では撃っていない（子は `cmd.exe`）⑶ `d-launch-probe.ps1` の新しい枝は
+    無人の走行に掛けていない。
+
+11. **もう保存されている下限未満の変種を、断りの 1 行で放り出さない**（裁定 126 ⑽・同じ日の追補。
+    所見ではなく B の**取りこぼし**＝釘は `Decision126BelowMinimumTests.cs` の 12 本）。
+
+    - **穴**＝B が塞いだのは「これから選ぶ」路（ウィザードと設定頁）だけである。v1.0.2 で `cu130` の
+      まま取得を通した機体には `settings.json` の `variant=cu130` と `runtime\cu130` が残り、
+      **誰もその値を直さない**。v1.1.0 の起動は `VariantGate` が断る（勧める先＝`cu126`）ので、
+      RTX 3090・ドライバ 537.58 の席に出るのは失敗の理由 1 行だけで、そこから
+      設定 →`cu126`→「取得へ進む」を**利用者が自分で見つける**ほかなかった。
+      この製品は利用者を導く TTS の器なので、断ると同時に次の 1 手まで運ぶ。
+    - **どこで断るか**＝`MainViewModel.StartServerAsync` の中、GPU の列挙で `driver_version` を
+      読んだ**直後**（`Status.BeginRun` より前＝`RefuseBelowMinimumVariant`）。判断は
+      `VariantRecommendation.IsBelowMinimum`（閾は `DriverRequirement` の 1 箇所）だけで、
+      勧める先は**ウィザードが出す一覧と同じ物**（`ReleaseFlavors.AvailableChoices`）から
+      `Recommend` で選ぶ＝開いた先の初期値と食い違わない。
+    - **出す 4 つ**＝⑴ 起こさない ⑵ 理由 1 行（`VariantRecommendation.StartRefusalReason`＝
+      `BlockReason` と同じ頭で末尾だけが違う。例＝
+      `このドライバ（537.58）では CUDA 13.0 は動きません（下限 580.00）。CUDA 12.6 に切り替えて取得します。`）を
+      状態帯とログ檔（§30-3 ⑴）へ ⑶ 帯の「取得が未了です。」＋「取得へ進む」
+      （`StatusViewModel.ApplyAcquisition`＝裁定 121 と同じ仕掛け）⑷ ウィザードを**この走行で 1 度だけ**
+      自動で開く求め（`MainViewModel.WizardRequested`／`FirstRunRequest`）。
+    - **窓の側**＝`MainWindow` が求めを受けて `ShowFirstRun(理由, 勧める変種, ドライバの版)` を
+      `Dispatcher.BeginInvoke` で開く（その場で `ShowDialog` を回すと断りの後始末が閉じるまで止まる）。
+      ViewModel は WPF の型に 1 つも触れない（§12-2 ⑴）。ウィザード側の受け口は
+      `FirstRunViewModel.Preselect(変種, ドライバの版)`＝**「利用者が選んだ」ことにはしない**ので、
+      窓が続けて撃つ `RefreshDriverAsync` が同じ `Recommend` で勧め直しても答えが変わらず、
+      利用者が選び直せばそちらが正本になる（裁定 4）。
+    - **取得を始めずに閉じた回でも帯の 1 手は残る**（是正・検分）＝窓はウィザードを閉じた後に
+      `ReapplySettings`→`RefreshAcquisition` を撃つが、**檔の検分（`AcquisitionCheck`）はドライバを
+      知らない**ので `runtime\cu130` もモデルも在るこの機体では「揃っている」と答える。そのまま
+      `ApplyAcquisition(false)` を渡すと、帯に残るのは失敗の 1 行だけで**「取得へ進む」が消え**、
+      ウィザードも 2 枚目は開かない（1 走行 1 度）＝⑽ が無くそうとした袋小路がそのまま戻る。
+      断った版を覚え（`MainViewModel._refusedDriverVersion`）、`IsBelowMinimum` が真の間は
+      **帯にだけ**（`NeedsAcquisition` は据え置き＝窓はそちらを見て裁定 121 の別の註で開くので、
+      混ぜると文言が食い違う）1 手を出し続ける。ウィザードが `cu126`／`cpu` を保存すれば偽に戻る＝
+      自分で消える。
+    - **ウィザードは渡された版を捨てない**（是正・検分）＝ウィザード自身の検分は主窓のより弱い
+      （初回取得の時点では実行系が無く、`ResolvePythonExe(勧める変種)` は `null`＝`nvidia-smi` の
+      1 本だけ）。期限切れ・一時の失敗で版が消えると `Recommend` は「判らない」に落ちて
+      **並びの先頭＝断られた `cu130`** を勧め直し、Trail の「`CUDA 12.6` に切り替えて取得します。」と
+      選びが食い違う（＝また数 GB 落として、次の起動でまた断られる）。`RefreshDriverAsync` は
+      **自分が版を読めなかった回だけ** `Preselect` の版を残す（読めた回はそちらが勝つ＝上書きしない）。
+    - **この枝に落ちるのは下限未満の 1 つだけ**＝GPU が見つからない・検分が読めない等の門の断りは
+      今まで通り理由 1 行で終える。**ドライバの版が読めない機体も今まで通り**
+      （`IsBelowMinimum` は「読めない」を「駄目」の側に倒さない）。
+    - 完了後は普通の路＝ウィザードが `settings.Variant` を書き、実行系を取得し、モデルは在るので
+      飛ばし（`InstallSkipLine`／モデルの段の判定）、最後に「起動の確認」まで進む。
+    - **釘**＝`ドライバ537_58のcu130は起こさずに取得へ導く`・`押し直してもウィザードは2枚目を開かない`・
+      `ドライバ581のcu130はそのまま起こす`・`ドライバ537_58のcu126はそのまま起こす`・
+      `ドライバが読めない機体では今まで通り`・`断りの1行は下限と勧める先を名乗る`・
+      `渡された初期値と自分の検分は同じ答えになる`・`利用者が選び直せばそちらが残る`・`一覧に無い名は無視する`。
+      是正の 3 本＝`取得せずにウィザードを閉じても取得への1手は残る`・
+      `自分の検分が版を読めなくても渡された版は残る`・`自分の検分が新しい版を読めばそちらが勝つ`。
+      既存の 2 本（`RoundTwoIntegrationTests` の `窓の起動要求は門の入力3つを載せる`・
+      `載せた変種のおかげで門はcu130を断ってcu126を勧められる`）は**ドライバを 591.86 に替えた**＝
+      下限未満の組み合わせはもう門まで届かないので、門の入力そのものを見る釘は届く版で撃つ。
+      検分＝`dotnet test launcher -c Release --nologo`＝**743 合格・1 skip（総数 744）**。
+    - **確かめていないこと**＝実窓で開いた実射が無い（UIA なし・537.58 の実機にも掛けていない）。
+      ウィザードが自動で開いた後の取得そのもの（数 GB の実取得）も走らせていない。

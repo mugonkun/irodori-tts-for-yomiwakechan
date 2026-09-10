@@ -723,7 +723,7 @@ public sealed class StatusViewModel : ObservableObject
     }
 
     /// <summary>
-    /// <b>檔にも残す口</b>（裁定 125 の C（1）＝<see cref="Services.Logging.LauncherLogFile.Append"/>）。
+    /// <b>檔にも残す口</b>（裁定 126 の C（1）＝<see cref="Services.Logging.LauncherLogFile.Append"/>）。
     /// null＝檔には残さない（試験の既定）。<b>ここが投げても画面は止めない</b>
     /// （<see cref="AppendLog"/> が包む）。
     /// </summary>
@@ -733,7 +733,7 @@ public sealed class StatusViewModel : ObservableObject
     /// stderr の 1 行（畳んでから入れる）。
     /// <para>
     /// 末尾 20 行の環（<see cref="LogTail"/>）に足すのと同じ 1 行を
-    /// <see cref="LogSink"/> にも渡す＝<b>画面に出た物が檔にも残る</b>（裁定 125 の C（1））。
+    /// <see cref="LogSink"/> にも渡す＝<b>画面に出た物が檔にも残る</b>（裁定 126 の C（1））。
     /// 窓が構えるより前の行（<c>LauncherComposition.DrainNotes</c>）も、窓が引き取った時点で
     /// ここを通るので同じ檔に載る。
     /// </para>

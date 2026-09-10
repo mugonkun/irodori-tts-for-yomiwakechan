@@ -4,9 +4,11 @@
     launcher/ の共通設定（便 D・骨組み席・2026-09-05）。
     正典＝decisions.md（51＝SelfContained publish・52＝日本語 UI）。設計＝docs/design/ben-d-launcher.md。
 
-    ImplicitUsings は **disable**。UseWPF と UseWindowsForms（トレイの NotifyIcon＝裁定 52 の常駐）を
-    同時に有効にすると、暗黙 using が入る System.Windows.Forms と明示 using の System.Windows で
-    Application・MessageBox・Point・Color 等が曖昧参照になる。using は 1 檔ずつ書く。
+    ImplicitUsings は **disable**。UseWPF と UseWindowsForms（トレイの NotifyIcon）を同時に有効にすると、
+    暗黙 using が入る System.Windows.Forms と明示 using の System.Windows で Application・MessageBox・
+    Point・Color 等が曖昧参照になる。using は 1 檔ずつ書く。
+    ※ WinForms は裁定 126 の A（＝裁定 124＝常駐をやめた）でトレイごと落としたので、いまこの樹に
+    WinForms は 1 つも無い。それでも disable のままにするのは、暗黙 using を入れない書き方を保つため。
   -->
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
@@ -24,11 +26,11 @@
     版の一元定義（本体 yomiwakechan2.csproj の型を倣う）。AppDisplayVersion（v 前置の表示形）が
     唯一の定義箇所で、数値版はここから v を剥いで導出する。外部台本（build/release-build.ps1）は
     この行を機械読取する。IncludeSourceRevisionInInformationalVersion=false は SDK 既定の
-    「+コミット SHA」付加を止めて表示版を素の v1.0.2 に保つため。
-    1.0.2 は server/ywk_server.py の YWK_VERSION と揃えてある（/ywk/status.version と同じ数字）。
+    「+コミット SHA」付加を止めて表示版を素の v1.1.0 に保つため。
+    1.1.0 は server/ywk_server.py の YWK_VERSION と揃えてある（/ywk/status.version と同じ数字）。
   -->
   <PropertyGroup>
-    <AppDisplayVersion>v1.0.2</AppDisplayVersion>
+    <AppDisplayVersion>v1.1.0</AppDisplayVersion>
     <Version>$(AppDisplayVersion.TrimStart('v'))</Version>
     <InformationalVersion>$(AppDisplayVersion)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>

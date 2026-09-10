@@ -72,6 +72,10 @@ public partial class MainWindow : Window
         // 状態帯の「取得へ進む」（裁定 121）＝ウィザードを開けるのは窓だけなので、ここで繋ぐ。
         StatusPage.AcquireRequested += (_, _) => ShowFirstRun();
 
+        // **下限に届かない変種で保存されている機体を取得へ連れて行く**（裁定 126 ⑽）＝
+        // 判断も文言も ViewModel の側に在り、窓は求めに応じて 1 枚開くだけである。
+        _model.WizardRequested += OnWizardRequested;
+
         AppServices.Server.StateChanged += OnServerStateChanged;
         AppServices.Server.LogLine += OnServerLogLine;
         AppServices.Server.StatusSampled += OnStatusSampled;
@@ -99,6 +103,7 @@ public partial class MainWindow : Window
         AppServices.Server.StateChanged -= OnServerStateChanged;
         AppServices.Server.LogLine -= OnServerLogLine;
         AppServices.Server.StatusSampled -= OnStatusSampled;
+        _model.WizardRequested -= OnWizardRequested;
         _player.Dispose();
         base.OnClosing(e);
     }
@@ -134,16 +139,34 @@ public partial class MainWindow : Window
 
     private void OnFirstRunClick(object sender, RoutedEventArgs e) => ShowFirstRun();
 
+    /// <summary>
+    /// <b>ViewModel がウィザードを求めた</b>（裁定 126 ⑽＝保存された変種がドライバの下限に
+    /// 届かない）。<b>その場では開かない</b>（<c>BeginInvoke</c>）＝求めは
+    /// <c>StartServerAsync</c> の途中で上がるので、ここで <c>ShowDialog</c> を回すと
+    /// 断りの後始末がウィザードを閉じるまで止まる。
+    /// </summary>
+    private void OnWizardRequested(object? sender, FirstRunRequest e) =>
+        Dispatcher.BeginInvoke(() => ShowFirstRun(e.Notice, e.Variant, e.DriverVersion));
+
     /// <param name="notice">
     /// ウィザードの Trail に先に置いておく 1 行（裁定 121＝なぜ勝手に開いたかを書く）。null＝置かない。
     /// </param>
-    private void ShowFirstRun(string? notice = null)
+    /// <param name="preselect">
+    /// 変種の段の初期値（裁定 126 ⑽＝勧める変種。null＝ウィザードの既定に任せる）。
+    /// </param>
+    /// <param name="driverVersion">その判断に使ったドライバの版（null＝ウィザード自身の検分に任せる）。</param>
+    private void ShowFirstRun(string? notice = null, string? preselect = null, string? driverVersion = null)
     {
         _firstRunShown = true;
         var firstRun = _model.CreateFirstRun();
         if (notice is not null)
         {
             firstRun.Note(notice);
+        }
+
+        if (preselect is not null)
+        {
+            firstRun.Preselect(preselect, driverVersion);
         }
 
         var wizard = new FirstRunWizard(firstRun) { Owner = this };

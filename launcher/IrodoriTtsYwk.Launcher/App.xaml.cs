@@ -47,14 +47,34 @@ public partial class App : Application
         base.OnStartup(e);
 
         // ⑴ 単一起動。既に居るなら、そちらの窓を出させて自分は静かに退く。
+        //    **合図が届かなかった回は錠を待つ**（是正・検分）＝1 個目が終了の後始末
+        //    （ツリー kill・最大 15 秒）に入っていると、窓はもう無いのにプロセスは生きている。
+        //    そこで黙って退くと「押しても何も出ない」になり、本体の一括起動（裁定 103）も
+        //    /health が上がらないまま失敗を読む。錠が空いたら自分が 1 個目になる。
         _singleInstance = new Mutex(initiallyOwned: true, MutexName, out var isFirst);
         if (!isFirst)
         {
-            SignalExistingInstance();
-            _singleInstance.Dispose();
-            _singleInstance = null;
-            Shutdown();
-            return;
+            var owned = false;
+            if (ShutdownSequence.SecondInstanceShouldWait(SignalExistingInstance()))
+            {
+                try
+                {
+                    owned = _singleInstance.WaitOne(ShutdownSequence.SecondInstanceWait);
+                }
+                catch (AbandonedMutexException)
+                {
+                    // 1 個目が後始末を終える前に殺された＝錠はこちらの物になった
+                    owned = true;
+                }
+            }
+
+            if (!owned)
+            {
+                _singleInstance.Dispose();
+                _singleInstance = null;
+                Shutdown();
+                return;
+            }
         }
 
         AppServices.Paths.EnsureDataDirectories();
@@ -66,6 +86,16 @@ public partial class App : Application
         StartActivateWatch();
 
         _window = new MainWindowView();
+
+        // **閉じた窓を後から Show() しない**（是正・検分）＝裁定 124 で × ＝終了になった今、
+        // 窓が閉じてから OnExit が走るまでの隙に 2 個目の合図が届くと、閉じた窓に Show() を
+        // 撃って InvalidOperationException になる（受け口は無いので終了が墜落に化ける）。
+        _window.Closed += (_, _) =>
+        {
+            _shuttingDown = true;
+            _window = null;
+        };
+
         _window.Show();
     }
 
@@ -73,14 +103,19 @@ public partial class App : Application
     {
         _shuttingDown = true;
 
+        // ⑵ **合図の口を先に畳む**（是正・検分）＝この後の後始末は最大 15 秒 UI の糸を止める。
+        //    口を開けたまま待つと、その間に起きた 2 個目は「1 個目が居る」と読んで合図を送り、
+        //    止まった Dispatcher に積まれた ShowMainWindow は誰にも実行されずに捨てられる。
+        //    先に閉じておけば、2 個目は OpenExisting の失敗で「終わろうとしている」と判り、
+        //    錠が空くのを待って自分が 1 個目になる（ShutdownSequence.SecondInstanceShouldWait）。
+        _activateWatch?.Cancel();
+        _activateWatch?.Dispose();
+        _activateSignal?.Dispose();
+
         // ⑶ 起こした個体をツリー kill してから消える（VRAM を返す＝裁定 124）。
         //    待ちには上限を置く（落ちない個体のためにアプリが終われない、を作らない）。
         //    どの状態から閉じられても同じ 1 本を通る＝起動中・読込中・暖機中も止める。
         ShutdownSequence.StopServerTree(AppServices.Server, ShutdownSequence.DefaultStopTimeout);
-
-        _activateWatch?.Cancel();
-        _activateWatch?.Dispose();
-        _activateSignal?.Dispose();
 
         AppServices.Wrapper?.Dispose();
 
@@ -93,12 +128,13 @@ public partial class App : Application
     /// <summary>窓を出して前に持ってくる（2 個目の起動の合図）。</summary>
     public void ShowMainWindow()
     {
-        if (_shuttingDown)
+        // **終わりかけ・閉じた後は何も作らない**（是正・検分）＝合図の路から窓を新しく建てない
+        // （建てると裁定 124 の「閉じたら終わる」を合図 1 つで覆せてしまう）。
+        if (_shuttingDown || _window is null)
         {
             return;
         }
 
-        _window ??= new MainWindowView();
         if (!_window.IsVisible)
         {
             _window.Show();
@@ -140,20 +176,27 @@ public partial class App : Application
             token);
     }
 
-    private static void SignalExistingInstance()
+    /// <summary>
+    /// 1 個目へ「窓を出せ」と伝える。<b>届いたかを返す</b>（是正・検分）＝届かなかった回は
+    /// 1 個目が終わろうとしている（合図の口は終了の頭で閉じる）ので、呼び手は錠を待つ。
+    /// </summary>
+    private static bool SignalExistingInstance()
     {
         try
         {
             using var signal = EventWaitHandle.OpenExisting(ActivateEventName);
             signal.Set();
+            return true;
         }
         catch (WaitHandleCannotBeOpenedException)
         {
-            // 1 個目がまだ口を開けていない＝黙って退く（多重起動はしていない）
+            // 1 個目がまだ口を開けていない、または終了の後始末に入って閉じた
+            return false;
         }
         catch (UnauthorizedAccessException)
         {
-            // 別の利用者の個体＝触らない
+            // 別の利用者の個体＝触らない（待っても空かない）
+            return true;
         }
     }
 }

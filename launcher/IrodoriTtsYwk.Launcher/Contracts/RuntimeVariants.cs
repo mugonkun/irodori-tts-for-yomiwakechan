@@ -87,7 +87,9 @@ public static class RuntimeVariants
     /// <summary>UI の表示名（日本語のみ＝裁定 52）。</summary>
     public static string DisplayName(string variant) => variant switch
     {
-        Cu130 => "CUDA 13.0（既定・ドライバ 580 以上）",
+        // 「既定」は落とした（裁定 126 の B）＝どれを最初に選ぶかはドライバの帯が決めるので、
+        // 一覧の札が cu130 を既定と名乗ると、門が断る側へ利用者を呼び戻すことになる。
+        Cu130 => "CUDA 13.0（ドライバ 580 以上）",
         Cu126 => "CUDA 12.6（ドライバ 528.33 以上）",
         Cpu => "CPU（遅い・配信用途では非推奨）",
         RocmGfx1151 => "Radeon gfx1151（未保障・bf16 固定）",
@@ -95,7 +97,7 @@ public static class RuntimeVariants
     };
 
     /// <summary>
-    /// <b>文中に差す短い名</b>（括弧の註を落とした形＝裁定 125 の B）。
+    /// <b>文中に差す短い名</b>（括弧の註を落とした形＝裁定 126 の B）。
     /// <see cref="DisplayName"/> は括弧に下限や注記を抱えているので、
     /// 「このドライバ（537.58）では <b>CUDA 13.0</b> は動きません」のような 1 行にはそのまま置けない。
     /// <b>名は 1 箇所で綴る</b>ので、短い形もここに置く。
