@@ -431,8 +431,10 @@ public sealed class RoundThreeStampAndCacheTests : IDisposable
 
         Assert.True(verdict.Mismatch);
         Assert.True(verdict.LedgerChanged);
-        Assert.Contains("runtime-cpu.json", verdict.Line!, StringComparison.Ordinal);
-        Assert.Contains("組み直して", verdict.Line!, StringComparison.Ordinal);
+        // 段 F＝画面に出る 1 行は UiStrings が綴る（台帳の檔名は記録の側の綴りなので出さない）。
+        Assert.Equal(UiStrings.StatusRebuildLedgerChanged, verdict.Line);
+        Assert.Contains("入れ直して", verdict.Line!, StringComparison.Ordinal);
+        Assert.DoesNotContain("runtime-cpu.json", verdict.Line!, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -458,7 +460,11 @@ public sealed class RoundThreeStampAndCacheTests : IDisposable
         Assert.Null(verdict.Line);
         Assert.False(verdict.LedgerChanged);
         Assert.True(verdict.AppVersionChanged);
-        Assert.Contains("そのまま使えます", verdict.Note!, StringComparison.Ordinal);
+        // 段 F＝Note は記録にしか落ちない（版の綴りを残してよい唯一の面）。
+        Assert.StartsWith(
+            UiStrings.StatusAppVersionChangedLog, verdict.Note!, StringComparison.Ordinal);
+        Assert.Contains("v0.1.0", verdict.Note!, StringComparison.Ordinal);
+        Assert.Contains("v0.2.0", verdict.Note!, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -543,7 +549,7 @@ public sealed class RoundThreeStampAndCacheTests : IDisposable
         Assert.False(result.Ok);
         Assert.Equal(0, result.Files);
         Assert.True(File.Exists(Path.Combine(cache, "torch-1.whl")));
-        Assert.Contains("実行系がまだ組み上がっていない", result.Message, StringComparison.Ordinal);
+        Assert.Equal(UiStrings.CacheBlockedNotInstalled, result.Message);
     }
 
     [Fact]
@@ -564,7 +570,8 @@ public sealed class RoundThreeStampAndCacheTests : IDisposable
 
         Assert.False(result.Ok);
         Assert.True(File.Exists(Path.Combine(cache, "torch-1.whl")));
-        Assert.Contains("組み直して", result.Message, StringComparison.Ordinal);
+        Assert.Equal(UiStrings.CacheBlockedMismatch, result.Message);
+        Assert.Contains("入れ直して", result.Message, StringComparison.Ordinal);
 
         // 焼き印そのものが無い機体も同じ（判らない物は消さない）
         Assert.NotNull(CacheCleaner.Blocked(true, null, "aaaa"));
@@ -1395,7 +1402,10 @@ public sealed class RoundThreeMainViewModelTests : IDisposable
         var main = NewMain(paths, settings);
 
         Assert.True(main.Status.CanRebuildRuntime);
-        Assert.Contains("組み直して", main.Status.RebuildRuntimeText!, StringComparison.Ordinal);
+        Assert.StartsWith(
+            UiStrings.StatusRebuildLedgerChanged,
+            main.Status.RebuildRuntimeText!,
+            StringComparison.Ordinal);
         Assert.True(main.Status.RebuildRuntimeCommand.CanExecute(null));
 
         // 焼き印を今の台帳に直せば 1 手は消える

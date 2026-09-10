@@ -70,8 +70,11 @@ Python も pip も、黒い画面も要りません。同梱の 12 人の声か�
 
 ## 2. 導入の流れ（概略）
 
-> 便 D（ランチャ）と便 E（インストーラ）の実装で**確定した**。**確定手順は `docs/install.md`**（本節はその概略）。
-> 受け入れ条件は「利用者操作 ≤ 6（vc_redist を黙って通せれば ≤ 5）」（`docs/acceptance.md`）＝**実測 5 押下**。
+> 便 D（ランチャ）と便 E（インストーラ）の実装で**確定した**。**確定手順は `docs/install.md`**（本節はその概略・
+> **作る側の帳面**＝配布物には入らない）。利用者向けの手引きは `docs/guide.md`（**配布物に入る 1 檔**）。
+> 受け入れ条件は「利用者操作 ≤ 6（vc_redist を黙って通せれば ≤ 5）」（`docs/acceptance.md`）＝
+> **いまの規則は 4 押下**（v2.0 段 B）＝同意チェック・同意して次へ・準備を始める・発話テストへ。
+> 実測は RTX 機の 1 周で採る（`docs/design/v2-plan.md` 段 H の 2）。**改訂前の実測＝5 押下**。
 
 1. Release からインストーラ（ランチャ＋埋め込み Python の取得台帳＋自作分・数十 MB）を落として実行する。
 2. インストーラが `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（ROCm 版は `…\irodori-tts-ywk-radeon\`）
@@ -93,7 +96,8 @@ Python も pip も、黒い画面も要りません。同梱の 12 人の声か�
 **オフライン導入は用意しません**（`decisions.md` 8）。第三者バイナリ（wheel・exe・dll・モデル）を
 配布物に入れない方針のためです。
 
-詳細＝`docs/install.md`（**確定手順**・配布物にも入る）。
+利用者向けの手引き＝`docs/guide.md`（**配布物に入る**＝`{app}\docs\guide.md`。〔このアプリについて〕の
+〔使い方を見る〕が開くのもこれ）。作る側の確定手順＝`docs/install.md`（**配布物には入らない**＝v2.0 段 F-2）。
 
 ---
 
@@ -106,7 +110,7 @@ Python も pip も、黒い画面も要りません。同梱の 12 人の声か�
 | `docs/acceptance.md` | 受け入れ条件（数値）。 |
 | `docs/install.md` | 導入手順（**確定**・**作る側の帳面**＝利用者には指さない）。 |
 | `docs/guide.md` | **利用者向けの使い方**（配布物に入る・本文の正本＝`docs/design/v2-copy.md` §6）。 |
-| `docs/radeon.md` | ROCm 版の注記（gfx1151 で確認済みの事実だけ）。 |
+| `docs/radeon.md` | Radeon（ROCm）版の注記（gfx1151 で確認済みの事実だけ・**作る側の帳面**＝v2.0 段 F-2 で配布物から外した）。 |
 | `docs/design/` | 便ごとの設計書。 |
 | `upstream/` | 上流 2 本の submodule（**無改変**・`Irodori-TTS` `8224daf`／`Irodori-TTS-Server` `841fb7c`）。 |
 | `patches/` | ビルド時にだけ当てる差分（submodule には当てない）。 |

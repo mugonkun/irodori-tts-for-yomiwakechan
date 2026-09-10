@@ -164,31 +164,68 @@ public sealed class ReleaseFlavorTests
         Assert.Equal(RuntimeVariants.RadeonReleaseChoices, available);
     }
 
-    // ---- 裁定 109＝版の名札（CUDA 版／ROCm 版）--------------------------------------
+    // ---- 裁定 109 → v2.0 段 F-1＝版の名札（RTX（CUDA）／Radeon（ROCm））----------------
 
     [Fact]
-    public void 版の名札は利用者にはROCm版と名乗る()
+    public void 版の名札は利用者の語を先に置く()
     {
         // 内部の識別子（enum の Radeon・台帳名 runtime-rocm-*・Flavor id の radeon）は据え置きで、
-        // **利用者に見せる名だけ**が「ROCm 版」＝司令官の逐語「(CUDA版)(ROCm版)」。
-        Assert.Equal("CUDA 版", ReleaseFlavors.FlavorLabel(ReleaseFlavor.Cuda));
-        Assert.Equal("ROCm 版", ReleaseFlavors.FlavorLabel(ReleaseFlavor.Radeon));
+        // **利用者に見せる名だけ**が替わった＝所有者の指示（2026-09-10・憲章 §6-2 附録 4）＝
+        // 併記が正である（「CUDA 版」だけ・「ROCm 版」だけ・「NVIDIA 版」だけは使わない）。
+        Assert.Equal("RTX（CUDA）", ReleaseFlavors.FlavorLabel(ReleaseFlavor.Cuda));
+        Assert.Equal("Radeon（ROCm）", ReleaseFlavors.FlavorLabel(ReleaseFlavor.Radeon));
+    }
+
+    [Fact]
+    public void 版の名札に旧い綴りが1つも残っていない()
+    {
+        // 「（CUDA 版）」「（ROCm 版）」は v1.1.0 までの名で、いまは .iss の OldAppName にしか居ない。
+        foreach (var flavor in new[] { ReleaseFlavor.Cuda, ReleaseFlavor.Radeon })
+        {
+            foreach (var text in new[]
+                     {
+                         ReleaseFlavors.FlavorLabel(flavor),
+                         ReleaseFlavors.AppTitle(flavor),
+                         ReleaseFlavors.WizardTitle(flavor),
+                     })
+            {
+                Assert.DoesNotContain("CUDA 版", text, StringComparison.Ordinal);
+                Assert.DoesNotContain("ROCm 版", text, StringComparison.Ordinal);
+            }
+        }
     }
 
     [Fact]
     public void 窓題はインストーラの表示名と1字も違わない()
     {
-        // installer/irodori-tts-ywk.iss の MyAppName の逐語（全角括弧・版の前に半角空白 1 つ）。
-        Assert.Equal("irodori-TTS for 読み分けちゃん（CUDA 版）", ReleaseFlavors.AppTitle(ReleaseFlavor.Cuda));
-        Assert.Equal("irodori-TTS for 読み分けちゃん（ROCm 版）", ReleaseFlavors.AppTitle(ReleaseFlavor.Radeon));
+        // installer/irodori-tts-ywk.iss の MyAppName の逐語（全角ダッシュ・前後に半角空白 1 つ）。
+        Assert.Equal(
+            "irodori-TTS for 読み分けちゃん － RTX（CUDA）", ReleaseFlavors.AppTitle(ReleaseFlavor.Cuda));
+        Assert.Equal(
+            "irodori-TTS for 読み分けちゃん － Radeon（ROCm）", ReleaseFlavors.AppTitle(ReleaseFlavor.Radeon));
         Assert.StartsWith(ReleaseFlavors.AppBaseName, ReleaseFlavors.AppTitle(ReleaseFlavor.Radeon), StringComparison.Ordinal);
     }
 
     [Fact]
-    public void 初回取得の窓題も版で分かれる()
+    public void はじめの準備の窓題も版で分かれる()
     {
-        Assert.Equal("初回取得（CUDA 版）", ReleaseFlavors.WizardTitle(ReleaseFlavor.Cuda));
-        Assert.Equal("初回取得（ROCm 版）", ReleaseFlavors.WizardTitle(ReleaseFlavor.Radeon));
+        // 幹に本体名を入れない＝` － ` が 2 つ並ばない（`v2-copy.md` §1-8 の :110）。
+        Assert.Equal("はじめの準備 － RTX（CUDA）", ReleaseFlavors.WizardTitle(ReleaseFlavor.Cuda));
+        Assert.Equal("はじめの準備 － Radeon（ROCm）", ReleaseFlavors.WizardTitle(ReleaseFlavor.Radeon));
+        Assert.Equal(
+            1,
+            ReleaseFlavors.WizardTitle(ReleaseFlavor.Cuda).Split(ReleaseFlavors.Separator).Length - 1);
+    }
+
+    [Fact]
+    public void このアプリについてのバージョンは番号に名札を添える()
+    {
+        // `v2-copy.md` §1-8 の :39＝「バージョン v2.0.0 － RTX（CUDA）」。
+        // 主窓の隅は番号だけ（同 §1-1 の 33 行目）＝AboutViewModel.VersionText は通さない。
+        Assert.Equal(
+            AppVersion.Display + " － RTX（CUDA）", AboutViewModel.VersionText(ReleaseFlavor.Cuda));
+        Assert.Equal(
+            AppVersion.Display + " － Radeon（ROCm）", AboutViewModel.VersionText(ReleaseFlavor.Radeon));
     }
 
     // トレイの吹き出しの 2 本（`TrayText` の版の名札と 63 字の枠）は裁定 124 で消えた＝
@@ -1961,7 +1998,8 @@ public sealed class AboutViewModelTests
     public void 開発ビルドはそう名乗る()
     {
         Assert.Contains("開発ビルド", AboutViewModel.UpstreamText, StringComparison.Ordinal);
-        Assert.Equal(AppVersion.Display, AboutViewModel.VersionText);
+        Assert.StartsWith(
+            AppVersion.Display, AboutViewModel.VersionText(ReleaseFlavor.Cuda), StringComparison.Ordinal);
     }
 
     [Fact]

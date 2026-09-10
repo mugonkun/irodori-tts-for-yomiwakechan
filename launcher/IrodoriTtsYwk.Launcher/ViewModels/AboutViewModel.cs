@@ -33,7 +33,17 @@ public sealed class AboutViewModel : ObservableObject
     /// <summary>README §4（Ethical Restrictions 1・No Impersonation）。</summary>
     public static string EthicsNotice => VoicesViewModel.ImpersonationNotice;
 
-    public static string VersionText => AppVersion.Display;
+    /// <summary>
+    /// 〔このアプリについて〕の「バージョン」＝<b>番号 ＋ 版の名札</b>
+    /// （<c>v2.0.0 － RTX（CUDA）</c>・`v2-copy.md` §1-8 の <c>:39</c>／§8）。
+    /// <para>
+    /// <b>主窓の隅は番号だけ</b>（`v2-copy.md` §1-1 の 33 行目）＝そちらは
+    /// <see cref="AppVersion.Display"/> を直に読む。名札を綴るのは
+    /// <see cref="ReleaseFlavors.FlavorLabel"/> ただ 1 箇所である（`v2-plan.md` F-1 の規則）。
+    /// </para>
+    /// </summary>
+    public static string VersionText(ReleaseFlavor flavor) =>
+        ReleaseFlavors.Decorate(AppVersion.Display, flavor);
 
     /// <summary>上流 pin（publish でだけ焼かれる）。</summary>
     public static string UpstreamText => AppVersion.IsReleaseBuild

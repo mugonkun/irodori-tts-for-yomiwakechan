@@ -26,12 +26,13 @@ public partial class AboutView : UserControl
     {
         InitializeComponent();
 
-        // 見出しは版で分ける（裁定 109）＝樹の ledger/ から読む。読めなければ CUDA 版として振る舞う。
-        TitleText.Text = ReleaseFlavors.AppTitle(
-            ReleaseFlavors.DetectFrom(AppServices.Paths.LedgerDir));
+        // 見出しと「バージョン」は版で分ける（裁定 109 → v2.0 段 F-1）＝樹の ledger/ から読む。
+        // 読めなければ RTX（CUDA）として振る舞う。**樹は 1 度だけ読む**（同じ画面で 2 度数えない）。
+        var flavor = ReleaseFlavors.DetectFrom(AppServices.Paths.LedgerDir);
+        TitleText.Text = ReleaseFlavors.AppTitle(flavor);
 
         DisclaimerText.Text = AboutViewModel.Disclaimer;
-        VersionText.Text = AboutViewModel.VersionText;
+        VersionText.Text = AboutViewModel.VersionText(flavor);
         UpstreamText.Text = AboutViewModel.UpstreamText;
         WatermarkText.Text = AboutViewModel.WatermarkNotice;
         EthicsText.Text = AboutViewModel.EthicsNotice;

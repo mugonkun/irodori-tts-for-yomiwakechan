@@ -400,6 +400,25 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// 詳細 6 行目＝更新のとき、新しくなった分だけ取り直す（既定 ON・<c>v2-copy.md</c> §4 の 6 行目）。
+    /// </summary>
+    public bool DifferentialUpdate
+    {
+        get => _draft.DifferentialUpdate;
+        set
+        {
+            if (_draft.DifferentialUpdate == value)
+            {
+                return;
+            }
+
+            _draft.DifferentialUpdate = value;
+            RaisePropertyChanged();
+            Touch();
+        }
+    }
+
     /// <summary>ready 待ち（秒）。0＝変種の既定。</summary>
     public int ReadyTimeoutSeconds
     {
@@ -735,6 +754,7 @@ public sealed class SettingsViewModel : ObservableObject
         RaisePropertyChanged(nameof(EmptyCacheNote));
         RaisePropertyChanged(nameof(ShowMemoryPanel));
         RaisePropertyChanged(nameof(AutoStartServer));
+        RaisePropertyChanged(nameof(DifferentialUpdate));
         RaisePropertyChanged(nameof(ReadyTimeoutSeconds));
         RaisePropertyChanged(nameof(ReadyTimeoutNote));
     }
@@ -778,6 +798,7 @@ public sealed class SettingsViewModel : ObservableObject
         to.ReadyTimeoutSeconds = from.ReadyTimeoutSeconds;
         to.AutoStartServer = from.AutoStartServer;
         to.ShowMemoryPanel = from.ShowMemoryPanel;
+        to.DifferentialUpdate = from.DifferentialUpdate;
 
         // **ここから下は写さない**（上の註）＝ウィザード（firstRunCompleted・
         // acceptedNoticesSha256・runtimeLedgers・installedAppVersions）・話者一覧（voiceOrder）・

@@ -831,7 +831,15 @@ public sealed class MainViewModel : ObservableObject
 
             if (RuntimeStamp.LooksComplete(_paths, ledger, variant))
             {
-                RuntimeStamp.Burn(_settings, _paths, variant);
+                // **写しは置かない**（是正・2026-09-11・medium 5）＝ここで受け入れているのは
+                // 「*.dist-info の件数が合う樹」であって、**何で組んだかは判っていない**
+                // （v1.1.0 で組んだ樹・build/assemble-runtime.ps1 で組んだ樹）。
+                // 焼き印だけなら「催促を止める」で済むが、写しを置くのは「この樹の中身は全部この
+                // 内容である」と名乗る行為で、それは嘘になりうる＝次の版の差分がその嘘を信じ、
+                // 本当は古い wheel を見送って混ざった樹を残す。写しが**無い**回は差分が組めず、
+                // その 1 回だけ丸ごとになる＝素性の知れない樹には、それが正しい。
+                // 規則の正本は RuntimeStamp.Burn の註（writeAppliedLedger）。
+                RuntimeStamp.Burn(_settings, _paths, variant, writeAppliedLedger: false);
                 _store.Save(_settings);
             }
             else
@@ -862,6 +870,21 @@ public sealed class MainViewModel : ObservableObject
                 Status.AppendLog(verdict.Note);
             }
         }
+        else if (verdict.LedgerChanged
+                 && !string.Equals(
+                     _settings.InstalledAppVersionFor(variant)?.Trim(),
+                     AppVersion.Display,
+                     StringComparison.Ordinal))
+        {
+            // **版だけは先に焼き直す**（是正・2026-09-11・low 9）＝台帳も一緒に動いた回
+            // （v1.1.0 → v2.0.0 がまさにそれ）は上の枝に入らないので、組み直しを後回しにしている
+            // 間ずっと installedAppVersion が古いまま残る。それを見て「版が変わった回だけ」と
+            // 構えている同梱の声の突き合わせ（LauncherComposition の PresetSync＝12 檔・35 MB 級）が
+            // **毎起動**走ってしまう。焼き直すのは版の欄だけで、内容の側（sha256）は古いまま＝
+            // 状態帯の 1 行と 1 手は消えない（催促は続く）。
+            RuntimeStamp.BurnAppVersion(_settings, variant);
+            _store.Save(_settings);
+        }
 
         Status.ApplyRuntimeStamp(verdict.Line is null ? null : WithRefetchSize(verdict.Line));
     }
@@ -876,7 +899,12 @@ public sealed class MainViewModel : ObservableObject
     /// </summary>
     private string WithRefetchSize(string line)
     {
-        var plan = FirstRunViewModel.TryPlan(_paths, _settings.Variant, skipVcRedist: true);
+        // **差分で済む回は差分の代金を告げる**（是正・2026-09-11・low 8）＝丸ごとの計画で値を付けると、
+        // 実際には数百 MB しか落とさない更新に「押すと 4.2 GiB を取り直します」と書くことになり、
+        // この 1 行が在る理由（押す前に代金を告げる）と正反対になる。
+        // 切ってある回・丸ごとへ落ちる回は、これまでどおり全体の計画で値を付ける。
+        var plan = DifferentialFetchPlan()
+            ?? FirstRunViewModel.TryPlan(_paths, _settings.Variant, skipVcRedist: true);
         if (plan is null)
         {
             return line;
@@ -897,6 +925,40 @@ public sealed class MainViewModel : ObservableObject
         return line + "（取得キャッシュに原檔が "
             + missing.Count.ToString(CultureInfo.InvariantCulture) + " 件足りません＝押すと "
             + FetchPlanner.FormatBytes(bytes) + " を取り直します）";
+    }
+
+    /// <summary>
+    /// <b>いま押したら差分で済むか</b>＝済むならその取得計画（済まないなら null）。
+    /// <see cref="WithRefetchSize"/> と <see cref="TryDifferentialAsync"/> が<b>同じ 4 つの条件</b>を
+    /// 見る（値と行いを食い違わせない）。<b>檔は 1 つも書かない。</b>
+    /// </summary>
+    private FetchPlan? DifferentialFetchPlan()
+    {
+        if (!_settings.DifferentialUpdate)
+        {
+            return null;
+        }
+
+        var variant = _settings.Variant;
+        if (_paths.ResolvePythonExe(variant) is null)
+        {
+            return null;
+        }
+
+        var ledger = FirstRunViewModel.ReadLedgerFile<LedgerFile>(
+            _paths.LedgerPath(RuntimeVariants.LedgerName(variant)));
+        if (ledger is null)
+        {
+            return null;
+        }
+
+        if (!RuntimeStamp.LooksComplete(_paths, ledger, variant))
+        {
+            return null; // 途中で切れている樹＝差分の相手にならない（丸ごとが拾う）
+        }
+
+        var diff = RuntimeDiff.Plan(RuntimeStamp.ReadAppliedLedger(_paths, variant), ledger);
+        return diff.RebuildAll ? null : RuntimeDiff.ToDifferentialRun(variant, diff).Plan;
     }
 
     /// <summary>
@@ -955,6 +1017,13 @@ public sealed class MainViewModel : ObservableObject
         if (AppServices.Server.ProcessId is not null)
         {
             await StopServerAsync().ConfigureAwait(true);
+        }
+
+        // ⑴ **差分で済むならそちら**（段 E の RuntimeDiff・段 F が配線した＝憲章 §4-24）。
+        // 済まない回（設定が OFF・写しが無い・6 割超が動いた・締めが通らない）は下の丸ごとへ落ちる。
+        if (await TryDifferentialAsync(ledger, cancellationToken).ConfigureAwait(true))
+        {
+            return;
         }
 
         var plan = FirstRunViewModel.TryPlan(_paths, _settings.Variant, skipVcRedist: true, out var reason);
@@ -1035,6 +1104,154 @@ public sealed class MainViewModel : ObservableObject
             + install.Files.ToString(CultureInfo.InvariantCulture) + " 檔・"
             + UiText.Bytes(install.Bytes) + "）。");
         CheckRuntimeStamp();
+    }
+
+    /// <summary>
+    /// <b>新しくなった分だけ取り直す</b>（設定 › 詳細 の 6 行目・<c>v2-spec.md</c> §11-3）。
+    /// <para>
+    /// 段 E が道具（<see cref="RuntimeDiff"/>）を作り、段 F がここで更新の道に結んだ。
+    /// <b>差分を選ぶ条件は 4 つとも揃ったときだけ</b>＝⑴ 設定が ON ⑵ いま動く一式が在る
+    /// ⑶ 展開に使った台帳の写し（<c>.ledger.json</c>）が在る ⑷ 計画が丸ごとへ落ちていない。
+    /// 1 つでも欠けたら<b>偽を返す</b>＝呼び手はそのまま丸ごと入れ直しへ進む。
+    /// </para>
+    /// <para>
+    /// <b>締めを必ず撃つ</b>（<see cref="RuntimeDiff.VerifyAfterApply"/>）＝差分の回は
+    /// <c>RemovePartialOnFailure=false</c> で構えるので、途中で落ちた機体は新旧が混ざった樹で残る。
+    /// 締めが通らなければ<b>その場で偽を返し</b>、丸ごと入れ直しに拾わせる。
+    /// <c>.ledger.json</c> は<b>締めが通ってから</b>置く（嘘の写しを次の版に信じさせない）。
+    /// </para>
+    /// </summary>
+    /// <returns>差分で決着したか（偽＝丸ごと入れ直しへ落ちる）。</returns>
+    private async Task<bool> TryDifferentialAsync(
+        LedgerFile ledger, CancellationToken cancellationToken)
+    {
+        if (!_settings.DifferentialUpdate)
+        {
+            return false;
+        }
+
+        var variant = _settings.Variant;
+        if (_paths.ResolvePythonExe(variant) is null)
+        {
+            return false; // まだ一式が無い＝初回の道（差分の相手が居ない）
+        }
+
+        if (!RuntimeStamp.LooksComplete(_paths, ledger, variant))
+        {
+            // **途中で切れている樹には当てない**（是正・2026-09-11）＝写しが残っていると計画は組めるが、
+            // 当てた先で締めが必ず落ちる＝丸ごとへ行く前に樹をもう一度いじるだけである。
+            // 値を告げる側（WithRefetchSize）も同じ条件を見るので、代金と行いが食い違わない。
+            return false;
+        }
+
+        var diff = RuntimeDiff.Plan(RuntimeStamp.ReadAppliedLedger(_paths, variant), ledger);
+        if (diff.RebuildAll)
+        {
+            Status.AppendLog(UiStrings.DifferentialFallsBack
+                + (diff.RebuildReason is null ? string.Empty : "（" + diff.RebuildReason + "）"));
+            return false;
+        }
+
+        if (diff.UpToDate)
+        {
+            // **落とす物も入れ替える物も無い**（是正・2026-09-11・medium 6）＝持ち物の一覧は
+            // 別の檔になったが、中身（item と内容の突合）は 1 件も動いていない回である
+            // （作り直した日付が動いただけ、など）。ここを素通りさせると 0 件の当て込みが失敗し、
+            // 見出しが動いただけの更新に数 GiB を払わせることになる。
+            // この回は樹が本当に新しい内容と合っているので、写しも置いてよい。
+            Status.AppendLog(UiStrings.DifferentialNothingToDo);
+            RuntimeStamp.Burn(_settings, _paths, variant);
+            _store.Save(_settings);
+            CheckRuntimeStamp();
+            return true;
+        }
+
+        var downloader = AppServices.Downloader;
+        var installer = AppServices.RuntimeInstaller;
+        if (installer is null || (diff.Any && downloader is null))
+        {
+            return false;
+        }
+
+        var (fetch, differential) = RuntimeDiff.ToDifferentialRun(variant, diff);
+        Status.ApplyRebuildProgress(UiStrings.DifferentialStarting, 0);
+        Status.AppendLog(UiStrings.DifferentialStarting
+            + (RuntimeDiff.DownloadNotice(diff.Bytes) ?? string.Empty));
+        if (RuntimeDiff.RemovedLine(diff.Removed) is string removed)
+        {
+            Status.AppendLog(removed);
+        }
+
+        // ⑴ 落とす（cache に在る原檔はそのまま使う＝MissingCacheRequests が間引く）。
+        var missing = MissingCacheRequests(fetch);
+        if (missing.Count > 0)
+        {
+            var progress = new Progress<DownloadProgress>(p =>
+            {
+                Status.ApplyRebuildProgress(FirstRunViewModel.Describe(p), p.Fraction ?? 0);
+                Status.AppendLog(FirstRunViewModel.Describe(p));
+            });
+            var results = await downloader!
+                .DownloadAllAsync(missing, progress, cancellationToken)
+                .ConfigureAwait(true);
+            if (results.FirstOrDefault(static r => !r.Ok) is { } failed)
+            {
+                Status.AppendLog("取得に失敗しました：" + (failed.FailureReason ?? "理由が分かりません。"));
+                return false;
+            }
+        }
+
+        // ⑵ 変わった分だけを当てる（既存の樹は消さない＝ToDifferentialRun が構えた展開器）。
+        var runtimeDir = _paths.ResolveRuntimeDir(variant)
+            ?? System.IO.Path.Combine(_paths.RuntimeRoot, variant);
+        var install = await differential
+            .InstallAsync(
+                new InstallRequest(
+                    new LedgerFile { Items = diff.Fetch },
+                    _paths.DownloadCacheDir,
+                    runtimeDir,
+                    _paths.AppDir,
+                    _paths.PthTemplatePath),
+                new Progress<InstallProgress>(p =>
+                {
+                    var line = p.Phase + "：" + (p.ItemName ?? string.Empty)
+                        + "　" + UiText.Progress(p.Done, p.Total);
+                    Status.ApplyRebuildProgress(
+                        line, p.Total > 0 ? Math.Clamp((double)p.Done / p.Total, 0, 1) : 0);
+                    Status.AppendLog(line);
+                }),
+                cancellationToken)
+            .ConfigureAwait(true);
+
+        // ⑶ 締め＝*.dist-info の件数が配布樹の台帳と合うか。合わなければ丸ごとへ落とす。
+        if (!install.Ok || !RuntimeDiff.VerifyAfterApply(_paths, ledger, variant))
+        {
+            // **ここまで来た回は樹に手を入れている**（是正・2026-09-11・medium 4）＝
+            // 当て込みは檔を書きながら進むので、落ちた地点によっては新旧が混ざっている。
+            // ⑴ 画面には「途中で止まった＝丸ごと入れ直す」と出す（「変わった量が多い」ではない）
+            // ⑵ **写しを落とす**＝混ざる前の姿を名乗ったまま残ると、次の回の差分がその嘘を信じて
+            //    混ざりを温存する。落としておけば次は必ず丸ごとから始まる。
+            Status.AppendLog(UiStrings.DifferentialApplyFailed
+                + (install.FailureReason is null ? string.Empty : "（" + install.FailureReason + "）"));
+            RuntimeStamp.RemoveAppliedLedger(_paths, variant);
+            return false;
+        }
+
+        RuntimeStamp.Burn(_settings, _paths, variant);
+        _store.Save(_settings);
+        Status.AppendLog(UiStrings.DifferentialDone + "（"
+            + install.Files.ToString(CultureInfo.InvariantCulture) + " 檔・"
+            + UiText.Bytes(install.Bytes) + "）");
+
+        // 声のデータ（モデル）の差分は**見積りだけ**を記録に残す（取得の道は既存のまま＝§11-4）。
+        var models = ModelDiff.PlanAgainstApplied(_paths);
+        if (ModelDiff.Summary(models) is string summary)
+        {
+            Status.AppendLog(summary);
+        }
+
+        CheckRuntimeStamp();
+        return true;
     }
 
     /// <summary>cache に居ない（または長さが合わない）原檔の注文だけ（<b>純関数に近い</b>）。</summary>

@@ -156,6 +156,7 @@ CUDA 版の `{app}\ledger` に `runtime-rocm-gfx1151.json` が 1 檔残るだけ
 | `DefaultDirName` | `{autopf}\irodori-tts-ywk-cuda` | `{autopf}\irodori-tts-ywk-radeon` |
 | 同梱台帳 | `runtime-cu130` `runtime-cu126` `runtime-cpu` | `runtime-rocm-gfx1151` `runtime-cpu` |
 | 同梱 docs | `README.md` `install.md` | ＋`radeon.md` |
+| ↑ **いまの正本は v2.0 段 F-2** | `README.md` `guide.md` | **同じ 2 檔**（`radeon.md` は外した） |
 | 出力 | `irodori-tts-ywk-setup-v0.1.0-cuda.exe` | `…-v0.1.0-radeon.exe` |
 
 ※ `launcher/Directory.Build.props` の `<Product>irodori-TTS for 読み分けちゃん</Product>` は
@@ -169,6 +170,11 @@ CUDA 版の `{app}\ledger` に `runtime-rocm-gfx1151.json` が 1 檔残るだけ
 `PrivilegesRequiredOverridesAllowed` は**書かない**（既定＝空＝利用者が `/ALLUSERS` で昇格導入に切り替えられない）。
 
 ### 1-5 `docs\` は明示列挙する（**最小案から採る**）
+
+> **いまの正本＝v2.0 段 F-2**（2026-09-11）。写すのは **両版とも 2 檔**（`README.md`・`guide.md`）である。
+> `install.md` と `radeon.md` は**作る側の帳面**へ戻した（リポの檔名・番号・実測を引く文が利用者機に
+> 出ていた＝憲章 原則 8）。既に入っている機体の写しは `[InstallDelete]` の 2 行が落とす。
+> 以下の本文は**便 E 当時の記帳**として残す（数の「2 檔（Radeon 版のみ 3 檔）」は古い）。
 
 `{#SourceDocs}\*.md` のような一括写しは**却下**。実測＝`docs/` 直下は
 `acceptance.md`・`contract.md`・`install.md`・`preset-voices-listening.md`・`radeon.md` の 5 檔で、
@@ -605,7 +611,18 @@ but it will **not** recursively delete files/directories inside them.」＝junct
 
 ### 5-4 アンインストール
 
-順＝`usAppMutexCheck`（走行中なら止まる）→ `usUninstall`（`[Files]` の逆再生）→ `usPostUninstall`（§2 の 2 段の問い）→ `usDone`。
+順＝`usAppMutexCheck`（走行中なら止まる）→ `usUninstall`（`[Files]` の逆再生）→ `usPostUninstall`（**版の置き場を丸ごと消す。問わない**）→ `usDone`。
+
+> **この節の 2 と 3 は裁定 132／133（2026-09-11）で規則ごと古くなった。**
+> **いまの正本は `docs/design/v2-spec.md` §11-8 と `docs/design/v2-plan.md` 段 E-3／F-2 である。**
+> ⑴ **問いは 1 つも出さない**（「取得した実行系とモデルも削除しますか？」も
+> 「追加した声と設定を消しますか？」も廃した）＝無人でも有人でも同じ道を通る。
+> ⑵ **データ樹は版ごと**（`…\irodori-tts-ywk-cuda\`／`…-radeon\`）＝共有していないので、
+> 下の 3 の「道連れになる」場合分けは**規則ごと廃止**した。もう一方の版の樹には 1 檔も触れない。
+> ⑶ **旧い共有樹**（`%LOCALAPPDATA%\irodori-tts-ywk\`）だけは、もう一方の版が入っていない
+> ときに限って一緒に消す（移送していない機体に約 8 GB が居残るため＝裁定 133 ⑸）。
+> ⑷ **置き場の外には 1 檔も触れない**＝声を追加するときに利用者が選んだ元の wav は残る。
+> 以下の 2 と 3 は**この改正までの記帳**として残す（消さない＝なぜ変わったかが読めなくなる）。
 
 1. **`{app}` は畳まれる。**`[UninstallDelete]` は名指しで 2 行だけ（`{app}\server` と `dirifempty {app}`）。
    **`{app}` を `filesandordirs` で丸ごと消す形は採らない**＝CHM 逐語の第 2 の理由

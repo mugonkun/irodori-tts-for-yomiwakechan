@@ -79,40 +79,58 @@ public static class ReleaseFlavors
         return filtered.Length > 0 ? filtered : Choices(flavor);
     }
 
-    // ---- 版の名札（裁定 109＝CUDA 版と ROCm 版を利用者に見せ分ける）--------------------
+    // ---- 版の名札（裁定 109 → v2.0 段 F-1 で綴りを改めた）------------------------------
     // 司令官の逐語（2026-09-07）＝「『CUDA版とROCm版の区別』インストーラーが別のはずだが、アプリ名称も
     // (CUDA版)(ROCm版)としてデフォルトインストールフォルダも分けたい。……Windowタイトルも別に分ける。」
+    // 所有者の指示（2026-09-10・憲章 §6-2 附録 4／`v2-spec.md` §9）＝**併記が正**である＝
+    //   「（CUDA 版）」「（ROCm 版）」→ **「RTX（CUDA）」「Radeon（ROCm）」**。
+    //   利用者は自分の機体の箱に書いてある語（RTX／Radeon）で選ぶのであって、CUDA／ROCm は
+    //   どの箱にも書いていない。だから**利用者の語を先に置き、技術の語を括弧で添える**。
     // ここに置く理由＝exe は 1 本で両リリースを兼ねる（樹から読む）ので、名札も樹から導く純関数にする。
     // 内部の識別子（enum の Radeon・台帳名 runtime-rocm-*・Flavor id の radeon）は 1 字も変えない
-    // ＝利用者に見せる名だけが「ROCm 版」である。
+    // ＝利用者に見せる名だけが「Radeon（ROCm）」である。
+    //
+    // **版の名札を綴るのはこの 1 箇所だけ**（`v2-plan.md` F-1 の規則）＝
+    // `RuntimeVariants.ShortDisplayName` と `VariantGate.Label` の「CUDA」は**動かし方の短い名**で
+    // あって版の名札ではない（同じ文で「動かし方」と「版」の名を混ぜない）。
+    // インストーラ側の逐語は `installer/irodori-tts-ywk.iss` の MyAppName＝**同じ 2 語**である。
 
     /// <summary>版に依らないアプリの名（表示名の幹）。</summary>
     public const string AppBaseName = "irodori-TTS for 読み分けちゃん";
 
-    /// <summary>版の名札（<c>CUDA 版</c>／<c>ROCm 版</c>・純関数）。</summary>
+    /// <summary>幹と版の名札のあいだの飾り（全角ダッシュ＝インストーラの表示名と 1 字も違えない）。</summary>
+    public const string Separator = " － ";
+
+    /// <summary>版の名札（<c>RTX（CUDA）</c>／<c>Radeon（ROCm）</c>・純関数）。</summary>
     public static string FlavorLabel(ReleaseFlavor flavor) => flavor switch
     {
-        ReleaseFlavor.Radeon => "ROCm 版",
-        _ => "CUDA 版",
+        ReleaseFlavor.Radeon => "Radeon（ROCm）",
+        _ => "RTX（CUDA）",
     };
 
-    /// <summary>幹に版の名札を括弧で足す（全角括弧＝インストーラの表示名と 1 字も違えない）。</summary>
+    /// <summary>
+    /// 幹に版の名札を足す（<c>幹 － RTX（CUDA）</c>）。
+    /// <b>括弧では飾らない</b>＝名札そのものが括弧を持つので「…（RTX（CUDA））」と二重になる。
+    /// </summary>
     public static string Decorate(string baseName, ReleaseFlavor flavor)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(baseName);
-        return baseName + "（" + FlavorLabel(flavor) + "）";
+        return baseName + Separator + FlavorLabel(flavor);
     }
 
     /// <summary>窓題・このアプリについての見出し（＝インストーラの AppName と同じ文字列）。</summary>
     public static string AppTitle(ReleaseFlavor flavor) => Decorate(AppBaseName, flavor);
 
-    /// <summary>初回取得ウィザードの窓題。</summary>
-    public static string WizardTitle(ReleaseFlavor flavor) => Decorate("初回取得", flavor);
+    /// <summary>
+    /// はじめの準備の窓題（<c>はじめの準備 － RTX（CUDA）</c>）。
+    /// <b>幹に本体名を入れない</b>＝` － ` が 2 つ並ぶ（`v2-copy.md` §1-8 の :110）。
+    /// </summary>
+    public static string WizardTitle(ReleaseFlavor flavor) => Decorate("はじめの準備", flavor);
 
     // トレイの吹き出し（TrayBaseName／TrayText）は裁定 124 で消えた＝常駐しないので
     // NotifyIcon も 63 字の枠も無い。状態の日本語は StatusViewModel.StateLabel が 1 箇所で綴る。
 
-    /// <summary>配布樹の <c>ledger/</c> を読んで版を決める（薄い殻＝読めなければ CUDA 版）。</summary>
+    /// <summary>配布樹の <c>ledger/</c> を読んで版を決める（薄い殻＝読めなければ RTX（CUDA））。</summary>
     public static ReleaseFlavor DetectFrom(string? ledgerDir) =>
         string.IsNullOrWhiteSpace(ledgerDir)
             ? ReleaseFlavor.Cuda

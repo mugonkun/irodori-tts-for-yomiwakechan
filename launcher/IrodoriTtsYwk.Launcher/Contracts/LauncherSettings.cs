@@ -250,6 +250,19 @@ public sealed class LauncherSettings
     [JsonPropertyName("showMemoryPanel")]
     public bool ShowMemoryPanel { get; set; } = true;
 
+    /// <summary>
+    /// 更新のとき、<b>新しくなった分だけ</b>取り直すか（既定 ON・憲章 §4-24・<c>v2-spec.md</c> §11-3）。
+    /// <para>
+    /// 真＝版が上がった回に <see cref="Services.Ledger.RuntimeDiff"/> の計画で
+    /// <b>変わった item だけ</b>を落として当てる。偽＝いままでどおり丸ごと組み直す
+    /// （<c>decisions.md</c> 90 で取得キャッシュは空なのが常態なので、実際は数 GiB の再取得になる）。
+    /// 差分が組めない回（旧台帳の写しが無い・6 割超が動いた・旧にだけ在る item が在る）は
+    /// この設定が真でも<b>丸ごと</b>へ落ちる＝<see cref="Services.Ledger.RuntimeDiffPlan.RebuildAll"/>。
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("differentialUpdate")]
+    public bool DifferentialUpdate { get; set; } = true;
+
     /// <summary>試し撃ちで最後に使った話者。</summary>
     [JsonPropertyName("lastTestVoice")]
     public string? LastTestVoice { get; set; }

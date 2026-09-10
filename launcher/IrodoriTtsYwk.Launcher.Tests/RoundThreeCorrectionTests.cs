@@ -243,7 +243,8 @@ public sealed class CorrectionThreeStampTests : IDisposable
 
         Assert.Null(main.Status.RebuildRuntimeText);                       // 1 手は出ない
         Assert.False(main.Status.RebuildRuntimeCommand.CanExecute(null));
-        Assert.Contains("そのまま使えます", main.Status.LogText, StringComparison.Ordinal);
+        Assert.Contains(
+            UiStrings.StatusAppVersionChangedLog, main.Status.LogText, StringComparison.Ordinal);
         Assert.Equal(AppVersion.Display, settings.InstalledAppVersionFor(RuntimeVariants.Cpu));
 
         // 檔にも焼き直っている＝窓を開き直しても同じ 1 行を見せられない

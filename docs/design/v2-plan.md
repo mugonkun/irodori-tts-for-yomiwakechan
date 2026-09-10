@@ -778,15 +778,18 @@ XAML の**要素の本文**を足した。1 巡目は UiStrings と可視属性�
 > **規則**＝**版の名札を綴るのは `ReleaseFlavors.FlavorLabel` の 1 箇所だけ**である。
 > それ以外の `cuda`／`rocm` の綴りは識別子であり、`ShortDisplayName`／`VariantGate.Label` は**動かし方の名**である。
 
-**`OldAppName` の枠は 1 つしかない**＝v1.0 世代の名（`irodori-TTS for 読み分けちゃん`）の近道は**掃除できない**。
-その機体は既に 1 度更新を通っているので実害は薄いが、**判っている欠落として記帳する**。
+**`OldAppName` の枠は 1 つ**＝この見込みは**誤りだった**（是正・2026-09-11・medium 10）。
+`[InstallDelete]` は行をいくつ書いてもよいので、`OldAppName`（v1.1.0 世代）と
+**`OlderAppName`（v1.0 世代）**の 2 行を書いた。v1.0.0／v1.0.1／v1.0.2 は v1.1.0 と**同じ `AppId`**で
+公開済みなので、v1.0.x → v2.0.0 と直に上げる機体（v1.1.0 を 1 度も通っていない機体）が実在する＝
+**判っている欠落ではなく、塞いだ穴である**（§4 の 2 も同じ回に書き替えた）。
 **`AppId`・`DefaultDirName`・資産の檔名は据え置き**（§0）。
 
 #### F-2 文書と配布物
 
 | 触る所 | 内容 |
 |---|---|
-| `installer/irodori-tts-ywk.iss:221` | `docs\install.md` の行を**消し**、`docs\guide.md` を足す（`docs\radeon.md` と `README.md` の行は据え置き） |
+| `installer/irodori-tts-ywk.iss:221` | `docs\install.md` の行を**消し**、`docs\guide.md` を足す。**`docs\radeon.md` の行も同じ回に消した**（是正・2026-09-11・medium 16＝548 行の調べの帳面で、`install.md` と同じ理由＝憲章 原則 8。利用者に要る 2 文は `guide.md` §1 に畳んだ）。`README.md` の行だけが据え置き＝配布物の `docs\` は**両版とも 2 檔** |
 | 同 `:151`（`AppMutex`）と註 `:152-159` | **版ごとに割る**＝`Local\irodori-tts-ywk-launcher-cuda`／`…-radeon`（`App.xaml.cs:34` と同じ 2 語・段 E-3・裁定 133）。**註の 2 文が偽になる**＝`:155`「この錠は **両方の種で同じ**…裁定 109 でも変えない」と `:159`「同じ錠・同じ 127.0.0.1:18088」＝**書き直す**（錠は版ごと・つなぎ口だけが 1 つ） |
 | 同 `:41-42`（内部識別子の錠の註） | `AppMutex` と **データ樹の名（`irodori-tts-ywk`）** を「1 つも変えない」側から**外す**（裁定 133 で両方とも版ごとに割れた）。Flavor の id・`/DFlavor=`・`AppId` の GUID・setup の檔名・台帳名は据え置き |
 | 同 `:291-296`（`DataDir()`・路の文字列は `:295`） | **版ごとの樹を返す**＝`…\irodori-tts-ywk-cuda`／`…-radeon`（`AppPaths` の新しい既定と**同じ場所**を固定で解く。env は見ないまま） |
@@ -817,6 +820,114 @@ XAML の**要素の本文**を足した。1 巡目は UiStrings と可視属性�
 **規模**＝C# 3 檔の定数・`.iss` 5 行・文書 5 檔・台本 1 檔。**小〜中**（危険は台本と門に集中）。
 **検分の目**＝原則 8 の検分文＝「**リポを見たことがない人が最後まで読めるか**。引いている番号・檔名・測定値を
 消しても意味が通るか」。`README`・`site`・`guide`・リリース文の 4 面に当てる。
+
+#### 段 F の記帳（2026-09-11・実装 1 席・Opus 5）
+
+**入れた物**＝F-1（版の名札＝`ReleaseFlavors.FlavorLabel` が `RTX（CUDA）`／`Radeon（ROCm）`・
+`Decorate` の飾りを `（…）` から新設の `Separator`（` － `）へ・`WizardTitle` の幹を
+`初回取得` → `はじめの準備` へ・`AboutViewModel.VersionText` は<b>版を引数に取る</b>形にして
+`v2.0.0 － RTX（CUDA）` を返す。**主窓の隅は番号だけ**なので `MainWindow.xaml.cs` は
+`AppVersion.Display` を直に読む）・
+F-2（`.iss` の `MyAppName` 2 行と `OldAppName` 2 行〔＝**v1.1.0 世代の名**〕・`[Files]` の
+`docs\install.md` → `docs\guide.md`・`[InstallDelete]` に `{app}\docs\install.md` の 1 行・
+準備完了頁の `VariantText` 2 行も新しい名札へ）・
+**版の繰り上げ v1.1.0 → v2.0.0**（`ben-e` §18 の段 1 の並びどおり＝`Directory.Build.props` の
+`AppDisplayVersion`・`server/ywk_server.py` の `YWK_VERSION`・契約 ⑻ の見本・`launcher/README` の
+settings 見本・`e-install-probe.ps1` の既定の setup 名・`.iss` と `installer-build.ps1` の註・
+`ben-f-handoff.md` の現行値 3 箇所）・
+**段 C／段 E の申し送り**（⑴ `RuntimeStamp` の 3 本と `CacheCleaner` の 3 本を `UiStrings` へ
+⑵ 設定 › 詳細 の 6 行目 `SettingsDifferentialUpdateCheck`（既定 ON・鍵 `differentialUpdate`）を新設して
+**8 行**に ⑶ その 1 行と段 E の `RuntimeDiff` を `MainViewModel.TryDifferentialAsync` で結んだ）。
+
+**差分の道の形**（F の中心）＝丸ごと入れ直しの手前に 1 本の枝を置いた。選ぶ条件は 4 つとも
+揃った回だけ＝⑴ 設定が ON ⑵ いま動く一式が在る ⑶ `.ledger.json` の写しが在る ⑷ 計画が
+丸ごとへ落ちていない。**締め（`RuntimeDiff.VerifyAfterApply`）が偽なら、その場で丸ごとへ落とす**＝
+差分の回は `RemovePartialOnFailure=false` で構えるので、黙って終わると新旧が混ざった樹が残る。
+`.ledger.json` は締めが通ってから置く（嘘の写しを次の版に信じさせない）。
+`ModelDiff` は**見積りだけ**を記録に残す（取得の道は既存のまま＝`v2-spec.md` §11-4）。
+
+**台本**（`probe/e-install-probe.ps1`）＝⑴ `Get-ExpectedAppName` を「幹 ＋ ` － ` ＋ `RTX（CUDA）`／
+`Radeon（ROCm）`」に組み直し、旧名は `Get-OldAppName`（`.lnk` の掃除の相手）として残した
+⑵ **データ樹を版ごとに**＝`irodori-tts-ywk-cuda`／`-radeon`／旧い共有樹の **3 本**を退避・復元し、
+`Reset-WorkDataDir` は樹を名指しで作る ⑶ **撤去の問いが 1 つも出ないこと**を段 7（無人＝
+`Defaulting to No …` が **0 行**）と段 8（有人＝2 つの旧い問いの窓が **1 つも出ない**・
+**答えない**）の両方で見る ⑷ 段 8 を 3 つに組み直した＝(a) その版の樹が丸ごと消え、
+**樹の外に置いた檔は残る** (b) 旧い共有樹も道連れになる（もう一方が入っていないとき）
+(c) もう一方の版を入れてある回は**向こうの樹も旧樹も 1 バイトも減らない**
+⑸ 段 1 に「`docs\guide.md` が在り `install.md` が無い」を名指しで足した。
+
+**site/index.html は 1 字も触っていない**＝段 E の文書席が `v2-copy.md` §9-3 の 4 の 2 件
+（「2 つは別のアプリ・同時には開けない」・撤去の範囲）を既に当て込んでいた（実測で確認）。
+
+**据え置き**（この席の持ち場ではない／次の席へ）＝
+⑴ `decisions.md`（主席の持ち物）
+⑵ `docs/release-notes/v2.0.0.md` は**既に在る**（`v2-copy.md` §7-2 の逐語）＝この席は触っていない
+⑶ **画像 3 枚**（`site/img/step*.png`）は未撮影のまま（`v2-copy.md` §9-3 の 5）
+⑷ **A-1 の記録値は動いた**（この計画の見込みは外れた）＝`docs\` は `build\out\app` を通らず、
+`ywk_server.py` の版の字も長さが同じ（`1.1.0` → `2.0.0`）なのに **+801 B** ずれた。
+出所は**段 D**＝`/ywk/status` に `requests.in_flight` を足したとき（決裁 130 Q4）に
+`server/ywk_server.py` が 151,012 → 151,813 B へ伸びており、その回に A-1 を測り直していなかった。
+段 F で `34,087,580` → **`34,088,381`** に据え直し、算術を台本の註に書いた（前席と同じ形）。
+**動く物がもう 1 つ**＝B-2（`install.md` → `guide.md` の数 KB）＝帯の中。
+
+> **測るときの落とし穴を 1 つ記帳する**＝`server\*.py` はこの樹では **LF**
+> （`ywk_fetch_models.py`・`ywk_params.py`・`ywk_server.py`。`server\upstream\` は CRLF のまま）。
+> 檔を書き戻すときに CRLF へ変える道具を通すと、この大きさの檔で **1 行 1 バイト＝3,651 B** 増え、
+> **配布物と関係のない理由で A-1 が WARN を出す**。実際に 1 度出した（2026-09-11・段 F の 1 巡目）＝
+> 直した上で測り直した値が上の `34,088,381` である。
+
+**実測**＝`dotnet build launcher -c Release --no-incremental` が **0 警告 0 エラー**／
+`dotnet test launcher -c Release --nologo` が **897 合格＋1 スキップ**（工事前 886＋1・追加 11・削除 0）／
+契約テスト **372 passed**／`probe/*.ps1` は構文 0 エラー・`-DryRun` が「nothing was touched.」で終わる／
+`build/installer-build.ps1 -All` は **20 門 0 失敗 WARN 0**。**アプリは 1 度も起こしていない**（実射は段 H）。
+
+#### 段 F の是正（同日・検分 20 件の当て込み・Opus 5）
+
+**一番大きい発見＝差分の道は 1 度も通っていなかった。** 配線（`TryDifferentialAsync`）は正しかったが、
+差分の回に `WheelInstaller` の門が 3 つとも効いたままで、**どの設定でも必ず失敗して丸ごとへ落ちていた**。
+897 本が緑だったのは、釘が **ON／OFF／写し無し／締めが落ちる回**しか見ておらず、
+**「ON で、しかも通った」回の釘が 1 本も無かった**からである（medium 7）。3 つとも実射で確かめた。
+
+| 塞ぎ | 実射の 1 行 | 手当て |
+|---|---|---|
+| 件数の突合 | `展開の件数が台帳と合わない（*.dist-info 4 件・台帳は 1 件）。` | `VerifyDistInfoCount`（新設・差分の回は偽）＝渡る台帳は切れ端で樹には全件が居る。締めは `VerifyAfterApply` が**全件**で撃つ |
+| 埋め込み Python | `python の原檔が cache に無い（先に取得を済ませること）：python-3.12.10-embed-amd64.zip` | `SkipPythonEmbed`（新設・差分の回は真）＝取得計画に 1 件も無いのに要求していた。相手の樹には `python.exe` が既に在る |
+| 古い畳み | 当てた後に `torch-1` と `torch-2` が並び `VerifyAfterApply=False` | `ReplaceSupersededDistInfo`（新設）＝当てる前に同じ名の `*.dist-info` を落とす。**版が上がった回**が一番ありふれた回である |
+
+**同じ回に塞いだ 5 つ**＝
+⑴ **落とす物も入れ替える物も無い回**（`diff.UpToDate`＝持ち物の一覧の檔だけが別物になった）は
+0 件の当て込みをせず焼き印と写しを置いて終わる（medium 6）
+⑵ **当て込みを始めたあとで落ちた回**は写し（`.ledger.json`）を**落とす**＝混ざる前の姿を名乗ったまま
+残ると次の回の差分がその嘘を信じる（medium 4）
+⑶ **裁定 91 の受け入れは写しを置かない**（`writeAppliedLedger: false`）＝件数しか見ていない樹に
+「中身は全部この内容である」と名乗らせない（medium 5）
+⑷ **版の欄は台帳も動いた回でも先に焼き直す**＝同梱の声の突き合わせ（12 檔 35 MB 級）が
+毎起動走るのを止める。内容の側は古いままなので催促は続く（low 9）
+⑸ **押す前の代金は差分の代金で綴る**＝丸ごとの計画で値を付けると 300 MB の更新に「4.2 GiB」と書く（low 8）。
+
+**インストーラと文書**＝
+⒜ `OlderAppName`（v1.0 世代）を足して旧名の近道を **2 世代とも**消す（medium 10・§4 の 2 を閉じた）
+⒝ 門 B-1 の内部帳面の表に `install.md`／`radeon.md` を足し、**`docs\guide.md` が入っていること**も
+同じ門で見る（medium 11＝行を足し戻しても 20 門が緑のままだった）
+⒞ 準備完了頁の `ja.ReadyLabel2a/2b` 4 行を新しい名札へ（medium 15＝`DisableReadyPage` を立てていない
+＝**利用者が読む**頁に「ROCm 版」「実行系」「cu130」が残っていた）
+⒟ **`docs\radeon.md` を配布物から外した**（medium 16）＝`install.md` と同じ理由。
+利用者に要る 2 文は `guide.md` §1 へ。配布物の `docs\` は**両版とも 2 檔**になった
+⒠ 〔使い方を見る〕は置き場ではなく **`guide.md` の 1 檔**を選んで開く（low 19＝`v2-spec.md` §2-6 と
+`.iss` の註が言っていたのは初めからこれである）
+⒡ `e-install-probe` の段 6 が **2 つの `.lnk` と 2 つの docs** を植えて `[InstallDelete]` を実際に撃つ
+（low 12＝`Get-OldAppName` に呼び手が付き、新設 `Get-OlderAppName` にも付いた）
+⒢ `README.md` の 3 行（`install.md` は「配布物にも入る」・押下 5・檔の並びの表）を今の姿へ（low 14／18／20）
+⒣ **`v2-copy.md` §4 と `v2-spec.md` §2-5／§7 を 8 行に揃えた**（medium 17）＝当て込んだ姿が正しく、
+⑼⑽ は**畳みの外**に在る（記録はふだんの設定と〔このアプリについて〕・〔適用〕〔取り消し〕は畳みの下）。
+**画面は 1 行も直していない。**
+
+**是正後の門**＝`dotnet build launcher -c Release --no-incremental` **0 警告 0 エラー**／
+`dotnet test launcher -c Release --nologo` **903 合格＋1 スキップ**（是正で +6・削除 0）／
+契約テスト **372 passed**／台本は構文 0 エラー・`d-launch-probe -DryRun` が「nothing was touched.」／
+`build/installer-build.ps1 -All` **20 門 0 失敗 WARN 0**（radeon の `Compressing:` は `radeon.md` を
+外した分 111 → **110**・B-2 は **75,505,876 B**＝72.01 MiB で帯の中・A-1 は `34,088,381` のまま）。
+**アプリは 1 度も起こしていない。**
 
 ---
 
@@ -902,7 +1013,7 @@ XAML の**要素の本文**を足した。1 巡目は UiStrings と可視属性�
 | # | 件 | いまの扱い |
 |---|---|---|
 | 1 | **報告の受け皿** | **決まった**＝X の `@yomiwakechan`（https://x.com/yomiwakechan ・裁定 131・2026-09-11）。**GitHub の Issues は使わない**（開発者の画面なので利用者に指さない）。公式ページの脚・〔このアプリについて〕（`AboutSaveLogButton` の隣）・`guide.md` の「困ったときは」の末尾・リリース文の **4 面に同じ 1 行**（段 F-2）。〔報告用のログを保存〕は檔の場所を出し、その隣にこの 1 行を添える |
-| 2 | **`OldAppName` の枠が 1 つ** | v1.0 世代の近道は掃除できない（§2 段 F-1）。判っている欠落として記帳する |
+| 2 | ~~**`OldAppName` の枠が 1 つ**~~ | **塞いだ**（是正・2026-09-11・medium 10）＝枠ではなく行の並びだった。`OlderAppName`（v1.0 世代）を足して `[InstallDelete]` を 2 行にし、`e-install-probe` の段 6 が 2 つの名の `.lnk` を植えて**どちらも消える**ことを見る |
 | 3 | **`docs/acceptance.md` D-5 の記録値** | 押下 5 → 4 になる。この計画の書き手の持ち場ではないので、実装席が工事後に直す |
 | 4 | **CPU の見せ方** | GPU が在る機体では**一切出さない**（憲章 §7 末尾）。`RuntimeVariants.CudaReleaseChoices` に `cpu` は残す（詳細の中の選択肢）＝**一覧の作りは触らず、出す場所だけを絞る** |
 | 5 | **段 E の実射が本機（Radeon）では足りない** | 上書き更新の射は**両方の機体**で要る（RTX 機の席・§2 段 H の 9） |

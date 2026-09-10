@@ -274,6 +274,16 @@ public static class UiStrings
     /// <summary>詳細 5 行目の 3 つ目（旧「初回取得をやり直す」）。</summary>
     public const string SettingsFirstRunButton = "はじめの準備をやり直す";
 
+    /// <summary>
+    /// 詳細 6 行目＝更新のときの差分取り直し（`v2-copy.md` §4 の 6 行目・既定 ON）。
+    /// 段 C は 7 行で置いた＝この 1 行が段 E の持ち物だったため。段 F で入って <b>8 行</b>になる。
+    /// </summary>
+    public const string SettingsDifferentialUpdate = "更新のとき、新しくなった分だけ取り直す";
+
+    /// <summary>その註（切ると何が起きるかを 1 行で言う）。</summary>
+    public const string SettingsDifferentialUpdateNote =
+        "切ると、新しい版に上げるたびに一式を丸ごとダウンロードし直します。";
+
     /// <summary>詳細 7 行目＝ファイルの場所（旧「データの置き場」）。</summary>
     public const string SettingsPathsLabel = "ファイルの場所";
 
@@ -562,6 +572,71 @@ public static class UiStrings
 
     /// <summary>入れ直している間（旧「実行系を組み直しています…」）。</summary>
     public const string StatusRebuilding = "動かすための一式を入れ直しています…";
+
+    // ---- 一式の焼き印の食い違い（Services/Ledger/RuntimeStamp.cs の 3 本）--------------
+    // 段 C の申し送り ⑵＝この 3 本は段 E の席が触っている檔に在ったので据え置かれていた。
+    // 出所を UiStrings に寄せる（画面に出る文は必ずここが綴る）＝Services 側は綴らない。
+
+    /// <summary>配布物の台帳が変わった＝入れ直しの 1 手を出す（旧「…実行系を組み直してください。」）。</summary>
+    public const string StatusRebuildLedgerChanged =
+        "このアプリが新しくなりました。動かすための一式を入れ直してください。";
+
+    /// <summary>途中までしか組み上がっていない（旧「実行系（…）が途中までしか…」）。</summary>
+    public const string StatusRebuildIncomplete =
+        "動かすための一式が途中までしか入っていません。入れ直してください。";
+
+    /// <summary>
+    /// 台帳は同じで版だけ動いた＝<b>黙って焼き直す</b>ときに記録へ落とす 1 行（画面には出ない）。
+    /// </summary>
+    public const string StatusAppVersionChangedLog =
+        "動かすための一式は前の版のまま使えます（入れ直しは要りません）。";
+
+    // ---- 一時ファイルの掃除が断るとき（Services/Ledger/CacheCleaner.cs の 3 本）--------
+    // 段 C の申し送り ⑶＝RuntimeStamp と対で読む文なので同じ回に寄せる。
+
+    /// <summary>一式がまだ無いので消さない。</summary>
+    public const string CacheBlockedNotInstalled =
+        "動かすための一式がまだ入っていないので、一時ファイルは消しません。";
+
+    /// <summary>何で組んだかが判らないので消さない。</summary>
+    public const string CacheBlockedUnknown =
+        "何を使って組み上げたかが判らないので、一時ファイルは消しません"
+        + "（動かすための一式を入れ直すと判るようになります）。";
+
+    /// <summary>いま在る一式と配布物が食い違うので消さない。</summary>
+    public const string CacheBlockedMismatch =
+        "いま入っている一式と、このアプリが持っている内容が違うので、一時ファイルは消しません"
+        + "（動かすための一式を入れ直してから消してください）。";
+
+    // ---- 差分の取り直し（段 E の RuntimeDiff／ModelDiff を段 F が配線した）------------
+
+    /// <summary>差分の取り直しを始める（帯の 1 行＝状態は「準備しています…」のまま）。</summary>
+    public const string DifferentialStarting = "新しくなった分をダウンロードしています…";
+
+    /// <summary>差分の取り直しが通った。</summary>
+    public const string DifferentialDone = "新しくなった分を入れました。";
+
+    /// <summary>差分では足りないので丸ごと入れ直す（押す前に告げる 1 行）。</summary>
+    public const string DifferentialFallsBack =
+        "変わった量が多いので、動かすための一式を丸ごと入れ直します。";
+
+    /// <summary>
+    /// 落とす物も入れ替える物も無い（是正・2026-09-11・medium 6）＝
+    /// 中身は既に新しい内容と同じで、動いたのは持ち物の一覧の見出しだけ、という回。
+    /// </summary>
+    public const string DifferentialNothingToDo =
+        "新しくする物はありませんでした（いま入っている一式のままで動きます）。";
+
+    /// <summary>
+    /// 入れ替えが通らなかった（是正・2026-09-11・medium 4）。
+    /// <para>
+    /// <see cref="DifferentialFallsBack"/>（<b>始める前</b>に「量が多いから丸ごとにする」と告げる 1 行）
+    /// とは<b>別の場面</b>である＝こちらは<b>当て込みを始めたあと</b>で落ちた回で、
+    /// 落ちた地点によっては新旧が混ざっている。だから量の話をしない。
+    /// </para>
+    /// </summary>
+    public const string DifferentialApplyFailed =
+        "新しくなった分だけでは入れ替えられませんでした。動かすための一式を丸ごと入れ直します。";
 
     /// <summary>選んだグラフィックスと、実際に使われたグラフィックスの食い違い。</summary>
     public const string StatusGpuMismatch =

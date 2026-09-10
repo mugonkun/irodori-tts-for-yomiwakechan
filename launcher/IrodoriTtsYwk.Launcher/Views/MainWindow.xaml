@@ -10,8 +10,9 @@
         AutomationProperties.AutomationId="MainWindow">
   <!--
     上の Title は**設計時（デザイナ）用の見本**であって落ち先ではない。実行時は必ず
-    MainWindow.xaml.cs が ReleaseFlavors.AppTitle で「（CUDA 版）」「（ROCm 版）」を足して
-    差し替える＝裁定 109（樹が読めないときは CUDA 版と名乗る＝DetectFrom は投げない）。
+    MainWindow.xaml.cs が ReleaseFlavors.AppTitle で「 － RTX（CUDA）」「 － Radeon（ROCm）」を
+    足して差し替える＝裁定 109／v2.0 段 F-1（樹が読めないときは RTX（CUDA）と名乗る＝
+    DetectFrom は投げない）。
 
     主窓＝**タブ 3 枚（発話テスト・話者・設定）＋歯車の層**（v2.0 段 A・v2-spec.md §2-0）。
     「状態」と「このアプリについて」は**要素ごと歯車の層（MainDetailOverlay）へ移した**＝

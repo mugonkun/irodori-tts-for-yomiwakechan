@@ -175,7 +175,7 @@ launcher/IrodoriTtsYwk.Launcher/
 | 詳しい状態 | 畳みの外＝`StatusStateText`・`StatusReasonText`・`StatusGpuMismatchText`・`StatusSettingsPendingText`。**`StatusAdvancedExpander`（新設・既定は閉）の中**＝`StatusGpuText`・`StatusDeviceText`・`StatusVariantText`・`StatusWarmupText`・`StatusPrecomputeText`・`StatusMemoryPanel`／`StatusMemoryText`・`StatusLatentCacheText`・`StatusVoiceMemoryText`・`StatusUpstreamMismatchText`・`StatusNoticesText`・`StatusLogBox`・`StatusEndpointText`（**要素と id は残すが本文を常時は出さない**＝18088 を出す面は帯 1 つだけ） |
 | 声 | `VoicesGrid`（列は 5→**4**＝1 名あたりのメモリの列を消した）・`VoicesBrowseButton`・`VoicesSourcePathBox`・`VoicesNewNameBox`・`VoicesNewCaptionBox`・`VoicesAddButton`・`VoicesPreviewButton`・`VoicesStopPreviewButton`・`VoicesRemoveButton`・`VoicesRefreshButton`・`VoicesPreviewBlockedText`・`VoicesRemoveBlockedText`・`VoicesMessageText`・**`VoicesCountText`**（新設・一覧の下の薄字＝数は出さない）。**`VoicesAdvancedExpander`（新設）の中**＝**`VoicesSelectedMemoryText`**（是正・段 C の検分で**要素ごと**ここへ移した＝この 1 行は `MiB`／`GiB` を綴るので、置き場は 詳細 に限る＝`v2-copy.md` §1-8 の `UiText` の行）・`VoicesPrecomputeButton`・`VoicesRestorePresetsButton` |
 | 発話テスト | ふだん＝`TryInputBox`・`TryInputLengthText`・`TryVoiceCombo`・`TryStepsPreset10`／`TryStepsPreset40`（札は「はやい」「きれい」）・`TryCaptionBox`・`TrySpeedBox`・`TrySynthesizeButton`・`TryReplayButton`・`TryStopButton`・`TrySaveButton`・`TryResultText`・`TryMessageText`・`TryConcurrencyText`。**`TryAdvancedExpander`（新設）の中**＝`TryStepsBox`・`TryCfgTextBox`・`TryCfgCaptionBox`・`TryCfgSpeakerBox`・`TrySeedBox`・**`TryDetailText`**（新設＝所要 ms・RTF・seed の内訳） |
-| 設定 | ふだんの 4 つ＝`SettingsAutoStartCheck`・`SettingsWarmupCheck`・`SettingsVoicesDirText`＋**`SettingsOpenVoicesDirButton`**・**`SettingsOpenLogButton`**（3 つとも新設）。**`SettingsAdvancedExpander` の中**＝`SettingsGpuCombo`／`SettingsRefreshGpuButton`／`SettingsGpuMessageText`／`SettingsDriverText`・`SettingsVariantCombo`／`SettingsVariantNameText`／`SettingsVariantBlockText`・`SettingsPrecisionCombo`／`SettingsPrecisionNoteText`・`SettingsPrecomputeCheck`／`SettingsPrecomputeNoteText`・`MainStopButton`／`MainStartButton`／`MainFirstRunButton`・`SettingsDataDirText`＋**`SettingsOpenDataDirButton`**（新設）／`SettingsAppDirText`（`SettingsModelDirText`・`SettingsRuntimeRootText` は「データ」に畳んで伏せた・id は据え置き）・`SettingsClearCacheButton`／`SettingsCacheMessageText`・`SettingsPortBox`／`SettingsPortNoteText`（**伏せてある**）。畳みの外の下端＝`SettingsApplyButton`／`SettingsRevertButton`／`SettingsMessageText`。**退役 7**＝`SettingsShowMemoryCheck`・`SettingsWarmupStagesBox`・`SettingsWarmupVoicesBox`・`SettingsEmptyCacheBox`・`SettingsEmptyCacheNoteText`・`SettingsReadyTimeoutBox`・`SettingsReadyTimeoutNoteText` |
+| 設定 | ふだんの 4 つ＝`SettingsAutoStartCheck`・`SettingsWarmupCheck`・`SettingsVoicesDirText`＋**`SettingsOpenVoicesDirButton`**・**`SettingsOpenLogButton`**（3 つとも新設）。**`SettingsAdvancedExpander` の中**＝`SettingsGpuCombo`／`SettingsRefreshGpuButton`／`SettingsGpuMessageText`／`SettingsDriverText`・`SettingsVariantCombo`／`SettingsVariantNameText`／`SettingsVariantBlockText`・`SettingsPrecisionCombo`／`SettingsPrecisionNoteText`・`SettingsPrecomputeCheck`／`SettingsPrecomputeNoteText`・`MainStopButton`／`MainStartButton`／`MainFirstRunButton`・**`SettingsDifferentialUpdateCheck`**（段 F で新設＝更新のとき、新しくなった分だけ取り直す）・`SettingsDataDirText`＋**`SettingsOpenDataDirButton`**（新設）／`SettingsAppDirText`（`SettingsModelDirText`・`SettingsRuntimeRootText` は「データ」に畳んで伏せた・id は据え置き）・`SettingsClearCacheButton`／`SettingsCacheMessageText`・`SettingsPortBox`／`SettingsPortNoteText`（**伏せてある**）。畳みの外の下端＝`SettingsApplyButton`／`SettingsRevertButton`／`SettingsMessageText`。**退役 7**＝`SettingsShowMemoryCheck`・`SettingsWarmupStagesBox`・`SettingsWarmupVoicesBox`・`SettingsEmptyCacheBox`・`SettingsEmptyCacheNoteText`・`SettingsReadyTimeoutBox`・`SettingsReadyTimeoutNoteText` |
 | このアプリについて | 畳みの外＝`AboutTitleText`・`AboutDisclaimerText`・`AboutVersionText`・`AboutWatermarkText`・`AboutEthicsText`・`AboutLicensesDirText`・**`AboutGuideButton`**／**`AboutSaveLogButton`**（新設）＋**`AboutSavedLogText`**／**`AboutOpenReportFolderButton`**（是正・段 C の検分で新設＝〔報告用のログを保存〕を押した後だけ出る 1 行と、その檔を開く釦）。**`AboutAdvancedExpander`（新設）の中**＝`AboutUpstreamText`・`AboutNoticesPathText`・`AboutLicenseList` |
 | 初回取得（v2.0＝はじめの準備） | `FirstRunWizard`・`FirstRunStepTitle`・`FirstRunStepNumber`・`FirstRunNoticesBox`・`FirstRunAcceptCheck`・`FirstRunVariantCombo`・`FirstRunVariantNoteText`・`FirstRunDriverText`・`FirstRunSizeText`・`FirstRunProgressBar`／`FirstRunProgressText`・`FirstRunTrailList`・`FirstRunBackButton`／`FirstRunNextButton`／`FirstRunCancelButton`・`FirstRunMessageText`　＋ **v2.0 段 B の新設 12**＝`FirstRunNoticesSummaryText`・`FirstRunNoticesFullButton`・`FirstRunNoticesExpander`・`FirstRunDecisionText`・`FirstRunPlanText`・`FirstRunPhaseText`・`FirstRunProgressDetailText`・`FirstRunUacNoticeText`・`FirstRunDoneText`・`FirstRunAdvancedExpander`・`FirstRunNoticesUnreadableText`（お知らせの全文が読めない回だけ出る 1 行）・`FirstRunWhyText`（段 2 の「なぜ落ちるのか」） |
 
@@ -374,7 +374,7 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 ```json
 { "runtimeLedgers":       { "rocm-gfx1151": "<ledger/runtime-rocm-gfx1151.json の sha256（小文字 hex 64 字）>",
                             "cu126":        "<ledger/runtime-cu126.json の sha256>" },
-  "installedAppVersions": { "rocm-gfx1151": "v1.1.0", "cu126": "v1.1.0" } }
+  "installedAppVersions": { "rocm-gfx1151": "v2.0.0", "cu126": "v2.0.0" } }
 ```
 
 **鍵は変種**（是正・便 D（3）の 3 巡目）。1 巡目は `runtimeLedgerSha256`／`installedAppVersion` の
@@ -585,14 +585,13 @@ VRAM が実際に返ることは**プロセスを殺す意味**でしか確か�
 | 詳しい状態 | `StatusAdvancedExpander` | 大きな 1 行・止まった理由・準備が要る／一式を入れ直す・食い違いの告知 | **11 行**（上限 12＝憲章 原則 7） |
 | 発話テスト | `TryAdvancedExpander` | 声・話し方の指示・速さ・品質の 2 択 | 歩数・3 つの効き・乱数の種・所要 ms と RTF |
 | 声 | `VoicesAdvancedExpander` | 一覧（列 4）・一覧の下の薄字・追加の 3 欄・試聴／停止／削除／更新 | 1 人あたりの量・下ごしらえ・最初から入っている声を入れ直す |
-| 設定 | `SettingsAdvancedExpander` | 4 つ（自動で読み上げ・よく使う声を先に準備・声のファイルの場所・ログを開く）＋**畳みの外の下端**に〔適用〕〔取り消し〕 | **7 行**（上限 12・是正で数え直した） |
+| 設定 | `SettingsAdvancedExpander` | 4 つ（自動で読み上げ・よく使う声を先に準備・声のファイルの場所・ログを開く）＋**畳みの外の下端**に〔適用〕〔取り消し〕 | **8 行**（上限 12・段 F で 6 行目が入った） |
 
-**設定の 詳細 が 7 行であること**（是正・段 C の検分で数え直した）＝グラフィックス／動かし方／
-音質と速さ／声の下ごしらえ／読み上げの動作／ファイルの場所／一時ファイル。`v2-copy.md` §4 の
-10 行との差は 3 つ＝⒜ 6 行目「更新のとき、新しくなった分だけ取り直す」は**段 E の持ち物**でまだ無い
-⒝ 9 行目「記録」は ふだんの設定 の `SettingsOpenLogButton` 1 つに寄せた ⒞ 10 行目「変えた設定は…」＋
+**設定の 詳細 が 8 行であること**（段 C で 7 行・段 F で 6 行目が入った）＝グラフィックス／
+動かし方／音質と速さ／声の下ごしらえ／読み上げの動作／**更新のとき、新しくなった分だけ取り直す**／
+ファイルの場所／一時ファイル。`v2-copy.md` §4 の 10 行との差は 2 つ＝
+⒜ 9 行目「記録」は ふだんの設定 の `SettingsOpenLogButton` 1 つに寄せた ⒝ 10 行目「変えた設定は…」＋
 〔適用〕〔取り消し〕は**畳みの外**に置いた（ふだんの 4 つを保存するのに「詳細」を開かせないため）。
-段 E が入れば 8 行になる。
 
 **入らなかったので消した 7 件**（移さずに消す＝原則 7 の検分文）＝
 `SettingsShowMemoryCheck`・`SettingsWarmupStagesBox`・`SettingsWarmupVoicesBox`・
@@ -650,3 +649,114 @@ powershell -File probe\d-launch-probe.ps1 -DryRun    # 構文 0 エラー・「n
 新しい助手 `Open-YwkStatusDetails`（タブ＋畳み）を足し、`TabStatus` を選ぶ 15 箇所を全部これに替えた。
 併せて門の段の期待値も直した＝画面はもう台帳の綴り（`cu130`）を出さないので、
 `Get-YwkVariantName` で「CUDA 13.0」に読み替え、「見られません」→「**見つけられません**」に。
+
+## 15. 名札・文書・インストーラ（2026-09-11・v2.0 段 F）
+
+**裁可された正本**＝`docs/design/charter.md` 附録 4（版の名札）・`docs/design/v2-copy.md` §1-8／§4／§8・
+`docs/design/v2-spec.md` §9-1／§11-3・`docs/design/v2-plan.md` 段 F。この節はその当て込みの記帳である。
+
+### 15-1 版の名札は 1 箇所だけが綴る
+
+`ViewModels/ReleaseFlavor.cs` の `FlavorLabel` が **`RTX（CUDA）`／`Radeon（ROCm）`**、
+`Decorate` が `幹 － 名札`（全角ダッシュ・前後に半角空白 1 つ＝新設の `Separator`）。
+`AppTitle`（主窓と〔このアプリについて〕の見出し）・`WizardTitle`（**`はじめの準備 － …`**）・
+`AboutViewModel.VersionText(flavor)`（**`v2.0.0 － RTX（CUDA）`**）はここを読むので自動で揃う。
+**主窓の隅は番号だけ**（`v2-copy.md` §1-1 の 33 行目）＝`MainWindow.xaml.cs` は `AppVersion.Display` を直に読む。
+
+- 併記が正である（所有者の指示 2026-09-10）＝「CUDA 版」だけ・「ROCm 版」だけ・「NVIDIA 版」だけは使わない。
+  利用者は箱に書いてある語（RTX／Radeon）で選ぶのであって、CUDA／ROCm はどの箱にも書いていない。
+- **`RuntimeVariants.ShortDisplayName` と `VariantGate.Label` の「CUDA」は動かし方の短い名**であって
+  版の名札ではない。同じ文に「動かし方」と「版」の名を混ぜないので、ここには名札を入れない。
+- インストーラ側の逐語は `installer/irodori-tts-ywk.iss` の `MyAppName`＝**同じ 2 語**。
+  釘は `ViewModelsTests`（名札 2 語・旧い綴りが 1 つも残っていない・窓題・はじめの準備の窓題・バージョン行）と
+  `probe/e-install-probe.ps1` の `Get-ExpectedAppName`（HKCU の `DisplayName` の頭と `.lnk` の名）。
+- **旧名の近道は 2 世代とも消す**（是正・2026-09-11）＝`.iss` に `OldAppName`（v1.1.0 世代）と
+  `OlderAppName`（v1.0 世代）を置き、`[InstallDelete]` に 2 行書いた。
+  「枠は 1 つ」という前の記帳は**誤り**だった＝`[InstallDelete]` は行をいくつ書いてもよい。
+  v1.0.x は v1.1.0 と同じ `AppId` で公開済みなので、v1.0.x → v2.0.0 と直に上げた機体が実在する。
+  釘は `probe/e-install-probe.ps1` の段 6＝2 つの名の `.lnk` を植えてから上書き導入し、
+  **どちらも消えている**ことを見る（`Get-OldAppName`／新設 `Get-OlderAppName` に呼び手が付いた）。
+
+### 15-2 設定 › 詳細 の 6 行目と、更新の道
+
+`SettingsDifferentialUpdateCheck`（**更新のとき、新しくなった分だけ取り直す**・既定 ON・
+`settings.json` の鍵は `differentialUpdate`）が入って 詳細 は **8 行**になった。
+段 E は道具（`RuntimeDiff`・`ModelDiff`・`PresetSync`）を入れたが**呼ぶ者が居なかった**＝
+段 F が `MainViewModel.TryDifferentialAsync` で更新の道に結んだ。選ぶ条件は 4 つとも揃った回だけ＝
+⑴ 設定が ON ⑵ いま動く一式が在る ⑶ 展開に使った台帳の写し（`.ledger.json`）が在る
+⑷ 計画が丸ごとへ落ちていない。1 つでも欠ければ**いままでどおり丸ごと入れ直す**。
+締め（`RuntimeDiff.VerifyAfterApply`）が通らなければ**その場で丸ごとへ落とす**＝
+新旧が混ざった樹を黙って残さない。`.ledger.json` は締めが通ってから置く。
+
+**是正（同日・検分 20 件）＝配線しただけでは 1 度も通らなかった。** 差分の回は
+`WheelInstaller` の門を 3 つ外さなければ**必ず**失敗する（3 つとも実射で確かめた）。
+`RuntimeDiff.NewInstaller(differential: true)` がまとめて外す。
+
+| 外す門 | なぜ | 外さないと |
+|---|---|---|
+| `VerifyDistInfoCount` | 差分の回に渡る台帳は「変わった item だけ」の切れ端なのに、樹には全 N 件が居る | `展開の件数が台帳と合わない（*.dist-info 4 件・台帳は 1 件）。`＝6 割の歯止めがある限り**絶対に**一致しない |
+| `SkipPythonEmbed` | 差分の取得計画は `python-embed` を 1 件も積まない。相手の樹には `python.exe` が既に在る | `python の原檔が cache に無い`＝裁定 90 で空の取得キャッシュに当たり、wheel を 1 本も触らずに落ちる |
+| `ReplaceSupersededDistInfo`（新設） | 被せるだけでは `torch-1.dist-info` と `torch-2.dist-info` が並ぶ | **版が上がった回**（一番ありふれた回）が締めで必ず落ちる |
+
+締めは消えていない＝`VerifyAfterApply` が**配布樹の台帳（全件）**で数え直す。
+古い畳みを落とすのは `*.dist-info` だけで、古い版だけが持っていた `.py` は残りうる
+（`RECORD` を辿って本体まで抜く手は採らない＝他の item と共有する路を巻き添えにしうる）＝**判っている欠落**。
+
+**同じ回に塞いだ 3 つ**＝⑴ **落とす物も入れ替える物も無い回**（`diff.UpToDate`＝持ち物の一覧の檔だけが
+別物になった）は 0 件の当て込みをせず、焼き印と写しを置いて終わる ⑵ **当て込みを始めたあとで落ちた回**は
+写し（`.ledger.json`）を**落とす**＝混ざる前の姿を名乗ったまま残ると、次の回の差分がその嘘を信じて
+混ざりを温存する ⑶ 状態帯の「押すと ◯ GiB を取り直します」は、差分で済む回は**差分の代金**で綴る
+（丸ごとの計画で値を付けると、300 MB の更新に「4.2 GiB」と書くことになる）。
+
+**裁定 91 の受け入れは写しを置かない**（`MainViewModel.CheckRuntimeStamp`）＝あそこが見ているのは
+`*.dist-info` の件数だけで、その樹を**何で組んだかは判っていない**。焼き印だけなら「催促を止める」で済むが、
+写しを置くのは「中身は全部この内容である」と名乗る行為で、それは嘘になりうる。
+**版の欄だけは、台帳も一緒に動いた回でも先に焼き直す**＝同梱の声の突き合わせ（`LauncherComposition` の
+`PresetSync`・12 檔 35 MB 級）が「版が変わった回だけ」の門を毎起動くぐり抜けるのを止めるため。
+内容の側（sha256）は古いままなので、状態帯の 1 行と 1 手は消えない。
+
+### 15-3 文言の残り 6 本を `UiStrings` へ（段 C の申し送り ⑵⑶）
+
+`Services/Ledger/RuntimeStamp.cs` の 3 本（台帳が変わった／途中までしか入っていない／版だけ動いた回の記録）と
+`Services/Ledger/CacheCleaner.cs` の 3 本（一時ファイルを消さない理由）は、段 C の当時
+**段 E の席が触っている檔**に在ったので据え置かれていた。段 F で `UiStrings` へ寄せた＝
+画面に出る文はもう `Services/` の中で綴られていない。台帳の檔名（`runtime-cu130.json`）と
+版の綴りは**記録の側にだけ**残る。
+
+### 15-4 〔使い方を見る〕は 1 檔を開く
+
+`AboutGuideButton` は `{app}\docs` の**置き場**ではなく `{app}\docs\guide.md` の**その 1 檔**を選んで開く
+（`explorer.exe /select,`＝`.md` の開き手が入っていない機体でも失敗しない）。
+`v2-spec.md` §2-6 と `.iss` の註が「開くのは `guide.md`」と書いているのに、置き場を開いていた（是正・同日）。
+置き場には作る側の帳面（`README.md`）も並ぶので、押した人がどれを読むのか判らなかった。
+檔が無い機体（古い配布）は、これまでどおり置き場 → 記録の順に落ちる。
+
+**配布物の `docs\` は 2 檔になった**＝`README.md` と `guide.md`。`install.md` に続いて
+`radeon.md`（548 行の調べの帳面）も外し、利用者に要る 2 文は `guide.md` §1 に畳んだ。
+両版で同じ構えである（Radeon 版だけ 3 檔、ではなくなった）。
+
+### 15-5 検分（この機体・2026-09-11・窓は 1 度も立てていない）
+
+```powershell
+dotnet build launcher -c Release --no-incremental   # 0 警告 0 エラー
+dotnet test  launcher -c Release --nologo           # 903 合格・1 skip（工事前 886＋1・是正で +6）
+powershell -File build\run-tests.ps1                 # 契約テスト 372 passed
+powershell -File build\installer-build.ps1 -All      # 20 門 0 失敗 WARN 0
+```
+
+**門 A-1 の記録値を据え直した**＝`34,087,580` → **`34,088,381`**（+801 B）。出所は段 F ではなく
+**段 D**＝`/ywk/status` に `requests.in_flight` を足した回に `server/ywk_server.py` が伸びており、
+その回に測り直していなかった。`docs\` は `build\out\app` を通らないので、
+`install.md` → `guide.md` の入れ替えはこの値を動かさない（動くのは B-2＝帯の中）。
+**`server\*.py` はこの樹では LF** である（`server\upstream\` は CRLF）＝CRLF へ書き戻す道具を
+通すと 1 行 1 バイト増えて、配布物と関係のない理由で A-1 が WARN を出す（実際に 1 度出した）。
+**`.ps1` と `.iss` は逆に CRLF が正**（`.gitattributes` の `*.ps1 text eol=crlf`／`*.iss text eol=crlf`）＝
+これらを LF で書き戻すと `git diff` が檔ぜんぶを差分に出す。`.cs` と `.md` はこの樹では LF である。
+
+**是正の回の門**（同日・検分 20 件の当て込み後）＝
+`dotnet test` **903 合格・1 skip**（追加 6・削除 0＝差分が通った回・何も動いていない回・
+途中で切れている樹には当てない回・写しを置かない回・版だけ焼き直す回・畳みの名の突合）／契約テスト **372 passed**／
+`installer-build -All` **20 門 0 失敗 WARN 0**（`docs\radeon.md` を外したので radeon 側の
+`Compressing:` 行は 111 → **110**・B-2 は 75,505,876 B＝72.01 MiB で帯の中）。
+
+**アプリは 1 度も起こしていない**（実射は段 H）。

@@ -2,7 +2,7 @@
 ; 設計＝docs/design/ben-e-installer.md §1・§2・§5・§6-3。裁定＝decisions.md 89・90・91。
 ; 是正＝同 §11-8（敵対検分の medium 6 件・low 4 件・2026-09-05・是正席 opus）。
 ; 呼び方＝build/installer-build.ps1 が ISCC に /D を 7 本渡す。この檔に版・路・上流 pin を書き写さない。
-;   /DAppVersion=v1.1.0 /DAppVersionNumeric=1.1.0 /DFlavor=cuda|radeon
+;   /DAppVersion=v2.0.0 /DAppVersionNumeric=2.0.0 /DFlavor=cuda|radeon
 ;   /DSrcApp=<build/out/app> /DSrcExe=<build/out/launcher/win-x64> /DRepo=<リポの根> /DOutDir=<出力先>
 ; 檔の形＝UTF-8 BOM 付き・CRLF（.gitattributes:7 の *.iss text eol=crlf）。日本語はこの檔にだけ置く。
 
@@ -32,7 +32,11 @@
 ; 裁定 109（2026-09-07）＝司令官の逐語「『CUDA版とROCm版の区別』インストーラーが別のはずだが、
 ; アプリ名称も(CUDA版)(ROCm版)としてデフォルトインストールフォルダも分けたい。yomiwakechan からは
 ; 無いが、Python無し環境での利用で両方インストールしたい人も居ると思われる。Windowタイトルも別に分ける。」
-;   ⑴ 表示名は **両方**に版を足す＝「…（CUDA 版）」「…（ROCm 版）」。旧 CUDA 版は版なしだった。
+;   ⑴ 表示名は **両方**に版を足す。v1.1.0 までは「…（CUDA 版）」「…（ROCm 版）」だった＝
+;       **v2.0 段 F-1 で「… － RTX（CUDA）」「… － Radeon（ROCm）」に改めた**（所有者の指示
+;       2026-09-10・憲章 §6-2 附録 4＝併記が正。利用者は箱に書いてある語＝RTX／Radeon で選ぶ）。
+;       逐語の正本は launcher/IrodoriTtsYwk.Launcher/ViewModels/ReleaseFlavor.cs の FlavorLabel／
+;       Decorate（全角ダッシュの前後に半角空白 1 つ）＝窓題と 1 字も違えない。
 ;   ⑵ 既定の導入先は CUDA 版を irodori-tts-ywk → **irodori-tts-ywk-cuda** に改める。
 ;       本体（読み分けちゃん2）の EngineLaunchDefaults は既に
 ;       Programs\irodori-tts-ywk-radeon → Programs\irodori-tts-ywk-cuda の順で探しており、
@@ -42,7 +46,14 @@
 ;       setup の檔名（…-cuda.exe／…-radeon.exe）・台帳名（runtime-rocm-gfx1151）。英語の #error 文の
 ;       "the Radeon release" も道具の名（gfx1151 の機体）として残す＝**利用者に見せる版の名だけ**が
 ;       「ROCm 版」である。
-;   ⑷ OldAppName＝改名前の AppName の逐語。[InstallDelete] が旧名の近道を 1 本消すために要る。
+;   ⑷ OldAppName／OlderAppName＝**過去の版の AppName の逐語**。[InstallDelete] が旧名の近道を消す。
+;       OldAppName  ＝v1.1.0 世代（…（CUDA 版）／…（ROCm 版））
+;       OlderAppName＝v1.0 世代（cuda は版なしの「irodori-TTS for 読み分けちゃん」・
+;                     radeon は「…（Radeon 版）」）
+;       **2 世代とも消す**（是正・2026-09-11・medium 10）＝v1.0.0／v1.0.1／v1.0.2 は **同じ AppId**で
+;       公開済みなので、v1.0.x から v2.0.0 へ直に上げる機体（v1.1.0 を 1 度も通っていない機体）が実在する。
+;       旧注釈の「枠は 1 つしかない」は **誤り**だった＝[InstallDelete] は行をいくつ書いてもよく、
+;       下の 2 行は 1 つの枠を奪い合ってなどいない。判っている欠落ではなく、**塞いだ**穴である。
 ; 裁定 133（2026-09-11）＝**RTX（CUDA）と Radeon（ROCm）は別アプリ**＝データ樹も設定も声も共有しない。
 ;   ⑴ データ樹の名を **版ごと**に割る（MyDataDirName）＝%LOCALAPPDATA%\irodori-tts-ywk-cuda\／…-radeon\。
 ;       正本は launcher/IrodoriTtsYwk.Launcher/Contracts/AppPaths.cs の DataDirNameCuda／DataDirNameRadeon。
@@ -50,14 +61,16 @@
 ;   ⑶ 旧い共有樹（%LOCALAPPDATA%\irodori-tts-ywk\）は移送の元としてだけ綴りが残る（LegacyDataDirName）。
 #if Flavor == "radeon"
   #define MyAppId       "{ECA98712-1574-4D2A-A1FE-0FF5347BF185}"
-  #define MyAppName     "irodori-TTS for 読み分けちゃん（ROCm 版）"
-  #define OldAppName    "irodori-TTS for 読み分けちゃん（Radeon 版）"
+  #define MyAppName     "irodori-TTS for 読み分けちゃん － Radeon（ROCm）"
+  #define OldAppName    "irodori-TTS for 読み分けちゃん（ROCm 版）"
+  #define OlderAppName  "irodori-TTS for 読み分けちゃん（Radeon 版）"
   #define MyDirName     "irodori-tts-ywk-radeon"
   #define MyDataDirName "irodori-tts-ywk-radeon"
 #elif Flavor == "cuda"
   #define MyAppId       "{F228543A-DCF9-45A3-8826-7485C81E1757}"
-  #define MyAppName     "irodori-TTS for 読み分けちゃん（CUDA 版）"
-  #define OldAppName    "irodori-TTS for 読み分けちゃん"
+  #define MyAppName     "irodori-TTS for 読み分けちゃん － RTX（CUDA）"
+  #define OldAppName    "irodori-TTS for 読み分けちゃん（CUDA 版）"
+  #define OlderAppName  "irodori-TTS for 読み分けちゃん"
   #define MyDirName     "irodori-tts-ywk-cuda"
   #define MyDataDirName "irodori-tts-ywk-cuda"
 #else
@@ -77,7 +90,7 @@
 ;      「Source: …\voices\*; Flags: recursesubdirs createallsubdirs」で包んだ実測＝「Compressing:
 ;      …\voices\presets.json」「…\voices\voices.json」の 2 行だけで「Successful compile (0.688 sec).」
 ;      ＝**警告 0・exit 0 で wav 0 檔の setup が出た**。
-; ⇒ **ここに要る門は ⑶ だけ**である。[Files] に名指しで書いてある檔（exe・ledger の各 json・docs\radeon.md）
+; ⇒ **ここに要る門は ⑶ だけ**である。[Files] に名指しで書いてある檔（exe・ledger の各 json・docs の 2 檔）
 ;    の #if は ⑵ で ISCC が自分で止めるので **保険**（読む側への名札）であって、無くても止まる。
 ; ※ 旧注釈「Inno は『Source が 0 件』を既定では止めない＝EXIT=0・Successful compile のまま中身の欠けた
 ;    setup が出る」は **誤り**＝⑴⑵ で反証した。設計書 §3-2 冒頭と §8 危険 3 の同じ主張も訂正が要る（卓へ）。
@@ -126,9 +139,6 @@
 #if Flavor == "radeon"
   #if !FileExists(SrcApp + "\ledger\runtime-rocm-gfx1151.json")
     #error ledger/runtime-rocm-gfx1151.json is missing (this is the Radeon release)
-  #endif
-  #if !FileExists(Repo + "\docs\radeon.md")
-    #error docs/radeon.md is missing (the Radeon release ships it)
   #endif
 #else
   #if !FileExists(SrcApp + "\ledger\runtime-cu130.json")
@@ -200,8 +210,20 @@ Type: filesandordirs; Name: "{app}\voices\presets"
 ; Inno は [Icons] の名が変わっても **旧名の .lnk を消さない**（消えるのはアンインストールのときだけ・
 ; しかも消す名は「いま入っている版が書き込んだ名」）＝更新導入では新旧 2 本が並ぶ。
 ; 既存の導入は UsePreviousAppDir（既定 yes）で **場所はそのまま**なので、直すのは近道の名だけでよい。
-; OldAppName＝cuda は「irodori-TTS for 読み分けちゃん」／radeon は「…（Radeon 版）」の逐語。
+; **2 世代ぶん書く**（是正・2026-09-11・medium 10）＝ここは「枠」ではなく行の並びで、何行でも書ける。
+; v1.0.x は v1.1.0 と同じ AppId で公開済みなので、v1.0.x → v2.0.0 と直に上げた機体
+; （v1.1.0 を 1 度も通っていない機体）には v1.0 世代の名の近道が残り、新旧 2 本が並ぶ。
+;   OldAppName  ＝v1.1.0 世代（cuda「…（CUDA 版）」／radeon「…（ROCm 版）」）
+;   OlderAppName＝v1.0 世代（cuda は版なし／radeon「…（Radeon 版）」）
 Type: files; Name: "{autoprograms}\{#OldAppName}.lnk"
+Type: files; Name: "{autoprograms}\{#OlderAppName}.lnk"
+; 配布物から外した檔（v2.0 段 F-2）＝[Files] から消しても既に入っている機体では**消えない**。
+; docs\install.md と docs\radeon.md は作る側の帳面へ戻したので、利用者機の写しをここで落とす。
+; radeon.md（548 行）は調べの帳面＝リポの檔名・番号・研究の控えが利用者機に出ていた＝
+; install.md と**同じ理由**で外した（憲章 原則 8・是正 2026-09-11・medium 16）。
+; 利用者に要る 2 文（確かめたのは gfx1151 の 1 機種だけ・ほかは測っていない）は docs\guide.md §1 に畳んだ。
+Type: files; Name: "{app}\docs\install.md"
+Type: files; Name: "{app}\docs\radeon.md"
 
 [Files]
 Source: "{#SrcExe}\IrodoriTtsYwk.Launcher.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -225,15 +247,22 @@ Source: "{#SrcApp}\ledger\vc_redist.json";    DestDir: "{app}\ledger"; Flags: ig
 #if Flavor == "radeon"
 Source: "{#SrcApp}\ledger\runtime-rocm-gfx1151.json"; DestDir: "{app}\ledger"; Flags: ignoreversion
 Source: "{#SrcApp}\ledger\runtime-cpu.json";          DestDir: "{app}\ledger"; Flags: ignoreversion
-Source: "{#Repo}\docs\radeon.md";                     DestDir: "{app}\docs";   Flags: ignoreversion
 #else
 Source: "{#SrcApp}\ledger\runtime-cu130.json"; DestDir: "{app}\ledger"; Flags: ignoreversion
 Source: "{#SrcApp}\ledger\runtime-cu126.json"; DestDir: "{app}\ledger"; Flags: ignoreversion
 Source: "{#SrcApp}\ledger\runtime-cpu.json";   DestDir: "{app}\ledger"; Flags: ignoreversion
 #endif
 ; docs は明示列挙する（一括写しにすると acceptance.md・contract.md が利用者機へ出る＝設計書 §1-5）。
-Source: "{#Repo}\README.md";       DestDir: "{app}\docs"; Flags: ignoreversion
-Source: "{#Repo}\docs\install.md"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "{#Repo}\README.md";      DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "{#Repo}\docs\guide.md";  DestDir: "{app}\docs"; Flags: ignoreversion
+; ↑ **v2.0 段 F-2 で install.md を guide.md に替えた**＝docs\install.md は**作る側の帳面**へ戻した
+;   （リポの番号・檔名・実測を引く文が利用者機に出ていた＝憲章 原則 8）。
+;   利用者向けの 1 檔は docs\guide.md ただ 1 つで、〔このアプリについて〕の〔使い方を見る〕
+;   （AboutGuideButton）が開くのもこれである（MainWindow.xaml.cs の OpenGuide が**その 1 檔を選んで**開く）。
+; ↑ **docs\radeon.md も同じ回に外した**（是正・2026-09-11・medium 16）＝install.md と同じ理由である。
+;   これで Radeon 版の {app}\docs も README.md と guide.md の 2 檔＝**両版で同じ構え**になった。
+;   既に入っている機体の {app}\docs\install.md ／ {app}\docs\radeon.md は [Files] から消しても
+;   **消えない**ので、上の [InstallDelete] の 2 行が消す。
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\IrodoriTtsYwk.Launcher.exe"
@@ -258,14 +287,18 @@ Type: dirifempty;     Name: "{app}"
 ; **種ごとに切り替える**（敵対検分 medium 3）＝ROCm 版の利用者に、その版が絶対に取得できない
 ; cu130 の数字（5.26 GiB／11.56 GiB）を出さない。数字の出所＝ledger/README.md §7 の表と、
 ; 本席が台帳 json から FetchPlanner.cs:54,57-59,65 の式を踏み直した実測（§11-8 に逐語）。
+; **名札は v2.0 段 F の綴り**（是正・2026-09-11・medium 15）＝この頁は DisableReadyPage を立てて
+; いないので**利用者が読む**。窓題と近道が「… － RTX（CUDA）」なのに本文が「CUDA 版」では食い違う。
+; 数字は動かさない（ben-e §6-2＝準備完了頁が代金を言う規則）。隠す語（実行系・変種・gfx1151・
+; cu130／cu126）も同じ回に置き換えた＝憲章 §6-1。
 #if Flavor == "radeon"
-ja.ReadyLabel2a=ここで入るのは本体（約 106 MiB）だけです。実行系とモデル（ROCm 版 rocm-gfx1151 で 4.79 GiB）は、最初にランチャを起動したときに取得します。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
-ja.ReadyLabel2b=ここで入るのは本体（約 106 MiB）だけです。実行系とモデル（ROCm 版 rocm-gfx1151 で 4.79 GiB）は、最初にランチャを起動したときに取得します。%n%nインストールを続行するには「インストール」をクリックしてください。
+ja.ReadyLabel2a=ここで入るのは本体（約 106 MiB）だけです。動かすための一式と声のデータ（Radeon（ROCm）で 4.79 GiB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
+ja.ReadyLabel2b=ここで入るのは本体（約 106 MiB）だけです。動かすための一式と声のデータ（Radeon（ROCm）で 4.79 GiB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」をクリックしてください。
 ja.FinishedLabel=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 9.55 GiB の空きが要ります（CPU 変種なら 4.53 GiB）。
 ja.FinishedLabelNoIcons=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 9.55 GiB の空きが要ります（CPU 変種なら 4.53 GiB）。
 #else
-ja.ReadyLabel2a=ここで入るのは本体（約 106 MiB）だけです。実行系とモデル（CUDA 版は既定の cu130 で 5.26 GiB・cu126 なら 5.93 GiB）は、最初にランチャを起動したときに取得します。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
-ja.ReadyLabel2b=ここで入るのは本体（約 106 MiB）だけです。実行系とモデル（CUDA 版は既定の cu130 で 5.26 GiB・cu126 なら 5.93 GiB）は、最初にランチャを起動したときに取得します。%n%nインストールを続行するには「インストール」をクリックしてください。
+ja.ReadyLabel2a=ここで入るのは本体（約 106 MiB）だけです。動かすための一式と声のデータ（RTX（CUDA）で 5.26 GiB・CUDA 12.6 なら 5.93 GiB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
+ja.ReadyLabel2b=ここで入るのは本体（約 106 MiB）だけです。動かすための一式と声のデータ（RTX（CUDA）で 5.26 GiB・CUDA 12.6 なら 5.93 GiB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」をクリックしてください。
 ja.FinishedLabel=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 14.45 GiB の空きが要ります（既定の cu130 なら 11.56 GiB・CPU 変種なら 4.53 GiB）。
 ja.FinishedLabelNoIcons=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 14.45 GiB の空きが要ります（既定の cu130 なら 11.56 GiB・CPU 変種なら 4.53 GiB）。
 #endif
@@ -295,12 +328,12 @@ const
   PeakDiskBytes = 10252286678;
   PeakDiskText  = '9.55 GiB';
   FetchText     = '4.79 GiB';
-  VariantText   = 'ROCm 版（rocm-gfx1151）';
+  VariantText   = 'Radeon（ROCm）';
 #else
   PeakDiskBytes = 15515873265;
   PeakDiskText  = '14.45 GiB';
   FetchText     = 'cu130 で 5.26 GiB・cu126 で 5.93 GiB';
-  VariantText   = 'CUDA 版（既定は cu130・いちばん食うのは cu126）';
+  VariantText   = 'RTX（CUDA）';
 #endif
   BytesPerGiB = 1073741824;
 

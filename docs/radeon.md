@@ -1,7 +1,18 @@
-# radeon.md — ROCm 版の注記（Radeon の GPU＝gfx1151 向け）
+# radeon.md — Radeon（ROCm）版の注記（Radeon の GPU＝gfx1151 向け）
+
+> **ここから下は作る側の帳面です**（v2.0 段 F-2＝是正 2026-09-11）。
+> **配布物には入りません**（`installer/irodori-tts-ywk.iss` の `[Files]` から外し、
+> 既に入っている機体の写しは `[InstallDelete]` が消す）。理由は `docs/install.md` と同じ＝
+> リポの檔名・裁定の番号・研究の控えを引く文が利用者機に出ていた（憲章 原則 8）。
+> **利用者に要る 2 文**（確かめたのは gfx1151 の 1 機種だけ・ほかは測っていない）は
+> `docs/guide.md` §1 に畳んだ＝利用者向けの 1 檔はあちらである。
 
 > 檔名の `radeon` と、本文の `Radeon 8060S`・`gfx1151`・`rocm-gfx1151` は**道具の名**なので据え置き。
-> **リリース／アプリを指す名だけ**が「ROCm 版」である（`decisions.md` 109）。
+> **リリース／アプリを指す名**は v1.1.0 までの「ROCm 版」から
+> **「irodori-TTS for 読み分けちゃん － Radeon（ROCm）」**に改まった（v2.0 段 F-1＝所有者の指示
+> 2026-09-10・憲章 §6-2 附録 4）。逐語の正本は
+> `launcher/IrodoriTtsYwk.Launcher/ViewModels/ReleaseFlavor.cs` の `FlavorLabel`／`Decorate`。
+> 本檔の以下の本文に残る「ROCm 版」は、**その当時の綴りの記帳**として据え置く（`decisions.md` 109）。
 
 > **ROCm は未保障。ROCm 版は別リリースである**（`decisions.md` 5・21）。
 > 本檔に書くのは **gfx1151（Ryzen AI MAX+ 395／Radeon 8060S）で実際に測った事実だけ**である。

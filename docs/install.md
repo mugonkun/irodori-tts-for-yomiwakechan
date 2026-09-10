@@ -15,7 +15,15 @@
 > **v1.1.0 までの配布物にはこの檔が入っている**（CUDA 版なら
 > `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\docs\install.md`・ROCm 版なら
 > `…\Programs\irodori-tts-ywk-radeon\docs\install.md`＝`decisions.md` 109）。
-> **v2.0 で配布物から外し、代わりに `docs/guide.md` を入れる**（`docs/design/charter.md` 根 7・`docs/design/v2-plan.md` 段 F-2）。
+> **v2.0 で配布物から外した**（段 F-2 で当て込み済み）＝代わりに `docs/guide.md` が入る。
+> ここから先は**作る側の帳面**であり、利用者に指す檔ではない。
+>
+> **v2.0 で規則が変わった 2 つ**（本文はその前の記帳のまま残してある）＝
+> ⑴ **データの置き場は版ごと**（`%LOCALAPPDATA%\irodori-tts-ywk-cuda\`／`…-radeon\`）。
+> 本文が書いている共有の `%LOCALAPPDATA%\irodori-tts-ywk\` は**移送の元**としてだけ残る。
+> ⑵ **アンインストールは問いを 1 つも出さず、その版の置き場を丸ごと消す**
+> （本文 §5 の「`voices\` は既定で残す」は廃止）。**置き場の外の元の wav には触れない。**
+> 正本＝`docs/design/v2-spec.md` §11-8・`docs/design/v2-plan.md` 段 E-3／F-2（裁定 132／133）。
 
 ---
 

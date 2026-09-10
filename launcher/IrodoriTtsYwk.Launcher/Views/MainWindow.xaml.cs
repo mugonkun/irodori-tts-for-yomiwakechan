@@ -33,6 +33,7 @@ public partial class MainWindow : Window
 {
     private readonly IAudioPlayer _player = new NAudioPlayer();
     private readonly MainViewModel _model;
+    private ReleaseFlavor _flavor = ReleaseFlavor.Cuda;
     private bool _firstRunShown;
 
     public MainWindow()
@@ -50,16 +51,18 @@ public partial class MainWindow : Window
             Services.LauncherComposition.DetachWrapper);
         DataContext = _model;
 
-        // v2.0 段 C＝**版の番号だけ**（`v2-copy.md` §1-1 の 33 行目）＝
-        // 元になった実装の pin の綴りは 〔このアプリについて〕 › 詳細 の中にだけ残す。
-        VersionText.Text = AboutViewModel.VersionText;
+        // v2.0 段 C＝**版の番号だけ**（`v2-copy.md` §1-1 の 33 行目）＝名札（RTX（CUDA））も
+        // 元になった実装の pin の綴りも 〔このアプリについて〕 の側にだけ出す。
+        VersionText.Text = AppVersion.Display;
 
         var paths = AppServices.Paths;
 
-        // 窓題は版で分ける（裁定 109）。XAML 側の Title（MainWindow.xaml:5）は設計時（デザイナ）用の
-        // 見本で、実行時は必ずこの行が版つきに差し替える＝素の幹が利用者の目に入る経路は無い。
-        // 樹が読めないときも DetectFrom は投げず ReleaseFlavor.Cuda を返す＝「（CUDA 版）」と名乗る。
-        Title = ReleaseFlavors.AppTitle(ReleaseFlavors.DetectFrom(paths.LedgerDir));
+        // 窓題は版で分ける（裁定 109 → v2.0 段 F-1）。XAML 側の Title（MainWindow.xaml:5）は
+        // 設計時（デザイナ）用の見本で、実行時は必ずこの行が版つきに差し替える＝
+        // 素の幹が利用者の目に入る経路は無い。
+        // 樹が読めないときも DetectFrom は投げず ReleaseFlavor.Cuda を返す＝「－ RTX（CUDA）」と名乗る。
+        _flavor = ReleaseFlavors.DetectFrom(paths.LedgerDir);
+        Title = ReleaseFlavors.AppTitle(_flavor);
 
         // **開発ビルドのときだけ本文を入れる**（v2.0 段 A-1）＝要素と id（MainHeaderText）は残す。
         // 出来上がりの配布物では 1 文字も出ない＝主画面から「変種」の語が消える。
@@ -399,7 +402,7 @@ public partial class MainWindow : Window
 
             using (var writer = new StreamWriter(target, append: false, new UTF8Encoding(false)))
             {
-                writer.WriteLine("# " + AboutViewModel.VersionText);
+                writer.WriteLine("# " + AboutViewModel.VersionText(_flavor));
                 foreach (var source in sources)
                 {
                     writer.WriteLine();
@@ -427,10 +430,28 @@ public partial class MainWindow : Window
     /// <summary>まとめた檔の名の頭（自分自身を集め直さないための印）。</summary>
     private const string ReportPrefix = "report-";
 
-    /// <summary>困ったときの手引き（配布物の <c>docs\</c>）を開く。</summary>
+    /// <summary>
+    /// 困ったときの手引き（<c>docs\guide.md</c>）を開く。
+    /// <para>
+    /// <b>指すのは 1 檔である</b>（是正・2026-09-11・low 19）＝`v2-spec.md` §2-6 も
+    /// <c>installer/irodori-tts-ywk.iss</c> の註も「〔使い方を見る〕が開くのは
+    /// <c>docs\guide.md</c>」と書いているのに、ここは<b>置き場</b>を開いていた。
+    /// 置き場には作る側の帳面（<c>README.md</c>）も並んでいるので、押した人がどれを読むのか
+    /// 判らない。<b>檔を選んで開く</b>（<c>/select,</c>＝置き場を開いてその 1 檔を選んだ形＝
+    /// <c>.md</c> の開き手が入っていない機体でも失敗しない）。
+    /// 檔が無い機体（古い配布）は、これまでどおり置き場→記録の順に落ちる。
+    /// </para>
+    /// </summary>
     private void OpenGuide()
     {
         var docs = Path.Combine(AppServices.Paths.AppDir, "docs");
+        var guide = Path.Combine(docs, GuideFileName);
+        if (File.Exists(guide))
+        {
+            SelectInExplorer(guide);
+            return;
+        }
+
         if (Directory.Exists(docs))
         {
             StartShell("explorer.exe", "\"" + docs + "\"");
@@ -439,6 +460,9 @@ public partial class MainWindow : Window
 
         OpenLog();
     }
+
+    /// <summary>利用者向けの 1 檔（<c>installer/irodori-tts-ywk.iss</c> の <c>[Files]</c> と同じ綴り）。</summary>
+    private const string GuideFileName = "guide.md";
 
     private void OpenExternal(string url) => StartShell(url, null);
 

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using IrodoriTtsYwk.Launcher.Contracts;
+using IrodoriTtsYwk.Launcher.ViewModels;
 
 namespace IrodoriTtsYwk.Launcher.Services.Ledger;
 
@@ -221,19 +222,17 @@ public static class CacheCleaner
     {
         if (!runtimeInstalled)
         {
-            return "実行系がまだ組み上がっていないので、取得キャッシュは消しません。";
+            return UiStrings.CacheBlockedNotInstalled;
         }
 
         if (string.IsNullOrWhiteSpace(storedLedgerSha256) || string.IsNullOrWhiteSpace(currentLedgerSha256))
         {
-            return "展開に使った取得台帳が判らないので、取得キャッシュは消しません"
-                + "（実行系を組み直すと判るようになります）。";
+            return UiStrings.CacheBlockedUnknown;
         }
 
         return string.Equals(storedLedgerSha256.Trim(), currentLedgerSha256.Trim(), StringComparison.OrdinalIgnoreCase)
             ? null
-            : "いま在る実行系と配布物の取得台帳が違うので、取得キャッシュは消しません"
-              + "（実行系を組み直してから消してください）。";
+            : UiStrings.CacheBlockedMismatch;
     }
 
     /// <summary>

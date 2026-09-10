@@ -54,6 +54,54 @@ public sealed class WheelInstaller : IRuntimeInstaller
     /// <summary>組み直すときに既存の変種ディレクトリを消してから始める（既定＝消す）。</summary>
     public bool CleanBeforeInstall { get; init; } = true;
 
+    /// <summary>
+    /// 最後に <c>*.dist-info</c> の件数を<b>渡された台帳</b>と突き合わせる（既定＝突き合わせる）。
+    /// <para>
+    /// <b>差分の回だけ偽にする</b>（是正・2026-09-11・high 1）＝差分の回に渡る台帳は
+    /// 「変わった item だけ」の切れ端で、<see cref="CleanBeforeInstall"/> が偽だから
+    /// <c>site-packages</c> には<b>全 N 件</b>が居る。N と切れ端の件数は
+    /// <see cref="RuntimeDiff.RebuildFraction"/> の歯止めにより<b>絶対に一致しない</b>＝
+    /// この門を素通しにしないと差分の回は 1 度も成功しない（実射＝
+    /// 「展開の件数が台帳と合わない（*.dist-info 4 件・台帳は 1 件）。」）。
+    /// 締めが消えるわけではない＝差分の回は
+    /// <see cref="RuntimeDiff.VerifyAfterApply"/> が<b>配布樹の台帳（全件）</b>で数え直す。
+    /// </para>
+    /// </summary>
+    public bool VerifyDistInfoCount { get; init; } = true;
+
+    /// <summary>
+    /// 埋め込み Python を当てない（既定＝当てる）。
+    /// <para>
+    /// <b>差分の回だけ真にする</b>（是正・2026-09-11・high 2）＝差分の取得計画は
+    /// <see cref="RuntimeDiff.ToDifferentialRun"/> が <c>python-embed</c> を<b>1 件も積まない</b>のに、
+    /// ここが無条件に配布樹の <c>ledger\python-embed.json</c> を足して原檔を要求すると、
+    /// <c>decisions.md</c> 90 で空になっている取得キャッシュに当たって
+    /// <b>wheel を 1 本も触らないうちに落ちる</b>（実射＝「python の原檔が cache に無い」）。
+    /// 差分の回は相手の樹に <c>python.exe</c> が既に在る（呼び手の
+    /// <c>MainViewModel.TryDifferentialAsync</c> がそれを見てから入る）ので、
+    /// 11 MB の zip を落とし直して生きた樹の上へ展開し直す意味が無い。
+    /// </para>
+    /// </summary>
+    public bool SkipPythonEmbed { get; init; }
+
+    /// <summary>
+    /// 当てる前に<b>同じ名の古い <c>*.dist-info</c></b> を落とす（既定＝落とさない）。
+    /// <para>
+    /// <b>差分の回だけ真にする</b>（是正・2026-09-11・high 3）＝
+    /// <see cref="InstallWheel"/> は新しい zip を site-packages へ被せるだけなので、
+    /// 版が上がった wheel は <c>torch-1.dist-info</c> と <c>torch-2.dist-info</c> を<b>両方</b>残す。
+    /// 差分の締め（<see cref="RuntimeStamp.LooksComplete"/>）は件数で数えるから、
+    /// <b>版が動いたという一番ありふれた回</b>が必ず締めで落ちて丸ごとへ流れていた。
+    /// </para>
+    /// <para>
+    /// <b>落とすのは <c>*.dist-info</c> だけ</b>＝<c>RECORD</c> の列を辿って本体の檔まで抜く手は採らない
+    /// （<see cref="RuntimeDiffPlan.Removed"/> を消さないのと同じ理由＝他の item と共有する路を
+    /// 巻き添えにしうる）。古い版だけが持っていた <c>.py</c> は残りうる＝
+    /// <b>判っている欠落</b>として記帳する（<c>v2-plan.md</c> 段 F の記帳）。
+    /// </para>
+    /// </summary>
+    public bool ReplaceSupersededDistInfo { get; init; }
+
     /// <inheritdoc />
     public async Task<InstallResult> InstallAsync(
         InstallRequest request,
@@ -103,17 +151,22 @@ public sealed class WheelInstaller : IRuntimeInstaller
             // 変種の台帳（runtime-<変種>.json）は埋め込み Python を持たない。呼び手が
             // LedgerReader.WithPythonEmbed で足していれば item として来るし、足していなければ
             // 配布樹の ledger/python-embed.json から自分で読む（呼び手に順を強いない）。
-            var embed = ledger.PythonEmbed ?? TryReadPythonEmbed(request.AppDir);
-            if (embed is not null)
+            // **差分の回は当てない**（SkipPythonEmbed）＝相手の樹に python.exe が既に在る。
+            LedgerItem? embed = null;
+            if (!SkipPythonEmbed)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                progress?.Report(new InstallProgress(InstallPhase.PythonEmbed, embed.Name, done, total));
-                var embedPath = await VerifiedCachedPathAsync(request.CacheDir, embed, cancellationToken)
-                    .ConfigureAwait(false);
-                ArchiveExtractor.ExtractZip(embedPath, runtimeDir, cancellationToken);
-                if (ledger.PythonEmbed is not null)
+                embed = ledger.PythonEmbed ?? TryReadPythonEmbed(request.AppDir);
+                if (embed is not null)
                 {
-                    done++;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    progress?.Report(new InstallProgress(InstallPhase.PythonEmbed, embed.Name, done, total));
+                    var embedPath = await VerifiedCachedPathAsync(request.CacheDir, embed, cancellationToken)
+                        .ConfigureAwait(false);
+                    ArchiveExtractor.ExtractZip(embedPath, runtimeDir, cancellationToken);
+                    if (ledger.PythonEmbed is not null)
+                    {
+                        done++;
+                    }
                 }
             }
 
@@ -121,9 +174,11 @@ public sealed class WheelInstaller : IRuntimeInstaller
             if (!File.Exists(pythonExe))
             {
                 return Fail(runtimeDir, started, dropped,
-                    embed is null
-                        ? "埋め込み Python の台帳（ledger/python-embed.json）が配布樹に無い。"
-                        : "埋め込み Python の zip に python.exe が無い（台帳か cache が壊れている）。");
+                    SkipPythonEmbed
+                        ? "新しくなった分を当てる相手に python.exe が無い（先に丸ごと組むこと）。"
+                        : embed is null
+                            ? "埋め込み Python の台帳（ledger/python-embed.json）が配布樹に無い。"
+                            : "埋め込み Python の zip に python.exe が無い（台帳か cache が壊れている）。");
             }
 
             // ---- ⑵ python312._pth --------------------------------------------
@@ -143,6 +198,13 @@ public sealed class WheelInstaller : IRuntimeInstaller
                 progress?.Report(new InstallProgress(InstallPhase.Packages, item.Name, done, total));
                 var source = await VerifiedCachedPathAsync(request.CacheDir, item, cancellationToken)
                     .ConfigureAwait(false);
+
+                // **版が上がった item は古い *.dist-info を先に落とす**（差分の回だけ）。
+                // 被せるだけでは torch-1 と torch-2 が並び、締めの件数が必ず 1 件多くなる。
+                if (ReplaceSupersededDistInfo)
+                {
+                    RemoveSupersededDistInfo(sitePackages, item.Name);
+                }
 
                 switch (item.Kind)
                 {
@@ -191,8 +253,10 @@ public sealed class WheelInstaller : IRuntimeInstaller
 
             // **数えた件数を台帳と突き合わせる**（是正・2026-09-05）。数えて報告するだけでは、
             // 檔が 1 件も入らなくても Ok=true になる（実射＝dist-info 1・台帳 2 で成功を名乗った）。
+            // 差分の回（VerifyDistInfoCount=false）は**ここでは数えない**＝渡る台帳が切れ端で、
+            // 樹には全件が居るので絶対に合わない。締めは RuntimeDiff.VerifyAfterApply が全件で撃つ。
             var expected = ExpectedDistInfoCount(items);
-            if (distInfos != expected)
+            if (VerifyDistInfoCount && distInfos != expected)
             {
                 return Fail(runtimeDir, started, dropped, string.Create(CultureInfo.InvariantCulture,
                     $"展開の件数が台帳と合わない（*.dist-info {distInfos} 件・台帳は {expected} 件）。"));
@@ -473,16 +537,21 @@ public sealed class WheelInstaller : IRuntimeInstaller
     /// <b>組み始める前に</b>台帳の全 item が cache に在り sha256 が合うことを 1 巡して確かめる
     /// （low 8）。落ちた理由 1 行を返す（健全なら null）。
     /// </summary>
-    private static async Task<string?> PreflightAsync(
+    private async Task<string?> PreflightAsync(
         InstallRequest request, CancellationToken cancellationToken)
     {
         var items = new List<LedgerItem>(request.Ledger.Items.Count + 1);
-        if (request.Ledger.PythonEmbed is null && TryReadPythonEmbed(request.AppDir) is { } embed)
+        if (!SkipPythonEmbed
+            && request.Ledger.PythonEmbed is null
+            && TryReadPythonEmbed(request.AppDir) is { } embed)
         {
             items.Add(embed);
         }
 
-        items.AddRange(request.Ledger.Items);
+        // 差分の回は埋め込み Python を 1 件も要求しない（当てないので原檔も要らない）。
+        items.AddRange(SkipPythonEmbed
+            ? request.Ledger.Items.Where(static i => i.Kind != LedgerItemKinds.PythonEmbed)
+            : request.Ledger.Items);
 
         foreach (var item in items)
         {
@@ -510,6 +579,94 @@ public sealed class WheelInstaller : IRuntimeInstaller
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// item の名を <c>*.dist-info</c> の綴りに揃える（<b>純関数</b>＝小文字・<c>-</c>／<c>_</c>／<c>.</c>
+    /// の連なりは <c>_</c> 1 つ）。<see cref="MinimalDistInfo.DirectoryName"/> と同じ規則で、
+    /// wheel 側の escape（PEP 503）にも合う。
+    /// </summary>
+    public static string NormalizeDistributionName(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+
+        var text = new System.Text.StringBuilder(name.Length);
+        var lastWasSeparator = false;
+        foreach (var ch in name.Trim())
+        {
+            if (ch is '-' or '_' or '.')
+            {
+                if (!lastWasSeparator)
+                {
+                    text.Append('_');
+                }
+
+                lastWasSeparator = true;
+                continue;
+            }
+
+            text.Append(char.ToLowerInvariant(ch));
+            lastWasSeparator = false;
+        }
+
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// <c>site-packages</c> に居る<b>同じ名の <c>*.dist-info</c></b>（版は問わない）。
+    /// <b>純関数に近い＝檔を読むだけ</b>で、消しはしない。
+    /// </summary>
+    public static IReadOnlyList<string> SupersededDistInfoDirectories(string sitePackages, string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sitePackages);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        if (!Directory.Exists(sitePackages))
+        {
+            return [];
+        }
+
+        var want = NormalizeDistributionName(name);
+        return Directory
+            .GetDirectories(sitePackages, "*.dist-info", SearchOption.TopDirectoryOnly)
+            .Where(dir => string.Equals(DistributionNameOf(dir), want, StringComparison.Ordinal))
+            .OrderBy(dir => dir, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    /// <summary><c>&lt;name&gt;-&lt;ver&gt;.dist-info</c> の名の側（揃えた綴り・読めなければ null）。</summary>
+    private static string? DistributionNameOf(string distInfoDir)
+    {
+        var leaf = Path.GetFileName(distInfoDir);
+        if (leaf.Length <= DistInfoSuffix.Length)
+        {
+            return null;
+        }
+
+        var stem = leaf[..^DistInfoSuffix.Length];
+        var dash = stem.LastIndexOf('-');
+        return dash <= 0 ? null : NormalizeDistributionName(stem[..dash]);
+    }
+
+    private const string DistInfoSuffix = ".dist-info";
+
+    /// <summary>同じ名の古い <c>*.dist-info</c> を落とす（差分の回だけ＝消せなければ黙って諦める）。</summary>
+    private static void RemoveSupersededDistInfo(string sitePackages, string name)
+    {
+        foreach (var dir in SupersededDistInfoDirectories(sitePackages, name))
+        {
+            try
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+            catch (IOException)
+            {
+                // 掴まれている＝締めの件数で落ちて丸ごとへ流れる（黙って混ぜない）
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
     }
 
     /// <summary>

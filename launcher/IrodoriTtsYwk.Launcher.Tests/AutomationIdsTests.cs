@@ -280,6 +280,25 @@ public sealed class AutomationIdsTests
     }
 
     /// <summary>
+    /// <b>段 F（名札・文書・インストーラ）で新設した id</b>（`v2-copy.md` §4 の 6 行目）。
+    /// <para>
+    /// 1 つだけである＝設定 › 詳細 の 6 行目「更新のとき、新しくなった分だけ取り直す」。
+    /// 段 C はこの 1 行を持たずに 7 行で置き、段 E が差分の道具（<c>RuntimeDiff</c>・
+    /// <c>ModelDiff</c>・<c>PresetSync</c>）を入れ、段 F がその 2 つを結んで <b>8 行</b>にした。
+    /// <b>退役させた id は 1 つも無い。</b>
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void 段Fで新設したidが揃っている()
+    {
+        var found = AllIds();
+        string[] added = ["SettingsDifferentialUpdateCheck"];
+
+        var missing = added.Where(id => !found.Contains(id)).ToArray();
+        Assert.True(missing.Length == 0, "新設できていない AutomationId：" + string.Join("・", missing));
+    }
+
+    /// <summary>
     /// <b>退役させた id は本当に画面から消えているか</b>（段 C）＝
     /// 「消した」と帳面に書いておいて XAML に残っている、を止める錠である。
     /// </summary>

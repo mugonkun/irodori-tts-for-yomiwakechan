@@ -9,14 +9,14 @@
     v2.0 段 C／A-5＝**上はふだんの設定 4 つだけ**（v2-spec.md §2-5・v2-copy.md §4）＝
     ⑴ 自動で読み上げできるようにする ⑵ よく使う声を先に準備しておく
     ⑶ 声のファイルの場所 ⑷ ログを開く。**それ以外は 詳細 か 削除**である。
-    詳細（SettingsAdvancedExpander・既定は閉）は **7 行**（是正・段 C の検分＝数え直した）＝
+    詳細（SettingsAdvancedExpander・既定は閉）は **8 行**（段 F で 6 行目が入った）＝
     ⑴ 使うグラフィックス ⑵ 動かし方 ⑶ 音質と速さ ⑷ 声の下ごしらえ ⑸ 読み上げの動作
-    ⑹ ファイルの場所 ⑺ 一時ファイル。**上限 12 行**（憲章 原則 7）に収まっている。
-    v2-copy.md §4 の 10 行との差は 3 つ＝⒜ 6 行目「更新のとき、新しくなった分だけ取り直す」
-    （SettingsDifferentialUpdateCheck）は**段 E の持ち物**でまだ無い ⒝ 9 行目「記録」は
-    ふだんの設定の側の SettingsOpenLogButton 1 つに寄せた ⒞ 10 行目「変えた設定は…」＋
+    ⑹ 更新のとき、新しくなった分だけ取り直す ⑺ ファイルの場所 ⑻ 一時ファイル。
+    **上限 12 行**（憲章 原則 7）に収まっている。
+    v2-copy.md §4 の 10 行との差は 2 つ＝⒜ 9 行目「記録」は
+    ふだんの設定の側の SettingsOpenLogButton 1 つに寄せた ⒝ 10 行目「変えた設定は…」＋
     〔適用〕〔取り消し〕は**畳みの外**（この下の DockPanel.Dock="Bottom"）に置いた＝
-    ふだんの 4 つを保存する道が畳みの中にあると行き止まりになるため。段 E が入れば 8 行になる。
+    ふだんの 4 つを保存する道が畳みの中にあると行き止まりになるため。
 
     **入らなかったので消した物（移さない）**＝GPU の UUID の 1 行・
     SettingsShowMemoryCheck・SettingsWarmupStagesBox／SettingsWarmupVoicesBox・
@@ -97,7 +97,7 @@
                 AutomationProperties.AutomationId="SettingsOpenLogButton"
                 Click="OnOpenLogClick" />
 
-        <!-- ===== 詳細（上級者向け）＝7 行（上限 12・段 E で 8 行） ===== -->
+        <!-- ===== 詳細（上級者向け）＝8 行（上限 12） ===== -->
         <Expander x:Name="AdvancedExpander" Margin="0,18,0,0" IsExpanded="False"
                   AutomationProperties.AutomationId="SettingsAdvancedExpander"
                   Header="{x:Static vm:UiStrings.AdvancedHeader}">
@@ -186,8 +186,21 @@
             </WrapPanel>
 
             <!--
-              6＝ファイルの場所（v2-copy.md §4 の 7 行目）。**場所は変えられません。**
+              6＝更新のとき、新しくなった分だけ取り直す（v2-copy.md §4 の 6 行目・既定 ON）。
+              段 E が RuntimeDiff／ModelDiff／PresetSync を入れ、段 F がこの 1 行と更新の道を
+              結んだ（MainViewModel.RebuildRuntimeCoreAsync）。**切ると丸ごと入れ直しに戻る**。
+            -->
+            <CheckBox Margin="0,14,0,0" FontWeight="Bold"
+                      Content="{x:Static vm:UiStrings.SettingsDifferentialUpdate}"
+                      AutomationProperties.AutomationId="SettingsDifferentialUpdateCheck"
+                      IsChecked="{Binding DifferentialUpdate, Mode=TwoWay}" />
+            <TextBlock Style="{StaticResource Note}"
+                       Text="{x:Static vm:UiStrings.SettingsDifferentialUpdateNote}" />
+
+            <!--
+              7＝ファイルの場所（v2-copy.md §4 の 7 行目）。**場所は変えられません。**
               「モデル」と「動かすための一式」の 2 行は「データ」に畳んだ＝要素と id は残す。
+              版ごとに別（decisions.md 133）＝RTX（CUDA）は …\irodori-tts-ywk-cuda\。
             -->
             <TextBlock Text="{x:Static vm:UiStrings.SettingsPathsLabel}" Style="{StaticResource Head}" />
             <Grid>
@@ -225,7 +238,7 @@
             <TextBlock Style="{StaticResource Note}" Text="{x:Static vm:UiStrings.SettingsPathsNote}" />
 
             <!--
-              7＝一時ファイル（裁定 90 Q-E2 ⑶）。組み上がれば原檔は要らない。
+              8＝一時ファイル（裁定 90 Q-E2 ⑶）。組み上がれば原檔は要らない。
               初回の合成が 200 で返った時点でアプリが自動で消すので、ここは手で消したいとき用。
             -->
             <TextBlock Text="{x:Static vm:UiStrings.SettingsCacheLabel}" Style="{StaticResource Head}" />

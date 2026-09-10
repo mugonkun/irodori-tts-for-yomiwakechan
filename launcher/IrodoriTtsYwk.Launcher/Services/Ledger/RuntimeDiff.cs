@@ -229,11 +229,23 @@ public static class RuntimeDiff
     /// <summary>
     /// 差分の回の <see cref="WheelInstaller"/>（<b>既存の樹を消さない構え</b>）。
     /// <b>入口は <see cref="ToDifferentialRun"/> 1 本</b>＝取得計画と切り離して使わせない。
+    /// <para>
+    /// <b>差分の回に外す門は 3 つ</b>（是正・2026-09-11・high 1〜3）＝
+    /// ⑴ <c>VerifyDistInfoCount</c>＝渡す台帳が<b>切れ端</b>なので、樹の全件と突き合わせても合わない
+    /// （締めは <see cref="VerifyAfterApply"/> が配布樹の台帳＝全件で撃つ）
+    /// ⑵ <c>SkipPythonEmbed</c>＝取得計画に <c>python-embed</c> が 1 件も無いのに原檔を要求され、
+    /// 空の取得キャッシュ（<c>decisions.md</c> 90）で wheel を触る前に落ちていた
+    /// ⑶ <c>ReplaceSupersededDistInfo</c>＝版が上がった wheel の古い <c>*.dist-info</c> が残ると
+    /// 締めの件数が必ず 1 件多くなる。<b>3 つとも、外さなければ差分の回は 1 度も成功しない。</b>
+    /// </para>
     /// </summary>
     private static WheelInstaller NewInstaller(bool differential) => new()
     {
         CleanBeforeInstall = !differential,
         RemovePartialOnFailure = !differential,
+        VerifyDistInfoCount = !differential,
+        SkipPythonEmbed = differential,
+        ReplaceSupersededDistInfo = differential,
     };
 
     /// <summary>

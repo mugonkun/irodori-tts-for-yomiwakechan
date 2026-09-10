@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using IrodoriTtsYwk.Launcher.Contracts;
+using IrodoriTtsYwk.Launcher.ViewModels;
 
 namespace IrodoriTtsYwk.Launcher.Services.Ledger;
 
@@ -111,6 +112,43 @@ public static class RuntimeStamp
     }
 
     /// <summary>
+    /// <b>写しを落とす</b>（是正・2026-09-11・medium 4）＝差分の当て込みが<b>檔を書いたあとで</b>
+    /// 落ちた回に撃つ。
+    /// <para>
+    /// そのとき樹は新旧が混ざっているのに、写しは<b>混ざる前の姿</b>を名乗ったまま残る＝
+    /// 次の <see cref="RuntimeDiff.Plan"/> がその嘘を信じ、もう入れ替わっている item を
+    /// 「変わっていない」と見送って<b>混ざりを温存する</b>。写しを落としておけば、
+    /// 次の回は歯止め ⑴ で丸ごと組み直しへ落ちる＝素性の知れない樹には、それが正しい。
+    /// </para>
+    /// 戻り＝落としたか（無かった・落とせなかったなら偽＝起動は止めない）。
+    /// </summary>
+    public static bool RemoveAppliedLedger(AppPaths paths, string variant)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentException.ThrowIfNullOrWhiteSpace(variant);
+
+        var path = AppliedLedgerPath(paths, variant);
+        try
+        {
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
+            File.Delete(path);
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// 台帳 1 檔の sha256（小文字 hex）。読めなければ null＝<b>黙る</b>
     /// （配布樹が読めない機体で「組み直せ」と急かさない）。
     /// </summary>
@@ -207,9 +245,10 @@ public static class RuntimeStamp
 
         if (!string.Equals(storedLedgerSha256.Trim(), currentLedgerSha256, StringComparison.OrdinalIgnoreCase))
         {
+            // 画面に出る 1 行は UiStrings が綴る（段 F＝段 C の申し送り ⑵）。
+            // 台帳の檔名（runtime-cu130.json）は**記録の側の綴り**なので画面へは出さない。
             return new Verdict(
-                "配布物の取得台帳（" + RuntimeVariants.LedgerName(variant)
-                + ".json）が、いまの実行系を展開したときの台帳と違います。実行系を組み直してください。",
+                UiStrings.StatusRebuildLedgerChanged,
                 LedgerChanged: true,
                 AppVersionChanged: false);
         }
@@ -222,8 +261,10 @@ public static class RuntimeStamp
                 Line: null,
                 LedgerChanged: false,
                 AppVersionChanged: true,
-                Note: "この実行系はランチャ " + storedAppVersion.Trim() + " で展開した物です（いまは "
-                    + currentAppVersion.Trim() + "）。取得台帳は同じなので、そのまま使えます。");
+                // Note は**記録にしか落ちない**（MainViewModel.CheckRuntimeStamp が AppendLog へ渡す）＝
+                // 版の綴りを残してよい面である。画面に出す言い直しは UiStrings が持つ。
+                Note: UiStrings.StatusAppVersionChangedLog + "（"
+                    + storedAppVersion.Trim() + " → " + currentAppVersion.Trim() + "）");
         }
 
         return Verdict.Silent;
@@ -333,8 +374,10 @@ public static class RuntimeStamp
         }
     }
 
-    /// <summary>展開が途中で切れている樹に出す 1 行（<b>純関数</b>）。</summary>
-    public static string IncompleteLine(string variant) =>
-        "実行系（" + RuntimeVariants.DisplayName(variant)
-        + "）が途中までしか組み上がっていません。実行系を組み直してください。";
+    /// <summary>
+    /// 展開が途中で切れている樹に出す 1 行（<b>純関数</b>）。
+    /// <paramref name="variant"/> は<b>読まない</b>＝画面に動かし方の綴りを出さない（憲章 §6-1）。
+    /// 引数は残す（呼び手 2 箇所の形と、記録側の呼びを変えないため）。
+    /// </summary>
+    public static string IncompleteLine(string variant) => UiStrings.StatusRebuildIncomplete;
 }

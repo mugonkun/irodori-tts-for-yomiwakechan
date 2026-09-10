@@ -1,4 +1,4 @@
-# installer-build.ps1 -- the installer production line (convoy E).
+﻿# installer-build.ps1 -- the installer production line (convoy E).
 #
 # ASCII only. CRLF. Must parse and run on Windows PowerShell 5.1 and PowerShell 7+.
 # No ternary operator, no null-coalescing, no '&&' inside this file.
@@ -107,10 +107,23 @@ trap {
 #                                  +   3,687 (voices\presets.json    52,495 -> 56,182 B)
 #                                  +   1,817 (licenses\README.md     19,408 -> 21,225 B)
 #                                  =  34,087,580
-# NOTE: a doc edit under docs\ does NOT move this figure -- docs\ never reaches build\out\app;
-# the .iss names docs\install.md one by one at install time ([Files] section).
+# Re-based 2026-09-11 (v2.0 stage F). ONE term moved and it is not a doc: stage D added
+# requests.in_flight to server/ywk_server.py (decisions 130 Q4, /ywk/status gained a 7th field) and
+# never re-measured this gate; stage F's v1.1.0 -> v2.0.0 bump keeps the same string length
+# ("1.1.0" -> "2.0.0"). Measured file by file against build\out\app: only that one file differs.
+#   34,087,580 (裁定 118 の記録値) + 801 (server\ywk_server.py 151,012 -> 151,813 B)
+#                                  =  34,088,381
+# The file count does not move (109). docs\ never reaches build\out\app -- the .iss names
+# README.md and docs\guide.md one by one at install time ([Files] section) -- so stage F-2's
+# doc changes (install.md and radeon.md dropped from the distributable, guide.md added) leave
+# this figure alone. They show up in B-2 (the setup size band) and nowhere else. The launcher
+# exe is outside build\out\app too (裁定 51), so the version bump does not move A-1 either.
+# WATCH THE LINE ENDINGS: server\*.py are LF in this tree (ywk_fetch_models.py, ywk_params.py and
+# ywk_server.py; upstream\ is CRLF and stays CRLF). An editor that rewrites ywk_server.py as CRLF
+# adds one byte per line -- 3,651 B on a file this size -- and A-1 drifts for a reason that has
+# nothing to do with the distributable. Measured 2026-09-11 when exactly that happened.
 $ExpectedAppFiles = 109
-$ExpectedAppBytes = @([int64]34087580)
+$ExpectedAppBytes = @([int64]34088381)
 
 # Gate A-7. Files named ONE BY ONE, because their absence produces the worst artefact this line can
 # make: a setup that installs, exits 0 and then does not work. Nothing else in gate A sees them --
@@ -445,7 +458,7 @@ if ($versionHits.Count -ne 1) {
         ' AppDisplayVersion tags (expected exactly 1 -- the version has one definition).')
 }
 $appVersion = $versionHits[0].Matches[0].Groups[1].Value
-# The trap: AppDisplayVersion is 'v1.1.0' (Directory.Build.props:31). [Setup] AppVersion= and
+# The trap: AppDisplayVersion is 'v2.0.0' (Directory.Build.props:33). [Setup] AppVersion= and
 # VersionInfoVersion= take digits only, so the .iss is handed BOTH forms as separate /D switches.
 $appVersionNumeric = $appVersion.TrimStart('v')
 Write-YwkLog -Message ('AppVersion = ' + $appVersion + ' / AppVersionNumeric = ' + $appVersionNumeric)
@@ -819,7 +832,8 @@ foreach ($l in @($successLine | Select-Object -First 1)) {
 #   (1) ISCC exited 0 and the setup is on disk;
 #   (2) the compile log ships exactly the ledger set of this flavour and none of the other's
 #       (this is the "no mixing" proof: it reads what was PUT IN the setup, not what was on disk);
-#   (3) no __pycache__ / *.pyc and none of the internal docs (acceptance.md, contract.md) got in.
+#   (3) no __pycache__ / *.pyc and none of the internal docs (acceptance.md, contract.md,
+#       install.md, radeon.md) got in, and docs\guide.md -- the one user-facing doc -- did.
 $b1problems = New-Object System.Collections.Generic.List[string]
 if ($isccRun.ExitCode -ne 0) {
     $b1problems.Add('ISCC exited ' + $isccRun.ExitCode + ' (1 = command line, 2 = compile aborted); see ' + $isccLogPath)
@@ -828,6 +842,7 @@ if (-not (Test-Path -LiteralPath $setupPath)) {
     $b1problems.Add('the setup is not on disk: ' + $setupPath)
 }
 $shippedLedgers = New-Object System.Collections.Generic.List[string]
+$sawGuideDoc = $false
 foreach ($line in $compressing) {
     $t = $line.Trim()
     if ($t -match '__pycache__') {
@@ -836,8 +851,16 @@ foreach ($line in $compressing) {
     if ($t -match '(?i)\.pyc$') {
         $b1problems.Add('a .pyc was compressed into the setup: ' + $t)
     }
-    if ($t -match '(?i)\\docs\\(acceptance|contract)\.md$') {
+    # v2.0 stage F-2 moved install.md and radeon.md back to the maker's side (the .iss [Files]
+    # note and each file's own header say so), but no gate enforced that: re-adding either
+    # Source: line would have kept all 20 gates green. A-1 cannot see it (docs\ never enters
+    # build\out\app) and B-2's +-4 MiB band would not move for a 40 KB file. So the list of
+    # names this gate refuses is the enforcement (是正 2026-09-11, medium 11).
+    if ($t -match '(?i)\\docs\\(acceptance|contract|install|radeon)\.md$') {
         $b1problems.Add('an internal doc was compressed into the setup: ' + $t)
+    }
+    if ($t -match '(?i)\\docs\\guide\.md$') {
+        $sawGuideDoc = $true
     }
     $m = [regex]::Match($t, '(?i)\\ledger\\([^\\]+)$')
     if ($m.Success) {
@@ -855,10 +878,16 @@ if ($isccRun.ExitCode -eq 0) {
             $b1problems.Add('a ledger of this flavour was NOT shipped: ' + $need)
         }
     }
+    # The other half of the same question: the ONE user-facing doc has to be in there.
+    # Asserted the way the ledger set is, so that dropping the line is as loud as adding one.
+    if (-not $sawGuideDoc) {
+        $b1problems.Add('docs\guide.md was NOT compressed into the setup (the .iss [Files] list)')
+    }
 }
 $b1ok = ($b1problems.Count -eq 0)
 $b1detail = 'exit 0, ' + $compressing.Count + ' file(s) compressed in ' + $isccSeconds + ' s, ledger = ' +
-    (($shippedLedgers | Sort-Object) -join ' ') + ', ' + $isccWarnings.Count + ' warning(s)'
+    (($shippedLedgers | Sort-Object) -join ' ') + ', docs\guide.md shipped, ' +
+    $isccWarnings.Count + ' warning(s)'
 if (-not $b1ok) {
     $b1detail = ($b1problems -join ' ; ')
 }
