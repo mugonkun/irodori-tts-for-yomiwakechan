@@ -60,6 +60,37 @@ public sealed class WrapperClientTests
     }
 
     [Fact]
+    public async Task requestsの欄が無い個体は0と読む()
+    {
+        // 決裁 130 Q4＝v1.1.0 までの wrapper にはこの欄が無い（上の逐語も無い形）。
+        // 欄の欠けを「使用中」と読むと、古い個体で〔しゃべらせる〕が永久に押せなくなる。
+        using var client = Client(Respond(HttpStatusCode.OK, StatusBody));
+
+        var status = (await client.GetStatusAsync(CancellationToken.None)).Value!;
+
+        Assert.Null(status.Requests);
+        Assert.Equal(0, status.RequestsInFlight);
+        Assert.False(status.HostBusy);
+    }
+
+    [Fact]
+    public async Task requestsのin_flightを読んで本体が使っていると判る()
+    {
+        // 契約 ⑹ の新しい欄（名詞 requests の下の 1 欄・schema は上がらない＝⑻）。
+        using var client = Client(Respond(HttpStatusCode.OK, """
+            {"engine":"irodori-ywk","pid":4242,
+             "runtime":{"loaded":true,"loading":false,"error":null},
+             "requests":{"in_flight":1}}
+            """));
+
+        var status = (await client.GetStatusAsync(CancellationToken.None)).Value!;
+
+        Assert.Equal(1, status.Requests!.InFlight);
+        Assert.Equal(1, status.RequestsInFlight);
+        Assert.True(status.HostBusy);
+    }
+
+    [Fact]
     public async Task 読込中のruntimeを3欄そのまま読む()
     {
         // 裁定 105（ポート先行）＝bind の直後はこの形が 20〜70 秒続く。

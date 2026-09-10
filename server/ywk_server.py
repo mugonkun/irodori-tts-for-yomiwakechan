@@ -1803,6 +1803,14 @@ def ywk_status() -> dict[str, Any]:
         # 裁定 87 ⑴: the speaker ids come from the list built just above, so the
         # latents table is answered from the same reading of voices.json.
         "memory": memory_snapshot(device_obj, [item["id"] for item in voices]),
+        # 決裁 130 Q4（v2.0）: 本体が読み上げに使っている間、ランチャは〔しゃべらせる〕を
+        # 譲る。**新しい計数は 1 つも書かない**＝暖機の優先度判定が既に持っている
+        # ``pending_real_requests()`` そのもの（本物の ``POST /v1/audio/speech`` だけ・
+        # 暖機と事前計算の射は数えない＝⑺ 7-2 と同じ数）。名詞の下に置くのは
+        # ``warmup``／``precompute`` と揃えるため＝top-level の ``in_flight`` では
+        # 読み手が「何の in flight か」を取り違える。**欄の追加は schema を上げない**
+        # （契約 ⑻）。整数 1 つなので絶対パスも秘密も載らない。
+        "requests": {"in_flight": pending_real_requests()},
         "warmup": warmup_snapshot(),
         "precompute": precompute_snapshot(),
     }

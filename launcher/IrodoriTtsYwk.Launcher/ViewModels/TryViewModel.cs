@@ -20,7 +20,9 @@ namespace IrodoriTtsYwk.Launcher.ViewModels;
 /// </para>
 /// <para>
 /// <b>合成は 1 プロセス 1 本の直列</b>（<c>max_concurrent_synthesis</c> 既定 1＝launcher/README §4 ⑧）。
-/// 配信中にここで撃つと本体の読み上げが待たされる＝画面に注記を出す。
+/// 配信中にここで撃つと本体の読み上げが待たされる＝<b>本体が使っている間は譲る</b>
+/// （決裁 130 Q4）＝<see cref="HostBusy"/> の間だけ〔しゃべらせる〕を押せなくし、
+/// 脇に 1 行出す（<see cref="ConcurrencyNotice"/>）。<b>直列の制約そのものは変えない。</b>
 /// </para>
 /// <para>
 /// 再生は裁定 52 の作法（NAudio・<b>再生時に −16 dBFS 相当へ揃える</b>）。保存は生の wav を
@@ -49,6 +51,15 @@ public sealed class TryViewModel : ObservableObject
     private CancellationTokenSource? _inFlight;
     private string? _serverDown;
 
+    /// <summary>本体（読み分けちゃん2）の読み上げが走っている（決裁 130 Q4）。</summary>
+    private bool _hostBusy;
+
+    /// <summary>
+    /// 直前の標本に<b>自分の射</b>が乗っていた（決裁 130 Q4・<c>v2-spec.md</c> §2-1c）。
+    /// 標本は 2 秒ごとで射より遅れて届くので、射が終わった直後の 1 回ぶんだけ覚えておく。
+    /// </summary>
+    private bool _selfShotOnTheSample;
+
     public TryViewModel(Func<IWrapperClient?> wrapper, IAudioPlayer player, LauncherSettings settings)
     {
         ArgumentNullException.ThrowIfNull(wrapper);
@@ -61,9 +72,15 @@ public sealed class TryViewModel : ObservableObject
         _numSteps = settings.LastTestNumSteps;
         _selectedVoice = settings.LastTestVoice ?? VoiceIds.Default;
 
-        SynthesizeCommand = new AsyncRelayCommand(SynthesizeAsync, () => !string.IsNullOrWhiteSpace(Input));
+        SynthesizeCommand = new AsyncRelayCommand(
+            SynthesizeAsync, () => !string.IsNullOrWhiteSpace(Input) && !HostBusy);
         StopCommand = new RelayCommand(() => _player.Stop());
         ReplayCommand = new RelayCommand(Replay, () => _lastAudio is not null);
+
+        // 自分の射が始まった／終わった回にも脇の 1 行を計り直す（決裁 130 Q4）＝
+        // `AsyncRelayCommand.IsRunning` が変わると `CanExecuteChanged` が上がる。
+        // ここでは**釦の再計算はしない**（属性の告知だけ）ので輪にならない。
+        SynthesizeCommand.CanExecuteChanged += (_, _) => RaiseConcurrencyChanged();
 
         // 捕れなかった例外を握り潰さない（§20-5 ⑴）。
         SynthesizeCommand.Faulted += (_, line) => Message = "合成の手が落ちました：" + line;
@@ -91,9 +108,67 @@ public sealed class TryViewModel : ObservableObject
 
     public RelayCommand ReplayCommand { get; }
 
-    /// <summary>合成の直列（1 本）についての注記（launcher/README §4 ⑧）。</summary>
+    /// <summary>
+    /// 譲っている間の 1 行（決裁 130 Q4・<c>v2-copy.md</c> §3-3 の逐語）。
+    /// <para>
+    /// <b>常設をやめた</b>＝v1.1.0 までは「合成はサーバ 1 プロセスにつき 1 本ずつ…」の
+    /// 注記が橙の枠で出っぱなしだった（合成の直列＝launcher/README §4 ⑧）。いまは
+    /// <b>本体からの要求が走っている間だけ</b>出す＝原則 6 の ⑴何が起きたか ⑵なぜか
+    /// ⑶次の 1 手（＝待つ）が 1 文に揃っている。
+    /// </para>
+    /// </summary>
     public static string ConcurrencyNotice =>
-        "合成はサーバ 1 プロセスにつき 1 本ずつ走ります。配信中にここで撃つと、本体の読み上げがその分だけ待たされます。";
+        "いま読み分けちゃん2 の読み上げに使われています。終わってからお試しください。";
+
+    /// <summary>
+    /// 本体（読み分けちゃん2）が読み上げに使っている
+    /// （<c>/ywk/status.requests.in_flight &gt; 0</c>＝契約 ⑹・決裁 130 Q4）。
+    /// <para>
+    /// 流し込むのは<b>2 秒ごとの既存の見張りの標本</b>（<see cref="MainViewModel.ApplyStatusSample"/>）
+    /// だけ＝この画面は新しい問い合わせを 1 本も足さない。<b>欄が無い個体では常に偽</b>
+    /// （古い wrapper を「使用中」と読まない）。
+    /// </para>
+    /// <para>
+    /// <b>錠ではなく案内</b>＝標本の隙（最大 2 秒）に押せてしまう射は残るが、1 プロセス
+    /// 1 合成の直列（契約 ⑶ 3-4）は変えていないので、すり抜けても読み上げが少し待たされるだけ。
+    /// </para>
+    /// <para>
+    /// <b>持つのは濾した値</b>＝<b>自分の射が乗った標本は偽に落とす</b>ので、<c>set</c> した値と
+    /// <c>get</c> で返る値は一致しないことがある（下の setter の註）。
+    /// </para>
+    /// </summary>
+    public bool HostBusy
+    {
+        get => _hostBusy;
+        set
+        {
+            // 自分の射が乗った標本を「本体が使っている」と読まない（決裁 130 Q4・v2-spec §2-1c）。
+            // ランチャ自身の〔しゃべらせる〕も同じ POST /v1/audio/speech を撃って
+            // wrapper の同じ数に乗る＝濾さないと、**自分で撃つたび**に射の終わりから
+            // 次の標本までの最大 2 秒、釦が死んで橙の枠に嘘の 1 行が出る。
+            // 標本は射より遅れて届くので、射の直後の 1 回ぶんも自分の分として引く。
+            var mine = _selfShotOnTheSample || SynthesizeCommand.IsRunning;
+            _selfShotOnTheSample = SynthesizeCommand.IsRunning;
+            if (SetProperty(ref _hostBusy, value && !mine))
+            {
+                SynthesizeCommand.RaiseCanExecuteChanged();
+                RaiseConcurrencyChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 脇の 1 行を出すか（<b>自分の射の間は出さない</b>）。
+    /// <para>
+    /// 自分の〔しゃべらせる〕も同じ <c>POST /v1/audio/speech</c> を撃って同じ数に乗る
+    /// （wrapper は発信元を区別しない）ので、<b>自分が走っていないこと</b>が「本体が使っている」
+    /// と言い切れる唯一確実な手である（<c>v2-spec.md</c> §2-1c）。
+    /// </para>
+    /// </summary>
+    public bool ShowConcurrency => HostBusy && !SynthesizeCommand.IsRunning;
+
+    /// <summary>橙の枠の本文（出さない回は空＝<c>TryConcurrencyText</c> は残るが無言）。</summary>
+    public string ConcurrencyText => ShowConcurrency ? ConcurrencyNotice : string.Empty;
 
     public string Input
     {
@@ -326,6 +401,13 @@ public sealed class TryViewModel : ObservableObject
         Caption,
         Seed,
         Speed));
+
+    /// <summary>脇の 1 行（出す・出さない・本文）を計り直す（決裁 130 Q4）。</summary>
+    private void RaiseConcurrencyChanged()
+    {
+        RaisePropertyChanged(nameof(ShowConcurrency));
+        RaisePropertyChanged(nameof(ConcurrencyText));
+    }
 
     /// <summary>撃って鳴らす。</summary>
     public async Task SynthesizeAsync()

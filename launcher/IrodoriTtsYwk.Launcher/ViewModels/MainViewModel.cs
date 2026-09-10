@@ -768,6 +768,14 @@ public sealed class MainViewModel : ObservableObject
         // 走行中で断られた焼きを、口が空いたところで出し直す（統合席 §19）。
         // 標本は見張り 1 本の物をそのまま配るだけ＝窓は HTTP を持たない（low 3）。
         Voices.ApplyPrecompute(status?.Precompute);
+
+        // 本体が読み上げに使っている間は〔しゃべらせる〕を譲る（決裁 130 Q4）。
+        // **同じ 2 秒の標本を配るだけ**＝新しい問い合わせは 1 本も足さない。
+        // 標本が無い回（止まっている・口が無い）は偽＝押せない理由を残さない。
+        // 申し送り＝v2-plan D-4 の正本は `StatusViewModel.HostBusy` 経由（Status → Try）。
+        // 段 B が StatusViewModel に欄を建てたら `Try.HostBusy = Status.HostBusy;` へ寄せる
+        // （繋がりは Decision130HostBusyWiringTests が釘付けしているので移設しても守られる）。
+        Try.HostBusy = status?.HostBusy == true;
     }
 
     /// <summary>

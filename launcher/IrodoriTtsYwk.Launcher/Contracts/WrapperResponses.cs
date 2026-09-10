@@ -119,6 +119,31 @@ public sealed record StatusVoices
     [JsonPropertyName("error")] public string? Error { get; init; }
 }
 
+/// <summary>
+/// <c>/ywk/status.requests</c>（契約 ⑹・<c>decisions.md</c> 130 Q4 で足した欄）。
+/// <para>
+/// <see cref="InFlight"/>＝いま走っている<b>本物の</b> <c>POST /v1/audio/speech</c> の数
+/// （暖機・事前計算は数えない＝⑺ 7-2 の優先度判定と同じ計数）。
+/// <b>欄が無い個体（v1.1.0 以前の wrapper）では null</b>＝<b>0 と読む</b>ので、
+/// 古い個体に当たったこの版のランチャは〔しゃべらせる〕を押せるまま（退行しない）。
+/// </para>
+/// <para>
+/// <b>累計（<c>total</c>）は契約に足していない</b>＝ランチャ自身の射・第三のクライアント・
+/// 落ちた射／SSE の中断が区別できず、引き算がずれて嘘の 1 行になる（<c>v2-spec.md</c> §8 Q4）。
+/// </para>
+/// <para>
+/// <b>型違いは標本全体を落とす</b>＝<c>int?</c> で受けるので <c>1.0</c>・<c>"1"</c> が来ると
+/// <c>JsonException</c> になり、<see cref="Services.Http.WrapperClient"/> の解釈が
+/// <c>/ywk/status</c> の応答 1 本を丸ごと null にする（欄 1 つではなく標本ごと）。
+/// <b>wrapper は必ず int を出す約束</b>（契約 ⑹）なので当面は据え置く＝直すなら
+/// <c>TolerantStringConverter</c> の隣に数を飲む <c>JsonConverter&lt;int?&gt;</c> を足す。
+/// </para>
+/// </summary>
+public sealed record StatusRequests
+{
+    [JsonPropertyName("in_flight")] public int? InFlight { get; init; }
+}
+
 /// <summary>暖機の 1 射の記録（契約 ⑺ 7-2）。</summary>
 public sealed record WarmupShot
 {
@@ -386,8 +411,32 @@ public sealed record StatusResponse
 
     [JsonPropertyName("memory")] public MemoryStatus? Memory { get; init; }
 
+    /// <summary>
+    /// いま走っている本物の合成の数（契約 ⑹・<c>decisions.md</c> 130 Q4）。
+    /// <b>欄が無ければ null</b>＝古い wrapper。読み方は <see cref="RequestsInFlight"/>。
+    /// </summary>
+    [JsonPropertyName("requests")] public StatusRequests? Requests { get; init; }
+
     /// <summary>合成できる＝<c>runtime.loaded</c> が真。</summary>
     public bool IsReady => Runtime?.Loaded == true;
+
+    /// <summary>
+    /// いま走っている本物の合成の数（<b>欄が無い個体は 0</b>＝古い wrapper を「使用中」と
+    /// 読まない）。負の数は来ない約束だが、来ても 0 に丸める（釦を理由なく殺さない）。
+    /// </summary>
+    public int RequestsInFlight => Requests?.InFlight is int count && count > 0 ? count : 0;
+
+    /// <summary>
+    /// <b>本体（読み分けちゃん2）が読み上げに使っている</b>＝〔しゃべらせる〕を譲る合図
+    /// （決裁 130 Q4）。<b>錠ではなく案内</b>＝1 プロセス 1 合成の直列（契約 ⑶ 3-4）は
+    /// 変えていないので、2 秒の見張りの隙をすり抜けて押せても壊れない（待たされるだけ）。
+    /// <para>
+    /// <b>自分の射との区別はここでは付けない</b>＝ランチャ自身の〔しゃべらせる〕も同じ
+    /// <c>POST /v1/audio/speech</c> を撃って同じ数に乗るので、区別は
+    /// <see cref="ViewModels.TryViewModel"/> が自分の走行中かどうかで行う（<c>v2-spec.md</c> §2-1c）。
+    /// </para>
+    /// </summary>
+    public bool HostBusy => RequestsInFlight > 0;
 }
 
 /// <summary><c>/params.checkpoint</c>。読込前は 3 欄とも null（契約 ⑸）。</summary>

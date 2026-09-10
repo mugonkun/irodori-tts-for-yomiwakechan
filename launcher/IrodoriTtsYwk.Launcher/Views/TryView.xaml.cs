@@ -18,7 +18,9 @@ public partial class TryView : UserControl
     public TryView()
     {
         InitializeComponent();
-        ConcurrencyText.Text = TryViewModel.ConcurrencyNotice;
+
+        // 橙の枠の本文は**束縛で出す**（決裁 130 Q4）＝構築時に 1 度書き込む常設の注記を
+        // やめたので、ここで文字を入れる行は要らない（TryViewModel.ConcurrencyText）。
     }
 
     private TryViewModel? Model => DataContext as TryViewModel;

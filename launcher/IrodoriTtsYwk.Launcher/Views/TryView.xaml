@@ -7,7 +7,11 @@
     本文＋話者＋主要パラメータ→合成→再生／保存。
     「既定に戻す」は**欄を空にする**ことで表す（契約 ⑶＝載せない欄は既定が効く）。
     再生は −16 dBFS 相当に揃える（裁定 52）。保存は生の wav（揃えない）。
+    橙の枠（TryConcurrencyText）は**常設をやめた**＝本体の読み上げが走っている間だけ出す（決裁 130 Q4）。
   -->
+  <UserControl.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+  </UserControl.Resources>
   <Grid Margin="12">
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="*" />
@@ -20,9 +24,11 @@
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <Border Grid.Row="0" Grid.ColumnSpan="2" Padding="10,8" Background="#FFF6E5" CornerRadius="4">
-      <TextBlock x:Name="ConcurrencyText" TextWrapping="Wrap" Foreground="#7A5200"
-                 AutomationProperties.AutomationId="TryConcurrencyText" />
+    <Border Grid.Row="0" Grid.ColumnSpan="2" Padding="10,8" Background="#FFF6E5" CornerRadius="4"
+            Visibility="{Binding ShowConcurrency, Converter={StaticResource BoolToVis}}">
+      <TextBlock TextWrapping="Wrap" Foreground="#7A5200"
+                 AutomationProperties.AutomationId="TryConcurrencyText"
+                 Text="{Binding ConcurrencyText, Mode=OneWay}" />
     </Border>
 
     <!-- 本文 -->
@@ -96,7 +102,8 @@
 
     <!-- 操作 -->
     <WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,10,0,0">
-      <Button Content="合成して再生" Padding="16,5" Margin="0,0,8,6"
+      <!-- 札は「しゃべらせる」（決裁 130 Q4）。AutomationId は 1 字も変えない。 -->
+      <Button Content="しゃべらせる" Padding="16,5" Margin="0,0,8,6"
               AutomationProperties.AutomationId="TrySynthesizeButton"
               Command="{Binding SynthesizeCommand}" />
       <Button Content="もう一度再生" Padding="12,5" Margin="0,0,8,6"

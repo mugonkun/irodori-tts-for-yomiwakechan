@@ -7,7 +7,9 @@ from the env, because that is the only way the 本体 can tell an honest
 
 from __future__ import annotations
 
-from conftest import DEFAULT_VOICE, write_voices
+from typing import Any
+
+from conftest import DEFAULT_VOICE, MODEL, write_voices
 
 
 def test_health_is_200_without_a_model(client, unloaded):
@@ -108,3 +110,53 @@ def test_device_line_is_not_logged_before_the_model_is_in(ywk, unloaded):
     ywk._device_logged = False
     assert ywk.note_device_once() is None
     assert ywk._device_logged is False
+
+
+# ---------------------------------------------------------- 決裁 130 Q4（v2.0）
+
+
+def test_status_declares_no_request_in_flight_when_idle(client):
+    """契約 ⑹: ``requests.in_flight``＝いま走っている本物の合成の数（既定 0）。
+
+    欄を足すだけなので ``schema`` は動かない（⑻）＝古い本体は知らない欄を無視し、
+    古い wrapper に当たった新しいランチャは欄が無いのを 0 と読む（両方向で互換）。
+    """
+    payload = client.get("/ywk/status").json()
+    assert payload["requests"] == {"in_flight": 0}
+    assert isinstance(payload["requests"]["in_flight"], int)
+    assert not isinstance(payload["requests"]["in_flight"], bool)
+
+
+def test_status_reports_the_count_while_a_real_request_runs(client, baseline):
+    """**本物の POST の路**と ``/ywk/status`` の欄が繋がっている。
+
+    手で ``_real_request_in_flight()`` を握るだけでは、``ywk_status()`` の 1 行が
+    別の名（例＝新しい計数）に差し替わっても契約テストは緑のまま「本体が使っている」を
+    永久に 0 と答えうる。作法は ``tests/contract/test_warmup.py`` の
+    ``test_the_speech_route_counts_the_request_while_it_runs`` から借り、
+    数える先を ``pending_real_requests()`` ではなく **status の欄**にした。
+    """
+    seen: list[int] = []
+    original = baseline.synthesize
+
+    def counting(req: Any, *, log_fn: Any = None) -> Any:
+        seen.append(client.get("/ywk/status").json()["requests"]["in_flight"])
+        return original(req, log_fn=log_fn)
+
+    baseline.synthesize = counting
+    response = client.post(
+        "/v1/audio/speech", json={"model": MODEL, "input": "テスト。", "voice": DEFAULT_VOICE}
+    )
+    assert response.status_code == 200, response.text
+    assert seen == [1]
+    assert client.get("/ywk/status").json()["requests"]["in_flight"] == 0
+
+
+def test_status_comes_back_to_zero_and_release_is_idempotent(client, ywk):
+    """``release`` は冪等＝二度呼んでも負に振れない（SSE は終わりを 2 つ持つ）。"""
+    holder = ywk._real_request_in_flight()
+    holder.__enter__()
+    holder.release()
+    holder.release()
+    assert ywk.pending_real_requests() == 0
+    assert client.get("/ywk/status").json()["requests"]["in_flight"] == 0

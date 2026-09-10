@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using IrodoriTtsYwk.Launcher;
 using IrodoriTtsYwk.Launcher.Audio;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Mvvm;
@@ -1006,6 +1007,80 @@ public sealed class TryViewModelTests
     }
 
     [Fact]
+    public void 本体が使っている間はしゃべらせるを押せず脇に1行出る()
+    {
+        // 決裁 130 Q4＝/ywk/status の requests.in_flight > 0 を MainViewModel が流し込む。
+        var vm = Create();
+        Assert.True(vm.SynthesizeCommand.CanExecute(null));
+        Assert.False(vm.ShowConcurrency);
+        Assert.Equal(string.Empty, vm.ConcurrencyText);
+
+        vm.HostBusy = true;
+
+        Assert.False(vm.SynthesizeCommand.CanExecute(null));
+        Assert.True(vm.ShowConcurrency);
+        Assert.Equal(
+            "いま読み分けちゃん2 の読み上げに使われています。終わってからお試しください。",
+            vm.ConcurrencyText);
+
+        vm.HostBusy = false;
+
+        Assert.True(vm.SynthesizeCommand.CanExecute(null));
+        Assert.False(vm.ShowConcurrency);
+        Assert.Equal(string.Empty, vm.ConcurrencyText);
+    }
+
+    [Fact]
+    public async Task 自分の射が乗った標本を本体の使用と読まない()
+    {
+        // 決裁 130 Q4・v2-spec §2-1c＝ランチャ自身の〔しゃべらせる〕も同じ
+        // POST /v1/audio/speech を撃って wrapper の同じ数に乗る。濾さないと
+        // **自分で撃つたび**に、射の終わりから次の標本までの最大 2 秒だけ釦が死んで
+        // 橙の枠に「読み分けちゃん2 が使っています」という嘘が出た（本体は 1 度も
+        // 呼んでいないのに）。標本は射より遅れて届くので 1 回ぶん覚えて引く。
+        var wrapper = new GatedWrapper();
+        var vm = new TryViewModel(() => wrapper, new FakeAudioPlayer(), new LauncherSettings())
+        {
+            Input = "あ。",
+        };
+
+        var run = vm.SynthesizeCommand.ExecuteAsync();
+        await wrapper.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        vm.HostBusy = true;  // ⑴ 射の最中に届いた標本＝自分の分
+        wrapper.Gate.SetResult();
+        await run.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.False(vm.HostBusy);
+        Assert.False(vm.ShowConcurrency);
+        Assert.Equal(string.Empty, vm.ConcurrencyText);
+        Assert.True(vm.SynthesizeCommand.CanExecute(null));
+
+        vm.HostBusy = true;  // ⑵ 射の直後の標本＝まだ自分の分（見張りは 2 秒遅れる）
+        Assert.False(vm.HostBusy);
+        Assert.False(vm.ShowConcurrency);
+        Assert.True(vm.SynthesizeCommand.CanExecute(null));
+
+        vm.HostBusy = true;  // ⑶ 次の標本＝本物（ここで初めて譲る）
+        Assert.True(vm.HostBusy);
+        Assert.True(vm.ShowConcurrency);
+        Assert.False(vm.SynthesizeCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void 橙の枠は常設をやめた()
+    {
+        // 常設だった注記（launcher/README §4 ⑧）は 1 文に短くなり、**出るのは
+        // 本体の要求が走っている間だけ**＝ふだんは何も出さない（v2-spec §3-3）。
+        var vm = Create();
+
+        Assert.False(vm.ShowConcurrency);
+        Assert.Equal(string.Empty, vm.ConcurrencyText);
+        Assert.DoesNotContain("1 プロセス", TryViewModel.ConcurrencyNotice);
+        Assert.StartsWith("いま読み分けちゃん2", TryViewModel.ConcurrencyNotice);
+    }
+
+    [Fact]
     public void 入力欄の空はnullとして扱う()
     {
         var vm = Create();
@@ -1057,6 +1132,75 @@ public sealed class TryViewModelTests
     public void 保存の既定の檔名はwav()
     {
         Assert.EndsWith(".wav", Create().SuggestedFileName(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 門を開けるまで返らない合成（実 HTTP には触れない＝<c>RoundTwoUiTests.BlockingWrapper</c>
+    /// と同じ形だが、こちらは<b>開けたら 200 で返る</b>＝射の「終わり」まで見る。
+    /// </summary>
+    private sealed class GatedWrapper : IWrapperClient
+    {
+        public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource Gate { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Uri BaseAddress { get; } = new("http://127.0.0.1:18099/");
+
+        public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(5);
+
+        public async Task<SpeechResult> SynthesizeAsync(
+            SpeechRequest request, TimeSpan timeout, System.Threading.CancellationToken cancellationToken)
+        {
+            Entered.TrySetResult();
+            await Gate.Task.ConfigureAwait(false);
+            return new SpeechResult(
+                true,
+                WavTests.MakeWav(24000, new short[2400]),
+                "audio/wav",
+                1234,
+                200,
+                null,
+                TimeSpan.FromMilliseconds(1));
+        }
+
+        public Task<HealthResponse> GetHealthAsync(System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WrapperResult<StatusResponse>> GetStatusAsync(System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WrapperResult<ParamsResponse>> GetParamsAsync(System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WrapperResult<VoicesResponse>> GetVoicesAsync(System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WrapperResult<VoicesResponse>> GetOpenAiVoicesAsync(System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WrapperResult<WarmupStartResult>> StartWarmupAsync(
+            WarmupRequest request, System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WrapperResult<CancelResult>> CancelWarmupAsync(
+            string id, System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WrapperResult<PrecomputeStartResult>> StartPrecomputeAsync(
+            PrecomputeRequest request, System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WrapperResult<CancelResult>> CancelPrecomputeAsync(
+            string id, System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WrapperResult<DropLatentResult>> DropLatentAsync(
+            string voiceId, System.Threading.CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public void Dispose()
+        {
+        }
     }
 }
 
@@ -1799,5 +1943,70 @@ public sealed class AboutViewModelTests
     {
         var paths = new AppPaths(@"C:\x", @"C:\x\nowhere", @"C:\x\rt", @"C:\x\data", false);
         Assert.Empty(new AboutViewModel(paths).LicenseFolders());
+    }
+}
+
+/// <summary>
+/// 決裁 130 Q4 の<b>配り道</b>＝見張りの標本（<c>/ywk/status</c>）が〔しゃべらせる〕の
+/// 可否まで届くか。<b>新しい問い合わせは足していない</b>ので、届かなければ釦は永久に
+/// 押せるまま（＝配信の読み上げを待たせる）か、永久に押せない（＝退行）かのどちらかになる。
+/// </summary>
+[Collection(AppServicesCollection.Name)]
+public sealed class Decision130HostBusyWiringTests : IDisposable
+{
+    private readonly string _root = Path.Combine(
+        Path.GetTempPath(), "ywk-d-hostbusy-" + Guid.NewGuid().ToString("N"));
+
+    [Fact]
+    public void 標本のin_flightがしゃべらせるの可否まで届く()
+    {
+        var paths = CorrectionThreeTree.MakePaths(_root);
+        AppServices.Server = new CorrectionThreeTree.QuietServer();
+        AppServices.GpuEnumerator = null;
+        var main = new MainViewModel(
+            paths,
+            new LauncherSettings(),
+            new JsonSettingsStore(paths.SettingsPath),
+            new CorrectionThreeTree.SilentPlayer());
+
+        main.ApplyStatusSample(Sample(1));
+        Assert.True(main.Try.HostBusy);
+        Assert.False(main.Try.SynthesizeCommand.CanExecute(null));
+        Assert.True(main.Try.ShowConcurrency);
+
+        main.ApplyStatusSample(Sample(0));
+        Assert.False(main.Try.HostBusy);
+        Assert.True(main.Try.SynthesizeCommand.CanExecute(null));
+
+        // 欄の無い個体（v1.1.0 以前の wrapper）＝0 と読む＝押せるまま。
+        main.ApplyStatusSample(new StatusResponse());
+        Assert.False(main.Try.HostBusy);
+
+        // 標本が無い回（止まっている・口が無い）も押せない理由を残さない。
+        main.ApplyStatusSample(Sample(1));
+        main.ApplyStatusSample(null);
+        Assert.False(main.Try.HostBusy);
+    }
+
+    private static StatusResponse Sample(int inFlight) => new()
+    {
+        Engine = "irodori-ywk",
+        Runtime = new StatusRuntime { Loaded = true, Loading = false },
+        Requests = new StatusRequests { InFlight = inFlight },
+    };
+
+    public void Dispose()
+    {
+        AppServices.Reset();
+        try
+        {
+            if (Directory.Exists(_root))
+            {
+                Directory.Delete(_root, recursive: true);
+            }
+        }
+        catch (IOException)
+        {
+        }
     }
 }
