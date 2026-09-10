@@ -24,7 +24,8 @@ public sealed class AppPathsTests
 
         Assert.False(paths.DeveloperMode);
         Assert.Equal(@"C:\Program Files\irodori-tts-ywk", paths.AppDir);
-        Assert.Equal(@"C:\Users\u\AppData\Local\irodori-tts-ywk", paths.DataDir);
+        // データ樹は**版ごと**（decisions.md 133 ⑶）＝既定（版を渡さない）は RTX（CUDA）版。
+        Assert.Equal(@"C:\Users\u\AppData\Local\irodori-tts-ywk-cuda", paths.DataDir);
         // 書き込み側は必ず利用者データ配下（導入先が読取専用でも壊れない）
         Assert.StartsWith(paths.DataDir, paths.VoicesDir, StringComparison.Ordinal);
         Assert.StartsWith(paths.DataDir, paths.HfHomeDir, StringComparison.Ordinal);

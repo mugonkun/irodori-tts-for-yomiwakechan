@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Services.Server;
 
 // Application.MainWindow（既存のプロパティ）と型名がぶつかるので別名で呼ぶ。
@@ -30,11 +31,21 @@ public partial class App : Application
 {
     /// <summary>
     /// 単一起動の錠（<c>Local\</c>＝ログオンセッション単位。利用者ごとに 1 個体）。
+    /// <para>
+    /// <b>版ごとに割る</b>（<c>decisions.md</c> 133 ⑷＝RTX（CUDA）と Radeon（ROCm）は別アプリ＝
+    /// 互いを起こし直さない）。綴りの正本は <see cref="AppPaths.SingleInstanceMutexName"/> で、
+    /// <c>installer/irodori-tts-ywk.iss</c> の <c>AppMutex</c> も同じ 2 つに割ってある。
+    /// 2 つを同時に開いた回は、後から起きた側が <b>18088 の塞がり</b>で止まる。
+    /// </para>
     /// </summary>
-    private const string MutexName = @"Local\irodori-tts-ywk-launcher";
+    private static string MutexName => AppPaths.SingleInstanceMutexName(AppServices.Paths.Flavor);
 
-    /// <summary>2 個目が 1 個目に「窓を出せ」と伝える口。</summary>
-    private const string ActivateEventName = @"Local\irodori-tts-ywk-launcher-activate";
+    /// <summary>
+    /// 2 個目が 1 個目に「窓を出せ」と伝える口（<b>錠と必ず同じ組で割る</b>）。
+    /// 割り忘れると、合図は <see cref="EventResetMode.AutoReset"/> の 1 本なので
+    /// <b>CUDA 版の 2 個目の起動が Radeon 版の窓を前に出す</b>。
+    /// </summary>
+    private static string ActivateEventName => AppPaths.ActivateEventName(AppServices.Paths.Flavor);
 
     private Mutex? _singleInstance;
     private EventWaitHandle? _activateSignal;

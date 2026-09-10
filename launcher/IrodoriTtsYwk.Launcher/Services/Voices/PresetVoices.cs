@@ -14,7 +14,21 @@ namespace IrodoriTtsYwk.Launcher.Services.Voices;
 /// <param name="FileName"><c>voices\</c> に置く檔名（ASCII）。</param>
 /// <param name="SourcePath">配布樹の実体。</param>
 /// <param name="Caption">caption の既定（無ければ null）。</param>
-public sealed record PresetVoice(string Id, string FileName, string SourcePath, string? Caption);
+/// <param name="SourceMd5">
+/// 配布側の <c>presets.json</c> の <c>secondary.md5</c>（<b>中身の差分の材料</b>＝
+/// <c>v2-spec.md</c> §11-2）。台帳を持たない配布樹（檔名だけで拾った回）は null＝
+/// <see cref="PresetSync"/> はその行を<b>触らない</b>。
+/// </param>
+/// <param name="SourceSizeBytes">
+/// 同 <c>secondary.size_bytes</c>。md5 を計る前の<b>足切り</b>にだけ使う（長さが違えば計らない）。
+/// </param>
+public sealed record PresetVoice(
+    string Id,
+    string FileName,
+    string SourcePath,
+    string? Caption,
+    string? SourceMd5 = null,
+    long? SourceSizeBytes = null);
 
 /// <summary>
 /// プリセット 1 名の<b>改名</b>（裁定 108＝配布側が <c>display_name</c> を変えた分を利用者の台帳へ引き継ぐ）。
@@ -194,12 +208,12 @@ public static class PresetVoices
                 continue;
             }
 
-            if (!CopyReference(store, preset))
+            if (!CopyReference(store, preset, out var wrote))
             {
                 continue; // 1 名の失敗で残り全部を落とさない（次の起動でもう 1 度試す）
             }
 
-            voices[preset.Id] = NewEntry(preset);
+            voices[preset.Id] = NewEntry(preset, wrote);
             offered.Add(preset.Id);
             added.Add(preset.Id);
         }
@@ -211,6 +225,177 @@ public static class PresetVoices
 
         store.Save(table with { Voices = voices, PresetsInstalledIds = Ordered(offered) });
         return added;
+    }
+
+    /// <summary>
+    /// <b>中身が変わった同梱の wav だけ</b>を写し直す（<c>v2-spec.md</c> §11-2・
+    /// <c>decisions.md</c> 115 の穴）。戻り＝この回に起きたこと。
+    /// <para>
+    /// <b>走る場所</b>＝<c>LauncherComposition.PrepareVoices</c> の ⑸（<see cref="InstallNew"/>）の
+    /// <b>すぐ後</b>。順（改名 → 初回展開 → 増えた分 → <b>中身の更新</b>）を崩さない。
+    /// <b>ネットは要らない</b>（配布樹の中の wav を写すだけ）。
+    /// </para>
+    /// <para>
+    /// <b>wav を上書きした行は下ごしらえ（<c>ref_latent</c>）を捨てる</b>＝<c>.pt</c> と sidecar を
+    /// 消す。捨てないと、新しい wav に古い音の下ごしらえが当たる。焼き直しは wrapper の
+    /// 起動時の事前計算に任せる（裁定 78 ⑴＝<see cref="MigrateRenamed"/> と同じ手）。
+    /// </para>
+    /// <para>
+    /// <b>順は ⑴ <c>ref_latent</c> を落として保存 → ⑵ wav を写す → ⑶ <c>.pt</c> を消す →
+    /// ⑷ <c>preset_md5</c> を書いて保存</b>（是正・2026-09-11）。
+    /// <see cref="MigrateRenamed"/> の「保存 → 削除」を借りていたが、あちらは wav を触らないので
+    /// <b>落ち方が違う</b>＝写してから保存する形は、保存が落ちた回に
+    /// 「新しい wav ＋ 古い <c>ref_latent</c>」を残す。事前計算は ref_embed を持つ行を飛ばすので
+    /// <b>新しい録音が永久に鳴らない</b>。どこで落ちても<b>自力で治る側</b>に倒すため、
+    /// 潜在の参照を先に捨てる。
+    /// </para>
+    /// </summary>
+    public static PresetSyncResult SyncContents(AppPaths paths, VoiceStore store)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(store);
+
+        var manifest = DiscoverManifest(paths);
+        if (manifest is not { Count: > 0 } || !File.Exists(store.TablePath))
+        {
+            return PresetSyncResult.Empty; // 正本が読めない／台帳がまだ無い＝初回展開の持ち場
+        }
+
+        var table = store.Load();
+        var byId = new Dictionary<string, PresetVoice>(StringComparer.Ordinal);
+        foreach (var preset in manifest)
+        {
+            byId.TryAdd(preset.Id, preset);
+        }
+
+        var plan = PresetSync.Plan(manifest, table, id =>
+        {
+            if (!byId.TryGetValue(id, out var preset)
+                || !table.Voices.TryGetValue(id, out var entry)
+                || !PresetSync.IsInsideReferences(entry.File))
+            {
+                return null;
+            }
+
+            var path = Path.Combine(store.ReferencesDir, entry.File!);
+
+            // **足切り**（正本の <c>size_bytes</c> の唯一の用途）＝<c>preset_md5</c> を持たない行
+            // （v1.x の台帳）は「配布側と同じか」しか問われない（枝 e）ので、長さが違えば
+            // md5 を計らずに「違う」と決めてよい。欄を持つ行は枝 b／c の見分けに実測が要る。
+            if (string.IsNullOrWhiteSpace(entry.PresetMd5)
+                && !PresetSync.LengthCouldMatch(path, preset.SourceSizeBytes))
+            {
+                return File.Exists(path) ? PresetSync.Different : null;
+            }
+
+            // **「無い」と「読めない」を混ぜない**（是正・2026-09-11）＝`Md5OfFile` は檔が無い回も
+            // 掴まれている回（再生器・編集器が開いている・ACL を締めた）も null を返す。
+            // null は枝 a＝上書きの写しなので、混ぜると **読めなかっただけの差し替え wav** が
+            // 配布側の音に戻る。在るなら `Different` を名乗って枝 c（触らない）へ落とす。
+            var measured = PresetSync.Md5OfFile(path);
+            return measured ?? (File.Exists(path) ? PresetSync.Different : null);
+        });
+
+        if (!plan.HasWork)
+        {
+            return new PresetSyncResult([], Ids(plan.Kept));
+        }
+
+        var voices = new Dictionary<string, VoiceEntry>(table.Voices, StringComparer.Ordinal);
+        var writes = new List<PresetSyncItem>();
+        var stale = new List<(string Id, string? RefLatent)>();
+
+        // ⑴ **wav に触る前に `ref_latent` を落として台帳を確定させる**（是正・2026-09-11）。
+        // 逆順（写す → 保存）だと、保存が落ちた回に「新しい wav ＋ 古い `ref_latent` ＋ 古い
+        // `preset_md5`」が残る＝wrapper の事前計算は ref_embed を持つ行を飛ばすので **新しい録音が
+        // 永久に鳴らない**うえ、次の起動は実測＝配布側で枝 e に落ち、Record は `PresetMd5` しか
+        // 書かないので自力で治らない。ここで落ちれば wav は 1 バイトも動いていない。
+        foreach (var item in plan.Items)
+        {
+            if (item.Action is not (PresetSyncAction.Copy or PresetSyncAction.Overwrite)
+                || !voices.TryGetValue(item.Id, out var entry))
+            {
+                continue;
+            }
+
+            writes.Add(item);
+            stale.Add((item.Id, entry.RefLatent));
+            voices[item.Id] = entry with { RefLatent = null };
+        }
+
+        if (writes.Count > 0)
+        {
+            store.Save(table with { Voices = voices });
+        }
+
+        // ⑵ wav を写す（1 名の失敗で残り全部を落とさない＝次の版でもう 1 度）。
+        var updated = new List<string>();
+        foreach (var item in writes)
+        {
+            if (!Overwrite(store, item))
+            {
+                continue;
+            }
+
+            voices[item.Id] = voices[item.Id] with { PresetMd5 = item.SourceMd5 };
+            updated.Add(item.Id);
+        }
+
+        // ⑶ 古い下ごしらえを捨てる（台帳はもう `ref_latent` を指していない）。
+        foreach (var (id, refLatent) in stale)
+        {
+            store.DeleteLatentFiles(id, refLatent);
+        }
+
+        // ⑷ 枝 e＝欄を書き足すだけ（次の版から b が効く）。檔は 1 バイトも動かない。
+        var changed = writes.Count > 0;
+        foreach (var item in plan.Items)
+        {
+            if (item.Action != PresetSyncAction.Record || !voices.TryGetValue(item.Id, out var entry))
+            {
+                continue;
+            }
+
+            voices[item.Id] = entry with { PresetMd5 = item.SourceMd5 };
+            changed = true;
+        }
+
+        if (changed)
+        {
+            store.Save(table with { Voices = voices });
+        }
+
+        return new PresetSyncResult(updated, Ids(plan.Kept));
+    }
+
+    /// <summary>参照 wav を<b>上書きで</b>写す（枝 a／b）。戻り＝置けたか。</summary>
+    private static bool Overwrite(VoiceStore store, PresetSyncItem item)
+    {
+        try
+        {
+            Directory.CreateDirectory(store.ReferencesDir);
+            File.Copy(item.SourcePath, Path.Combine(store.ReferencesDir, item.FileName), overwrite: true);
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private static IReadOnlyList<string> Ids(IReadOnlyList<PresetSyncItem> items)
+    {
+        var ids = new List<string>(items.Count);
+        foreach (var item in items)
+        {
+            ids.Add(item.Id);
+        }
+
+        return ids;
     }
 
     /// <summary>足した話者を告げる 1 行（<b>純関数</b>＝0 名なら null）。</summary>
@@ -508,12 +693,12 @@ public static class PresetVoices
                 continue;
             }
 
-            if (!CopyReference(store, preset))
+            if (!CopyReference(store, preset, out var wrote))
             {
                 continue; // 1 名の失敗で残り全部を落とさない
             }
 
-            voices[preset.Id] = NewEntry(preset);
+            voices[preset.Id] = NewEntry(preset, wrote);
             offered.Add(preset.Id);
             copied++;
         }
@@ -534,8 +719,16 @@ public static class PresetVoices
     }
 
     /// <summary>参照 wav を利用者データへ写す（既に在れば触らない）。戻り＝置けたか。</summary>
-    private static bool CopyReference(VoiceStore store, PresetVoice preset)
+    private static bool CopyReference(VoiceStore store, PresetVoice preset) =>
+        CopyReference(store, preset, out _);
+
+    /// <summary>
+    /// 同上＋<b>この回に実際に書いたか</b>を返す（<c>v2-spec.md</c> §11-2）。
+    /// 書いた回だけ <c>preset_md5</c> を記録できる＝既に在った檔は「判らない」（枝 e）のまま残す。
+    /// </summary>
+    private static bool CopyReference(VoiceStore store, PresetVoice preset, out bool wrote)
     {
+        wrote = false;
         Directory.CreateDirectory(store.ReferencesDir);
         var destination = Path.Combine(store.ReferencesDir, preset.FileName);
         try
@@ -543,6 +736,7 @@ public static class PresetVoices
             if (!File.Exists(destination))
             {
                 File.Copy(preset.SourcePath, destination, overwrite: false);
+                wrote = true;
             }
 
             return true;
@@ -558,7 +752,7 @@ public static class PresetVoices
     }
 
     /// <summary>台帳に足す 1 行（プリセットの姿＝<b>純関数</b>）。</summary>
-    private static VoiceEntry NewEntry(PresetVoice preset) => new()
+    private static VoiceEntry NewEntry(PresetVoice preset, bool wrote = false) => new()
     {
         DisplayName = preset.Id,
         File = preset.FileName,
@@ -567,6 +761,7 @@ public static class PresetVoices
         NoRef = false,
         Origin = "preset",
         AddedAt = DateTimeOffset.Now,
+        PresetMd5 = wrote ? preset.SourceMd5 : null,
     };
 
     /// <summary>
@@ -643,7 +838,13 @@ public static class PresetVoices
                     }
                 }
 
-                found.Add(new PresetVoice(displayName.Trim(), fileName, source, Text(element, "caption")));
+                found.Add(new PresetVoice(
+                    displayName.Trim(),
+                    fileName,
+                    source,
+                    Text(element, "caption"),
+                    Text(secondary, "md5"),
+                    Number(secondary, "size_bytes")));
             }
 
             return found;
@@ -657,6 +858,14 @@ public static class PresetVoices
             return null;
         }
     }
+
+    /// <summary><c>secondary.size_bytes</c> のような数の欄（無ければ null）。</summary>
+    private static long? Number(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value)
+        && value.ValueKind == JsonValueKind.Number
+        && value.TryGetInt64(out var parsed)
+            ? parsed
+            : null;
 
     private static string? Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String

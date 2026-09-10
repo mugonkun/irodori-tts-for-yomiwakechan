@@ -2916,3 +2916,83 @@ Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/
 
 **この回の実測**＝xUnit **743**＋1 skip・契約テスト 369・門 20／0 失敗・WARN 0・setup cuda **75,475,640 B** `ef3f11d8…`／radeon **75,490,540 B** `2688b09e…`・tag は commit `f4cec17`・公開 2026-09-10 13:57:37Z（22:57 JST）・Latest・N: `sha256sum -c` OK。
 **未実射**＝本機・RTX 機とも v1.1.0 を撃っていない（RTX 機の 2 段の検分＝既存の cu130 の扱い → cu126 で 1 射して × で終了し VRAM が返るか、は別席の実射待ち・裁定 126 ⑽）。
+
+## 22. 段 E（v2.0）＝置き場を版ごとに割り、撤去の問いを 0 にした記帳（実装席・2026-09-11）
+
+正典＝`decisions.md` 132（撤去の既定）・133（削除と置き場の規則）。設計の正本＝`docs/design/charter.md` §4-24／§4-25／§5・`docs/design/v2-spec.md` §11（11-1〜11-8）・`docs/design/v2-plan.md` 段 E（E-1／E-2／E-3）と段 F-2。**この §22 は、その 2 檔の設計を実装に落としたときの実測と、判っている欠落の記帳である。**
+
+### 22-1 §5-4 の規則は廃止した（この檔の中で最も大きい訂正）
+
+`ben-e` §5-4 の「**共有のデータ樹を道連れにしない**」（＝もう一方の種が入っていれば取得物を消さない）は、**規則ごと無効**である。裁定 133 ⑶ で RTX（CUDA）版と Radeon（ROCm）版は**別アプリ**と徹底され、**データ樹も設定も声も共有しない**ことになったので、道連れが起きる場面そのものが消えた。§5-4 を読むときは、この §22 と `v2-spec.md` §11-8 を正本とすること。
+
+### 22-2 `.iss` の差分（4 箇所）
+
+| 何 | 前 | 後 |
+|---|---|---|
+| データ樹の綴り | `DataDir()` が `{localappdata}\irodori-tts-ywk` を固定で返す | **版ごと**＝`#define MyDataDirName` を新設し `{localappdata}\irodori-tts-ywk-cuda`／`…-radeon`。綴りの正本は `launcher/…/Contracts/AppPaths.cs` の `DataDirNameCuda`／`DataDirNameRadeon` |
+| 単一起動の錠 | `AppMutex=Local\irodori-tts-ywk-launcher`（**両版で 1 つ**） | `AppMutex=Local\irodori-tts-ywk-launcher-{#Flavor}`＝`AppPaths.SingleInstanceMutexName` の逐語。ランチャ側は錠と**合図の口**（`…-activate-cuda`／`…-radeon`）を同じ組で割った |
+| 撤去の問い | `SuppressibleTaskDialogMsgBox` が 2 つ（取得物・話者と設定。既定はどちらも IDNO） | **0 つ。**`WipeTree(DataDir())` が版の樹を丸ごと消す。`TwoLabels`／`OtherFlavorName` は使い手が消えたので落とした |
+| 旧い共有樹 | 触れる口が無かった | `LegacyDataDir()` を新設。**もう一方の版が入っていないときだけ**一緒に消す（判定は既存の `OtherFlavorKey` の `RegKeyExists`） |
+
+**`WipeTree` の形**＝ふつうのディレクトリは、**すぐ下の枝を先に `WipeTree` 自身へ渡してから** `DelTree(Dir, True, True, True)`（この檔で既に実績のある形）。**junction のときだけ** `DelTree(Dir + '\*', False, True, True)` で中身だけを落として路を残す＝路を丸ごと撃つと CHM の免除（reparse point 自身は消すが中までは消さない）が当たって**中身が残ったまま路だけ消える**からである。
+
+**枝へ降りる理由（是正・2026-09-11）**＝免除は**根だけの話ではない**。`<data>\models` だけを別ドライブへ逃がした樹（3 GB のモデルだけを退かす、いちばん自然な手）は、根がふつうのディレクトリなので `DelTree(Dir, True, True, True)` 1 手に当たり、**入れ子の junction は環だけ消えて実体が D:\ に孤児として残る**＝裁定 132 が起こされた当の症状が、置き場所を変えて再現する。だから枝の名を `FindFirst`／`FindNext` で**先に読み切ってから**（消しながら走査しない）1 段ずつ降り、入れ子の junction は上の「中身だけ落とす」枝に当たらせる。空になった環は最後の `DelTree` が畳む（**根の環だけは残す**＝入れ直しに `mklink /J` を張り直さなくてよい）。
+
+**`NextButtonClick` の関門は 3 つになった**（是正・2026-09-11）＝⑴ 非昇格で書けない場所 ⑵ 版のデータ樹 ⑶ **旧い共有樹**。⑶ が要る理由＝⑵ は版ごとの路しか見ないので、**まだ移送していない機体**では約 8 GB が居る `%LOCALAPPDATA%\irodori-tts-ywk\` が素通りする。そこへ入れると、初回起動の移送が「自分の exe が入ったままの樹」を `Directory.Move` しようとして錠で落ち、撤去の `WipeTree(Legacy)` が残りを消す。
+
+**`[UninstallDelete]` にデータ樹を書かなかった理由**＝`filesandordirs` を junction に撃つと、まさにその「路だけ消えて実体が孤児になる」が起きる。データ樹の削除は junction を見分けられる `[Code]` 側（`CurUninstallStepChanged` → `WipeTree`）に 1 本化した。
+
+### 22-3 ランチャ側で足した物（`.iss` と綴りを揃える先）
+
+| 檔 | 何 |
+|---|---|
+| `Contracts/AppPaths.cs` | `DataDirNameCuda`／`DataDirNameRadeon`／`LegacyDataDirName`／`FlavorId`／`SingleInstanceMutexName`／`ActivateEventName`／`FlavorDetermined`。`Resolve` は版を受け取る純関数のまま・`FromEnvironment` が版を 3 段で決め、`settings.json` の `dataDir` もここで拾う（§22-3-1 ⑵⑼） |
+| `Services/Ledger/LegacyDataMigration.cs` | 旧共有樹 → 版の樹の移送（純関数 `Plan` ＋ 薄い殻 `Run`）。`EnsureDataDirectories` の頭で 1 度だけ走る＝`settings.json` を読むより**前** |
+| `Services/Voices/PresetSync.cs` | 同梱の声の中身の差分（§11-2 の 5 枝）＋ md5 の純関数 |
+| `Services/Ledger/RuntimeDiff.cs` | 一式の差分（§11-3 の 4 枝＋歯止め）＋差分の回の `WheelInstaller` の構え |
+| `Services/Models/ModelDiff.cs` | モデルの差分（§11-4＝**見積り専用**・檔を動かさない） |
+| `Services/Ledger/RuntimeStamp.cs` | `.ledger.json`（適用済みの台帳の写し）の読み書き。`Burn` と**同じ回**で置く（`writeAppliedLedger: false` で写しだけ抑えられる＝§22-4 の 8） |
+
+#### 22-3-1 検分（Opus 5）を受けて当て込んだ是正（2026-09-11）
+
+| # | 何が壊れていたか | 当てた物 |
+|---|---|---|
+| ⑴ | 写しの移送が**途中で落ちると再開しない**＝半端に入った版の樹を `Plan` が「もう使われている」と読んで `None` を返す＝欠けた声のまま残り、残りは旧樹に取り残される（両版の機体は約 8 GB を版ごとに写すので ENOSPC は現実の話） | `CopyToStaging`＝兄弟の `<版の樹>.migrating` へ写してから `Directory.Move` 1 手。落ちた回は残骸を畳むので**版の樹は空のまま**＝次も `Copy` が出る。加えて `FitsOnDestination`（樹のバイトの和 ＋ 1 割 vs `DriveInfo.AvailableFreeSpace`）で、足りなければ**旧樹に 1 檔も触らずに帰る** |
+| ⑵ | 版の判定が**黙って CUDA に倒れる**＝`ledger/` が 1 度読めないだけで、Radeon 機がデータ樹・錠・**移送の行き先**まで CUDA 側を掴む（裁定 109 のころは窓題を間違えるだけだった） | `ReleaseFlavors.TryDetectFrom`（読めたときだけ真）＋ `TryDetectFromDirectoryName`（`.iss` の `MyDirName` は版ごと）＋ 既に在る版の樹（片方だけ在るとき）の 3 段。どれも黙ったら `AppPaths.FlavorDetermined=false` で、**移送を断る** |
+| ⑶ | 上書きの**行き先が、md5 を測った檔ではなかった**＝実測は `refs\<台帳の file>`、写しは `refs\<正本の檔名>`。配布側が `secondary.file` だけ改名した版で**別の話者の参照 wav を潰す**うえ、当の行は古い wav のまま `preset_md5` だけ新しくなり枝 d で二度と見直されない | `PresetSyncItem.FileName` を**台帳の `file`**（`IsInsideReferences` を通った側）から採る。正本の檔名にも同じ関門を通す（`..\..\x.wav` を名乗る `presets.json` を弾く） |
+| ⑷ | `Burn` が `.ledger.json` を**無条件で**置く＝裁定 91 の受け入れ路（`LooksComplete` しか見ていない・**どの台帳で組んだか判らない**樹）でも「中身は全部この sha256 だ」と名乗る＝次の版の差分がその嘘を信じて混ざった樹を残す | `Burn(..., bool writeAppliedLedger = true)`。呼び手の付け替えは段 C／F（§22-4 の 8） |
+| ⑸ | 「檔が無い」と「檔が読めない」が同じ `null` になり、`null` は**上書きの写し**だった＝再生器が掴んでいるだけの wav が配布側の音に戻る（枝 c が守っている当の事故） | 測り手の締めを `measured ?? (File.Exists(path) ? Different : null)` に。`Different` は 16 進 32 桁にならないので必ず枝 c へ落ちる。`PresetSync.Plan` の約束も註に書いた |
+| ⑹ | 台帳の保存が落ちると**新しい wav ＋ 古い `ref_latent`** が残る＝事前計算は ref_embed を持つ行を飛ばすので**新しい録音が永久に鳴らない**。次の起動は枝 e に落ち、`Record` は `PresetMd5` しか書かないので自力で治らない | 順を組み直した＝⑴ `ref_latent` を落として保存 → ⑵ wav を写す → ⑶ `.pt` を消す → ⑷ `preset_md5` を書いて保存。**どこで落ちても自力で治る側**に倒れる |
+| ⑺ | `ToFetchPlan` と `NewInstaller` が**別々の入口**＝差分の計画を既定の `WheelInstaller` に流すと、頭で樹が空になってから数本だけ入る＝**動いていた一式が数本の wheel だけになる**。歯止めは註しか無かった | `ToDifferentialRun(variant, diff) -> (FetchPlan, WheelInstaller)` 1 本に畳み、2 つは `private` に。丸ごとの計画を渡したら `InvalidOperationException` |
+| ⑻ | §11-3 が必須と書く**締め**（`LooksComplete` ＋ `ExpectedDistInfoCount`）の継ぎ目が無い＝段 F が知らずに飛ばせる | `RuntimeDiff.VerifyAfterApply(paths, ledger, variant)`（偽＝丸ごとへ落とす）。**`.ledger.json` はこれが真を返してから置く** |
+| ⑼ | CANON の「`settings.json` の `dataDir` は勝つ」が**実装に存在しなかった**（欄は読んで書き戻すだけで、誰も使わない）＝註だけが嘘をついていた | `FromEnvironment` が版の樹（無ければ旧い共有樹）の `settings.json` を 1 度覗いて、値が在れば置き場ごと差し替える（`EnsureDataDirectories` より前）。env と違い `DeveloperMode` は立てない |
+| ⑽ | 撤去の `WipeTree` が**根の junction しか見ない**／`NextButtonClick` が**旧い共有樹を守らない**／移送が**版の樹の 1 段下の junction を消す** | §22-2 の `WipeTree`／`NextButtonClick` の項と、`LegacyDataMigration.HasReparsePointChild`（枝に junction が在れば移送しない） |
+| ⑾ | 写しで移した機体は**旧樹 ＋ 版の樹 2 本＝同じ物を 3 本**抱えるのに、誰も告げない | 写しの後に**旧樹が食っている量を 1 行だけ**ログに残す。**launcher からは消さない**＝「向こうの樹に檔が在る」は「向こうも移送を済ませた」の証明ではない（まっさらに作った樹でも真になる）＝取り返しのつかない削除を推量で撃たない。旧樹は最後の撤去が畳む |
+
+### 22-4 判っている欠落（この席では埋められない）
+
+1. **ISCC を通していない。**この席は台本を撃てないので、`.iss` は**読んでの検分だけ**である（`#define` の綴り・`{#Flavor}` の展開・`begin`／`end` の対・Pascal の注釈に `{` を入れていないこと・`and` と `<>` の優先順位の括弧）。**compile と実射は主席・段 F の持ち場。**
+2. **撤去の実射をしていない。**「問いが 1 つも出ないこと」「版の樹が丸ごと消えること」「旧い共有樹が（もう一方の版が無い機体でだけ）消えること」は `probe/e-install-probe.ps1` の門で見る（`v2-plan.md` §2 段 F の表）。
+3. **junction 越しの中身の削除**は相変わらず未実射（CHM の原文と `.iss` の行からの断定）。`D:` は停止域のまま。
+4. **移送（旧共有樹 → 版の樹）の実射をしていない。**単体試験（`LegacyDataMigrationTests`）は改名・写し・「版の樹が使われていれば何もしない」「明示指定なら何もしない」「失敗したら旧樹を残す」を釘付けしたが、**開発機の実樹（約 8 GB）で撃った例はまだ無い**（`v2-plan.md` §2 段 H の 12）。
+5. **`docs/install.md` は §5 だけ直した。**§2 の置き場の表はまだ旧い共有樹の綴りである＝**段 F の持ち場**。
+6. **`SettingsDifferentialUpdateCheck` の設定の鍵を足していない**＝この席は `settings.json` の鍵を増やさない約束（契約と JSON の鍵は据え置き）なので、差分の当て込みは「版が変わった回は当てる」を既定にしてある。チェックの札と鍵は段 F の持ち場。
+7. **`probe/e-install-probe.ps1` をこの版に当てて撃ってはならない**（**是正・2026-09-11・危険**）。台本の `$script:DataDirRoot`（`:169`）は**旧い共有樹** `%LOCALAPPDATA%\irodori-tts-ywk` を固定で指したままで、`Reset-WorkDataDir`／`-DataDirBackup` の退避（`:653-707`）も、`-DataDirBackup` を切ったときの安全側の拒否（`:751`）も、段 8 の `still there:`／`lost:` の突き合わせ（`:1560-1563`・`:1624`）も**全部その路**を見ている。この版の撤去は **`…-cuda\`／`…-radeon\` を問い無しで丸ごと消す**ので、⑴ 台本が守っている路と ⑵ 実際に消える路が**食い違い**、しかも旧い二重の守り（正しい路の退避 ＋ 2 つの問いが既定 IDNO）が**同時に消えている**＝**実データ樹を持つ機体で走らせると声と設定が消える。** 段 F が直すまでは撃たない（`v2-plan.md` §2 段 F の表・probe の行）。直す中身＝⒜ `$DataDirRoot` を版ごとに（既に版で分けている `ProgramsRoot` の `switch` と同じ形で）⒝ 旧い共有樹を**2 本目の守り／突き合わせ先**として足す ⒞ 段 8 の判定を「版の樹が丸ごと消えた・MsgBox は 1 つも出ない・旧い共有樹はもう一方の版が無いときだけ消える」に組み直す ⒟ 段 5 のログの綴りを `Local\irodori-tts-ywk-launcher-<flavour>` へ。
+8. **`MainViewModel.CheckRuntimeStamp`（`:826`）の `Burn` に `writeAppliedLedger: false` を渡すのは段 C／F の持ち場**（`ViewModels/` は本席の持ち場ではない）。`RuntimeStamp.Burn` は既定を真のままにしてあるので、**渡すまでは裁定 91 の受け入れ路が `.ledger.json` を書く**＝素性の知れない樹に「中身は全部この sha256 だ」と名乗らせてしまう。`FirstRunViewModel.cs:1813` と `MainViewModel.cs:1024`（どちらも `install.Ok` の後）は既定のままでよい。
+9. **版の見分けが 3 段とも黙る機体では、移送そのものを止める**ようにした（`AppPaths.FlavorDetermined`）。止まったことは**画面に出ない**＝旧い共有樹はそのまま残り、次の起動でやり直せるが、**利用者は「声が 1 つも無い」画面を見る**。⑴ `ledger/` が読めず ⑵ 導入先が版を名乗らず ⑶ 版の樹が両方在るか両方無い、の 3 つが同時に起きる回だけの話だが、実射はしていない。
+
+### 22-5 この回の実測
+
+- `dotnet test launcher -c Release`＝**877 合格＋1 skip**（段 E の前は 809＋1 skip＝**+68 本**。検分の是正で **+17 本**）。
+- `dotnet build launcher -c Release`＝**0 警告**（`AnalysisLevel=latest` の樹＝`PresetSync.Md5OfFile` の `CA5351` は用途を書いた `#pragma` で落としてある）。
+- 契約テスト（`tests/contract`）＝**372 合格**（§11 は HTTP の口に一切関わらないので**1 本も触っていない**）。
+- 配布樹に足した**檔数**＝**0**（`.iss` の変更は配布樹の外）＝門 **A-1 の件数（`$ExpectedAppFiles`）は動かない＝失敗にならない**。
+- **ただしバイトは動く**（是正・2026-09-11 の訂正）＝この段は檔を足していないが、**新しい 5 檔がランチャ exe にコンパイルされて入る**。`IrodoriTtsYwk.Launcher.exe` は**配布樹の中**なので `$appBytes` が `$ExpectedAppBytes` と食い違い、`build/installer-build.ps1:537` が `WARN A-1 the tree bytes drifted from the recorded figure` を出す。**この回は WARN 0 にならない。** 直し方は裁定 114／116 と同じ＝**主席が組んだ実測で `$ExpectedAppBytes` を記録し直す**（件数は WARN ではなく失敗になる門なので、そちらだけは動かさないこと）。
+
+### 22-6 設計の読みを 1 つ記帳する（§11-3 の「量」）
+
+`v2-spec.md` §11-3 の歯止め＝「**落ちる量が台帳全体の 6 割を超えるなら、差分をやめて丸ごと組み直す**」の「量」を、実装は **item の件数**で読んだ（`RuntimeDiff.RebuildFraction`・試験は 4/5 で丸ごと・3/5 で差分を釘付け）。§11-3 の他の「量」（**押す前に量を告げる**＝`FormatBytes`）は**バイト**なので、ここだけ読みが違う。
+
+**そう読んだ理由**＝この歯止めの目的は「**半端に混ざった樹を作らない**」で、混ざりの度合いは**入れ替わる item の数**に比例する。バイトで読むと、4 GB の `torch` 1 本だけが動いた版が 9 割を超えて丸ごとに落ちる＝樹はほとんど混ざらないのに 5 GB を落とし直すことになり、§4-24 が消したかった当のものが戻ってくる。
+
+**判っている逆の穴**＝小さい pure-python wheel が 61 本（`runtime-cu130.json` は 101 item）動くと、数十 MB の差分のために丸ごと（約 4 GB）へ落ちる。**主席は最初の実 upstream 更新でここに当たる。**そのときはバイト側の割合（`Fetch` の和 ÷ `Installable` の和）を**もう 1 本の条件として足す**（どちらかが超えたら丸ごと、ではなく**両方超えたら丸ごと**）のが素直だが、この席では設計の変更に当たるので**読みを記帳するだけ**にした。

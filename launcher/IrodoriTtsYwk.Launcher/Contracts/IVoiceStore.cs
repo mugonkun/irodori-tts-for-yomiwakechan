@@ -46,6 +46,18 @@ public sealed record VoiceEntry
     /// 上流は波形と潜在の同時指定を 400 にする）。
     /// </summary>
     [JsonPropertyName("ref_latent")] public string? RefLatent { get; init; }
+
+    /// <summary>
+    /// <b>この行の wav を置いた時点の、配布側の md5</b>（<c>v2-spec.md</c> §11-2＝更新の差分取り直し）。
+    /// <para>
+    /// これが在ると「利用者が差し替えた wav」と「こちらが写したままの wav」を見分けられる＝
+    /// 配布側が録り直した回だけ上書きし、利用者が差し替えた 1 檔には触らない。
+    /// <c>null</c>＝この欄を知らない版（≦ v1.1.0）が書いた台帳＝<b>判らない</b>として扱い、
+    /// 実測が配布側と同じ回にだけ欄を書き足す（<see cref="Services.Voices.PresetSync"/> の枝 e）。
+    /// </para>
+    /// <para><b>既存の欄は 1 つも変えていない</b>（足しただけ）。</para>
+    /// </summary>
+    [JsonPropertyName("preset_md5")] public string? PresetMd5 { get; init; }
 }
 
 /// <summary>

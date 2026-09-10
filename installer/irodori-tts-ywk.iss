@@ -39,23 +39,33 @@
 ;       素の irodori-tts-ywk は **候補に入っていない**＝こちらが本体に合わせる側である。
 ;       radeon 側の路は 1 字も変えない（本席の機体にも本体にも既に焼かれている）。
 ;   ⑶ **内部の識別子は 1 つも変えない**＝Flavor の id（cuda／radeon）・/DFlavor=・AppId の GUID・
-;       AppMutex・setup の檔名（…-cuda.exe／…-radeon.exe）・台帳名（runtime-rocm-gfx1151）・
-;       データ樹の名（irodori-tts-ywk）。英語の #error 文の "the Radeon release" も道具の名
-;       （gfx1151 の機体）として残す＝**利用者に見せる版の名だけ**が「ROCm 版」である。
+;       setup の檔名（…-cuda.exe／…-radeon.exe）・台帳名（runtime-rocm-gfx1151）。英語の #error 文の
+;       "the Radeon release" も道具の名（gfx1151 の機体）として残す＝**利用者に見せる版の名だけ**が
+;       「ROCm 版」である。
 ;   ⑷ OldAppName＝改名前の AppName の逐語。[InstallDelete] が旧名の近道を 1 本消すために要る。
+; 裁定 133（2026-09-11）＝**RTX（CUDA）と Radeon（ROCm）は別アプリ**＝データ樹も設定も声も共有しない。
+;   ⑴ データ樹の名を **版ごと**に割る（MyDataDirName）＝%LOCALAPPDATA%\irodori-tts-ywk-cuda\／…-radeon\。
+;       正本は launcher/IrodoriTtsYwk.Launcher/Contracts/AppPaths.cs の DataDirNameCuda／DataDirNameRadeon。
+;   ⑵ AppMutex も **版ごと**（下の [Setup]）＝同 AppPaths.SingleInstanceMutexName の逐語。
+;   ⑶ 旧い共有樹（%LOCALAPPDATA%\irodori-tts-ywk\）は移送の元としてだけ綴りが残る（LegacyDataDirName）。
 #if Flavor == "radeon"
-  #define MyAppId    "{ECA98712-1574-4D2A-A1FE-0FF5347BF185}"
-  #define MyAppName  "irodori-TTS for 読み分けちゃん（ROCm 版）"
-  #define OldAppName "irodori-TTS for 読み分けちゃん（Radeon 版）"
-  #define MyDirName  "irodori-tts-ywk-radeon"
+  #define MyAppId       "{ECA98712-1574-4D2A-A1FE-0FF5347BF185}"
+  #define MyAppName     "irodori-TTS for 読み分けちゃん（ROCm 版）"
+  #define OldAppName    "irodori-TTS for 読み分けちゃん（Radeon 版）"
+  #define MyDirName     "irodori-tts-ywk-radeon"
+  #define MyDataDirName "irodori-tts-ywk-radeon"
 #elif Flavor == "cuda"
-  #define MyAppId    "{F228543A-DCF9-45A3-8826-7485C81E1757}"
-  #define MyAppName  "irodori-TTS for 読み分けちゃん（CUDA 版）"
-  #define OldAppName "irodori-TTS for 読み分けちゃん"
-  #define MyDirName  "irodori-tts-ywk-cuda"
+  #define MyAppId       "{F228543A-DCF9-45A3-8826-7485C81E1757}"
+  #define MyAppName     "irodori-TTS for 読み分けちゃん（CUDA 版）"
+  #define OldAppName    "irodori-TTS for 読み分けちゃん"
+  #define MyDirName     "irodori-tts-ywk-cuda"
+  #define MyDataDirName "irodori-tts-ywk-cuda"
 #else
   #error Flavor must be cuda or radeon
 #endif
+; 旧い共有樹（≦ v1.1.0 の既定）＝**両版で 1 本**だった。移送（v2.0 の初回起動・AppPaths の
+; LegacyDataDirName）を通していない機体では約 8 GB が居残るので、撤去のときだけ面倒を見る（下）。
+#define LegacyDataDirName "irodori-tts-ywk"
 
 ; --- compile 時の門（組み立ての取りこぼしを「黙って通さない」）-----------------
 ; ISCC 6.7.3 の実測（本席の実射・2026-09-05・scratchpad/ben-e1/xt の使い捨て 3 檔）＝
@@ -148,17 +158,22 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
-AppMutex=Local\irodori-tts-ywk-launcher
-; ↑ launcher/IrodoriTtsYwk.Launcher/App.xaml.cs:32 の逐語
-;   private const string MutexName = @"Local\irodori-tts-ywk-launcher";
-;   CHM 逐語＝「mutex name comparison in Windows is case sensitive」＝1 字も変えない
-; ↑ この錠は **両方の種で同じ**（ランチャ exe が 1 本で両リリースを兼ねるから）＝裁定 109 でも変えない。
-;   既知の癖＝もう一方の種のランチャが走っている最中にこちらを導入すると、Inno は
-;   SetupAppRunningError を出して断るが、その文が名乗るのは **こちらの版の AppName** である
-;   （走っているのは向こうの版なのに「ROCm 版が検出されました」と読める）。害は無いので直さない
-;   ＝どちらの版でもランチャは同時に 1 個体しか走らない（同じ錠・同じ 127.0.0.1:18088）。
+AppMutex=Local\irodori-tts-ywk-launcher-{#Flavor}
+; ↑ launcher/IrodoriTtsYwk.Launcher/Contracts/AppPaths.cs の逐語
+;   public const string SingleInstanceNameBase = @"Local\irodori-tts-ywk-launcher";
+;   SingleInstanceMutexName(flavor) => SingleInstanceNameBase + "-" + FlavorId(flavor);
+;   FlavorId＝cuda／radeon＝この檔の /DFlavor= と **同じ綴り**（綴りの正本は AppPaths ただ 1 箇所）。
+;   CHM 逐語＝「mutex name comparison in Windows is case sensitive」＝1 字も変えない。
+; ↑ **裁定 133 ⑷ で版ごとに割った**（旧＝両版で 1 つ）。RTX（CUDA）と Radeon（ROCm）は別アプリなので
+;   互いを起こし直さない。ランチャ側は錠と**合図の口**（…-activate-cuda／…-radeon）を必ず同じ組で
+;   割ってある（片方だけ割ると、CUDA 版の 2 個目の起動が Radeon 版の窓を前に出す）。
+;   これで直った古い癖＝もう一方の版のランチャが走っている最中にこちらを導入／撤去すると、Inno が
+;   SetupAppRunningError を出して断り、しかもその文は **こちらの版の AppName** を名乗っていた。
+;   いまは自分の版の個体だけを見る。
 ;   CHM 逐語＝「Specifies the name of a mutex which Setup **and Uninstall** should check」＝
-;   **撤去でも同じ錠を見る**＝もう一方の版のランチャが走っていると、こちらの撤去も同じ文で断られる。
+;   **撤去でも同じ錠を見る**（＝自分の版のランチャが走っていれば撤去も断られる。これは正しい）。
+; ↑ 2 つの版を同時に開いた回は、後から起きた側が **つなぎ口 18088 の塞がり**で止まる（裁定 133 ⑷）。
+;   つなぎ口だけが 1 つで、錠は版ごとである。
 RestartApplications=no
 ; CloseApplications は書かない（既定 yes のまま・頼らない＝設計書 §8 危険 6）
 Uninstallable=yes
@@ -233,6 +248,9 @@ Filename: "{app}\IrodoriTtsYwk.Launcher.exe"; \
 ; {app}\server はこちらが作った枝で利用者の檔が 1 つも無い。dirifempty は中身が在れば何もしない。
 Type: filesandordirs; Name: "{app}\server"
 Type: dirifempty;     Name: "{app}"
+; ↑ **データ樹はここに書かない**（裁定 132／133 ⑴ でも同じ）。理由は junction である＝
+;   filesandordirs を reparse point に撃つと **路だけが消えて実体（D:\ywk-data 等）が孤児になる**。
+;   データ樹は下の CurUninstallStepChanged が、junction を見分けたうえで **中身から** 消す。
 
 [Messages]
 ; 歓迎頁は既定で出ない（DisableWelcomePage の既定＝yes）＝WelcomeLabel2 に文言を置かない。
@@ -255,13 +273,14 @@ ja.FinishedLabelNoIcons=ご使用のコンピューターに [name] がセット
 [Code]
 
 const
-  { もう一方の種のアンインストール鍵（AppId + '_is1'）。データ樹を共有するので道連れを避ける（設計書 §5-4）。}
+  { もう一方の種のアンインストール鍵（AppId + '_is1'）。
+    裁定 133 ⑶ でデータ樹の共有が無くなったので、いま見る用途は **1 つだけ**＝
+    旧い共有樹（%LOCALAPPDATA%\irodori-tts-ywk\）を道連れにしてよいかの判定である
+    （向こうがまだ移送で要るなら触らない）。}
 #if Flavor == "radeon"
   OtherFlavorKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{F228543A-DCF9-45A3-8826-7485C81E1757}_is1';
-  OtherFlavorName = 'CUDA 版';
 #else
   OtherFlavorKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{ECA98712-1574-4D2A-A1FE-0FF5347BF185}_is1';
-  OtherFlavorName = 'ROCm 版';
 #endif
   { 取得中に要る空き＝FetchPlan.EstimatedPeakDiskBytes（FetchPlanner.cs:54,57-59,65）＝
     CacheBytes ＋ (python-embed + runtime) * ExpansionFactor(3.3) ＋ ModelBytes。
@@ -290,16 +309,20 @@ var
 
 function DataDir(): String;
 begin
-  { AppPaths.DataDir の既定と同じ場所を固定で解く。env（YWK_LAUNCHER_DATA_DIR）は見ない＝設計書 §1-7。
-    1 本でも env を立てるとランチャが「開発起動」を名乗る（AppPaths.cs:205）。}
-  Result := ExpandConstant('{localappdata}\irodori-tts-ywk');
+  { AppPaths.DataDir の既定と同じ場所を固定で解く。**版ごと**である（裁定 133 ⑶）＝
+    MyDataDirName は AppPaths.DataDirNameCuda／DataDirNameRadeon の逐語。
+    env（YWK_LAUNCHER_DATA_DIR）と settings.json の dataDir は見ない＝設計書 §1-7。
+    1 本でも env を立てるとランチャが「開発起動」を名乗る。}
+  Result := ExpandConstant('{localappdata}\' + '{#MyDataDirName}');
 end;
 
-function TwoLabels(const A, B: String): TArrayOfString;
+function LegacyDataDir(): String;
 begin
-  SetArrayLength(Result, 2);
-  Result[0] := A;
-  Result[1] := B;
+  { ≦ v1.1.0 が両版で分け合っていた **旧い共有樹**（AppPaths.LegacyDataDirName の逐語）。
+    v2.0 の初回起動で版の樹へ移る（AppPaths.EnsureDataDirectories → LegacyDataMigration）が、
+    ⑴ v1.1.0 に上書き導入して **一度も開かずに** 撤去した機体 ⑵ 移送に失敗して旧樹が残った機体
+    では移送が走っていない＝約 8 GB が丸ごと居残る（裁定 132 が起こされた当の状態）。}
+  Result := ExpandConstant('{localappdata}\' + '{#LegacyDataDirName}');
 end;
 
 function StartsWithDir(const Path, Prefix: String): Boolean;
@@ -309,7 +332,7 @@ end;
 
 { データ樹が junction（mklink /J＝reparse point）かどうかを見る 1 本。Inno に尋ねる関数が無いので
   Win32 を直に引く。Inno 6 の [Code] は Unicode なので W 版を名指しする。
-  用途は 1 つだけ＝アンインストールの最後の RemoveDir(Data) を、junction には撃たないため（下）。}
+  用途は 1 つだけ＝撤去のときの WipeTree が、junction を丸ごと撃たないため（下）。}
 function GetFileAttributesW(lpFileName: String): DWORD;
   external 'GetFileAttributesW@kernel32.dll stdcall';
 
@@ -390,6 +413,20 @@ begin
     Exit;
   end;
 
+  { ⑶ **旧い共有樹にも重ねさせない**（是正・2026-09-11）。⑵ は版ごとの樹しか見ないので、
+    **まだ移送していない機体**（v1.1.0 から上げた機体＝声も設定も約 8 GB が旧樹に居る）では
+    その路が素通りしてしまう。そこへ入れると ⑴ 初回起動の移送が「自分の exe が入ったままの樹」を
+    Directory.Move しようとして錠で失敗し ⑵ 撤去のときの WipeTree(Legacy) が残りを消す。}
+  if StartsWithDir(Dir, LegacyDataDir()) or StartsWithDir(LegacyDataDir(), Dir) then
+  begin
+    MsgBox('その場所は以前の版の置き場（' + LegacyDataDir() + '）と重なっています。'
+         + 'この樹には登録済みの話者と設定が残っていることがあり、ここに入れると'
+         + '初回起動の引っ越しが通らなくなります。別の場所を選んでください。既定は' + #13#10
+         + ExpandConstant('{autopf}') + '\' + '{#MyDirName}' + ' です。', mbError, MB_OK);
+    Result := False;
+    Exit;
+  end;
+
   NotifyFreeSpace();
 end;
 
@@ -402,89 +439,98 @@ begin
   NotifyFreeSpace();
 end;
 
+{ 置き場を 1 本、**中身から**消す（junction を通り抜けて実体を消し、路そのものは junction のときだけ残す）。
+  CHM 逐語（ISetup.chm topic_isxfunc_deltree）＝「This function will remove directories that are
+  reparse points, but it will **not** recursively delete files/directories inside them.」＝
+  この免除が当たるのは reparse point **自身**であって、その下の檔ではない。だから
+  ⑴ ふつうのディレクトリは DelTree(Dir, True, True, True)（＝既に実績のある形）で丸ごと消し、
+  ⑵ junction のときだけ DelTree(Dir + '\*', False, True, True)（IsDir=False の wildcard）で
+  **中身だけ**を落として路を残す。
+  ※ junction 自身に RemoveDir を撃つと **路だけが消えて実体が孤児になる**ことは実射で確かめた
+    （2026-09-05・非昇格・使い捨ての .iss を ISCC で通し InitializeSetup で撃って中止）＝
+      before RemoveDir: DirExists(link)=1 / RemoveDir returned: 1
+      after  RemoveDir: DirExists(link)=0 / DirExists(real)=1 / FileExists(real\settings.json)=1
+    docs/install.md §5-3 が勧める mklink /J を張った機体で、入れ直すと空のデータ樹が C: に出来る。
+  ※ **置き場の外には 1 檔も触れない**（裁定 133 ⑵）＝声を追加するときに利用者が選んだ元の wav は
+    利用者の檔で、アプリは voices\refs\ に写しを取り込んで使う（VoiceStore はその形を守る）。
+    ここで消えるのは写しだけである。}
+{ ※ **入れ子の junction にも当たる**（是正・2026-09-11）。CHM の免除は reparse point 自身にしか
+  当たらないので、根だけを見て DelTree を撃つと `<data>\models` だけを別ドライブへ逃がした樹
+  （3 GB のモデルだけを退かす、いちばん自然な手）は **環が消えて実体が孤児になる**＝
+  裁定 132 が起こされた当の症状が、撤去のあとの D:\ に数 GB として残る。だから
+  **すぐ下の枝を先にこの手続き自身へ渡す**＝入れ子の junction は上の枝で「中身だけ落とす」に当たり、
+  空になった環は最後の DelTree(Dir, ...) が畳む（根の環だけは残す＝下）。
+  枝の名は **先に読み切ってから** 撃つ＝消しながら FindNext を続けない。}
+procedure WipeTree(const Dir: String);
+var
+  FindRec: TFindRec;
+  Names: TArrayOfString;
+  Count, I: Integer;
+begin
+  if not DirExists(Dir) then
+    Exit;
+
+  if IsReparsePoint(Dir) then
+  begin
+    { 路を丸ごと撃つと免除が当たって **中身が残ったまま路だけ消える**。だから中身を名指しで落とし、
+      路（junction 自身）は残す＝入れ直しに mklink /J を張り直さなくてよい。}
+    DelTree(Dir + '\*', False, True, True);
+    Log('the tree is a reparse point (junction); emptied it but left the link: ' + Dir);
+    Exit;
+  end;
+
+  Count := 0;
+  SetArrayLength(Names, 0);
+  if FindFirst(AddBackslash(Dir) + '*', FindRec) then
+  begin
+    try
+      repeat
+        { $10 = FILE_ATTRIBUTE_DIRECTORY（上の $400 と同じで、数で書く）。}
+        if (FindRec.Name <> '.') and (FindRec.Name <> '..')
+           and ((FindRec.Attributes and $10) <> 0) then
+        begin
+          SetArrayLength(Names, Count + 1);
+          Names[Count] := AddBackslash(Dir) + FindRec.Name;
+          Count := Count + 1;
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+
+  for I := 0 to Count - 1 do
+    WipeTree(Names[I]);
+
+  DelTree(Dir, True, True, True);
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
-  R: Integer;
-  Data, Extra: String;
-  OtherInstalled: Boolean;
+  Legacy: String;
 begin
   if CurUninstallStep <> usPostUninstall then
     Exit;
 
-  Data := DataDir();
-  if not DirExists(Data) then
-    Exit;
+  { 裁定 132／133 ⑴＝**このアプリが自分の置き場に持っている物をすべて消す。問わない。**
+    消える物＝ダウンロードした一式（runtime\）・モデル（models\）・取り込んだ声の写し（voices\refs\）・
+    下ごしらえ（voices\latents\）・settings.json・logs\・取得キャッシュ（cache\）・MIOpen の db。
+    司令官の逐語（裁定 132）＝「アンインストールで数Gバイト残るのは普通にアプリの範囲を逸脱している。」
+    問いは **1 つも出さない**（裁定 132 の「追加した声と設定を消しますか」も 133 ⑴ で廃止）＝
+    無人（/SUPPRESSMSGBOXES）でも有人でも同じ道を通る＝**/SUPPRESSMSGBOXES はもう効かない**。
+    **もう一方の版の樹には触れない**＝共有が無くなったので「道連れにしない」場合分けは規則ごと廃止した
+    （旧 ben-e §5-4）。}
+  WipeTree(DataDir());
 
-  OtherInstalled := RegKeyExists(HKEY_CURRENT_USER, OtherFlavorKey);
-
-  { 1 段目＝取得物。もう一方の種がまだ入っていれば **尋ねない**（共有のデータ樹を道連れにしない）。
-    無人（/SUPPRESSMSGBOXES）では既定＝IDNO が返る＝黙って残る。}
-  if not OtherInstalled then
+  { 旧い共有樹（≦ v1.1.0）＝**もう一方の版が入っていないときだけ**一緒に消す（裁定 133 ⑸・
+    v2-spec.md §11-8）。向こうが入っている回は触らない＝向こうがまだ移送で要る。
+    判定は既にある OtherFlavorKey の RegKeyExists をそのまま使う。}
+  Legacy := LegacyDataDir();
+  if (CompareText(Legacy, DataDir()) <> 0)
+     and DirExists(Legacy)
+     and not RegKeyExists(HKEY_CURRENT_USER, OtherFlavorKey) then
   begin
-    R := SuppressibleTaskDialogMsgBox(
-           '取得した実行系とモデルも削除しますか？',
-           Data + ' に残っています。残しておくと、次に入れ直したときそのまま使えます。',
-           mbConfirmation, MB_YESNO,
-           TwoLabels('削除する' + #13#10 + '実行系・モデル・取得キャッシュ・ログ・MIOpen db を消します。',
-                     '残す' + #13#10 + '何も消しません（既定）。'),
-           0, IDNO);
-    if R = IDYES then
-    begin
-      { ※ junction（mklink /J）でデータ樹を別ドライブへ逃がした利用者では、**実体の中身が消える**。
-        CHM 逐語（ISetup.chm topic_isxfunc_deltree）＝「This function will remove directories that are
-        reparse points, but it will **not** recursively delete files/directories inside them.」＝
-        この免除が当たるのは reparse point 自身（＝Data）であって Data\runtime 等ではない。
-        ここは Data の **下** を名指しで消すので、junction を通り抜けて実体が消える。
-        これは意図した挙動である（利用者が明示で「削除する」を選んだのだから消えるのが素直）＝
-        docs/install.md §5-3 は 2026-09-05 にこの実装に合わせて直っており、いまは食い違っていない
-        （旧注釈は「檔と食い違う・卓へ回した」と書いていたが、その票は既に閉じている）。
-        ※ junction を張っての実射はしていない（D: は停止域）＝**推測**。
-        junction 自身（＝Data）を畳まないことだけは実射で確かめた＝この手続きの最後の RemoveDir。}
-      DelTree(Data + '\runtime', True, True, True);
-      DelTree(Data + '\models',  True, True, True);
-      DelTree(Data + '\cache',   True, True, True);
-      DelTree(Data + '\logs',    True, True, True);
-      DelTree(Data + '\miopen',  True, True, True);
-    end;
+    Log('removing the legacy shared data tree (the other flavour is not installed): ' + Legacy);
+    WipeTree(Legacy);
   end;
-
-  { 2 段目＝利用者の資産。docs/install.md §5 の逐語「消すには明示の選択が要る」の口。
-    1 段目と違って **抑止はしない**＝docs/install.md §5-4 の 3 が「別に尋ねる」と例外なしで約束しており、
-    抑止すると利用者が話者を消す唯一の口を失う。代わりに、もう一方の種が居るときは
-    「そちらからも消える」ことを本文で告げる（敵対検分 medium 5 の ⑵ を採った。
-    ⑴＝2 段目も抑止する案は卓の裁定待ち＝decisions.md 90 は 1 段目しか触れていない）。}
-  Extra := '';
-  if OtherInstalled then
-    Extra := #13#10 + OtherFlavorName + 'がまだこの機体に入っています。話者と設定は 2 つの版が'
-           + '同じ場所（' + Data + '）を共有しているので、ここで消すとそちらからも消えます。';
-  R := SuppressibleTaskDialogMsgBox(
-         '登録した話者と設定も削除しますか？',
-         '追加した参照 wav・話者の名前・設定は利用者の資産です。既定では残します。' + Extra,
-         mbConfirmation, MB_YESNO,
-         TwoLabels('削除する' + #13#10 + 'voices\ と settings.json を消します。元に戻せません。',
-                   '残す' + #13#10 + '話者と設定を残します（既定）。'),
-         0, IDNO);
-  if R = IDYES then
-  begin
-    DelTree(Data + '\voices', True, True, True);
-    DeleteFile(Data + '\settings.json');
-  end;
-
-  { 空になっていれば根も畳む。ただし **junction には撃たない**。
-    旧注釈は「中身が残っていれば RemoveDir は失敗して何もしない」と書いていたが、それは **本物の
-    ディレクトリの話**であって junction には当たらない。実射（2026-09-05・非昇格・使い捨ての .iss を
-    ISCC で通し、InitializeSetup で撃って Result := False で中止＝1 檔も導入せず）の逐語＝
-      before RemoveDir: DirExists(link)=1
-      RemoveDir returned: 1
-      after  RemoveDir: DirExists(link)=0 / DirExists(real)=1 / FileExists(real\settings.json)=1
-    ＝**中身 3 檔を抱えた junction に対して RemoveDir は成功し、路だけを消して実体を残した。**
-    docs/install.md §5-3 が勧める mklink /J を張った機体では、これは「残す」を選んでも起き、
-    次に入れ直すと空のデータ樹が C: に出来て旧樹が孤児になる。だから畳む前に reparse point を見る。
-    ※ 非昇格で /J が張れることも同じ日に実測した（New-Item -ItemType Junction・elevated=False）。}
-  if IsReparsePoint(Data) then
-  begin
-    Log('the data root is a reparse point (junction); leaving it in place: ' + Data);
-    Exit;
-  end;
-  RemoveDir(Data);
 end;

@@ -22,6 +22,95 @@ namespace IrodoriTtsYwk.Launcher.Services.Ledger;
 public static class RuntimeStamp
 {
     /// <summary>
+    /// <b>展開に使った台帳そのものの写し</b>の檔名（<c>v2-spec.md</c> §11-3）。
+    /// <para>
+    /// 置き場＝<c>&lt;データ樹&gt;\runtime\&lt;variant&gt;\.ledger.json</c>＝
+    /// RTX（CUDA）版なら <c>%LOCALAPPDATA%\irodori-tts-ywk-cuda\runtime\…</c>、
+    /// Radeon（ROCm）版なら <c>…-radeon\runtime\…</c>（<b>データ樹は版ごと</b>＝
+    /// <c>decisions.md</c> 133＝§11-8）。<b>配布樹には 1 檔も書かない。</b>
+    /// 2 つの版が同じ機体に入っていても互いに見えない＝差分の判定も版ごとに独立する。
+    /// </para>
+    /// <para>
+    /// 焼き印（<c>settings.runtimeLedgers</c>）が持つのは sha256 だけで、
+    /// <b>「どの item がどの sha256 で入ったか」は残らない</b>＝差分が組めない。この写しが材料である。
+    /// </para>
+    /// </summary>
+    public const string AppliedLedgerFileName = ".ledger.json";
+
+    /// <summary>
+    /// 写しの路（<b>純関数に近い薄い殻</b>＝変種ディレクトリが未解決なら
+    /// <c>&lt;RuntimeRoot&gt;\&lt;variant&gt;</c> を使う）。
+    /// </summary>
+    public static string AppliedLedgerPath(AppPaths paths, string variant)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentException.ThrowIfNullOrWhiteSpace(variant);
+
+        var runtimeDir = paths.ResolveRuntimeDir(variant)
+                         ?? Path.Combine(paths.RuntimeRoot, variant);
+        return Path.Combine(runtimeDir, AppliedLedgerFileName);
+    }
+
+    /// <summary>
+    /// 写しを読む（無い・壊れている＝null＝<b>差分を組めない</b>＝その 1 回だけ丸ごと）。
+    /// </summary>
+    public static LedgerFile? ReadAppliedLedger(AppPaths paths, string variant)
+    {
+        var path = AppliedLedgerPath(paths, variant);
+        try
+        {
+            return File.Exists(path)
+                ? LedgerReader.ParseRuntime(File.ReadAllText(path), RuntimeVariants.LedgerName(variant))
+                : null;
+        }
+        catch (LedgerException)
+        {
+            return null;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 配布樹の台帳を写しへ置く（<b><see cref="Burn"/> と同じ回</b>＝片方だけ残さない）。
+    /// <b>展開が全部終わってから</b>呼ぶこと（途中で落ちた回は次回また全差分になる）。
+    /// 戻り＝置けたか（置けなくても起動は止めない＝次の版で丸ごとになるだけ）。
+    /// </summary>
+    public static bool BurnAppliedLedger(AppPaths paths, string variant)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentException.ThrowIfNullOrWhiteSpace(variant);
+
+        var source = paths.LedgerPath(RuntimeVariants.LedgerName(variant));
+        var destination = AppliedLedgerPath(paths, variant);
+        try
+        {
+            if (!File.Exists(source))
+            {
+                return false;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(source, destination, overwrite: true);
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// 台帳 1 檔の sha256（小文字 hex）。読めなければ null＝<b>黙る</b>
     /// （配布樹が読めない機体で「組み直せ」と急かさない）。
     /// </summary>
@@ -143,14 +232,40 @@ public static class RuntimeStamp
     /// <summary>
     /// いまの配布樹の値を settings へ焼く（展開が通った直後に呼ぶ）。
     /// <b>焼くのはその変種の欄だけ</b>＝他の変種の焼き印には触らない。
+    /// <para>
+    /// <b>同じ回で <c>.ledger.json</c> も置く</b>（<c>v2-spec.md</c> §11-3＝片方だけ残さない）。
+    /// 次の版の差分はこの写しと配布樹の台帳を突き合わせて組む（<see cref="RuntimeDiff.Plan"/>）。
+    /// </para>
+    /// <para>
+    /// <b><paramref name="writeAppliedLedger"/> を偽にする場面が 1 つある</b>（是正・2026-09-11）＝
+    /// <b>展開をこの回にしていない</b>呼び（裁定 91 の受け入れ＝
+    /// <c>MainViewModel.CheckRuntimeStamp</c>）。あそこが見ているのは <see cref="LooksComplete"/>
+    /// （<c>*.dist-info</c> の件数）だけで、その樹を<b>どの台帳で</b>組んだかは判っていない。
+    /// sha256 の焼き印だけなら「催促を止める」で済むが、<c>.ledger.json</c> を置くのは
+    /// <b>「この樹の中身は全部この sha256 である」と名乗る</b>行為で、それは嘘になりうる＝
+    /// 次の版の <see cref="RuntimeDiff.Plan"/> がその嘘を信じ、本当は古い wheel を「変わっていない」と
+    /// 見送って<b>混ざった樹</b>を残す。写しが<b>無い</b>回は
+    /// <see cref="RuntimeDiff.Plan"/> が丸ごと組み直しへ落ちる＝素性の知れない樹には、それが正しい。
+    /// </para>
     /// </summary>
-    public static void Burn(LauncherSettings settings, AppPaths paths, string variant)
+    /// <param name="settings">焼き印を持つ設定。</param>
+    /// <param name="paths">置き場。</param>
+    /// <param name="variant">変種。</param>
+    /// <param name="writeAppliedLedger">
+    /// <c>.ledger.json</c> も置くか。<b>展開が本当に通った回だけ真</b>（既定）。
+    /// </param>
+    public static void Burn(
+        LauncherSettings settings, AppPaths paths, string variant, bool writeAppliedLedger = true)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentException.ThrowIfNullOrWhiteSpace(variant);
 
         settings.SetRuntimeStamp(variant, LedgerSha256(paths, variant), AppVersion.Display);
+        if (writeAppliedLedger)
+        {
+            BurnAppliedLedger(paths, variant);
+        }
     }
 
     /// <summary>

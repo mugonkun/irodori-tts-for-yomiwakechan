@@ -118,6 +118,65 @@ public static class ReleaseFlavors
             ? ReleaseFlavor.Cuda
             : Detect(LedgerNames(ledgerDir));
 
+    /// <summary>
+    /// <b>読めたときだけ真</b>で版を返す（<c>decisions.md</c> 133・是正・2026-09-11）。
+    /// <para>
+    /// <see cref="DetectFrom"/> は <c>ledger/</c> が無い・読めない回も <see cref="ReleaseFlavor.Cuda"/> を
+    /// 返す＝<b>「空を読んだ」と「CUDA だと判った」が同じ顔になる</b>。名札しか決めていなかった頃
+    /// （裁定 109）は無害だったが、いまは<b>データ樹・単一起動の錠・移送の行き先</b>がこの 1 値で決まる＝
+    /// Radeon 機で <c>ledger/</c> の読みが 1 度こければ CUDA の樹で起動し、未移送の共有樹を
+    /// <b>CUDA の樹へ移してしまう</b>（Radeon 版は二度と見ないし、Radeon の撤去でも消えない）。
+    /// だから「判らなかった」を呼び手へ返す口を分ける（<see cref="Contracts.AppPaths.FromEnvironment"/>）。
+    /// </para>
+    /// </summary>
+    /// <param name="ledgerDir">配布樹の <c>ledger/</c>。</param>
+    /// <param name="flavor">判った版（偽のときは <see cref="ReleaseFlavor.Cuda"/>）。</param>
+    /// <returns>台帳が 1 檔でも読めたか（＝この判定を信じてよいか）。</returns>
+    public static bool TryDetectFrom(string? ledgerDir, out ReleaseFlavor flavor)
+    {
+        flavor = ReleaseFlavor.Cuda;
+        if (string.IsNullOrWhiteSpace(ledgerDir))
+        {
+            return false;
+        }
+
+        var names = LedgerNames(ledgerDir);
+        if (names.Count == 0)
+        {
+            return false; // 無い／読めない＝**CUDA だと判ったことにはしない**
+        }
+
+        flavor = Detect(names);
+        return true;
+    }
+
+    /// <summary>
+    /// 導入先の名から版を当てる（<b>純関数</b>＝<c>.iss</c> の <c>MyDirName</c> は版ごと＝
+    /// <c>irodori-tts-ywk-cuda</c>／<c>…-radeon</c>）。<see cref="TryDetectFrom"/> が黙った回の 1 段目の控え。
+    /// </summary>
+    public static bool TryDetectFromDirectoryName(string? installDir, out ReleaseFlavor flavor)
+    {
+        flavor = ReleaseFlavor.Cuda;
+        if (string.IsNullOrWhiteSpace(installDir))
+        {
+            return false;
+        }
+
+        var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(installDir.Trim()));
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return false;
+        }
+
+        if (name.EndsWith("-" + Contracts.AppPaths.FlavorId(ReleaseFlavor.Radeon), StringComparison.OrdinalIgnoreCase))
+        {
+            flavor = ReleaseFlavor.Radeon;
+            return true;
+        }
+
+        return name.EndsWith("-" + Contracts.AppPaths.FlavorId(ReleaseFlavor.Cuda), StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>配布樹の <c>ledger/</c> を読む（薄い殻＝檔が読めなければ CUDA 版として振る舞う）。</summary>
     public static IReadOnlyList<string> LedgerNames(string ledgerDir)
     {

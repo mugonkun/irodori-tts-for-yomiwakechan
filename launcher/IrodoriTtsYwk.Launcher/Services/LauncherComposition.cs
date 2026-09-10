@@ -78,7 +78,18 @@ public static class LauncherComposition
         // 失敗しても起動は止めない（話者 0 名でも「デフォルト」で合成できる＝裁定 45）。
         try
         {
-            PrepareVoices(paths, store, new VoicesJsonWriter(), out var renamed, out var added);
+            // **版が変わった回だけ中身の差分を当てる**（v2-spec.md §11-2）＝毎起動で
+            // 12 檔（35 MB 級）を読ませない。焼き印（裁定 91）が「この変種をどの版で組んだか」を
+            // 既に持っているので、新しい鍵も新しい欄も足さずに済む。
+            var variant = AppServices.Settings.Variant;
+            var syncPresets = !string.Equals(
+                AppServices.Settings.InstalledAppVersionFor(variant)?.Trim(),
+                AppVersion.Display,
+                StringComparison.Ordinal);
+
+            PrepareVoices(
+                paths, store, new VoicesJsonWriter(),
+                out var renamed, out var added, out var synced, syncPresets);
 
             // 改名（裁定 108）＝設定に残った旧い id も同じ回で改める。並びと試し撃ちは知らない
             // id を捨てるだけだが、暖機は旧い id で走行ごと failed になる（RenameInSettings）。
@@ -93,6 +104,13 @@ public static class LauncherComposition
             {
                 Note(line);
             }
+
+            // 中身の更新（v2-spec.md §11-2 の枝 b／c）＝同じ控えに 2 行まで積む。
+            Note(PresetSync.UpdatedLine(synced.Updated.Count));
+            Note(PresetSync.KeptLine(synced.Kept.Count));
+
+            // モデルの台帳の写し（見積り専用＝v2-spec.md §11-4）。揃っている回にだけ置き直す。
+            Models.ModelDiff.RecordAppliedIfReady(paths, variant);
         }
         catch (System.IO.IOException)
         {
@@ -137,7 +155,7 @@ public static class LauncherComposition
     /// </summary>
     /// <returns>写したプリセットの数（<c>voices.json</c> を書いたかは <c>File.Exists</c> で判る）。</returns>
     public static int PrepareVoices(AppPaths paths, VoiceStore store, IVoicesJsonWriter writer) =>
-        PrepareVoices(paths, store, writer, out _, out _);
+        PrepareVoices(paths, store, writer, out _, out _, out _);
 
     /// <summary>
     /// 同上＋<b>改めた名を返す</b>（裁定 108）＝呼ぶ側が設定の旧い id も直せる
@@ -149,7 +167,7 @@ public static class LauncherComposition
         VoiceStore store,
         IVoicesJsonWriter writer,
         out IReadOnlyList<PresetRename> renamed) =>
-        PrepareVoices(paths, store, writer, out renamed, out _);
+        PrepareVoices(paths, store, writer, out renamed, out _, out _);
 
     /// <summary>
     /// 同上＋<b>後の版で増えて足した話者を返す</b>（裁定 121）＝呼ぶ側がログに 1 行残せる。
@@ -167,7 +185,35 @@ public static class LauncherComposition
         VoiceStore store,
         IVoicesJsonWriter writer,
         out IReadOnlyList<PresetRename> renamed,
-        out IReadOnlyList<string> added)
+        out IReadOnlyList<string> added) =>
+        PrepareVoices(paths, store, writer, out renamed, out added, out _);
+
+    /// <summary>
+    /// 同上＋<b>中身が変わった同梱の wav を写し直す</b>（<c>v2-spec.md</c> §11-2＝
+    /// <c>decisions.md</c> 115 の穴）。
+    /// <para>
+    /// ⑹ <b>中身の更新</b>（<see cref="Voices.PresetVoices.SyncContents"/>）は ⑸ の<b>すぐ後</b>に走る。
+    /// 順（改名 → 初回展開 → 増えた分 → 中身の更新）を崩さない＝改名の前に当てると同じ檔を
+    /// 2 名が指し、初回展開の前に当てるとまだ写していない檔を相手にすることになる。
+    /// </para>
+    /// <para>
+    /// <b>版が変わった回だけ走らせる</b>（<paramref name="syncPresetContents"/>）＝
+    /// 毎起動で 12 檔（35 MB 級）を読ませない。2 度目からは台帳の <c>preset_md5</c> と
+    /// 正本の <c>secondary.md5</c> の<b>文字列比較だけ</b>で終わる。
+    /// </para>
+    /// </summary>
+    /// <param name="renamed">この回で改めた名（無ければ空）。</param>
+    /// <param name="added">この回で足した同梱の話者 id（無ければ空）。</param>
+    /// <param name="synced">この回で写し直した／触らずに残した同梱の声。</param>
+    /// <param name="syncPresetContents">中身の更新を当てるか（既定＝当てる）。</param>
+    public static int PrepareVoices(
+        AppPaths paths,
+        VoiceStore store,
+        IVoicesJsonWriter writer,
+        out IReadOnlyList<PresetRename> renamed,
+        out IReadOnlyList<string> added,
+        out PresetSyncResult synced,
+        bool syncPresetContents = true)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(store);
@@ -177,6 +223,7 @@ public static class LauncherComposition
         renamed = PresetVoices.MigrateRenamed(paths, store);
         var copied = PresetVoices.InstallIfFirstRun(paths, store);
         added = PresetVoices.InstallNew(paths, store);
+        synced = syncPresetContents ? PresetVoices.SyncContents(paths, store) : PresetSyncResult.Empty;
 
         // **毎回書く**（裁定 126 の C（2））。1 巡目は「この回で何かが動いたか、檔が無いか」を
         // 条件にしていたので、**サーバを止めている間に台帳を直した回**（話者一覧の編集・
