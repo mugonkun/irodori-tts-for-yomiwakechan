@@ -1,3 +1,5 @@
+using System;
+using System.Windows;
 using System.Windows.Controls;
 using IrodoriTtsYwk.Launcher.ViewModels;
 
@@ -19,6 +21,15 @@ public partial class StatusView : UserControl
     {
         InitializeComponent();
     }
+
+    /// <summary>
+    /// 「取得へ進む」（裁定 121）が押された。<b>ここは伝えるだけ</b>＝ウィザードを開けるのは
+    /// 主窓だけ（<c>MainWindow.ShowFirstRun</c>）なので、押された事実を上へ渡す。
+    /// </summary>
+    public event EventHandler? AcquireRequested;
+
+    private void OnAcquireClick(object sender, RoutedEventArgs e) =>
+        AcquireRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnLogChanged(object sender, TextChangedEventArgs e) => LogBox.ScrollToEnd();
 }

@@ -2862,7 +2862,7 @@ Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/
 
 1. **版を 1 箇所で上げる**＝`launcher/Directory.Build.props` の `<AppDisplayVersion>`（`v` 前置・唯一の定義・
    `installer-build.ps1` が機械読取）と、対の `server/ywk_server.py` の `YWK_VERSION`（`/ywk/status.version`）。
-   現行の値を名指す記述（契約 ⑹ の見本・`launcher/README.md` の settings 見本・`probe/e-install-probe.ps1` の
+   現行の値を名指す記述（契約 **⑻ 版と互換**の見本〔⑹ は `GET /ywk/status` の可視化で、版は`"<配布版の版>"` の placeholder なので触らない〕・`launcher/README.md` の settings 見本・`probe/e-install-probe.ps1` の
    既定の setup 名・`.iss` と `installer-build.ps1` の註）も同じ回で。設計書の実測の記帳と Tests の fixture は動かさない。
 2. **リリース文**＝`docs/release-notes/v<版>.md`（GitHub 風味・`##` から・事実は repo の檔から引く・sha256 と
    バイトの欄は `<sha256>`／`<bytes>` の placeholder にして組んだ後に埋める）。`.iss` の docs は明示列挙なので

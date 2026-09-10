@@ -120,10 +120,13 @@ public sealed class MainViewModel : ObservableObject
         // 設定を「適用」したら、状態帯の GPU・変種・接続先を引き直す
         // （引き直さないと、GPU を選んで保存した直後の状態帯が「未選択」のまま残る）。
         // 変種を変えれば「実行系を組み直す」の要否も変わる＝焼き印も突き合わせ直す（裁定 91）。
+        // 変種を変えれば「取得が未了か」も変わる（是正・検分）＝引き直さないと、実行系の無い
+        // 変種で出た帯が、入っている変種へ替えて「適用」しても消えない（逆も出ない）。
         Settings.Applied += (_, _) =>
         {
             Status.ApplySettings(settings);
             CheckRuntimeStamp();
+            RefreshAcquisition();
         };
 
         // 捕れなかった例外を握り潰さない（§20-5 ⑴）＝「サーバ起動」が黙って何もしない、を作らない。
@@ -139,6 +142,7 @@ public sealed class MainViewModel : ObservableObject
 
         Voices.Reload();
         CheckRuntimeStamp();
+        RefreshAcquisition();
     }
 
     public StatusViewModel Status { get; }
@@ -153,6 +157,45 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>初回取得を通していないか（窓が開いた直後にウィザードを出す判断）。</summary>
     public bool NeedsFirstRun => !_settings.FirstRunCompleted;
+
+    /// <summary>
+    /// <b>札は立っているのに実体が無い</b>（裁定 121）＝初回取得を通したことになっているのに、
+    /// 実行系かモデルが揃っていない。真なら主窓は自動起動をやめてウィザードを出す。
+    /// <para>
+    /// <see cref="NeedsFirstRun"/> が真の回はここを偽にする＝出す口は 1 つでよい
+    /// （窓は <c>NeedsFirstRun</c> を先に見る）。判断はここに置く＝WPF に触れずに試せる。
+    /// </para>
+    /// </summary>
+    public bool NeedsAcquisition { get; private set; }
+
+    /// <summary>足りない物の 1 行（揃っていれば空）。ウィザードの註と状態帯に<b>そのまま</b>出る。</summary>
+    public string AcquisitionSummary { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// ウィザードを自動で出すときに Trail とログへ残す 1 行（<b>純関数</b>）。
+    /// </summary>
+    public static string AcquisitionNotice(string summary) =>
+        "実行系／モデルが揃っていないため、取得からやり直します（不足＝"
+        + (string.IsNullOrWhiteSpace(summary) ? "不明" : summary.Trim()) + "）。";
+
+    /// <summary>取得の済み具合を見直す（構築時と、ウィザードを閉じた後）。</summary>
+    private void RefreshAcquisition()
+    {
+        if (NeedsFirstRun)
+        {
+            NeedsAcquisition = false;
+            AcquisitionSummary = string.Empty;
+            Status.ApplyAcquisition(false);
+            return;
+        }
+
+        var state = AcquisitionCheck.Check(_paths, _settings);
+        NeedsAcquisition = !state.Ready;
+        AcquisitionSummary = state.Summary;
+
+        // ウィザードを出さずに閉じた回でも帯に 1 手が残る（失敗を待たない）。
+        Status.ApplyAcquisition(NeedsAcquisition);
+    }
 
     /// <summary>
     /// 初回取得ウィザードの ViewModel を作る。
@@ -286,7 +329,21 @@ public sealed class MainViewModel : ObservableObject
         var pythonExe = _paths.ResolvePythonExe(_settings.Variant);
         if (pythonExe is null)
         {
-            FailBeforeStart("変種「" + _settings.Variant + "」の実行系がまだありません（初回取得が未了です）。");
+            // **断るだけで終わらせない**（裁定 121）＝どこから取れるかを同じ 1 行に書く。
+            FailBeforeStart("変種「" + _settings.Variant + "」の実行系がまだありません（初回取得が未了です）。"
+                + AcquisitionCheck.Hint);
+            return false;
+        }
+
+        // モデルが無い個体は起こしても HF_HUB_OFFLINE=1 で「モデルの読込に失敗＝…」になる
+        // （司令官の報告・2026-09-10）。起こす前に、何が足りないかと取り方を告げて断る。
+        var acquisition = AcquisitionCheck.Check(_paths, _settings);
+        if (!acquisition.ModelsReady)
+        {
+            FailBeforeStart(
+                "モデルがまだありません（不足＝"
+                + AcquisitionCheck.Describe(acquisition.MissingModelFiles) + "）。"
+                + AcquisitionCheck.Hint);
             return false;
         }
 
@@ -464,6 +521,7 @@ public sealed class MainViewModel : ObservableObject
         Settings.SyncFromLive();
         Status.ApplySettings(_settings);
         CheckRuntimeStamp();
+        RefreshAcquisition();
     }
 
     // ---- 裁定 91＝展開に使った台帳の焼き印 ------------------------------------

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Mvvm;
 using IrodoriTtsYwk.Launcher.Services.Gpu;
+using IrodoriTtsYwk.Launcher.Services.Server;
 
 namespace IrodoriTtsYwk.Launcher.ViewModels;
 
@@ -40,6 +41,8 @@ public sealed class StatusViewModel : ObservableObject
     private bool _serverAnswered;
     private bool _memoryPanelVisible = true;
     private string? _rebuildRuntime;
+    private bool _acquisitionNeeded;
+    private bool _acquisitionPending;
     private bool _isRebuilding;
     private string _rebuildProgress = string.Empty;
     private double _rebuildFraction;
@@ -151,6 +154,112 @@ public sealed class StatusViewModel : ObservableObject
 
     /// <summary>「実行系を組み直す」を出すか。</summary>
     public bool CanRebuildRuntime => RebuildRuntimeText is not null;
+
+    // ---- 裁定 121＝取得への導線 ---------------------------------------------
+
+    /// <summary>取得が未了のときに出す 1 行（<b>逐語</b>）。</summary>
+    public const string AcquisitionLine = "取得が未了です。";
+
+    /// <summary>
+    /// 取得への 1 手（「取得へ進む」）を出すか。
+    /// <para>
+    /// <b>出す条件は 3 つ</b>＝⑴ 起こす前の事前検査が「実行系／モデルがまだありません」で
+    /// 断った（理由に <see cref="Services.Models.AcquisitionCheck.Hint"/> が入っている）
+    /// ⑵ 起こした個体が <c>HF_HUB_OFFLINE=1</c> でモデルを読めずに落ちた
+    /// （<see cref="ServerStateMachine.RuntimeLoadFailedPrefix"/> の理由に、欠けた snapshot の
+    /// ときだけ上流が吐く字が入っている＝<see cref="MissingModelMarkers"/>）
+    /// ⑶ <b>檔を見た結果が「揃っていない」</b>（<see cref="ApplyAcquisition"/>＝
+    /// <c>MainViewModel.NeedsAcquisition</c>）＝ウィザードを出さずに閉じた利用者が、
+    /// 何もせずに帯だけを見ている回である。
+    /// それ以外の失敗（ポート・ドライバ・GPU の取り違え）では<b>出さない</b>。
+    /// </para>
+    /// </summary>
+    public bool AcquisitionNeeded
+    {
+        get => _acquisitionNeeded;
+        private set
+        {
+            if (SetProperty(ref _acquisitionNeeded, value))
+            {
+                RaisePropertyChanged(nameof(AcquisitionText));
+            }
+        }
+    }
+
+    /// <summary>その 1 行（出さないときは空）。</summary>
+    public string AcquisitionText => AcquisitionNeeded ? AcquisitionLine : string.Empty;
+
+    /// <summary>
+    /// 檔を見た結果を入れる（真＝実行系かモデルが揃っていない）。窓がウィザードを閉じた後にも
+    /// 呼ばれる＝<b>失敗を待たずに</b>帯へ 1 手を出す。
+    /// <para>
+    /// <b>新しい検分は古い断り書きに勝つ</b>（是正・検分）＝⑴ の事前検査で断った理由は
+    /// <see cref="ServerState.Failed"/> のまま残るので、取得を済ませてウィザードを閉じても
+    /// 帯が「取得が未了です。」と言い続けていた。檔を見て「揃っている」と判った回は、
+    /// 事前検査の名残（<see cref="Services.Models.AcquisitionCheck.Hint"/>）を無視する。
+    /// 個体が落ちた回（⑵ の <see cref="ServerStateMachine.RuntimeLoadFailedPrefix"/>）は
+    /// 檔の在否で否定できない事実なので、そのまま残す。
+    /// </para>
+    /// </summary>
+    public void ApplyAcquisition(bool needed)
+    {
+        _acquisitionPending = needed;
+        AcquisitionNeeded = needed
+            || (IsAcquisitionFailure(State, Reason) && !ReasonIsPreflight(Reason));
+    }
+
+    /// <summary>事前検査がランチャ自身の字で断った理由か（<b>純関数</b>）。</summary>
+    private static bool ReasonIsPreflight(string? reason) =>
+        reason is not null
+        && reason.Contains(Services.Models.AcquisitionCheck.Hint, StringComparison.Ordinal);
+
+    /// <summary>
+    /// モデルの読込の失敗が<b>「檔が無い／offline」だと読める</b>ときの字（控えめに拾う）。
+    /// <c>huggingface_hub</c> が pin した snapshot を見つけられなかったときに上流の
+    /// <c>from_pretrained</c> が吐く物である。
+    /// </summary>
+    public static readonly string[] MissingModelMarkers =
+    [
+        "OSError",
+        "does not appear to have a file",
+        "offline",
+        "not found",
+        "No such file",
+        "LocalEntryNotFound",
+    ];
+
+    /// <summary>取得が未了だと読める失敗か（<b>純関数</b>）。</summary>
+    public static bool IsAcquisitionFailure(ServerState state, string? reason)
+    {
+        if (state is not ServerState.Failed || string.IsNullOrWhiteSpace(reason))
+        {
+            return false;
+        }
+
+        var text = reason.Trim();
+
+        // ⑴ 事前検査で断った回＝ランチャ自身が書いた 1 文が入っている。
+        if (text.Contains(Services.Models.AcquisitionCheck.Hint, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        // ⑵ 起こした個体がモデルを載せられなかった回。前置きが違えば相手にしない。
+        if (!text.StartsWith(ServerStateMachine.RuntimeLoadFailedPrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        foreach (var marker in MissingModelMarkers)
+        {
+            if (text.Contains(marker, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>食い違いの 1 行を入れ替える（null＝消す）。</summary>
     public void ApplyRuntimeStamp(string? mismatchLine) => RebuildRuntimeText = mismatchLine;
@@ -538,6 +647,9 @@ public sealed class StatusViewModel : ObservableObject
         {
             Reason = null;
         }
+
+        // 取得が未了で落ちた回だけ、取得への 1 手を出す（裁定 121）。
+        AcquisitionNeeded = _acquisitionPending || IsAcquisitionFailure(state, Reason);
 
         if (state is ServerState.Stopped)
         {

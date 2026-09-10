@@ -438,7 +438,7 @@ if ($versionHits.Count -ne 1) {
         ' AppDisplayVersion tags (expected exactly 1 -- the version has one definition).')
 }
 $appVersion = $versionHits[0].Matches[0].Groups[1].Value
-# The trap: AppDisplayVersion is 'v1.0.1' (Directory.Build.props:31). [Setup] AppVersion= and
+# The trap: AppDisplayVersion is 'v1.0.2' (Directory.Build.props:31). [Setup] AppVersion= and
 # VersionInfoVersion= take digits only, so the .iss is handed BOTH forms as separate /D switches.
 $appVersionNumeric = $appVersion.TrimStart('v')
 Write-YwkLog -Message ('AppVersion = ' + $appVersion + ' / AppVersionNumeric = ' + $appVersionNumeric)

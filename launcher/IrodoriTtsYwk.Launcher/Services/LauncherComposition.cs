@@ -24,6 +24,38 @@ namespace IrodoriTtsYwk.Launcher.Services;
 /// </summary>
 public static class LauncherComposition
 {
+    private static readonly List<string> Notes = [];
+
+    /// <summary>
+    /// <b>窓が構えるより前に出た 1 行</b>の控え（裁定 121）。
+    /// <para>
+    /// <see cref="Compose"/> は <c>App.OnStartup</c> の、窓を作る<b>前</b>に走るので
+    /// 状態帯のログ（<c>StatusViewModel.AppendLog</c>）はまだ無い。設定の読み損ない
+    /// （<c>ISettingsStore.LastLoadError</c>）と同じ流儀で、主窓の構築が
+    /// <see cref="DrainNotes"/> で引き取って流す。
+    /// </para>
+    /// </summary>
+    public static void Note(string? line)
+    {
+        if (!string.IsNullOrWhiteSpace(line))
+        {
+            Notes.Add(line.Trim());
+        }
+    }
+
+    /// <summary>控えを 1 度だけ取り出す（<b>取ったら空になる</b>＝窓を開き直しても 2 度出ない）。</summary>
+    public static IReadOnlyList<string> DrainNotes()
+    {
+        if (Notes.Count == 0)
+        {
+            return [];
+        }
+
+        var drained = Notes.ToArray();
+        Notes.Clear();
+        return drained;
+    }
+
     /// <summary>起動席の実装を差す（<b>冪等</b>＝2 度呼んでも 1 度目の個体を保つ）。</summary>
     public static void Compose()
     {
@@ -46,13 +78,20 @@ public static class LauncherComposition
         // 失敗しても起動は止めない（話者 0 名でも「デフォルト」で合成できる＝裁定 45）。
         try
         {
-            PrepareVoices(paths, store, new VoicesJsonWriter(), out var renamed);
+            PrepareVoices(paths, store, new VoicesJsonWriter(), out var renamed, out var added);
 
             // 改名（裁定 108）＝設定に残った旧い id も同じ回で改める。並びと試し撃ちは知らない
             // id を捨てるだけだが、暖機は旧い id で走行ごと failed になる（RenameInSettings）。
             if (PresetVoices.RenameInSettings(AppServices.Settings, renamed))
             {
                 AppServices.SaveSettings();
+            }
+
+            // 後の版で増えた同梱の話者（裁定 121）＝黙って増やさず 1 行残す。窓はまだ無いので
+            // 控えに積み、主窓が構えたところで状態帯のログへ流す（Note の説明を見よ）。
+            if (PresetVoices.AddedLine(added) is string line)
+            {
+                Note(line);
             }
         }
         catch (System.IO.IOException)
@@ -98,7 +137,7 @@ public static class LauncherComposition
     /// </summary>
     /// <returns>写したプリセットの数（<c>voices.json</c> を書いたかは <c>File.Exists</c> で判る）。</returns>
     public static int PrepareVoices(AppPaths paths, VoiceStore store, IVoicesJsonWriter writer) =>
-        PrepareVoices(paths, store, writer, out _);
+        PrepareVoices(paths, store, writer, out _, out _);
 
     /// <summary>
     /// 同上＋<b>改めた名を返す</b>（裁定 108）＝呼ぶ側が設定の旧い id も直せる
@@ -109,7 +148,26 @@ public static class LauncherComposition
         AppPaths paths,
         VoiceStore store,
         IVoicesJsonWriter writer,
-        out IReadOnlyList<PresetRename> renamed)
+        out IReadOnlyList<PresetRename> renamed) =>
+        PrepareVoices(paths, store, writer, out renamed, out _);
+
+    /// <summary>
+    /// 同上＋<b>後の版で増えて足した話者を返す</b>（裁定 121）＝呼ぶ側がログに 1 行残せる。
+    /// <para>
+    /// ⑸ <b>増えたプリセットを足す</b>（<see cref="Voices.PresetVoices.InstallNew"/>）は
+    /// ⑷ 改名の<b>後</b>・⑵ 初回展開の<b>後</b>に走る。改名の後でなければ、旧い名で持っている
+    /// 1 名を「まだ差し出していない」と読んで新しい名でもう 1 名足してしまう（同じ wav を
+    /// 指す 2 名）。初回展開の後なら、その回に全員を入れた台帳には足す物が残らない。
+    /// </para>
+    /// </summary>
+    /// <param name="renamed">この回で改めた名（無ければ空）。</param>
+    /// <param name="added">この回で足した同梱の話者 id（無ければ空）。</param>
+    public static int PrepareVoices(
+        AppPaths paths,
+        VoiceStore store,
+        IVoicesJsonWriter writer,
+        out IReadOnlyList<PresetRename> renamed,
+        out IReadOnlyList<string> added)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(store);
@@ -118,8 +176,10 @@ public static class LauncherComposition
         var moved = store.MigrateReferences();
         renamed = PresetVoices.MigrateRenamed(paths, store);
         var copied = PresetVoices.InstallIfFirstRun(paths, store);
+        added = PresetVoices.InstallNew(paths, store);
 
-        if (moved > 0 || copied > 0 || renamed.Count > 0 || !System.IO.File.Exists(paths.VoicesJsonPath))
+        if (moved > 0 || copied > 0 || renamed.Count > 0 || added.Count > 0
+            || !System.IO.File.Exists(paths.VoicesJsonPath))
         {
             writer.Write(paths.VoicesJsonPath, store.Load());
         }

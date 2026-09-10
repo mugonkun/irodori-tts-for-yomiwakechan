@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using IrodoriTtsYwk.Launcher.Contracts;
@@ -93,6 +94,10 @@ public static class PresetVoices
     /// 利用者へ直した版を配っても、<see cref="File.Exists(string)"/> の判定だけでは
     /// 12 名が永久に入らない。
     /// </para>
+    /// <para>
+    /// <b>後の版で増えた 1 名はここでは入らない</b>（印が立った台帳には 0 を返す）＝
+    /// それは <see cref="InstallNew"/> の持ち場である（裁定 121）。起動席は 2 本とも呼ぶ。
+    /// </para>
     /// </summary>
     public static int InstallIfFirstRun(AppPaths paths, VoiceStore store)
     {
@@ -113,6 +118,160 @@ public static class PresetVoices
         // 台帳は在るが「展開を通した」印が無い＝presets.json を読めていなかった回の残骸。
         // 1 度だけ通す（既に在る id は飛ばす）。
         return Install(paths, store, existing, skipExisting: true);
+    }
+
+    /// <summary>
+    /// <b>後の版で増えたプリセットだけ</b>を足す（裁定 121）。戻り＝足した話者 id（順は正本の順）。
+    /// <para>
+    /// <b>要る理由</b>＝<see cref="InstallIfFirstRun"/> は <c>presets_installed</c> の印が立った
+    /// 台帳に 0 を返す（利用者が消した 1 名を毎起動書き戻さないため）ので、<b>配布側が
+    /// 後から足した 1 名</b>も永久に入らない。実射＝v1.0.1 で足した
+    /// 「シャンパンコール（ホスクラ）」が、v1.0.0 から使っている台帳の一覧に出てこなかった
+    /// （司令官の報告・2026-09-10＝「話者一覧にシャンパンコールがないね。」）。
+    /// </para>
+    /// <para>
+    /// <b>「消した」と「まだ差し出していない」を分ける</b>のが
+    /// <see cref="VoicesYwkFile.PresetsInstalledIds"/> である＝
+    /// ⑴ 欄が <c>null</c>（≦ v1.0.1 が書いた台帳）なら<b>いま台帳に居るプリセット</b>で種を蒔く
+    /// ⑵ 足すのは「正本（<see cref="DiscoverManifest"/>・<c>status: done</c>）に居て、
+    /// 種にも台帳にも居ない id」だけ ⑶ 足した id は欄に書き足す。
+    /// 欄に在って台帳に居ない id＝<b>利用者が消した</b>ので二度と戻さない
+    /// （戻す口は「同梱のプリセットを入れ直す」＝<see cref="Restore"/> のまま）。
+    /// </para>
+    /// <para>
+    /// <b>1 度だけの副作用</b>＝⑴ の種蒔きは「消した」を知らないので、
+    /// ≦ v1.0.1 の台帳で<b>プリセットを消してあった</b>利用者には、その 1 名が
+    /// v1.0.2 の初回起動で 1 度だけ戻る（次の起動からは戻らない）。
+    /// </para>
+    /// <para>
+    /// <b>何も変わらなければ台帳は書かない</b>（2 回目以降の起動は 1 バイトも触らない）＝
+    /// ただし<b>足した話者が 0 名でも、記録した id が増えた回は書く</b>（是正・検分）。
+    /// 書かずに捨てると、この回に覚えた id を次の起動が忘れ、利用者がその 1 名を消したときに戻ってしまう。
+    /// 正本が読めない配布樹では何もしない（<see cref="Discover"/> の ⑵⑶ は混ぜない＝
+    /// 檔名の幹が話者 id になって別人が増える）。
+    /// </para>
+    /// </summary>
+    public static IReadOnlyList<string> InstallNew(AppPaths paths, VoiceStore store)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(store);
+
+        if (!File.Exists(store.TablePath))
+        {
+            return []; // 台帳がまだ無い＝初回展開（InstallIfFirstRun）の持ち場
+        }
+
+        var table = store.Load();
+        if (!table.PresetsInstalled)
+        {
+            return []; // 印の無い台帳も初回展開の持ち場（そちらが全員を入れて id を記帳する）
+        }
+
+        var manifest = DiscoverManifest(paths);
+        if (manifest is not { Count: > 0 })
+        {
+            return [];
+        }
+
+        var seeded = table.PresetsInstalledIds is null;
+        var offered = new HashSet<string>(
+            seeded ? PresetIdsIn(table.Voices) : table.PresetsInstalledIds!, StringComparer.Ordinal);
+
+        // 記帳した時点の件数を控える（是正・検分）＝下の「何も変わっていない」の判定は
+        // <b>足した話者の数だけでは足りない</b>。既に台帳に居るのに欄がまだ知らない id
+        // （改名で新しい名が入った回など）をこの回に覚えても、書かずに捨てていた＝
+        // その 1 名を利用者が消した次の起動で「まだ差し出していない」と読んで戻してしまう。
+        var recorded = offered.Count;
+
+        var voices = new Dictionary<string, VoiceEntry>(table.Voices, StringComparer.Ordinal);
+        var added = new List<string>();
+
+        foreach (var preset in manifest)
+        {
+            if (offered.Contains(preset.Id) || voices.ContainsKey(preset.Id))
+            {
+                offered.Add(preset.Id); // 既に居る＝差し出した物として覚える
+                continue;
+            }
+
+            if (!CopyReference(store, preset))
+            {
+                continue; // 1 名の失敗で残り全部を落とさない（次の起動でもう 1 度試す）
+            }
+
+            voices[preset.Id] = NewEntry(preset);
+            offered.Add(preset.Id);
+            added.Add(preset.Id);
+        }
+
+        if (!seeded && added.Count == 0 && offered.Count == recorded)
+        {
+            return []; // 変わっていない＝台帳は書かない（記帳した id も増えていない）
+        }
+
+        store.Save(table with { Voices = voices, PresetsInstalledIds = Ordered(offered) });
+        return added;
+    }
+
+    /// <summary>足した話者を告げる 1 行（<b>純関数</b>＝0 名なら null）。</summary>
+    public static string? AddedLine(IReadOnlyList<string> added)
+    {
+        ArgumentNullException.ThrowIfNull(added);
+        return added.Count == 0
+            ? null
+            : "同梱の話者を " + added.Count.ToString(CultureInfo.InvariantCulture)
+              + " 名足しました：" + string.Join("・", added);
+    }
+
+    /// <summary>
+    /// 台帳に居るプリセット（<c>preset</c> か <c>origin=preset</c>）の id（<b>純関数</b>）。
+    /// 「デフォルト」は<b>数えない</b>＝正本に居ない常在の 1 名（裁定 16）で、写す檔も無い。
+    /// </summary>
+    private static IEnumerable<string> PresetIdsIn(IReadOnlyDictionary<string, VoiceEntry> voices)
+    {
+        foreach (var (id, entry) in voices)
+        {
+            if (!string.IsNullOrWhiteSpace(id)
+                && !string.Equals(id, VoiceIds.Default, StringComparison.Ordinal)
+                && (entry.Preset || string.Equals(entry.Origin, "preset", StringComparison.Ordinal)))
+            {
+                yield return id;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 差し出した記録を改名で引き継ぐ（<b>純関数</b>＝欄が null なら null のまま）。
+    /// </summary>
+    private static IReadOnlyList<string>? RenamedIds(
+        IReadOnlyList<string>? ids, IReadOnlyList<PresetRename> renames)
+    {
+        if (ids is null || ids.Count == 0 || renames.Count == 0)
+        {
+            return ids;
+        }
+
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var rename in renames)
+        {
+            map[rename.OldId] = rename.NewId;
+        }
+
+        var moved = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var id in ids)
+        {
+            moved.Add(map.TryGetValue(id, out var renamed) ? renamed : id);
+        }
+
+        return Ordered(moved);
+    }
+
+    /// <summary>記帳の並びを 1 つに決める（序数＝台帳の差分が読める）。</summary>
+    private static IReadOnlyList<string> Ordered(IEnumerable<string> ids)
+    {
+        var list = new List<string>(ids);
+        list.Sort(StringComparer.Ordinal);
+        return list;
     }
 
     /// <summary>
@@ -195,7 +354,14 @@ public static class PresetVoices
         // 事前計算は ref_embed を持つ行を飛ばす（server/ywk_server.py:3230-3246 の
         // precompute_targets）ので焼き直されず、その話者は二度と鳴らない。この順なら
         // 落ちても消し損ねの .pt が残るだけ＝害の小さいほうへ倒す（裁定 78 ⑴）。
-        store.Save(table with { Voices = voices });
+        // **差し出した記録も一緒に改める**（是正・検分）＝旧い id を残したままにすると、
+        // 欄は新しい名を知らないので「まだ差し出していない」と読み、利用者がその 1 名を
+        // 消した次の起動で戻ってしまう（裁定 121 の不変＝欄に在って台帳に居ない id は戻さない）。
+        store.Save(table with
+        {
+            Voices = voices,
+            PresetsInstalledIds = RenamedIds(table.PresetsInstalledIds, renames),
+        });
         foreach (var (oldId, refLatent) in stale)
         {
             store.DeleteLatentFiles(oldId, refLatent);
@@ -327,41 +493,28 @@ public static class PresetVoices
             VoiceStore.EnsureDefault(table).Voices, StringComparer.Ordinal);
         var copied = 0;
 
+        // **差し出した id を記帳する**（裁定 121）＝この後の版で増えたプリセットだけを
+        // 足せるようにする（<see cref="InstallNew"/>）。写せなかった 1 名は記帳しない
+        // （次の起動でもう 1 度差し出す）。
+        var offered = new HashSet<string>(
+            table.PresetsInstalledIds ?? [], StringComparer.Ordinal);
+
         Directory.CreateDirectory(store.ReferencesDir);
         foreach (var preset in presets)
         {
             if (skipExisting && voices.ContainsKey(preset.Id))
             {
+                offered.Add(preset.Id);
                 continue;
             }
 
-            var destination = Path.Combine(store.ReferencesDir, preset.FileName);
-            try
-            {
-                if (!File.Exists(destination))
-                {
-                    File.Copy(preset.SourcePath, destination, overwrite: false);
-                }
-            }
-            catch (IOException)
+            if (!CopyReference(store, preset))
             {
                 continue; // 1 名の失敗で残り全部を落とさない
             }
-            catch (UnauthorizedAccessException)
-            {
-                continue;
-            }
 
-            voices[preset.Id] = new VoiceEntry
-            {
-                DisplayName = preset.Id,
-                File = preset.FileName,
-                Caption = preset.Caption,
-                Preset = true,
-                NoRef = false,
-                Origin = "preset",
-                AddedAt = DateTimeOffset.Now,
-            };
+            voices[preset.Id] = NewEntry(preset);
+            offered.Add(preset.Id);
             copied++;
         }
 
@@ -369,9 +522,52 @@ public static class PresetVoices
         // （build/assemble-app.ps1 がまだ voices/presets/ を写していない＝便 A へ票）で
         // 印を立ててしまうと、檔が入った版に更新しても 12 名が永久に入らない。
         var installed = table.PresetsInstalled || presets.Count > 0;
-        store.Save(table with { Voices = voices, PresetsInstalled = installed });
+        store.Save(table with
+        {
+            Voices = voices,
+            PresetsInstalled = installed,
+            PresetsInstalledIds = offered.Count == 0 && table.PresetsInstalledIds is null
+                ? null
+                : Ordered(offered),
+        });
         return copied;
     }
+
+    /// <summary>参照 wav を利用者データへ写す（既に在れば触らない）。戻り＝置けたか。</summary>
+    private static bool CopyReference(VoiceStore store, PresetVoice preset)
+    {
+        Directory.CreateDirectory(store.ReferencesDir);
+        var destination = Path.Combine(store.ReferencesDir, preset.FileName);
+        try
+        {
+            if (!File.Exists(destination))
+            {
+                File.Copy(preset.SourcePath, destination, overwrite: false);
+            }
+
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>台帳に足す 1 行（プリセットの姿＝<b>純関数</b>）。</summary>
+    private static VoiceEntry NewEntry(PresetVoice preset) => new()
+    {
+        DisplayName = preset.Id,
+        File = preset.FileName,
+        Caption = preset.Caption,
+        Preset = true,
+        NoRef = false,
+        Origin = "preset",
+        AddedAt = DateTimeOffset.Now,
+    };
 
     /// <summary>
     /// <c>voices/presets.json</c> の実物（<b>トップレベルの鍵は <c>presets</c>・値は配列</b>）を読む。

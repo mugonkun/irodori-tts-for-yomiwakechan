@@ -64,6 +64,19 @@
                    Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#A05000"
                    Text="{Binding NoticesText, Mode=OneWay}" />
         <!--
+          裁定 121＝取得が未了（実行系かモデルが無い）で断られた／落ちた回だけ、取得への 1 手を出す。
+          押すと初回取得ウィザードが開く（窓が繋ぐ＝ViewModel は WPF の型に触れない）。
+        -->
+        <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                    Visibility="{Binding AcquisitionNeeded, Converter={StaticResource BoolToVis}}">
+          <TextBlock AutomationProperties.AutomationId="StatusAcquisitionText"
+                     VerticalAlignment="Center" TextWrapping="Wrap" Foreground="#A03030"
+                     Text="{Binding AcquisitionText, Mode=OneWay}" />
+          <Button Content="取得へ進む" Padding="12,4" Margin="12,0,0,0"
+                  AutomationProperties.AutomationId="StatusAcquireButton"
+                  Click="OnAcquireClick" />
+        </StackPanel>
+        <!--
           裁定 91＝配布樹の取得台帳と、いまの実行系を展開したときの台帳が食い違っている。
           押すと cache から再展開し、cache に原檔が無ければ取得から。
         -->

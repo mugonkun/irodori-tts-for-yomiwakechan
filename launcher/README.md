@@ -360,7 +360,7 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 ```json
 { "runtimeLedgers":       { "rocm-gfx1151": "<ledger/runtime-rocm-gfx1151.json の sha256（小文字 hex 64 字）>",
                             "cu126":        "<ledger/runtime-cu126.json の sha256>" },
-  "installedAppVersions": { "rocm-gfx1151": "v1.0.1", "cu126": "v1.0.1" } }
+  "installedAppVersions": { "rocm-gfx1151": "v1.0.2", "cu126": "v1.0.2" } }
 ```
 
 **鍵は変種**（是正・便 D（3）の 3 巡目）。1 巡目は `runtimeLedgerSha256`／`installedAppVersion` の
@@ -387,3 +387,63 @@ dotnet test  launcher\IrodoriTtsYwk.sln --nologo                    # 554 本（
 既存檔で直したのは**綴りと文言が動いた 5 本**と、`IServerProcess` に口が増えた偽物 1 つだけ。
 **実 GPU・実ポート・子プロセス・外への取得には 1 つも触れていない**
 （起こすのは「起こせない実行檔」1 本で、それも起きない）。
+
+## 12. 増えたプリセットと取得への導線（2026-09-10・裁定 121）
+
+司令官の報告（逐語）＝「**話者一覧にシャンパンコールがないね。**」「**初回起動から、モデルダウンロードへの
+導線を追加してほしい。単に、サーバー起動失敗となるから。**」設計＝`docs/design/ben-d-launcher.md` §29。
+
+### 12-1 同梱の話者は「増えた分だけ」起動で入る
+
+- 台帳 `voices.ywk.json` に **`presets_installed_ids`**（この台帳へ 1 度でも差し出したプリセット id）が増えた。
+  `presets_installed` の印は据え置き（意味も変わらない）。
+- 起動は `PresetVoices.InstallIfFirstRun`（初回展開）に続けて **`PresetVoices.InstallNew`**（増分）を通す。
+  足すのは「配布樹の `voices/presets.json`（`status: done`）に居て、`presets_installed_ids` にも台帳にも
+  居ない id」だけ＝**利用者が消した 1 名は起動では戻らない**（戻す口は話者画面の
+  「同梱のプリセットを入れ直す」＝`PresetVoices.Restore` のまま）。
+- 足した回は状態帯のログに `同梱の話者を N 名足しました：名1・名2` が 1 行出る
+  （窓より前に走るので `LauncherComposition.Note` の控えに積み、主窓の構築が流す）。
+- **`presets_installed_ids` の無い台帳**（≦ v1.0.1）は、いま台帳に居るプリセットで種を蒔く＝
+  そこで消してあったプリセットは**1 度だけ**戻る（次の起動からは戻らない）。v1.0.1 は public 化
+  （裁定 120）以後 Latest なので、該当するのは開発機だけではない＝**利用者に見せる文にも書く**
+  （`docs/release-notes/v1.0.2.md`・`docs/install.md`）。
+- **改名（裁定 108）は記録も一緒に改める**＝`MigrateRenamed` は `presets_installed_ids` の旧い id を
+  新しい id へ移す。移さないと新しい名が「まだ差し出していない」と読まれ、利用者がその 1 名を消した
+  次の起動で戻ってしまう。同じ理由で `InstallNew` は**足した話者が 0 名でも記録が増えた回は台帳を書く**。
+
+### 12-2 実行系／モデルが無ければ取得へ導く
+
+- **`Services/Models/AcquisitionCheck.cs`**（新設）＝`Check(paths, settings)` が
+  `RuntimeReady`（変種の `python.exe`）・`ModelsReady`（`HF_HOME/hub` の snapshot と `refs/main`）・
+  `MissingModelFiles`・`Summary` を返す。**檔の在否と長さだけ**（通信も python も無し・sha256 も取らない）で、
+  在否の規則は `server/ywk_fetch_models.py` の `_resolve_cached`／`refs_main_path` と同じ物を使い、
+  台帳が長さを名乗る檔は `FileInfo.Length` も突き合わせる（途中で切れた檔を「揃っている」と読まない）。
+  `ledger/models.json` が読めない配布樹では「揃っている」と答える（材料が無いのに急かさない）。
+- 主窓は `firstRunCompleted` が真でも `MainViewModel.NeedsAcquisition` が真なら**自動起動をやめて**
+  ウィザードを出し、Trail とログに `実行系／モデルが揃っていないため、取得からやり直します（不足＝…）` を残す。
+- 「サーバ起動」の事前検査は、実行系が無い断りにもモデルが無い断りにも
+  `上の「初回取得をやり直す」から取得してください。` を付ける。
+- 状態帯は、取得が未了だと読める失敗のときだけ `取得が未了です。` と「取得へ進む」を出す
+  （`StatusViewModel.IsAcquisitionFailure`＝事前検査の 1 文か、`モデルの読込に失敗＝` の理由に
+  `OSError`／`does not appear to have a file`／`offline`／`not found`／`No such file`／`LocalEntryNotFound`）。
+  押下は窓が繋ぐ（`StatusView.AcquireRequested` → `MainWindow.ShowFirstRun`）＝ViewModel は WPF に触れない。
+  **檔を見た結果は事前検査の断りに勝つ**＝取得を済ませてウィザードを閉じれば、`Failed` の理由が残っていても
+  帯は下がる（個体がモデルを読めずに落ちた回は残す）。判断は設定の「適用」でも引き直す（変種が動くため）。
+- **ウィザードは揃っている実行系を落とし直さない**＝`FirstRunViewModel.RuntimeLooksSound()`（`python.exe` が在る・
+  展開の件数が台帳と合う・展開に使った台帳が配布樹と同じ）が真なら取得と展開の段を飛ばしてモデルの段へ行く。
+  取得キャッシュは 1 射目で空にする（裁定 90 Q-E2 ⑶）ので、飛ばさないと数 GiB の再取得と健全な樹の
+  作り直しになる。
+
+### 12-3 UIA の名前（§7-3 への追加）
+
+| 画面 | 足した id |
+|---|---|
+| 状態 | `StatusAcquisitionText`・`StatusAcquireButton`（取得が未了だと読める失敗のときだけ木に出る） |
+
+### 12-4 検分（この機体・2026-09-10）
+
+```powershell
+dotnet test launcher -c Release --nologo    # 674 合格・1 skip（総数 675・新設 25 本）
+```
+
+**窓は立てていない**（UIA 実射なし＝走っている個体は止めない）。`installer-build.ps1` も走らせていない。

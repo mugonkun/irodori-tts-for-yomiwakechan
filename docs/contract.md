@@ -803,7 +803,7 @@
 
 - **`schema` 番号**＝`/params` の応答に載る（`/ywk/status` には載らない＝本体は `/params` から読む・裁定 104）。**欄を消す・意味を変えるときだけ**上げる。
   欄を足すのは上げない（本体は知らない欄を無視する）。
-- **配布版のランチャが `settings.json` に焼く 2 つの表（HTTP の口ではない・本体は読まない・裁定 91・95・97）**＝`runtimeLedgers`（鍵＝変種名・値＝展開に使った台帳 `ledger/runtime-<変種>.json` の sha256・小文字 hex 64 字）と `installedAppVersions`（鍵＝変種名・値＝`v1.0.1` の形）。組んだ変種の欄だけが焼かれる（組んでいない変種の欄は無い）。起動時にいまの変種の欄が配布樹の台帳と食い違えば状態帯に「実行系を組み直す」1 手が出る。`schema` は動かない。
+- **配布版のランチャが `settings.json` に焼く 2 つの表（HTTP の口ではない・本体は読まない・裁定 91・95・97）**＝`runtimeLedgers`（鍵＝変種名・値＝展開に使った台帳 `ledger/runtime-<変種>.json` の sha256・小文字 hex 64 字）と `installedAppVersions`（鍵＝変種名・値＝`v1.0.2` の形）。組んだ変種の欄だけが焼かれる（組んでいない変種の欄は無い）。起動時にいまの変種の欄が配布樹の台帳と食い違えば状態帯に「実行系を組み直す」1 手が出る。`schema` は動かない。
 - **上流の pin**＝`/ywk/status.upstream` に `irodori_tts`・`server` の短い commit を載せる。
   上流を上げるときは、`/params` と上流 openapi の突合ログ（⑸）に差分が出るので、それを見て本書を直す。
 - **配布版の版**＝`/ywk/status.version`。

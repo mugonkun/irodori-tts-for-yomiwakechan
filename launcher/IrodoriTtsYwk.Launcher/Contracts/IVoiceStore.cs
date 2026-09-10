@@ -69,6 +69,24 @@ public sealed record VoicesYwkFile
     /// </summary>
     [JsonPropertyName("presets_installed")] public bool PresetsInstalled { get; init; }
 
+    /// <summary>
+    /// この台帳へ<b>1 度でも差し出した</b>同梱プリセットの話者 id（裁定 121）。
+    /// <para>
+    /// <see cref="PresetsInstalled"/> の印だけでは<b>後の版で増えた</b>プリセットが永久に入らない
+    /// （実射＝v1.0.1 で足した「シャンパンコール（ホスクラ）」が、v1.0.0 から使っている台帳の
+    /// 話者一覧に出てこない）。この欄が「差し出した／差し出していない」を覚えるので、
+    /// <b>利用者が消した 1 名は消えたまま</b>・<b>配布側が足した 1 名だけ</b>が起動で入る
+    /// （<see cref="Services.Voices.PresetVoices.InstallNew"/>）。
+    /// </para>
+    /// <para>
+    /// <c>null</c>＝この欄を知らない版（≦ v1.0.1）が書いた台帳。次の起動で
+    /// <b>いま台帳に居るプリセットの id</b>で種を蒔く（＝「消した」と「まだ差し出していない」を
+    /// 区別できないので、そこで消してあった 1 名は<b>1 度だけ</b>戻る）。
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("presets_installed_ids")]
+    public IReadOnlyList<string>? PresetsInstalledIds { get; init; }
+
     [JsonPropertyName("voices")]
     public IReadOnlyDictionary<string, VoiceEntry> Voices { get; init; } =
         new Dictionary<string, VoiceEntry>(StringComparer.Ordinal);

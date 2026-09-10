@@ -108,12 +108,21 @@ public sealed class PresetRenameTests : IDisposable
     /// <paramref name="installed"/> を落とすと<b>印の無い台帳</b>＝
     /// <c>presets.json</c> を読めていなかった回の残骸になる。
     /// </summary>
-    private static void WriteTable(AppPaths paths, string voicesJson, bool installed = true)
+    /// <param name="offeredIds">
+    /// <c>presets_installed_ids</c>（裁定 121＝この台帳へ 1 度でも差し出したプリセット）。
+    /// null＝欄そのものが無い台帳（≦ v1.0.1 が書いた姿）。
+    /// </param>
+    private static void WriteTable(
+        AppPaths paths, string voicesJson, bool installed = true, string[]? offeredIds = null)
     {
         Directory.CreateDirectory(paths.VoicesDir);
+        var ids = offeredIds is null
+            ? string.Empty
+            : ",\"presets_installed_ids\":[\""
+              + string.Join("\",\"", offeredIds) + "\"]";
         File.WriteAllText(
             paths.VoicesYwkJsonPath,
-            "{\"schema\":1" + (installed ? ",\"presets_installed\":true" : string.Empty)
+            "{\"schema\":1" + (installed ? ",\"presets_installed\":true" : string.Empty) + ids
             + ",\"voices\":{" + voicesJson + "}}",
             new UTF8Encoding(false));
     }
@@ -188,10 +197,15 @@ public sealed class PresetRenameTests : IDisposable
     public void 消されたプリセットは改名でも起動でも戻らない()
     {
         // 設計書 §4＝削除は利用者の意思。改名の引き継ぎは「戻す」仕掛けではない。
+        // 裁定 121 で足した「増えた分だけ入れる」も同じ＝**差し出した記録**（presets_installed_ids）に
+        // 居て台帳に居ない id は「利用者が消した」ので、起動では二度と戻らない。
         var paths = Paths;
         MakeManifest(paths);
         MakeReference(paths, "vr2_akane_west.wav");
-        WriteTable(paths, DefaultEntry() + "," + PresetEntry(OtherId, "vr2_akane_west.wav", null, null));
+        WriteTable(
+            paths,
+            DefaultEntry() + "," + PresetEntry(OtherId, "vr2_akane_west.wav", null, null),
+            offeredIds: [OtherId, NewId]);
 
         var store = NewStore(paths);
         Assert.Equal(0, LauncherComposition.PrepareVoices(paths, store, new VoicesJsonWriter(), out var renamed));

@@ -61,6 +61,16 @@ public partial class MainWindow : Window
             _model.AppendLog(loadError);
         }
 
+        // 窓が構えるより前（LauncherComposition.Compose）に出た 1 行＝同梱の話者が増えた等
+        // （裁定 121）。控えは 1 度だけ流れる。
+        foreach (var note in Services.LauncherComposition.DrainNotes())
+        {
+            _model.AppendLog(note);
+        }
+
+        // 状態帯の「取得へ進む」（裁定 121）＝ウィザードを開けるのは窓だけなので、ここで繋ぐ。
+        StatusPage.AcquireRequested += (_, _) => ShowFirstRun();
+
         AppServices.Server.StateChanged += OnServerStateChanged;
         AppServices.Server.LogLine += OnServerLogLine;
         AppServices.Server.StatusSampled += OnStatusSampled;
@@ -103,6 +113,18 @@ public partial class MainWindow : Window
             return;
         }
 
+        // **札は立っているのに実体が無い**（裁定 121・司令官の報告 2026-09-10）＝
+        // 古いデータ樹・消したモデル置き場では「サーバ起動」が断られるか、起こした個体が
+        // offline でモデルを読めずに落ちる。そこに取得への導線が無かったので、
+        // <b>自動起動はやめて</b>ウィザードを出す（閉じれば主窓はそのまま使える）。
+        if (_model.NeedsAcquisition && !_firstRunShown)
+        {
+            var notice = MainViewModel.AcquisitionNotice(_model.AcquisitionSummary);
+            _model.AppendLog(notice);
+            ShowFirstRun(notice);
+            return;
+        }
+
         if (AppServices.Settings.AutoStartServer)
         {
             _ = _model.StartServerAsync();
@@ -111,10 +133,19 @@ public partial class MainWindow : Window
 
     private void OnFirstRunClick(object sender, RoutedEventArgs e) => ShowFirstRun();
 
-    private void ShowFirstRun()
+    /// <param name="notice">
+    /// ウィザードの Trail に先に置いておく 1 行（裁定 121＝なぜ勝手に開いたかを書く）。null＝置かない。
+    /// </param>
+    private void ShowFirstRun(string? notice = null)
     {
         _firstRunShown = true;
-        var wizard = new FirstRunWizard(_model.CreateFirstRun()) { Owner = this };
+        var firstRun = _model.CreateFirstRun();
+        if (notice is not null)
+        {
+            firstRun.Note(notice);
+        }
+
+        var wizard = new FirstRunWizard(firstRun) { Owner = this };
         wizard.ShowDialog();
 
         // ウィザードで変種・場所が変わりうる＝状態帯と話者を引き直す

@@ -740,8 +740,62 @@ public sealed class FirstRunViewModel : ObservableObject
     /// </summary>
     public Func<string, bool?>? AskVcRedist { get; set; }
 
+    /// <summary>
+    /// 選んだ変種の実行系が<b>もう出来上がっている</b>か（是正・検分＝裁定 121 の自動再開）。
+    /// <para>
+    /// <b>要る理由</b>＝取得キャッシュは 1 射目が通った時点で空にする（裁定 90 Q-E2 ⑶＝
+    /// <c>MainViewModel.ClearCacheAfterFirstShot</c>）ので、初回取得を通した機体では
+    /// <b>原檔が 1 檔も残っていないのが常態</b>である。そこへ「モデルだけ無い」機体で
+    /// ウィザードを自動で開くと（裁定 121）、取得の段が 2.77 GiB（cu126）を丸ごと落とし直し、
+    /// 展開の段は健全な実行系の置き場を消してから入れ直す（<c>WheelInstaller</c> の
+    /// <c>CleanBeforeInstall</c>）＝<b>足りていない物は 1 つも無かった</b>のに、である。
+    /// </para>
+    /// <para>
+    /// 見る物は主窓の焼き印の検査（<c>MainViewModel.CheckRuntimeStamp</c>）と同じ 3 つ＝
+    /// <c>python.exe</c> が在る・展開の件数が台帳と合う（<see cref="RuntimeStamp.LooksComplete"/>）・
+    /// 展開に使った台帳が配布樹の台帳と同じ（<see cref="RuntimeStamp.Compare"/> の
+    /// <c>LedgerChanged</c> が偽）。1 つでも欠ければ<b>飛ばさない</b>＝いつも通り取得から通す。
+    /// </para>
+    /// </summary>
+    public bool RuntimeLooksSound()
+    {
+        if (_paths.ResolvePythonExe(_variant) is null)
+        {
+            return false;
+        }
+
+        var ledger = ReadLedgerFile<LedgerFile>(_paths.LedgerPath(RuntimeVariants.LedgerName(_variant)));
+        if (!RuntimeStamp.LooksComplete(_paths, ledger, _variant))
+        {
+            return false;
+        }
+
+        return !RuntimeStamp.Compare(
+            _settings.RuntimeLedgerFor(_variant),
+            _settings.InstalledAppVersionFor(_variant),
+            RuntimeStamp.LedgerSha256(_paths, _variant),
+            AppVersion.Display,
+            runtimeInstalled: true,
+            _variant).LedgerChanged;
+    }
+
+    /// <summary>飛ばしたことを告げる 1 行（<b>逐語</b>＝Trail に残る）。</summary>
+    public const string RuntimeSoundSkipLine =
+        "実行系は揃っているので取得と展開は飛ばします（モデルだけ取り直します）。";
+
+    /// <summary>展開の段を飛ばしたときの 1 行（<b>逐語</b>）。</summary>
+    public const string InstallSkipLine = "実行系は揃っているので展開は飛ばします。";
+
     private async Task<bool> RunDownloadAsync()
     {
+        // **揃っている実行系を落とし直さない**（是正・検分）＝裁定 90 で cache は空なのが
+        // 常態なので、ここを素通りさせると数 GiB の再取得と健全な樹の作り直しになる。
+        if (RuntimeLooksSound())
+        {
+            Record(RuntimeSoundSkipLine);
+            return true;
+        }
+
         var downloader = _downloader();
         if (downloader is null)
         {
@@ -921,6 +975,14 @@ public sealed class FirstRunViewModel : ObservableObject
 
     private async Task<bool> RunInstallAsync()
     {
+        // 取得の段と同じ判断（是正・検分）＝展開は置き場を消してから入れ直すので、
+        // 揃っている樹をここへ通してはいけない。
+        if (RuntimeLooksSound())
+        {
+            Record(InstallSkipLine);
+            return true;
+        }
+
         var installer = _installer();
         var ledger = ReadLedgerFile<LedgerFile>(_paths.LedgerPath(RuntimeVariants.LedgerName(_variant)));
         if (installer is null || ledger is null)
