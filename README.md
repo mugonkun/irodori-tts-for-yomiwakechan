@@ -7,6 +7,23 @@
 
 ---
 
+## 0. 最新版を落とす（配布ページ）
+
+**固定 URL（版の数字を含まない・つねに最新版へ飛ぶ）**
+
+https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/latest
+
+| 機体 | 落とす檔 |
+|---|---|
+| NVIDIA の GPU | `irodori-tts-ywk-setup-v<版>-cuda.exe`（CUDA 版） |
+| Radeon gfx1151（Ryzen AI MAX+ 395／Radeon 8060S） | `irodori-tts-ywk-setup-v<版>-radeon.exe`（ROCm 版） |
+| GPU 無し | どちらでもよい（CPU 変種を選べる・遅い） |
+
+- **署名はありません**＝実行する前に、同じページの `SHA256SUMS.txt` と突き合わせてください。
+- 導入・更新・修復・削除の確定手順＝`docs/install.md`。版ごとの差分＝各 Release の本文（`docs/release-notes/`）。
+- 過去の版の一覧＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases
+---
+
 ## 1. これは何をするアプリか
 
 **Python を知らなくても導入できる、単体で使える日本語 TTS アプリ**です。
