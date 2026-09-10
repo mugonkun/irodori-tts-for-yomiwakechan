@@ -1,4 +1,4 @@
-# 便 P — プリセット話者 12 名の参照ボイス（設計書）
+# 便 P — プリセット話者 13 名（同梱 12 名）の参照ボイス（設計書）
 
 > 正典＝`decisions.md`（特に **17**・**18**・**26**・**27**）。本檔はその実装設計であり、正典を上書きしない。
 > 席＝便 P 道具席（Opus 5）。起草 2026-09-04。
@@ -26,11 +26,14 @@
 
 ## 2. 話者台帳（12 名）
 
+> **裁定 118（2026-09-10）で 13 行目（`ext_hostclub_champagne`・`engine: external`）が加わった＝§13。**
+> 本節の表と数は便 P が生成した 12 名のままである（13 行目は席が生成していない）。
+
 `decisions.md` 17 の 12 名。`id` は ASCII（参照ボイス檔名と Irodori の voice id を兼ねる）、`display_name` は本体 yomiwakechan2 に見せる日本語名。
 
 **`display_name` はそのまま話者 id である**（裁定 17・契約 ⑷ 4-1＝`PresetVoices.FromPresetsJson` が `PresetVoice.Id` に入れる）。同じ話者で複数スタイルがあるとき、および司令官が名を指したときはスタイルを添える＝「おふとんP（きざ）」「もち子さん（セクシー／あん子）」（裁定 108・2026-09-07）。ここを変えると**既存の利用者の台帳の id も変わる**ので、ランチャが起動と「入れ直す」で改名を引き継ぐ（同じ参照 wav を指すプリセットの行を新しい名へ移し、旧い id の潜在を消す＝便 D 設計書 §4）。
 
-接頭辞＝`vv_`（VOICEVOX）・`co_`（COEIROINK）・`vr2_`（VOICEROID2）・`cevio_`（CeVIO AI）。
+接頭辞＝`vv_`（VOICEVOX）・`co_`（COEIROINK）・`vr2_`（VOICEROID2）・`cevio_`（CeVIO AI）・`ext_`（**外部提供**＝エンジン由来でない録音・**裁定 118**・§13）。
 
 | # | id | display_name | エンジン | 話者 / スタイル | 実機 ID | 状態 |
 |---|----|--------------|----------|-----------------|---------|------|
@@ -769,3 +772,83 @@ python .\make_presets.py --copy
 **8 本も `calm_20s`＋cfg 7.0 で撃ち直して揃えるか、このまま出すか**は司令官の判断＝
 揃えるなら 8 本の実射と `$ExpectedAppBytes` の再測が要り、**今合格している 8 本が別の射に変わる危険**も負う。
 聴取表 §3 の 0-1 に同じ問いを開いたまま置いた。
+
+---
+
+## 13. 追補（2026-09-10）— エンジンを通さない話者 `engine: "external"`（裁定 118）
+
+**司令官の逐語**（2026-09-10）＝
+
+> 話者追加。"シャンパンコール(ホスクラ)" 参照ボイスファイル実体は"c:\yomiwakesozai\hostclub.wav"。
+> **既に2次生成なのでこのまま取り込んで**配布ページ更新まで頼む。
+
+### 13-1 何が新しいか
+
+§1〜§4 の作法は「エンジンで一次 wav を作り、それを参照にして Irodori で二次 wav を撃つ」だった。
+この 1 名は**その両方を通っていない**。司令官が渡した wav が**そのまま**同梱の参照ボイスになる。
+「既に2次生成」＝**届いた檔が最終形**という司令官の判断で、席はそれを検分し直す立場に無い
+（撃ち直そうにも一次が無い）。
+
+台帳（`voices/presets.json`）の側は、**この違いを黙って埋めない**ことで表す。
+
+| 欄 | エンジン由来の 11 名 | `engine: "external"` の 1 名 |
+|---|---|---|
+| `engine` | `voicevox` / `coeiroink` / `voiceroid2` | **`external`**（enum に足した） |
+| `primary` | 一次 wav の諸元（`pending` なら `null`＝**まだ無い**） | **`null`＝そもそも存在しない** |
+| `secondary.text_id` / `text` / `irodori` | 撃った本文と撃った値 | **`null`**（撃っていない＝記録が無い） |
+| `secondary.ref_variant` / `ref_10s_file` / `server` / `elapsed_s` | 在る | **欄ごと無い** |
+| `secondary` の実測（`md5`・`size_bytes`・`duration_s`・`sample_rate`・`channels`・`bits`・`peak_dbfs`・`rms_dbfs`・`tail`） | 実檔から測る | **同じ**（`verify_wavs.analyze` で実檔を測る） |
+| `provenance` | **無い** | 誰が・いつ・どの檔から（**在ること自体が「席の生成物ではない」の印**） |
+| `rights_note` | `decisions.md` 18（エンジンの生成ボイスは再配布可） | **18 は引かない**＝司令官提供の事実と「席は出所を確かめていない」 |
+
+**既定値で埋めない**のが要点＝`irodori` を `{"num_steps": 40, "seed": 1234}` で埋めると
+「その値で撃った」という**嘘**が台帳に載る。`null` は「無い」であって「既定」ではない。
+
+### 13-2 道具の側（`tools/preset-voices/make_presets.py`）
+
+`EXTERNAL_ENGINE` / `EXTERNAL_ROWS` を新設し、`ROSTER` の行の `engine` が `external` なら
+**`gen_*.result.json` も `run_secondary.result.json` も読まない**路に入る＝
+`voices/presets/<id>.wav` を直に `verify_wavs.analyze` で測って行を組む。
+`--copy` は要らない（実檔はもう置いてある）。手順は `tools/preset-voices/README.md` §5-2。
+
+`ROSTER` に足して `EXTERNAL_ROWS` を忘れると `KeyError` で落ちる＝
+契約テスト `test_the_generators_know_the_external_row_too` がその前に落とす。
+
+### 13-3 形（`presets.json.schema`）
+
+`engine` の enum に `external` を足し、`secondary.text_id`・`text`・`irodori` を **nullable** にした。
+「`null` ⇔ `engine external`」の**対**は JSON Schema の条件分岐では書かず（重い・読めない）、
+**説明文で約束し、契約テストで当てる**（`test_the_external_row_carries_no_generation_record` と
+逆向きの `test_only_the_external_row_may_omit_the_corpus_text` の 2 本）。
+`id` の接頭辞に `ext_` を足し、`provenance`（`additionalProperties: false` なので schema に要る）を新設した。
+
+**実測**＝`uv run --no-project --with jsonschema`（README §5 の型）で `schema OK`。
+
+### 13-4 この 1 名の実測（2026-09-10）
+
+`voices/presets/ext_hostclub_champagne.wav`＝md5 `149eddeca796616e916e2b83dc67f692`・
+**787,244 バイト**・**8.20 s**・48 kHz・mono・16 bit・ピーク **−1.76 dBFS**・RMS **−17.03 dBFS**・
+頭の無音 **0.976 s**・末尾の無音 0.775 s。
+末尾判定（decisions 39 の 3 条件）＝**clean**（Δ −53.38 dB・絶対 −70.41 dBFS・末端の立ち上がり無し）。
+
+**他の 11 本との違い**＝⑴ 長さが **8.20 s**（他は 18.32〜35.76 s）⑵ ピークがフルスケールに
+張り付いていない（他は −0.01〜0.00 dBFS）⑶ 頭の無音 0.976 s が**同梱 12 本で最長**（次点 琴葉茜 0.930 s）。
+**これで参照ボイスとして足りるかは席には判らない**（Irodori の `ref_max_seconds` は上限であって下限ではない）＝
+聴取表 §2 の 13 に問いとして開いてある。
+
+### 13-5 顔ぶれと門
+
+台帳は **13 行**（`done` 12・`skipped` 1＝弦巻マキ 英）。**同梱される wav は 12 本**（11 → 12）。
+2 枚の網の数を両方上げた＝`build/installer-build.ps1` の `$ExpectedPresetWavs` 11→12 と
+`installer/irodori-tts-ywk.iss` の `PresetWavCount != 11`→`!= 12`。
+併せて配布樹の記録値＝`$ExpectedAppFiles` 108→**109**（wav が 1 本増えた）・
+`$ExpectedAppBytes` 33,294,832→**34,085,763**（＋787,244 の wav ＋ 台帳の 3,687＝52,495→56,182 B）。
+
+### 13-6 この席がしていないこと
+
+- **音を聴いていない**（席は音を聴けない）＝この録音が話者として使えるかは司令官の耳が決める。
+- **録音の出所を確かめていない**＝誰がいつ録った物か・元の権利者が誰か・第三者の声が入っていないか。
+  台帳の `rights_note` と `licenses/README.md` §6-1 に、その旨をそのまま書いた。
+- **合成を撃っていない**＝この参照ボイスで実際に喋らせた実射は無い（サーバを起こしていない）。
+- **組んでいない**＝`build/installer-build.ps1` は走らせていない（主席の持ち場）。
+  上の `$ExpectedAppFiles` / `$ExpectedAppBytes` は**算で出した値**であって実測ではない。

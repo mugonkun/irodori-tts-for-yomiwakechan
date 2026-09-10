@@ -97,8 +97,20 @@ trap {
 # 37,111,434 B), so the same sources gave two different trees and the setup.exe did not reproduce
 # across hosts (design 14-3 / 14-4). Those two files are now written as literal text, and both hosts
 # were measured writing 50 B / 345 B with the same sha256, tree = 108 files / 37,111,434 B.
-$ExpectedAppFiles = 108
-$ExpectedAppBytes = @([int64]33294832)
+# 裁定 118 (2026-09-10): one preset wav was ADDED (voices\presets\ext_hostclub_champagne.wav,
+# the commander's own recording), so the tree gained exactly one file: 108 -> 109. Three terms move
+# the bytes -- the wav, the manifest row it needed, and licenses\README.md, which assemble-app.ps1
+# copies WHOLE into the tree (assemble-app.ps1 section 3b) and which grew by the 6-1 row 13 plus the
+# 6-2 / 6-3 corrections of the same 裁定. Measured file by file against build\out\app (the v1.0.0
+# tree, 108 files / 33,294,832 B): only those two text files differ in size, and the wav is new.
+#   33,294,832 (裁定 116 の記録値) + 787,244 (ext_hostclub_champagne.wav)
+#                                  +   3,687 (voices\presets.json    52,495 -> 56,182 B)
+#                                  +   1,817 (licenses\README.md     19,408 -> 21,225 B)
+#                                  =  34,087,580
+# NOTE: a doc edit under docs\ does NOT move this figure -- docs\ never reaches build\out\app;
+# the .iss names docs\install.md one by one at install time ([Files] section).
+$ExpectedAppFiles = 109
+$ExpectedAppBytes = @([int64]34087580)
 
 # Gate A-7. Files named ONE BY ONE, because their absence produces the worst artefact this line can
 # make: a setup that installs, exits 0 and then does not work. Nothing else in gate A sees them --
@@ -125,14 +137,17 @@ $RequiredAppFiles = @(
 )
 
 # decisions.md 37 verbatim: "the project's own output, the assets that ship with the distributable
-# (11 of them, 32 MB)"; decision 88 (5) asks for the same check. The .iss counts them at compile
-# time too (installer/irodori-tts-ywk.iss, the ISPP FindFirst/FindNext gate) -- this is the second
-# sheet of a two-sheet net, on purpose.
-$ExpectedPresetWavs = 11
+# (11 of them, 32 MB)"; decision 88 (5) asks for the same check. 裁定 118 (2026-09-10) added a
+# TWELFTH -- ext_hostclub_champagne.wav, supplied by the commander himself, engine "external" in
+# voices/presets.json -- so the current rule is 12; the 11 above is the quoted history, not the
+# figure. The .iss counts them at compile time too (installer/irodori-tts-ywk.iss, the ISPP
+# FindFirst/FindNext gate) -- this is the second sheet of a two-sheet net, on purpose.
+$ExpectedPresetWavs = 12
 
 # Gate A-4. A WHITELIST, not the $forbidden blacklist of release-build.ps1:187-191: that list bans
-# '*.wav' and 'voices.json', and the distributable carries both LEGITIMATELY (the 11 preset wavs are
-# ours, decisions.md 37; voices.ywk.json is read by PresetVoices.cs:54). A blacklist also cannot see
+# '*.wav' and 'voices.json', and the distributable carries both LEGITIMATELY (the 12 preset wavs are
+# ours -- 11 by decisions.md 37, the 12th by 裁定 118; voices.ywk.json is read by
+# PresetVoices.cs:54). A blacklist also cannot see
 # a NEW shape of third-party binary. Extensions measured over the whole tree on 2026-09-05.
 $AllowedExtensions = @(
     '.py', '.yaml', '.json', '.md', '.txt', '.toml', '.lock', '.template', '.example', '.wav'
@@ -145,7 +160,8 @@ $AllowedFileNames = @(
 # Gate A-5. One file may not exceed 4 MiB. The largest legitimate file in the tree is
 # voices/presets/vr2_tsukuyomi_ai.wav at 3,433,004 B (3.27 MiB), so the cap has 0.7 MiB of room.
 # Two exemptions are named, not inferred:
-#   - the 11 preset wavs under voices\presets\  (decisions.md 37 -- our own output, not third party)
+#   - the 12 preset wavs under voices\presets\  (decisions.md 37 の 11 本 ＋ 裁定 118 の 1 本 --
+#     ours or the commander's own, not third party)
 #   - build/out/launcher/win-x64/IrodoriTtsYwk.Launcher.exe (69.6 MB, self contained .NET =
 #     decision 51; it is outside this tree, so it is never scanned -- named here for the reader)
 $MaxFileBytes = [int64]4194304
@@ -422,7 +438,7 @@ if ($versionHits.Count -ne 1) {
         ' AppDisplayVersion tags (expected exactly 1 -- the version has one definition).')
 }
 $appVersion = $versionHits[0].Matches[0].Groups[1].Value
-# The trap: AppDisplayVersion is 'v1.0.0' (Directory.Build.props:31). [Setup] AppVersion= and
+# The trap: AppDisplayVersion is 'v1.0.1' (Directory.Build.props:31). [Setup] AppVersion= and
 # VersionInfoVersion= take digits only, so the .iss is handed BOTH forms as separate /D switches.
 $appVersionNumeric = $appVersion.TrimStart('v')
 Write-YwkLog -Message ('AppVersion = ' + $appVersion + ' / AppVersionNumeric = ' + $appVersionNumeric)
@@ -526,7 +542,7 @@ if ($appFiles.Count -eq 0) {
     Add-YwkGateResult -FlavorName $fl -Id 'A-1' -Title 'distributable tree has the recorded file count' -Ok $a1ok -Detail $a1detail
 }
 
-# ------------------------------------------------------------------ GATE A-2: the 11 preset wavs
+# ------------------------------------------------------------------ GATE A-2: the 12 preset wavs
 
 $presetDir = Join-Path $srcApp 'voices\presets'
 $presetJson = Join-Path $srcApp 'voices\presets.json'

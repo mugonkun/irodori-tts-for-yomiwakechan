@@ -96,7 +96,7 @@
 
 | 場所 | 中身 | 誰の物 | 消してよいか |
 |---|---|---|---|
-| `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（**アプリ樹**・ROCm 版は `…-radeon\`） | ランチャ exe（69,588,729 B）・`server\`（wrapper＋**パッチ適用済みの上流の写し**＝MIT・数 MB のテキスト）・`ledger\`・`licenses\`・`voices\presets\`（プリセット話者 11 檔・32,571,364 B）・`docs\`・`unins000.exe` | **インストーラの専管**（利用者の檔は 1 つも置かれない） | アンインストーラが消す |
+| `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（**アプリ樹**・ROCm 版は `…-radeon\`） | ランチャ exe（69,588,729 B）・`server\`（wrapper＋**パッチ適用済みの上流の写し**＝MIT・数 MB のテキスト）・`ledger\`・`licenses\`・`voices\presets\`（プリセット話者 12 檔・29,526,288 B＝**裁定 118** 時点の実測）・`docs\`・`unins000.exe` | **インストーラの専管**（利用者の檔は 1 つも置かれない） | アンインストーラが消す |
 | `%LOCALAPPDATA%\irodori-tts-ywk\runtime\<variant>\` | 埋め込み Python ＋ site-packages（cu130／cu126／cpu／rocm-gfx1151 のいずれか） | ランチャの専管 | 消せる（次回起動で取り直し） |
 | `%LOCALAPPDATA%\irodori-tts-ywk\models\` | モデル（`HF_HOME`）＝checkpoint 2.86 GiB・コーデック 410 MB・透かし 65 MiB・tokenizer 6 MiB | 同 | 消せる（同上・**3.33 GiB の取り直し**） |
 | `%LOCALAPPDATA%\irodori-tts-ywk\cache\` | 取得中の `.part` と検証済みの原檔（cu130 で ≈1.93 GiB） | 同 | 消せる（**消すと修復が遅くなる**＝§5-2） |

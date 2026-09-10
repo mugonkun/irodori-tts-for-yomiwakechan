@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/mugonkun/irodori-tts-for-yomiwakechan/tools/preset-voices/presets.json.schema",
   "title": "便 P — プリセット話者の台帳（voices/presets.json）",
-  "description": "decisions.md 17・18・26・27 が正典。リリース版に同梱するテンプレート参照ボイス 12 名の台帳。二次 wav が実体の参照ボイス（voices/presets/<id>.wav）で、一次 wav は素材＝配布物には入れない（build/out/preset-work/primary/ と N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/primary/ に保全）。",
+  "description": "decisions.md 17・18・26・27 と裁定 118 が正典。台帳の行は 13（うち status done ＝同梱する参照ボイス 12 本・skipped 1）。二次 wav が実体の参照ボイス（voices/presets/<id>.wav）で、一次 wav は素材＝配布物には入れない（build/out/preset-work/primary/ と N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/primary/ に保全）。engine external の行（裁定 118）だけは一次 wav が**存在しない**＝司令官が渡した録音そのものが同梱の参照ボイス。",
   "type": "object",
   "required": ["version", "generated_at", "presets"],
   "additionalProperties": true,
@@ -20,7 +20,7 @@
 
     "presets": {
       "type": "array",
-      "description": "話者 12 名。status が pending のものは一次 wav がまだ無い（VOICEROID2 4 名・CeVIO AI 1 名）。",
+      "description": "話者 13 名（decisions 17 の 12 名 ＋ 裁定 118 の外部提供 1 名）。status が pending のものは一次 wav がまだ無い（いまは 0 名＝VOICEROID2 4 名は 2026-09-05 に done になった）。skipped は CeVIO AI 弦巻マキ 英の 1 名だけ＝同梱されるのは done の 12 名。",
       "items": { "$ref": "#/$defs/preset" }
     }
   },
@@ -34,7 +34,7 @@
         "id": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9_]{2,47}$",
-          "description": "ASCII の識別子。参照ボイス檔名（<id>.wav）と Irodori の voice id を兼ねる。例 vv_mochiko_sexy・co_tsukuyomi・vr2_akane_west。接頭辞＝vv_（VOICEVOX）・co_（COEIROINK）・vr2_（VOICEROID2）・cevio_（CeVIO AI）。"
+          "description": "ASCII の識別子。参照ボイス檔名（<id>.wav）と Irodori の voice id を兼ねる。例 vv_mochiko_sexy・co_tsukuyomi・vr2_akane_west。接頭辞＝vv_（VOICEVOX）・co_（COEIROINK）・vr2_（VOICEROID2）・cevio_（CeVIO AI）・ext_（外部提供＝エンジン由来でない録音・裁定 118）。"
         },
         "display_name": {
           "type": "string",
@@ -43,12 +43,12 @@
         },
         "engine": {
           "type": "string",
-          "enum": ["voicevox", "coeiroink", "voiceroid2", "cevio_ai"],
-          "description": "一次 wav を作ったエンジン。"
+          "enum": ["voicevox", "coeiroink", "voiceroid2", "cevio_ai", "external"],
+          "description": "一次 wav を作ったエンジン。external＝司令官が提供した録音・エンジン由来ではない（裁定 118）。external の行は primary が必ず null（一次が**無い**の意）で、secondary.text_id・text・irodori も null＝席が撃っていないので生成の記録が存在しない。その代わり provenance が出所を持つ。"
         },
         "engine_speaker": {
           "type": "string",
-          "description": "エンジン内での話者名（原文）。例「もち子さん」「KANA」「琴葉 茜」。"
+          "description": "エンジン内での話者名（原文）。例「もち子さん」「KANA」「琴葉 茜」。engine external ではエンジンが無いので、司令官が名指した呼び名を入れる（例「シャンパンコール」）。"
         },
         "speaker_uuid": {
           "type": ["string", "null"],
@@ -74,7 +74,7 @@
 
         "primary": {
           "type": ["object", "null"],
-          "description": "エンジンが読んだ素の地の文の wav（素材・配布物には入れない）。null＝まだ無い。",
+          "description": "エンジンが読んだ素の地の文の wav（素材・配布物には入れない）。null＝まだ無い（status pending / skipped）か、**そもそも存在しない**（engine external＝裁定 118。どちらの null かは provenance と status で分かる）。",
           "required": ["file", "duration_s", "sample_rate"],
           "additionalProperties": false,
           "properties": {
@@ -93,7 +93,7 @@
 
         "secondary": {
           "type": ["object", "null"],
-          "description": "一次を参照ボイスにして Irodori-TTS-Server で合成した wav＝これがリリース版のテンプレート参照ボイス。実体＝voices/presets/<id>.wav。md5・size_bytes はその実檔から測った値（make_presets.py が書く）。",
+          "description": "一次を参照ボイスにして Irodori-TTS-Server で合成した wav＝これがリリース版のテンプレート参照ボイス。実体＝voices/presets/<id>.wav。md5・size_bytes はその実檔から測った値（make_presets.py が書く）。engine external の行（裁定 118）では「司令官が渡した録音そのもの」がここに入る＝実測の欄（md5・size_bytes・duration_s・sample_rate・channels・bits・peak_dbfs・rms_dbfs・tail）だけが埋まり、生成の記録（text_id・text・irodori）は null。ref_variant・ref_10s_file・server・elapsed_s の欄そのものが無い（撃っていないので測る物が無い）。",
           "required": ["file", "md5", "size_bytes", "duration_s", "sample_rate", "text", "irodori", "tail"],
           "additionalProperties": false,
           "properties": {
@@ -114,8 +114,8 @@
             "bits": { "type": "integer" },
             "peak_dbfs": { "type": ["number", "null"] },
             "rms_dbfs": { "type": ["number", "null"] },
-            "text_id": { "type": "string", "description": "corpus.json の secondary のどれか（expressive_30s＝146 字・絵文字 5〔😊🎉😢😆🎉＝4 種・🎉 だけ 2 度出る〕・「！」有り / expressive_20s＝90 字・絵文字 4〔😊🎉😢😆＝4 種・重なりなし〕・「！」有り / calm_20s＝94 字・絵文字 1 つ〔😊〕・「！」無し / plain_20s＝89 字・絵文字も「！」も無い平坦 / greeting_10s＝44 字）。このうち plain_20s と greeting_10s は corpus.json に在るだけで、台帳に採用した行は 1 つも無い（plain_20s＝裁定 113 の候補・裁定 114 で不採用。greeting_10s＝予備）。行ごとに違いうる＝裁定 112 で co_kana_naisho・co_ofutonp_kiza・vr2_akane_west の 3 行を expressive_20s で撃ち直し（司令官 2026-09-09 逐語「3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。文章を20秒程度に見積もって再生成。」）、そのうち co_kana_naisho と vr2_akane_west の 2 行が裁定 114 で calm_20s に差し替わった（司令官 2026-09-09 逐語「calm採用。 インストーラーくみなおしとマージを頼む。」）。今の内訳＝expressive_30s 8 行・calm_20s 2 行・expressive_20s 1 行（co_ofutonp_kiza だけ）。台帳の頭の corpus_texts に、実際に使われている id が並ぶ。" },
-            "text": { "type": "string", "description": "生成に使った本文（逐語）。text_id と対で行ごとに持つ。" },
+            "text_id": { "type": ["string", "null"], "description": "corpus.json の secondary のどれか（expressive_30s＝146 字・絵文字 5〔😊🎉😢😆🎉＝4 種・🎉 だけ 2 度出る〕・「！」有り / expressive_20s＝90 字・絵文字 4〔😊🎉😢😆＝4 種・重なりなし〕・「！」有り / calm_20s＝94 字・絵文字 1 つ〔😊〕・「！」無し / plain_20s＝89 字・絵文字も「！」も無い平坦 / greeting_10s＝44 字）。このうち plain_20s と greeting_10s は corpus.json に在るだけで、台帳に採用した行は 1 つも無い（plain_20s＝裁定 113 の候補・裁定 114 で不採用。greeting_10s＝予備）。行ごとに違いうる＝裁定 112 で co_kana_naisho・co_ofutonp_kiza・vr2_akane_west の 3 行を expressive_20s で撃ち直し（司令官 2026-09-09 逐語「3ファイルともおなじところで参照ボイスが外れるね。アプローチを変えよう。文章を20秒程度に見積もって再生成。」）、そのうち co_kana_naisho と vr2_akane_west の 2 行が裁定 114 で calm_20s に差し替わった（司令官 2026-09-09 逐語「calm採用。 インストーラーくみなおしとマージを頼む。」）。今の内訳＝expressive_30s 8 行・calm_20s 2 行・expressive_20s 1 行（co_ofutonp_kiza だけ）。台帳の頭の corpus_texts に、実際に使われている id が並ぶ。**null ⇔ engine external**（裁定 118＝席が撃っていない＝本文が存在しない）。null の行は corpus_texts に数えない。text と対で null になる（片方だけ null は誤り）。" },
+            "text": { "type": ["string", "null"], "description": "生成に使った本文（逐語）。text_id と対で行ごとに持つ。**null ⇔ engine external**（裁定 118）＝text_id と必ず同時に null。" },
             "ref_variant": {
               "type": "string",
               "enum": ["30s", "10s"],
@@ -123,8 +123,8 @@
             },
             "ref_10s_file": { "type": ["string", "null"], "description": "10 s 参照で作った比較用二次 wav（<id>_ref10_secondary.wav）。採用しなかった側は配布しない。" },
             "irodori": {
-              "type": "object",
-              "description": "生成に使った irodori パラメータ（POST /v1/audio/speech の irodori 欄）。",
+              "type": ["object", "null"],
+              "description": "生成に使った irodori パラメータ（POST /v1/audio/speech の irodori 欄）。**null ⇔ engine external**（裁定 118）＝席が撃っていないので撃った値が存在しない。既定値で埋めない（埋めると「この値で撃った」という嘘になる）。",
               "required": ["num_steps", "seed"],
               "additionalProperties": true,
               "properties": {
@@ -211,7 +211,7 @@
         "rights_note": {
           "type": "string",
           "minLength": 1,
-          "description": "権利の注記。decisions 18＝司令官が「個人利用・商用・有償でも再配布可」と確認済み（確認日 2026-09-04）。ただし席は推測で断定しない＝規約原文の所在と確認日付を licenses/ の台帳に記す。この欄には『誰が・いつ確認したか』と『規約原文は未取得』の別を必ず書く。"
+          "description": "権利の注記。decisions 18＝司令官が「個人利用・商用・有償でも再配布可」と確認済み（確認日 2026-09-04）。ただし席は推測で断定しない＝規約原文の所在と確認日付を licenses/ の台帳に記す。この欄には『誰が・いつ確認したか』と『規約原文は未取得』の別を必ず書く。engine external の行には decisions 18 は当たらない（エンジンの生成ボイスではない）＝『司令官が提供した』事実と『席は録音の出所を確かめていない』ことを書く（裁定 118）。"
         },
         "rights_confirmed_by": { "type": "string", "description": "例「司令官（mugonkun）」。" },
         "rights_confirmed_at": { "type": "string", "description": "確認日（例 2026-09-04）。" },
@@ -219,7 +219,20 @@
           "type": "boolean",
           "description": "各エンジン／キャラの規約原文を席が取得して読んだか。false＝未取得（司令官の口頭確認のみ）。"
         },
-        "generated_at": { "type": "string", "description": "この 1 名の二次 wav を作った時刻（ISO 8601）。" }
+        "provenance": {
+          "type": "object",
+          "description": "この行の参照ボイスがどこから来たか（裁定 118 で新設）。エンジンで作った行には無い＝欄が在ること自体が「席が作った物ではない」の印。",
+          "required": ["kind", "provided_by", "provided_at", "source_file"],
+          "additionalProperties": true,
+          "properties": {
+            "kind": { "type": "string", "enum": ["external"], "description": "external＝席の生成物ではなく渡された物。" },
+            "provided_by": { "type": "string", "description": "渡した人（例「司令官（mugonkun）」）。" },
+            "provided_at": { "type": "string", "description": "渡された日（例 2026-09-10）。" },
+            "source_file": { "type": "string", "description": "渡された時の実檔の路（逐語）。配布樹には入らない＝取り込み元の記録。" },
+            "note": { "type": "string", "description": "取り込みの判断の根拠（司令官の逐語など）。" }
+          }
+        },
+        "generated_at": { "type": "string", "description": "この 1 名の二次 wav を作った時刻（ISO 8601）。engine external では**取り込んだ**時刻。" }
       }
     }
   }

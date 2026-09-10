@@ -331,8 +331,10 @@
 - 話者メタ（表示名・caption 既定・既定パラメータ）は**上流に置き場が無い**
   （`VoiceSpec` はパス 5 欄＋`no_ref` の 7 欄だけ・余分な鍵は無警告で捨てられる実射＝
   `research/lab/notes/37` §3-4）＝配布版の独自台帳（`voices/voices.ywk.json`）が持つ。
-- **プリセット話者 12 名**をリリース版に同梱する予定（`decisions.md` 17・生成は便 P）。
-  一覧では `preset: true` で区別できる。
+- **プリセット話者 13 名**が台帳（`voices/presets.json`）に載り、**うち 12 名を同梱する**
+  （`decisions.md` 17 の 12 名＝便 P の生成 11 名 ＋ 司令官提供待ちの 弦巻マキ 英 1 名〔同 27・`status: skipped`〕、
+  それに **裁定 118** の「シャンパンコール（ホスクラ）」1 名＝司令官が録音を直に渡した
+  `engine: "external"` の行）。一覧では `preset: true` で区別できる。
 
 ### 4-4 参照潜在（`latent`・`latent_stale`）＝**Radeon 版では話者登録時に潜在を焼く**
 
@@ -801,7 +803,7 @@
 
 - **`schema` 番号**＝`/params` の応答に載る（`/ywk/status` には載らない＝本体は `/params` から読む・裁定 104）。**欄を消す・意味を変えるときだけ**上げる。
   欄を足すのは上げない（本体は知らない欄を無視する）。
-- **配布版のランチャが `settings.json` に焼く 2 つの表（HTTP の口ではない・本体は読まない・裁定 91・95・97）**＝`runtimeLedgers`（鍵＝変種名・値＝展開に使った台帳 `ledger/runtime-<変種>.json` の sha256・小文字 hex 64 字）と `installedAppVersions`（鍵＝変種名・値＝`v1.0.0` の形）。組んだ変種の欄だけが焼かれる（組んでいない変種の欄は無い）。起動時にいまの変種の欄が配布樹の台帳と食い違えば状態帯に「実行系を組み直す」1 手が出る。`schema` は動かない。
+- **配布版のランチャが `settings.json` に焼く 2 つの表（HTTP の口ではない・本体は読まない・裁定 91・95・97）**＝`runtimeLedgers`（鍵＝変種名・値＝展開に使った台帳 `ledger/runtime-<変種>.json` の sha256・小文字 hex 64 字）と `installedAppVersions`（鍵＝変種名・値＝`v1.0.1` の形）。組んだ変種の欄だけが焼かれる（組んでいない変種の欄は無い）。起動時にいまの変種の欄が配布樹の台帳と食い違えば状態帯に「実行系を組み直す」1 手が出る。`schema` は動かない。
 - **上流の pin**＝`/ywk/status.upstream` に `irodori_tts`・`server` の短い commit を載せる。
   上流を上げるときは、`/params` と上流 openapi の突合ログ（⑸）に差分が出るので、それを見て本書を直す。
 - **配布版の版**＝`/ywk/status.version`。

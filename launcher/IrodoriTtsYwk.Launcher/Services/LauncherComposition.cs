@@ -89,7 +89,7 @@ public static class LauncherComposition
     /// ⑶ が要る理由＝<see cref="Voices.PresetVoices"/> が書くのはランチャの台帳
     /// （<c>voices.ywk.json</c>）だけで、<b>上流が読む別名表には 1 行も入らない</b>。
     /// 載せないままだと wrapper はプリセットを 1 名も知らず、<c>GET /v1/audio/voices</c> にも
-    /// 試し撃ちにも 11 名が出てこない（一覧はランチャの台帳だけが持つので画面では見える＝
+    /// 試し撃ちにも 12 名が出てこない（一覧はランチャの台帳だけが持つので画面では見える＝
     /// <b>見えるのに合成できない</b>形になる）。wrapper の起動時の事前計算 <c>all</c> は
     /// <b>ready 時点の <c>voices.json</c></b> を見るので、ここで書いてあれば
     /// <c>rocm-*</c> 変種は起動のたびに自動で焼ける（裁定 78 ⑴）。

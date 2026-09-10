@@ -304,7 +304,8 @@ JSON の欄そのものは互換のため据え置き（`docs/contract.md` ⑹ 6
 ### 10-2 無人検分は 57 段（`probe/d-launch-probe.ps1`）
 
 1 巡目の 31 段に、裁定 87・88 の 26 段を足した＝**変種の門**（別個体・私設ポート 18099・
-子プロセス 0）・**プリセット 11 名の 4 箇所突合**・**削除の押せない理由（`HelpText` と表示が同文言）**・
+子プロセス 0）・**プリセット話者の 4 箇所突合**（数は台帳の `status: done` を数える＝
+いまは **12 名**〔裁定 118〕。台本に数は焼いていない）・**削除の押せない理由（`HelpText` と表示が同文言）**・
 **GPU メモリの 4 数**・**潜在キャッシュの ON/OFF と件数**・**概算 → 実測の切り替わり**・
 **死活 2 種**（待機中の kill／合成中の kill）。`-GateOnly` で門だけ 6 秒で撃てる。
 
@@ -359,7 +360,7 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 ```json
 { "runtimeLedgers":       { "rocm-gfx1151": "<ledger/runtime-rocm-gfx1151.json の sha256（小文字 hex 64 字）>",
                             "cu126":        "<ledger/runtime-cu126.json の sha256>" },
-  "installedAppVersions": { "rocm-gfx1151": "v1.0.0", "cu126": "v1.0.0" } }
+  "installedAppVersions": { "rocm-gfx1151": "v1.0.1", "cu126": "v1.0.1" } }
 ```
 
 **鍵は変種**（是正・便 D（3）の 3 巡目）。1 巡目は `runtimeLedgerSha256`／`installedAppVersion` の

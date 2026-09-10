@@ -449,8 +449,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "& C:\ywk\repo\build\veri
 powershell -NoProfile -ExecutionPolicy Bypass -Command "& C:\ywk\repo\probe\cuda-bench.ps1 -Variant cu130 -Device cuda:0 -Precision bf16 -HfHome C:\ywk\models -ResultRoot N:\temp_for_claudecode_agents\irodori-ywk\rtx; Write-Host ('EXIT=' + $LASTEXITCODE)"
 ```
 
-**時間**＝条件 12 × 4 射＋プリセット 11 射＝59 射。3090 なら 3〜6 分（＋モデル読込 10 s 級）。
-**この 1 本がやること**＝参照ボイスを使い捨ての `voices` に置く（30 s 版 11 本＋先頭 10.0 s を切った 10 s 版 1 本）→ wrapper を bf16・cuda:0 で起こす→ `probe\cuda_bench.py` が ready 待ち→ 1 発目（cold）→各条件 warm 3 射（中央値）→プリセット 11 本を 1 射ずつ→ **必ずツリー kill** → kill 後 10 s の VRAM → 結果を `build\out\probe-log\` と `-ResultRoot` に写す。
+**時間**＝条件 12 × 4 射＋プリセット 12 射＝60 射（**裁定 118** で `ext_hostclub_champagne` が掃引に入った）。3090 なら 3〜6 分（＋モデル読込 10 s 級）。
+**この 1 本がやること**＝参照ボイスを使い捨ての `voices` に置く（同梱の 12 本＋先頭 10.0 s を切った 10 s 版 1 本＝12 本のうち 11 本は 24.84〜35.76 s の 30 s 級、`ext_hostclub_champagne` だけ 8.20 s）→ wrapper を bf16・cuda:0 で起こす→ `probe\cuda_bench.py` が ready 待ち→ 1 発目（cold）→各条件 warm 3 射（中央値）→プリセット 12 本を 1 射ずつ→ **必ずツリー kill** → kill 後 10 s の VRAM → 結果を `build\out\probe-log\` と `-ResultRoot` に写す。
 
 **合否**＝**`EXIT=0` かつ `CHECKS=OK`**（下の `status.txt` の 2 行で見る）。
 

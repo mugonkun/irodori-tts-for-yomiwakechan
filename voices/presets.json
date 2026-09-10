@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-09T04:27:37+0900",
+  "generated_at": "2026-09-10T17:40:00+0900",
   "corpus": "tools/preset-voices/corpus.json",
   "corpus_texts": [
     "calm_20s",
@@ -12,6 +12,7 @@
     "secondary.file が実体の参照ボイス＝voices/presets/<id>.wav。一次 wav は素材で配布物には入れない（build/out/preset-work/primary/ と N:/temp_for_claudecode_agents/irodori-ywk/preset-voices/primary/ に保全）。",
     "VOICEROID2 の 4 名は API が無いので GUI 駆動で一次 wav を取り出した（tools/preset-voices/gen_voiceroid2.py ＋ Vr2SaveTool・2026-09-05・設計書 §6）。",
     "status skipped＝decisions 27（CeVIO AI 弦巻マキ 英）。secondary が null の行は二次 wav がまだ無い。",
+    "engine external の行は司令官が録音を直に渡した話者＝一次 wav も席の二次生成も無い（裁定 118・2026-09-10＝ext_hostclub_champagne〔シャンパンコール（ホスクラ）〕が最初の 1 件）。secondary.text_id・text・irodori は null（この席が撃っていないから）で、代わりに provenance が出所〔誰が・いつ・どの檔から〕を持つ。secondary の md5・size_bytes・tail は届いた wav の実測（verify_wavs.analyze）。権利は decisions 18 ではなく行の rights_note が言う＝席は出所を確かめていない。",
     "rights_source_fetched は全行 false＝規約原文は席が未取得。司令官の確認のみ（decisions 18）。",
     "ref_variant は 30s／10s の両方を生成済み。聴いて良い方に差し替えてよい（ref_10s_file が対の檔）。",
     "secondary.md5 / secondary.size_bytes は voices/presets/<id>.wav の実檔から測った値（make_presets.py が --copy の複写後に測る）。N: の写しとの突合はこの md5 で行う。",
@@ -1174,6 +1175,78 @@
         "elapsed_s": 9.73
       },
       "generated_at": "2026-09-05T00:12:38+0900"
+    },
+    {
+      "id": "ext_hostclub_champagne",
+      "display_name": "シャンパンコール（ホスクラ）",
+      "engine": "external",
+      "engine_speaker": "シャンパンコール",
+      "speaker_uuid": null,
+      "style": {
+        "name": "ホスクラ",
+        "id": null
+      },
+      "status": "done",
+      "rights_note": "裁定 118＝司令官（mugonkun）が 2026-09-10 に提供した録音（ホストクラブのシャンパンコール）。エンジン由来ではないので decisions 18（各エンジンの生成ボイスの再配布可）は当たらない。権利の確認は司令官（rights_confirmed_by 司令官（mugonkun）・rights_confirmed_at 2026-09-10）であって、席はこの録音の出所（誰がいつ録った物か・元の権利者が誰か・第三者の声が入っていないか）を一切確かめていない（rights_source_fetched: false）。",
+      "rights_confirmed_by": "司令官（mugonkun）",
+      "rights_confirmed_at": "2026-09-10",
+      "rights_source_fetched": false,
+      "provenance": {
+        "kind": "external",
+        "provided_by": "司令官（mugonkun）",
+        "provided_at": "2026-09-10",
+        "source_file": "c:/yomiwakesozai/hostclub.wav",
+        "note": "司令官の逐語「既に2次生成なのでこのまま取り込んで」＝一次は無く、この wav をそのまま同梱の参照ボイスにする"
+      },
+      "primary": null,
+      "secondary": {
+        "file": "ext_hostclub_champagne.wav",
+        "md5": "149eddeca796616e916e2b83dc67f692",
+        "size_bytes": 787244,
+        "duration_s": 8.2,
+        "sample_rate": 48000,
+        "channels": 1,
+        "bits": 16,
+        "peak_dbfs": -1.76,
+        "rms_dbfs": -17.03,
+        "text_id": null,
+        "text": null,
+        "irodori": null,
+        "tail": {
+          "window_ms": 50.0,
+          "tail_rms_dbfs": -70.41,
+          "tail_delta_db": -53.38,
+          "margin_db": 20.0,
+          "delta_clean": true,
+          "abs_dbfs": -40.0,
+          "abs_clean": true,
+          "profile_ms": 300.0,
+          "step_ms": 25.0,
+          "final_ms": 100.0,
+          "floor_dbfs": -60.0,
+          "rise_limit_db": 0.5,
+          "rise_db": null,
+          "rise_clean": true,
+          "profile_dbfs": [
+            -70.81,
+            -69.48,
+            -69.35,
+            -69.97,
+            -69.82,
+            -69.56,
+            -69.38,
+            -69.79,
+            -71.94,
+            -71.4,
+            -70.1,
+            -70.75
+          ],
+          "fail_reasons": [],
+          "rule": "clean ⇔ 3 条件すべて: (a) tail_delta_db = tail50ms_dbfs - rms_dbfs <= -20 ; (b) tail50ms_dbfs <= -40 dBFS ; (c) 末尾 300 ms を 25 ms 刻みに割り、最後の 100 ms の各区間が直前より +0.5 dB を超えて上がらない（-60 dBFS 以下の区間は無音として除く）",
+          "verdict": "clean"
+        }
+      },
+      "generated_at": "2026-09-10T17:40:00+0900"
     },
     {
       "id": "cevio_maki_en",

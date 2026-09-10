@@ -57,7 +57,7 @@
 
 ```json
 {"engine":"irodori-ywk",
- "version":"1.0.0",
+ "version":"1.0.1",
  "variant":"cuda|cpu|rocm-gfx1151",
  "upstream":{"irodori_tts":"8224daf","server":"841fb7c"},
  "host":"127.0.0.1","port":18088,
@@ -76,7 +76,7 @@
 本体が読むのは太字の 6 つだけでよい：
 
 - **`engine`**＝`"irodori-ywk"`（`ywk_params.ENGINE`）。**これが配布版の名乗り**。
-- **`version`**＝配布版の版（実装の `YWK_VERSION` は現在 **`"1.0.0"`**）。
+- **`version`**＝配布版の版（実装の `YWK_VERSION` は現在 **`"1.0.1"`**）。
 - **`upstream`**＝上流 pin（`{"irodori_tts":"8224daf","server":"841fb7c"}`）。
 - **`device.actual`**＝**モデル読込後に実測した値**（`next(model.parameters()).device`）。
   **設定値の echo ではない・未読込なら `null`**。`device.configured` の方が echo。
@@ -158,7 +158,7 @@
 ### 2-2 応答の骨（**実装で確認した最上位 9 欄**）
 
 ```json
-{"schema": 1, "engine": "irodori-ywk", "version": "1.0.0", "model_loaded": false,
+{"schema": 1, "engine": "irodori-ywk", "version": "1.0.1", "model_loaded": false,
  "checkpoint": {"hf": "Aratako/Irodori-TTS-v4.1-Small",
                 "max_text_len": null, "max_caption_len": null, "ref_max_seconds": null},
  "request": { … 6 欄（下） … },
@@ -360,8 +360,11 @@ range_source, note, required, default, default_source, nullable, exposed_to_ywk}
   `DELETE /v1/audio/voices/{id}` は **404／405** を返す。
   ⇒ **本体の D-3（`POST /v1/audio/voices`＋`ywk-<sha12>` での話者登録）は路ごと無くなる。**
   読みの `GET /v1/audio/voices/{id}`（檔名・大きさ・更新時刻だけ）は残っている。
-- **プリセット話者 11 名が配布物に同梱されている**（`decisions.md` 17・37・93 ⑴）＝
-  一覧では `preset: true` で区別できる。12 名目（弦巻マキ英語）は司令官提供待ち（`decisions.md` 27）。
+- **プリセット話者 12 名が配布物に同梱されている**（`decisions.md` 17・37・93 ⑴ の 11 名 ＋
+  **裁定 118** の「シャンパンコール（ホスクラ）」）＝一覧では `preset: true` で区別できる。
+  台帳の 13 行目（弦巻マキ英語）は司令官提供待ちで同梱されない（`decisions.md` 27・`status: skipped`）。
+  裁定 118 の 1 名だけは**エンジン由来ではない**（司令官が渡した録音そのもの＝台帳の `engine` が
+  `"external"`）が、本体から見た形は他の 11 名と 1 つも変わらない（`preset: true` の 1 行）。
 
 ---
 

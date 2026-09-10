@@ -1,5 +1,5 @@
 {
-  "$comment": "便 P プリセット話者 12 名の参照ボイス本文。decisions.md 17・18・26・27 が正典。一次＝各エンジンで読ませる素の地の文。二次＝一次を参照ボイスにして Irodori-TTS-Server で合成する表情豊かな本文。",
+  "$comment": "便 P プリセット話者 12 名の参照ボイス本文。decisions.md 17・18・26・27 が正典。台帳（voices/presets.json）は裁定 118 で 13 行になったが、13 行目（ext_hostclub_champagne）は司令官が渡した録音そのもの＝本文を撃っていないので、この檔には現れない。一次＝各エンジンで読ませる素の地の文。二次＝一次を参照ボイスにして Irodori-TTS-Server で合成する表情豊かな本文。",
   "version": 1,
   "generated_by": "tools/preset-voices/corpus.json (便 P・道具席)",
   "updated_at": "2026-09-04",

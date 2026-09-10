@@ -27,7 +27,9 @@ public sealed record VoiceEntry
     public IReadOnlyDictionary<string, JsonElement> Defaults { get; init; } =
         new Dictionary<string, JsonElement>(StringComparer.Ordinal);
 
-    /// <summary>同梱のプリセット（裁定 17＝12 名）。削除は利用者の意思で可。</summary>
+    /// <summary>同梱のプリセット（裁定 17 の 11 名 ＋ 裁定 118 の 1 名＝<b>12 名</b>。
+    /// 台帳 <c>voices/presets.json</c> は 13 行だが、弦巻マキ 英は <c>status: skipped</c> で同梱されない）。
+    /// 削除は利用者の意思で可。</summary>
     [JsonPropertyName("preset")] public bool Preset { get; init; }
 
     /// <summary>参照なし（「デフォルト」だけが真＝裁定 16）。</summary>

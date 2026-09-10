@@ -32,7 +32,10 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from verify_wavs import tail_rule_text as _tail_rule_text  # noqa: E402 — 同じディレクトリの道具
+from verify_wavs import (  # noqa: E402 — 同じディレクトリの道具
+    analyze as _analyze,
+    tail_rule_text as _tail_rule_text,
+)
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -43,7 +46,45 @@ RIGHTS_NOTE = (
     "（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。"
 )
 
-# decisions 17 の 12 名。status pending / skipped の 5 名も最初から載せる。
+# ---- engine "external"（裁定 118・2026-09-10）--------------------------------------
+# 司令官が **録音そのもの**を渡してきた話者。エンジンの一次 wav も、この席の二次生成も無い。
+# 逐語＝「話者追加。"シャンパンコール(ホスクラ)" 参照ボイスファイル実体は
+# "c:\yomiwakesozai\hostclub.wav"。既に2次生成なのでこのまま取り込んで配布ページ更新まで頼む。」
+# ＝「既に2次生成」＝届いた wav が最終形＝そのまま voices/presets/<id>.wav にする。
+# ゆえにこの路は gen_*.result.json も run_secondary.result.json も見ない。実檔を直に測るだけ。
+EXTERNAL_ENGINE = "external"
+
+# 権利の注記は RIGHTS_NOTE（decisions 18＝エンジンの生成ボイスの話）と**別物**。
+# エンジン由来ではないので decisions 18 は当たらない＝司令官の提供という事実だけを書く。
+# 席は録音の出所を確かめていない。それを曖昧にしない（schema の rights_note の約束）。
+EXTERNAL_RIGHTS_NOTE = (
+    "裁定 118＝司令官（mugonkun）が 2026-09-10 に提供した録音（ホストクラブのシャンパンコール）。"
+    "エンジン由来ではないので decisions 18（各エンジンの生成ボイスの再配布可）は当たらない。"
+    "権利の確認は司令官（rights_confirmed_by 司令官（mugonkun）・rights_confirmed_at 2026-09-10）であって、"
+    "席はこの録音の出所（誰がいつ録った物か・元の権利者が誰か・第三者の声が入っていないか）を"
+    "一切確かめていない（rights_source_fetched: false）。"
+)
+
+# 行ごとの出所（schema の provenance）。ROSTER に置くと台帳の欄の並びが崩れるのでここに分ける。
+EXTERNAL_ROWS = {
+    "ext_hostclub_champagne": {
+        "rights_note": EXTERNAL_RIGHTS_NOTE,
+        "rights_confirmed_by": "司令官（mugonkun）",
+        "rights_confirmed_at": "2026-09-10",
+        "generated_at": "2026-09-10T17:40:00+0900",
+        "provenance": {
+            "kind": "external",
+            "provided_by": "司令官（mugonkun）",
+            "provided_at": "2026-09-10",
+            "source_file": "c:/yomiwakesozai/hostclub.wav",
+            "note": "司令官の逐語「既に2次生成なのでこのまま取り込んで」＝一次は無く、"
+                    "この wav をそのまま同梱の参照ボイスにする",
+        },
+    },
+}
+
+# decisions 17 の 12 名 ＋ 裁定 118 の 1 名（engine external）＝13 名。
+# status pending / skipped の行も最初から載せる。
 ROSTER = [
     # 裁定 108＝司令官の改名指示（2026-09-07）。display_name はそのまま話者 id になる（裁定 17）ので、
     # engine_speaker（VOICEVOX の話者名）は「もち子さん」のまま動かさない。
@@ -83,6 +124,12 @@ ROSTER = [
     {"id": "vr2_tsukuyomi_shota", "display_name": "月読ショウタ", "engine": "voiceroid2",
      "engine_speaker": "月読ショウタ(v1)", "speaker_uuid": None,
      "style": {"name": "ノーマル", "id": "shouta_44"}, "status": "done"},
+    # 裁定 118＝司令官が録音を直に渡した 1 名（2026-09-10）。engine は "external"＝一次 wav も
+    # 席の二次生成も無い。表示名の丸括弧は**全角**に直した（裁定 108 の作法＝司令官は ASCII の
+    # "(ホスクラ)" で書いたが、台帳の表示名はそのまま話者 id になる〔裁定 17〕ので他の 12 名に揃える）。
+    {"id": "ext_hostclub_champagne", "display_name": "シャンパンコール（ホスクラ）", "engine": "external",
+     "engine_speaker": "シャンパンコール", "speaker_uuid": None,
+     "style": {"name": "ホスクラ", "id": None}, "status": "done"},
     {"id": "cevio_maki_en", "display_name": "弦巻マキ（英語）", "engine": "cevio_ai",
      "engine_speaker": "弦巻マキ 英", "speaker_uuid": None,
      "style": {"name": "英語", "id": None}, "status": "skipped"},
@@ -193,6 +240,64 @@ def main() -> int:
         entry["primary"] = None
         entry["secondary"] = None
         # generated_at は schema で type: string＝null を許さない。まだ無い行では欄ごと落とす。
+
+        # ---- engine external（裁定 118）＝届いた wav を測るだけ。gen も run も見ない。
+        if row["engine"] == EXTERNAL_ENGINE:
+            meta = EXTERNAL_ROWS[vid]
+            # 欄の並びを台帳の他の行に揃えるため、ここで組み直す
+            # （provenance は権利の欄の隣＝primary の手前に置く）。
+            entry = dict(row)
+            entry["rights_note"] = meta["rights_note"]
+            entry["rights_confirmed_by"] = meta["rights_confirmed_by"]
+            entry["rights_confirmed_at"] = meta["rights_confirmed_at"]
+            entry["rights_source_fetched"] = False
+            entry["provenance"] = meta["provenance"]
+            entry["primary"] = None  # 一次は**存在しない**（pending の null とは意味が違う＝provenance が言う）
+            actual = presets_dir / f"{vid}.wav"
+            if not actual.is_file():
+                print(f"[warn] 外部提供の実檔が無い: {actual}")
+                entry["secondary"] = None
+                presets.append(entry)
+                continue
+            a = _analyze(actual, -50.0, 0.999)  # verify_wavs.py の既定（--silence-db / --clip-threshold）
+            entry["secondary"] = {
+                "file": f"{vid}.wav",
+                "md5": _md5(actual),
+                "size_bytes": actual.stat().st_size,
+                "duration_s": a["duration_s"],
+                "sample_rate": a["sample_rate"],
+                "channels": a["channels"],
+                "bits": a["bits"],
+                "peak_dbfs": a["peak_dbfs"],
+                "rms_dbfs": a["rms_dbfs"],
+                # 本文も irodori も **無い**＝この席が撃っていないから。空文字や既定値で埋めない。
+                "text_id": None,
+                "text": None,
+                "irodori": None,
+                "tail": {
+                    "window_ms": a["tail_window_ms"],
+                    "tail_rms_dbfs": a["tail_rms_dbfs"],
+                    "tail_delta_db": a["tail_delta_db"],
+                    "margin_db": a["tail_margin_db"],
+                    "delta_clean": a["tail_delta_clean"],
+                    "abs_dbfs": a["tail_abs_dbfs"],
+                    "abs_clean": a["tail_abs_clean"],
+                    "profile_ms": a["tail_profile_ms"],
+                    "step_ms": a["tail_step_ms"],
+                    "final_ms": a["tail_final_ms"],
+                    "floor_dbfs": a["tail_floor_dbfs"],
+                    "rise_limit_db": a["tail_rise_limit_db"],
+                    "rise_db": a["tail_rise_db"],
+                    "rise_clean": a["tail_rise_clean"],
+                    "profile_dbfs": a["tail_profile_dbfs"],
+                    "fail_reasons": a["tail_fail_reasons"],
+                    "rule": tail_rule,
+                    "verdict": a["tail_verdict"],
+                },
+            }
+            entry["generated_at"] = meta["generated_at"]
+            presets.append(entry)
+            continue
 
         if row["status"] != "done":
             entry["rights_note"] = RIGHTS_NOTE + " ／ " + PENDING_NOTE.get(row["engine"], "")
@@ -349,6 +454,12 @@ def main() -> int:
             "VOICEROID2 の 4 名は API が無いので GUI 駆動で一次 wav を取り出した"
             "（tools/preset-voices/gen_voiceroid2.py ＋ Vr2SaveTool・2026-09-05・設計書 §6）。",
             "status skipped＝decisions 27（CeVIO AI 弦巻マキ 英）。secondary が null の行は二次 wav がまだ無い。",
+            "engine external の行は司令官が録音を直に渡した話者＝一次 wav も席の二次生成も無い"
+            "（裁定 118・2026-09-10＝ext_hostclub_champagne〔シャンパンコール（ホスクラ）〕が最初の 1 件）。"
+            "secondary.text_id・text・irodori は null（この席が撃っていないから）で、代わりに provenance が"
+            "出所〔誰が・いつ・どの檔から〕を持つ。secondary の md5・size_bytes・tail は届いた wav の実測"
+            "（verify_wavs.analyze）。権利は decisions 18 ではなく行の rights_note が言う＝席は出所を"
+            "確かめていない。",
             "rights_source_fetched は全行 false＝規約原文は席が未取得。司令官の確認のみ（decisions 18）。",
             "ref_variant は 30s／10s の両方を生成済み。聴いて良い方に差し替えてよい（ref_10s_file が対の檔）。",
             "secondary.md5 / secondary.size_bytes は voices/presets/<id>.wav の実檔から測った値"

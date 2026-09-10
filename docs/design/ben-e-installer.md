@@ -510,7 +510,7 @@ Inno は「Source が 0 件」を既定では止めない。
 | 門 | 判定 | 現在値（2026-09-05・本席の実測） |
 |---|---|---|
 | A-1 | `build/out/app` の**檔数**と**総バイト**をログに書き、期待値から外れたら WARN、**0 件なら exit 1** | **108 檔・37,111,160 B** |
-| A-2 | `voices\presets\*.wav` が **11 檔**・`voices\presets.json` が在る | 裁定 88 ⑸ の「配布樹にプリセット 11 檔＋presets.json が在る検査」と同じ玉 |
+| A-2 | `voices\presets\*.wav` が **12 檔**・`voices\presets.json` が在る（**裁定 118**） | 裁定 88 ⑸ の「配布樹にプリセット 11 檔＋presets.json が在る検査」と同じ玉（**11 は当時の逐語＝歴史**。裁定 118 で 1 本増えたので門は 12） |
 | A-3 | `licenses\first-run-notices.md` が在る（裁定 46）・種に応じた `ledger\runtime-*.json` が揃い、**もう一方の種の台帳が 0 件** | 種の混入は `.iss` の `[Files]` では防げない（写さないだけ）。ここで見る |
 | A-4 | **拡張子の白名簿**で配布樹を走査し、載っていない檔が 1 つでもあれば exit 1 | 実測の全拡張子＝`.py .yaml .json .md .txt .toml .lock .template .example .wav` ＋ 拡張子なし（`LICENSE` `Dockerfile` `.gitignore` `.gitkeep` `.python-version` `.dockerignore`） |
 | A-5 | 配布樹の**どの 1 檔も 4 MiB を超えない** | 最大は `voices/presets/vr2_tsukuyomi_ai.wav` の **3,433,004 B**（3.27 MiB）＝余裕 0.7 MiB |

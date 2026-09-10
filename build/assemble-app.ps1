@@ -16,7 +16,8 @@
         voices/voices.json            <- {"<default>": {"no_ref": true}} (decisions.md 16)
         voices/voices.ywk.json        <- empty distributor-side speaker table (convoy D fills it)
         voices/presets.json           <- convoy P's preset ledger (the launcher reads it)
-        voices/presets/*.wav          <- the 11 secondary reference voices (decisions.md 88 (5))
+        voices/presets/*.wav          <- the 12 shipped reference voices (decisions.md 88 (5),
+                                         裁定 118 -- the 12th is the commander's own recording)
 
     licenses/first-run-notices.md IS copied (decisions.md 46). What stays out of the
     distributable is the third-party bytes (decisions.md 8), not the notice about them: the
@@ -374,9 +375,14 @@ Write-YwkLog -Message ('wrote voices/voices.json (' + $voicesBytes + ' B) and vo
 # --------------------------------------------------------------------------- 4b. presets
 
 # decisions.md 17, 37 and 88 (5): the eleven secondary reference wavs the seats generated in
-# convoy P ship with the app. They are not third-party bytes (decisions.md 37) -- they are this
-# project's own output -- so they are the one binary asset the distributable carries. Convoy A
-# left this out; without it the launcher installs zero preset speakers and says nothing.
+# convoy P ship with the app; 裁定 118 (2026-09-10) added a twelfth that the seats did NOT
+# generate -- the commander handed over the recording itself (engine "external" in
+# voices/presets.json). Neither kind is third-party bytes (decisions.md 37) -- they are this
+# project's own or the commander's own -- so they are the one binary asset the distributable
+# carries. Convoy A left this out; without it the launcher installs zero preset speakers and
+# says nothing. NOTHING here counts them: the loop below follows status=done in the ledger, so
+# a new speaker needs no edit in this file (the counting gates live in installer-build.ps1 and
+# the .iss).
 #
 # The names below are load-bearing, not a convention. The launcher reads
 #   <app>\voices\presets.json   (launcher Contracts/AppPaths.PresetsJsonPath)

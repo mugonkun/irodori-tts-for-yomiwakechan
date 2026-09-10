@@ -28,7 +28,8 @@
 #      and a kill during a synthesis is told at once instead of waiting for the HTTP deadline
 #                                                        (decisions 88 (3))
 #   f  the remove button's blocked reason is readable through UI Automation   (low 14)
-#   g  the 11 preset voices arrive from the app tree      (decisions 88 (5), 17)
+#   g  the preset voices arrive from the app tree        (decisions 88 (5), 17, 裁定 118)
+#      -- the count is read from voices/presets.json (status=done), not hard coded; 12 today
 #
 # Round three (convoy D (3), decisions 92 "low left for D (3)" / 94 (1)) adds five more:
 #   h  the first run wizard is counted in PRESSES (decisions 94 (1): 9 today, 5 once every

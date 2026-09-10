@@ -1,9 +1,11 @@
-# tools/preset-voices — プリセット話者 12 名の参照ボイスを作る
+# tools/preset-voices — プリセット話者 13 名の参照ボイスを作る（同梱は 12 名）
 
-設計＝`docs/design/ben-p-preset-voices.md`。正典＝`decisions.md`（17・18・26・27）。
+設計＝`docs/design/ben-p-preset-voices.md`。正典＝`decisions.md`（17・18・26・27・**118**）。
 
 各エンジンで**一次 wav**（素の地の文）を作り、それを参照ボイスにして Irodori-TTS-Server で
 「！」「？」絵文字入りの本文を合成した**二次 wav**を作る。二次がリリース版の同梱参照ボイス。
+**例外が 1 名**＝司令官が「既に2次生成」の wav を直に渡してきた行（`engine: "external"`・裁定 118）。
+この 1 名だけは一次も二次も撃たず、届いた檔を測って台帳に載せるだけ（**§5-2**）。
 
 すべて **Python 3.13 標準ライブラリのみ**（`urllib`・`struct`・`array`・`subprocess`）。
 外部パッケージは要らない。仮想環境も要らない。
@@ -359,8 +361,9 @@ python .\make_presets.py --copy
 python .\make_presets.py --copy --ref-variant 10s
 ```
 
-台帳には 12 名全員が載る（`status` が `pending` の 4 名と `skipped` の 1 名は
-`primary` / `secondary` が `null`）。形は `presets.json.schema`（JSON Schema 2020-12）。
+台帳には 13 名全員が載る（`status` が `skipped` の 1 名＝弦巻マキ 英は `primary` / `secondary` とも
+`null`。`pending` は今は 0 名）。**同梱されるのは `done` の 12 名**。
+形は `presets.json.schema`（JSON Schema 2020-12）。
 
 `secondary` の `md5`（小文字 32 桁）と `size_bytes` は **実檔**（`voices/presets/<id>.wav`・`--copy` の複写後）
 から測る。`tail` 節（3 条件の判定・25 ms 刻みの並び・規則の逐語）と併せて **schema で required**。
@@ -391,6 +394,42 @@ sys.exit(1 if errs else 0)
 $R = "C:\Users\mugonkun\source\repos\irodori-tts-for-yomiwakechan"
 Copy-Item "$W\secondary\co_tsukuyomi_ref10_secondary.wav" "$R\voices\presets\co_tsukuyomi.wav"
 ```
+
+---
+
+## 5-2. エンジンを通さない話者（`engine: "external"`・裁定 118）
+
+司令官が**参照ボイスの実体そのもの**を渡してくることがある。2026-09-10 の逐語＝
+
+> 話者追加。"シャンパンコール(ホスクラ)" 参照ボイスファイル実体は"c:\yomiwakesozai\hostclub.wav"。
+> **既に2次生成なのでこのまま取り込んで**配布ページ更新まで頼む。
+
+「既に2次生成」＝**届いた wav が最終形**。一次 wav は無く、§4 の二次生成も撃たない。
+この路は `make_presets.py` の `EXTERNAL_ENGINE` / `EXTERNAL_ROWS` が持つ。
+
+**手順**
+
+1. 届いた檔を `voices/presets/<id>.wav` に置く（`<id>` の接頭辞は **`ext_`**）。
+   `verify_wavs.py` で末尾判定（§3）を必ず通す＝**外から来た物でも語の途中で切れていたら同梱しない**。
+2. `make_presets.py` の `ROSTER` に 1 行足す（`engine` は `"external"`・`style.id` は `null`）。
+3. 同じ檔の `EXTERNAL_ROWS` に、その 1 名の `rights_note`・`rights_confirmed_*`・
+   `generated_at`（＝**取り込んだ**時刻）・`provenance`（誰が・いつ・どの檔から）を足す。
+   `ROSTER` だけ足して `EXTERNAL_ROWS` を忘れると `KeyError` で落ちる
+   （契約テスト `test_the_generators_know_the_external_row_too` が先に落とす）。
+4. `python .\make_presets.py`（**`--copy` は要らない**＝実檔はもう置いてある）。
+   道具は `gen_*.result.json` も `run_secondary.result.json` も見ず、実檔を `verify_wavs.analyze` で
+   測って `md5`・`size_bytes`・`duration_s`・`sample_rate`・`channels`・`bits`・`peak_dbfs`・`rms_dbfs`・
+   `tail` を書く。
+5. 門の数を上げる＝`build/installer-build.ps1` の `$ExpectedPresetWavs`・`$ExpectedAppFiles`・
+   `$ExpectedAppBytes` と、`installer/irodori-tts-ywk.iss` の `PresetWavCount`（**2 枚の網**）。
+
+**書かない物**（撃っていないので存在しない）＝`secondary.text_id`・`text`・`irodori` は `null`。
+`ref_variant`・`ref_10s_file`・`server`・`elapsed_s` は**欄ごと無い**。
+既定値（`num_steps` 40 など）で埋めない＝埋めると「その値で撃った」という嘘になる。
+
+**権利**＝`decisions.md` 18（各エンジンの生成ボイスは再配布可）は**当たらない**。
+行の `rights_note` には「司令官が提供した」事実と「**席は録音の出所を確かめていない**」ことを書く
+（誰がいつ録った物か・元の権利者が誰か・第三者の声が入っていないか）。`licenses/README.md` §6-1 も同じ。
 
 ---
 
@@ -438,8 +477,9 @@ VOICEVOX／COEIROINK より遅いので、二次本文は一次より短く書�
    **`calm_20s`（採用・2 行）と `plain_20s`（corpus に在るが採用した行は無い）の別を書く**
    ＝「corpus に在る」と「台帳が使っている」は違う、が読み手に伝わるようにする。
 
-**本文の世代は行ごとに混ざりうる（今そうなっている）。** 同梱 11 本の内訳は
+**本文の世代は行ごとに混ざりうる（今そうなっている）。** 同梱 12 本のうち、本文を撃った 11 本の内訳は
 `expressive_30s` 8 本（cfg 5.0）・`expressive_20s` 1 本（きざ・cfg 7.0）・`calm_20s` 2 本（KANA・琴葉茜・cfg 7.0）。
+（12 本目 `ext_hostclub_champagne` は `engine: external`＝本文が無いので `corpus_texts` に現れない・§5-2）
 台帳の頭の `corpus_texts` に実際に使われている id が並ぶので、**そこを見れば何種類混ざっているかが分かる**。
 揃えるかどうかは司令官の判断（`docs/preset-voices-listening.md` §3 の 0-1 に開いたまま置いてある）。
 

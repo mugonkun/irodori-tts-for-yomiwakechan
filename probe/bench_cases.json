@@ -64,7 +64,7 @@
 
   "reference_voices": {
     "primary_preset_id": "vv_mochiko_sexy",
-    "primary_preset_display_name": "\u3082\u3061\u5b50\u3055\u3093",
+    "primary_preset_display_name": "\u3082\u3061\u5b50\u3055\u3093\uff08\u30bb\u30af\u30b7\u30fc\uff0f\u3042\u3093\u5b50\uff09",
     "primary_preset_reason": "voices/presets.json \u306e\u5148\u982d\u884c\u3002secondary 30.76 s\u30fb48 kHz\u30fbmono\u30fb16 bit\u3067 30 s \u7d1a\u306e\u4ee3\u8868\u3068\u3057\u3066\u4f7f\u3046\u3002-ReferencePresetId \u3067\u5dee\u3057\u66ff\u3048\u3089\u308c\u308b\u3002",
     "none": {
       "voice": "\u30c7\u30d5\u30a9\u30eb\u30c8",
@@ -91,9 +91,9 @@
     "steps": 40,
     "reference": "ref30",
     "shots_per_preset": 1,
-    "order_note": "voices/presets.json \u306e\u4e26\u3073\u9806\u306e\u307e\u307e\u3002\u30a8\u30f3\u30b8\u30f3\u304c VOICEVOX \u2192 COEIROINK \u2192 VOICEROID2 \u306e\u9806\u306b\u306a\u308b\u306e\u3067\u3001\u4fbf C \u304c\u898b\u305f\u300c\u6700\u521d\u306e VOICEROID2 \u53c2\u7167\u300d\u306e\u5883\u76ee\uff08vr2_akane_west\uff09\u304c 8 \u672c\u76ee\u306b\u6765\u308b\u3002",
+    "order_note": "voices/presets.json \u306e\u4e26\u3073\u9806\u306e\u307e\u307e\u3002\u30a8\u30f3\u30b8\u30f3\u304c VOICEVOX \u2192 COEIROINK \u2192 VOICEROID2 \u306e\u9806\u306b\u306a\u308b\u306e\u3067\u3001\u4fbf C \u304c\u898b\u305f\u300c\u6700\u521d\u306e VOICEROID2 \u53c2\u7167\u300d\u306e\u5883\u76ee\uff08vr2_akane_west\uff09\u304c 8 \u672c\u76ee\u306b\u6765\u308b\u300212 \u672c\u76ee ext_hostclub_champagne\uff08\u88c1\u5b9a 118\u30fb\u53f8\u4ee4\u5b98\u63d0\u4f9b\u306e\u9332\u97f3\uff09\u306f 8.20 s \u3057\u304b\u306a\u304fref30 \u306e\u5e2f\uff0824.84\u301c35.76 s\uff09\u306b\u4e57\u3089\u306a\u3044\uff1d\u3053\u306e 1 \u672c\u3060\u3051\u306f\u300c\u77ed\u3044\u53c2\u7167\u300d\u306e\u89b3\u6e2c\u306b\u306a\u308b\u3002\u3053\u306e\u53c2\u7167\u3067\u5408\u6210\u3092\u6483\u3063\u305f\u306e\u306f\u672c\u5e2d\u304c\u521d\u3081\u3066\u306a\u306e\u3067\u3001\u51fa\u305f\u97f3\u304c\u8a71\u8005\u3068\u3057\u3066\u4f7f\u3048\u308b\u304b\u3082\u3053\u3053\u3067\u521d\u3081\u3066\u5224\u308b\u3002",
     "presets": [
-      {"id": "vv_mochiko_sexy",      "display_name": "\u3082\u3061\u5b50\u3055\u3093",                          "engine": "voicevox",   "ref30_seconds": 30.76},
+      {"id": "vv_mochiko_sexy",      "display_name": "\u3082\u3061\u5b50\u3055\u3093\uff08\u30bb\u30af\u30b7\u30fc\uff0f\u3042\u3093\u5b50\uff09",    "engine": "voicevox",   "ref30_seconds": 30.76},
       {"id": "vv_chibishikijii",     "display_name": "\u3061\u3073\u5f0f\u3058\u3044",                        "engine": "voicevox",   "ref30_seconds": 31.68},
       {"id": "co_tsukuyomi",         "display_name": "\u3064\u304f\u3088\u307f\u3061\u3083\u3093",                  "engine": "coeiroink", "ref30_seconds": 28.24},
       {"id": "co_kana_naisho",       "display_name": "KANA\uff08\u306a\u3044\u3057\u3087\u3070\u306a\u3057\uff09",      "engine": "coeiroink", "ref30_seconds": 33.28},
@@ -103,7 +103,8 @@
       {"id": "vr2_akane_west",       "display_name": "\u7434\u8449\u831c\uff08\u95a2\u897f\u5f01\uff09",            "engine": "voiceroid2", "ref30_seconds": 34.92},
       {"id": "vr2_yoshida",          "display_name": "\u5409\u7530\u304f\u3093",                          "engine": "voiceroid2", "ref30_seconds": 24.84},
       {"id": "vr2_tsukuyomi_ai",     "display_name": "\u6708\u8aad\u30a2\u30a4",                          "engine": "voiceroid2", "ref30_seconds": 35.76},
-      {"id": "vr2_tsukuyomi_shota",  "display_name": "\u6708\u8aad\u30b7\u30e7\u30a6\u30bf",                    "engine": "voiceroid2", "ref30_seconds": 32.72}
+      {"id": "vr2_tsukuyomi_shota",  "display_name": "\u6708\u8aad\u30b7\u30e7\u30a6\u30bf",                    "engine": "voiceroid2", "ref30_seconds": 32.72},
+      {"id": "ext_hostclub_champagne", "display_name": "\u30b7\u30e3\u30f3\u30d1\u30f3\u30b3\u30fc\u30eb\uff08\u30db\u30b9\u30af\u30e9\uff09",      "engine": "external",   "ref30_seconds": 8.2}
     ],
     "absent": [
       {"id": "cevio_maki_en", "display_name": "\u5f26\u5dfb\u30de\u30ad\uff08\u82f1\u8a9e\uff09", "reason": "decisions.md 27\uff1d\u4e00\u6b21 wav \u672a\u751f\u6210\uff08\u53f8\u4ee4\u5b98\u63d0\u4f9b\u5f85\u3061\uff09\u3002presets.json \u306e status \u306f skipped\u3002"}
