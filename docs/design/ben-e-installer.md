@@ -2882,3 +2882,18 @@ Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/
 **この回の実測**＝xUnit 649＋1 skip・契約テスト 361・門 20／0 失敗・setup cuda 82,741,884 B `ce817787…`／
 radeon 82,756,787 B `6a65eed2…`・tag は commit `5b0568a`・公開 2026-09-09 07:00:59Z（16:00 JST）。
 **未実射**＝v1.0.0 の setup を RTX 機で撃っていない。本機の導入済み Radeon 版は v0.1.0（裁定 115）のまま。
+
+## 19. v1.0.1 のリリース（裁定 118・2026-09-10）＝§18 の手順を 2 度目に通した記帳（主席）
+
+司令官の指示（逐語）＝「**話者追加。"シャンパンコール(ホスクラ)" 参照ボイスファイル実体は"c:\yomiwakesozai\hostclub.wav"。既に2次生成なのでこのまま取り込んで配布ページ更新まで頼む。**」。正典＝`decisions.md` 118。
+Release＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/tag/v1.0.1（repo は private のまま）。
+
+**§18 の手順との差**（手順そのものは変えていない）
+
+- 段 1＝版の繰り上げに加えて**配布樹の中身が動いた**（同梱 wav 1 本＋`voices/presets.json`＋`licenses/README.md`）ので、A-1 の記録値を **108 檔／33,294,832 B → 109 檔／34,087,580 B** に、A-2 と `.iss` の `PresetWavCount` を **11 → 12** に直した。件数は WARN ではなく失敗になる門なので、wav を足すときは `$ExpectedAppFiles` も必ず動かす。
+- 段 4＝A-1 は**算で先に置いた値が実測と一致**した（33,294,832 + 787,244〔wav〕+ 3,687〔台帳〕+ 1,817〔licenses/README.md〕）。`docs\` は配布樹に入らない（`install.md` だけ `.iss` の明示列挙）ので文書の編集はこの数を動かさない。
+- 段 5＝scratchpad `fill_release_notes_118.py`（表の行を檔名で特定して、その行の placeholder だけを置き換える型）。
+- 段 3 の退避先＝scratchpad `installer-v1.0.0-final`（N: の旧 3 檔も同じ下の `n-old\`）。
+
+**この回の実測**＝xUnit 649＋1 skip・契約テスト **369**（新設 8）・門 20／0 失敗・WARN 0・setup cuda **83,262,330 B** `42e8dacf…`／radeon **83,277,211 B** `16101a49…`・tag は commit `fd3d936`・公開 2026-09-10 09:21:13Z（18:21 JST）・Latest・N: `sha256sum -c` OK。
+**未実射**＝v1.0.1 の setup を RTX 機でも本機でも撃っていない（本機の導入済み Radeon 版は v0.1.0＝裁定 115 のまま・走っている個体は止めない）。新話者で合成を撃っていない・席は音を聴いていない・録音の出所は未確認（裁定 118）。
