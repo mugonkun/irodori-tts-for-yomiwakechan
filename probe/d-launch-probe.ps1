@@ -1121,12 +1121,19 @@ function Get-VariantComboToken {
       .SYNOPSIS
         An ASCII fragment of the display name of a variant (RuntimeVariants.DisplayName).
       .DESCRIPTION
-        The wizard's combo shows display names ("Radeon gfx1151 ..." / "CUDA 13.0 ..."), so the probe
-        picks the row by a fragment it can write in ASCII instead of by the id.
+        The wizard's combo shows display names ("ROCm ..." / "CUDA 13.0 ..."), so the probe picks the
+        row by a fragment it can write in ASCII instead of by the id.
+
+        Stage G (2026-09-11, high 14): until then the combo had no DisplayMemberPath and no
+        converter, so it printed the LEDGER SPELLINGS (cu130 / rocm-gfx1151). This helper hid that:
+        'rocm-gfx1151' matched the 'gfx1151' token by -Contains, and 'cu130' missed '13.0' but the
+        catch below picked $choices[0], which on the CUDA build IS cu130 -- so the gate passed down
+        either road. Both halves are fixed together: the combo now shows RuntimeVariants.DisplayName
+        (no 'gfx1151', per charter appendix 5) and the ROCm token is the display word.
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][string]$Variant)
-    if ($Variant -like '*gfx*') { return 'gfx1151' }
+    if ($Variant -like '*rocm*') { return 'ROCm' }
     if ($Variant -eq 'cu130') { return '13.0' }
     if ($Variant -eq 'cu126') { return '12.6' }
     if ($Variant -eq 'cpu') { return 'CPU' }
@@ -1227,14 +1234,31 @@ function Invoke-WizardPressProbe {
         Write-Host '[wizard] off-path = pick the runtime by hand in the fold (not counted as a press)'
         $token = Get-VariantComboToken -Variant $Variant
         $picked = ''
+        $tokenHit = $true
         try {
             $picked = Select-ComboItemById -Root $wizard -Id 'FirstRunVariantCombo' -ItemText $token -Contains
         } catch {
+            # Stage G (low 23): the old catch picked $choices[0] silently. On the CUDA build that IS
+            # cu130, so a token that matched NOTHING still walked out with the right row and the gate
+            # stayed green -- which is exactly how the raw ledger spellings in the combo survived
+            # three rounds of review. Record the miss as a failed step, then fall back so the rest of
+            # the run still measures.
+            $tokenHit = $false
             if ($choices.Count -ge 1) {
                 $picked = Select-ComboItemById -Root $wizard -Id 'FirstRunVariantCombo' -ItemText $choices[0]
             }
         }
+        Add-Step 'the runtime row can be found by its display word' $tokenHit (
+            'token=' + $token + ' rows=' + ($choices -join ' | '))
         Write-Host ('[wizard] picked = ' + $picked)
+
+        # The rows must read as the display names, never as the ledger spellings (charter 6-1 and
+        # appendix 5; v2-copy 9-2 -- cu130 / cu126 are printed nowhere).
+        $rowsClean = $true
+        foreach ($row in $choices) {
+            if ($row -match '(?i)(gfx1151|cu130|cu126|rocm-)') { $rowsClean = $false }
+        }
+        Add-Step 'the runtime rows carry no ledger spelling' $rowsClean (($choices -join ' | '))
 
         # press 3 -- "start preparing"
         # decisions 126 (B): a variant whose driver minimum is not met CANNOT start the fetch --

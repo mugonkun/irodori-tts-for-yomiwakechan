@@ -163,9 +163,13 @@ public sealed class GpuEnumerationTests
     }
 
     [Fact]
-    public async Task 実行系も無ければ理由1行で0台になる()
+    public async Task 実行系も無く板もNVIDIAなら理由1行で0台になる()
     {
-        var enumerator = new GpuEnumerator(new RecordingRunner(), _ => false, null);
+        // **理由を残す回**＝道具（nvidia-smi）が無いだけで、NVIDIA の板は居る。
+        // ここで理由を落とすと VariantRecommendation が NVIDIA の機体に CPU 版を勧める。
+        var enumerator = new GpuEnumerator(
+            new RecordingRunner(), _ => false, null,
+            new StubAdapters([new GpuAdapterInfo("L1", "NVIDIA GeForce RTX 3090", 25_769_803_776)]));
 
         var result = await enumerator.EnumerateAsync(
             new GpuEnumerationRequest(null, TimeSpan.FromSeconds(5)), CancellationToken.None);
@@ -173,6 +177,53 @@ public sealed class GpuEnumerationTests
         Assert.Equal(GpuSource.None, result.Source);
         Assert.Empty(result.Gpus);
         Assert.NotNull(result.FailureReason);
+        Assert.True(result.HasNvidiaAdapter);
+        Assert.False(result.HasAmdAdapter);
+    }
+
+    [Fact]
+    public async Task 板が1枚も無ければ理由を落として見た上での0台になる()
+    {
+        // 是正・段 G（medium 10）＝素の機体では実行系がまだ無いので、これが在るまで
+        // 「見た上で 0 台」は実機で 1 度も作れなかった＝憲章 §7 の 1 行が届かなかった。
+        var enumerator = new GpuEnumerator(
+            new RecordingRunner(), _ => false, null,
+            new StubAdapters([new GpuAdapterInfo("L9", "Intel(R) UHD Graphics", 134_217_728)]));
+
+        var result = await enumerator.EnumerateAsync(
+            new GpuEnumerationRequest(null, TimeSpan.FromSeconds(5)), CancellationToken.None);
+
+        Assert.Empty(result.Gpus);
+        Assert.Null(result.FailureReason);
+        Assert.False(result.HasNvidiaAdapter);
+        Assert.False(result.HasAmdAdapter);
+
+        // ここまで来て初めて CPU の枝が通る（＝はじめの準備が憲章 §7 の 1 行を出す）。
+        Assert.Equal(
+            RuntimeVariants.Cpu,
+            VariantRecommendation.Recommend(
+                RuntimeVariants.CudaReleaseChoices,
+                new DriverProbe(null, 0, Probed: true, result.FailureReason)));
+    }
+
+    [Fact]
+    public async Task 一覧そのものが読めない機体は今までどおり理由つきの0台()
+    {
+        var enumerator = new GpuEnumerator(
+            new RecordingRunner(), _ => false, null, new StubAdapters([]));
+
+        var result = await enumerator.EnumerateAsync(
+            new GpuEnumerationRequest(null, TimeSpan.FromSeconds(5)), CancellationToken.None);
+
+        Assert.NotNull(result.FailureReason);
+        Assert.Null(result.HasNvidiaAdapter);
+        Assert.Null(result.HasAmdAdapter);
+    }
+
+    /// <summary>OS のアダプタ一覧の差し替え（実機の DXGI を試験から外す）。</summary>
+    private sealed class StubAdapters(IReadOnlyList<GpuAdapterInfo> adapters) : IGpuAdapterInfoSource
+    {
+        public IReadOnlyList<GpuAdapterInfo> Adapters() => adapters;
     }
 
     [Theory]

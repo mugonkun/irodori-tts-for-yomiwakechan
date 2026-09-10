@@ -65,6 +65,35 @@ public static class UiStrings
     /// <summary>走っている入れ直しをやめる。</summary>
     public const string StatusRebuildCancelButton = "やめる";
 
+    /// <summary>
+    /// <b>入れ直しの代金の 1 行</b>（<c>StatusRebuildRuntimeText</c> の括弧の中）＝
+    /// 落としたものが揃っていて取り直しが要らない回（是正・段 G・medium 19）。
+    /// <para>
+    /// <b>綴りの直しどころ</b>＝「取得キャッシュ」は 設定 › 詳細 では
+    /// <see cref="SettingsCacheLabel"/>＝「一時ファイル」と呼んでおり、同じ物に 2 つの名が出ていた。
+    /// 「原檔」は `v2-copy.md` §9-1 が「ファイル」に替えた語、<c>GiB</c> は憲章 §6-1 が
+    /// 詳細の中だけに限った綴りで、この行は<b>畳みの外</b>に在る。
+    /// </para>
+    /// </summary>
+    public const string RefetchNothingToDo =
+        "一時ファイルが揃っているので、ダウンロードのやり直しはありません";
+
+    /// <summary>同・足りない回の頭（後ろに件数を継ぐ）。</summary>
+    public const string RefetchMissingHead = "一時ファイルが ";
+
+    /// <summary>同・件数の後ろ（後ろに丸めた量を継ぐ）。</summary>
+    public const string RefetchMissingMiddle = " 件足りないので、押すと ";
+
+    /// <summary>同・締め。</summary>
+    public const string RefetchMissingTail = " をダウンロードし直します";
+
+    /// <summary>
+    /// <b>配信中に × を押したときの 1 行</b>（憲章 §4-21 の後半の<b>逐語</b>）。
+    /// 出るのは本体の読み上げが走っている間だけで、走っていない回は今までどおり黙って閉じる。
+    /// </summary>
+    public const string ExitWhileHostBusy =
+        "いま読み分けちゃん2 の読み上げに使われています。終了しますか。";
+
     /// <summary>畳みの見出し（設定・発話テスト・声・このアプリについて とも同じ 1 語）。</summary>
     public const string AdvancedHeader = "詳細（上級者向け）";
 

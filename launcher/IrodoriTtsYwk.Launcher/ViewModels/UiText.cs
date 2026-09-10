@@ -66,6 +66,30 @@ public static class UiText
         return bytes.Value.ToString(CultureInfo.InvariantCulture) + " B";
     }
 
+    /// <summary>
+    /// <b>畳みの外に出す 1 行のためだけの丸め</b>（是正・段 G・medium 19）＝「約 5.3 GB」。
+    /// <para>
+    /// <b>なぜ別に置くか</b>＝<see cref="Bytes"/> と
+    /// <see cref="Services.Ledger.FetchPlanner.FormatBytes"/> は<b>1 字も触らない</b>
+    /// （憲章 §5＝ログと画面と帳面で数を食い違わせない・詳細と帳面は <c>GiB</c> のまま）。
+    /// 一方、憲章 §6-1 は「画面は <c>GB</c> で通す（詳細と帳面は <c>GiB</c> のまま）」と決めており、
+    /// <c>StatusRebuildRuntimeText</c> は<b>詳細の畳みの外</b>に在る。そこへ載せる 1 行にだけ
+    /// この丸めを使う（10 進・小数 1 桁・1 GB 未満は「1 GB 未満」）。
+    /// </para>
+    /// </summary>
+    public static string RoundedGigabytes(long bytes)
+    {
+        if (bytes < 0)
+        {
+            return Missing;
+        }
+
+        var gb = bytes / 1_000_000_000.0;
+        return gb < 0.05
+            ? "1 GB 未満"
+            : "約 " + Fixed(gb, 1) + " GB";
+    }
+
     /// <summary>取得の速さ。</summary>
     public static string Rate(double bytesPerSecond)
     {

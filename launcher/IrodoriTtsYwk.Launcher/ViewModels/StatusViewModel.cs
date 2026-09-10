@@ -208,6 +208,23 @@ public sealed class StatusViewModel : ObservableObject
             || (IsAcquisitionFailure(State, Reason) && !ReasonIsPreflight(Reason));
     }
 
+    /// <summary>
+    /// <b>はじめの準備が最後まで済んでいない</b>（<c>MainViewModel.NeedsFirstRun</c> ないし
+    /// <c>NeedsAcquisition</c>）＝帯に E-01 を出す（是正・段 G・high 7）。
+    /// <b>失敗を待たない</b>のが眼目である＝ウィザードを閉じた機体は誰もサーバを起こさないので、
+    /// 断りの 1 行すら出ないまま <see cref="ServerState.Stopped"/> のまま止まる。
+    /// </summary>
+    public void ApplyFirstRunPending(bool pending)
+    {
+        if (_firstRunPending == pending)
+        {
+            return;
+        }
+
+        _firstRunPending = pending;
+        RefreshBand();
+    }
+
     /// <summary>事前検査がランチャ自身の字で断った理由か（<b>純関数</b>）。</summary>
     private static bool ReasonIsPreflight(string? reason) =>
         reason is not null
@@ -262,7 +279,44 @@ public sealed class StatusViewModel : ObservableObject
     }
 
     /// <summary>食い違いの 1 行を入れ替える（null＝消す）。</summary>
-    public void ApplyRuntimeStamp(string? mismatchLine) => RebuildRuntimeText = mismatchLine;
+    public void ApplyRuntimeStamp(string? mismatchLine)
+    {
+        RebuildRuntimeText = mismatchLine;
+
+        // E1 は**帯にも載る**（憲章 §4-24＝v2.0 の必須要件・是正・段 G・high 1）。
+        // 詳しい状態 の畳みの外の 1 行と 1 手は据え置きで、同じ事実を帯にも出すだけである。
+        RefreshBand();
+    }
+
+    // ---- 連携の 1 行の材料（§2-1c）--------------------------------------------
+
+    /// <summary>
+    /// 本体の走行の標本を入れる（<b>配るのは <see cref="MainViewModel.ApplyStatusSample"/> 1 本</b>＝
+    /// 見張りが採った同じ 2 秒の標本をそのまま渡す。新しい問い合わせは 1 本も足さない）。
+    /// <para>
+    /// <b>段 D が契約に足した欄</b>（`docs/contract.md` ⑹ の <c>requests.in_flight</c>）を、
+    /// 段 G でようやく帯へ結んだ（是正・medium 2／9）＝それまで帯は
+    /// <c>hostFieldPresent:false</c> で凍っており、<see cref="BandText.HostIdle"/> と
+    /// <see cref="BandText.HostBusy"/> の 2 文は到達できなかった。
+    /// </para>
+    /// </summary>
+    /// <param name="fieldPresent">
+    /// <c>/ywk/status</c> に走行数の欄が在るか（<c>StatusResponse.Requests is not null</c>）。
+    /// 偽＝古い個体＝「読み分けちゃん2 から使えます」だけを出す（§2-1c＝嘘にならない）。
+    /// </param>
+    /// <param name="busy">いま本体の読み上げが走っているか（<b>自分の射は濾してある値</b>）。</param>
+    public void ApplyHost(bool fieldPresent, bool busy)
+    {
+        _hostFieldPresent = fieldPresent;
+        _hostBusy = busy;
+
+        // 「まだ呼ばれていません」は**この起動で 1 度でも見たら二度と出さない**（§2-1c）。
+        _hostSeen |= busy;
+        RefreshBand();
+    }
+
+    /// <summary>いま本体の読み上げが走っているか（<see cref="TryViewModel.HostBusy"/> の出所）。</summary>
+    public bool HostBusy => _hostBusy;
 
     // ---- 組み直しの取消と進捗（是正・便 D（3）の 3 巡目） ----------------------
 
@@ -534,6 +588,10 @@ public sealed class StatusViewModel : ObservableObject
     private string _bandHostText = string.Empty;
     private bool _runtimeLoaded;
     private bool _userStopped;
+    private bool _hostFieldPresent;
+    private bool _hostSeen;
+    private bool _hostBusy;
+    private bool _firstRunPending;
     private string? _driverVersion;
     private string? _alternativeVariant;
     private int? _missingModelCount;
@@ -610,7 +668,9 @@ public sealed class StatusViewModel : ObservableObject
             AlternativeVariant: _alternativeVariant,
             GpuName: _running?.GpuName ?? _desired?.GpuName,
             MissingModelCount: _missingModelCount,
-            ExitCode: _exitCode);
+            ExitCode: _exitCode,
+            RebuildRuntimeLine: _rebuildRuntime,
+            FirstRunPending: _firstRunPending);
 
         var next = BandText.For(State, Reason, context);
         if (!Equals(_band, next))
@@ -625,9 +685,9 @@ public sealed class StatusViewModel : ObservableObject
             RaisePropertyChanged(nameof(BandAction));
         }
 
-        // 走行数の欄はまだ契約に無い（段 D で足す）＝古い個体と同じ扱いで
-        //「読み分けちゃん2 から使えます」だけを出す（§2-1c＝嘘にならない）。
-        BandHostText = BandText.HostLine(State, hostFieldPresent: false, hostSeen: false, hostBusy: false);
+        // 走行数の欄は段 D が契約に足した（`server/ywk_server.py` の `requests.in_flight`・
+        // `docs/contract.md` ⑹）。標本は `ApplyHost` が配る（§2-1c）。
+        BandHostText = BandText.HostLine(State, _hostFieldPresent, _hostSeen, _hostBusy);
     }
 
     /// <summary>

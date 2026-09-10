@@ -305,9 +305,17 @@ public sealed class CorrectionThreeStampTests : IDisposable
         var main = NewMain(paths, settings);
 
         Assert.NotNull(main.Status.RebuildRuntimeText);
-        Assert.Contains("取り直します", main.Status.RebuildRuntimeText!, StringComparison.Ordinal);
+
+        // 段 G の是正（medium 19）＝この 1 行は**畳みの外**に出るので、綴りは
+        // UiStrings（「一時ファイル」「ダウンロードし直します」）と 10 進の丸めに揃えた。
+        // 「取得キャッシュ」「原檔」「GiB」はここから消えている。
         Assert.Contains(
-            FetchPlanner.FormatBytes(1150), main.Status.RebuildRuntimeText!, StringComparison.Ordinal);
+            UiStrings.RefetchMissingTail, main.Status.RebuildRuntimeText!, StringComparison.Ordinal);
+        Assert.Contains(
+            UiText.RoundedGigabytes(1150), main.Status.RebuildRuntimeText!, StringComparison.Ordinal);
+        Assert.DoesNotContain("取得キャッシュ", main.Status.RebuildRuntimeText!, StringComparison.Ordinal);
+        Assert.DoesNotContain("原檔", main.Status.RebuildRuntimeText!, StringComparison.Ordinal);
+        Assert.DoesNotContain("GiB", main.Status.RebuildRuntimeText!, StringComparison.Ordinal);
     }
 
     public void Dispose()

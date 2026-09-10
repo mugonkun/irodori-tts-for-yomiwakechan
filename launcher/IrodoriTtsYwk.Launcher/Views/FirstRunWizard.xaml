@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:IrodoriTtsYwk.Launcher.ViewModels"
+        xmlns:v="clr-namespace:IrodoriTtsYwk.Launcher.Views"
         Title="初回取得" Height="640" Width="900"
         MinHeight="480" MinWidth="720"
         WindowStartupLocation="CenterOwner"
@@ -18,6 +19,14 @@
   -->
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    <!--
+      動かし方の一覧の行に出す札＝RuntimeVariants.DisplayName（是正・段 G・high 14）。
+      束縛の値は台帳の綴りのままなので settings.json の variant は 1 字も動かない。
+    -->
+    <v:VariantDisplayConverter x:Key="VariantDisplay" />
+    <DataTemplate x:Key="VariantRow">
+      <TextBlock Text="{Binding Converter={StaticResource VariantDisplay}}" />
+    </DataTemplate>
   </Window.Resources>
 
   <DockPanel Margin="16">
@@ -79,6 +88,7 @@
           <ComboBox Width="420" HorizontalAlignment="Left"
                     AutomationProperties.AutomationId="FirstRunVariantCombo"
                     ItemsSource="{Binding VariantChoices}"
+                    ItemTemplate="{StaticResource VariantRow}"
                     SelectedItem="{Binding Variant, Mode=TwoWay}" />
           <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
                      AutomationProperties.AutomationId="FirstRunVariantNameText"

@@ -39,8 +39,12 @@
 ;       Decorate（全角ダッシュの前後に半角空白 1 つ）＝窓題と 1 字も違えない。
 ;   ⑵ 既定の導入先は CUDA 版を irodori-tts-ywk → **irodori-tts-ywk-cuda** に改める。
 ;       本体（読み分けちゃん2）の EngineLaunchDefaults は既に
-;       Programs\irodori-tts-ywk-radeon → Programs\irodori-tts-ywk-cuda の順で探しており、
+;       Programs\irodori-tts-ywk-cuda → Programs\irodori-tts-ywk-radeon の順で探しており、
 ;       素の irodori-tts-ywk は **候補に入っていない**＝こちらが本体に合わせる側である。
+;       ※ 順は司令官裁定 2026-09-10 で **cuda 先頭に覆った**（便 F 時点の radeon 先頭＝開発機の実在順）。
+;         正本＝本体 UI/Services/Launch/EngineLaunchDefaults.cs の IrodoriYwkCandidates()。
+;         両版が入っている機体では **RTX（CUDA）版が起きる**（是正・段 G・low 26）。
+;         綴り 2 つ（irodori-tts-ywk-cuda／-radeon）と MyDirName は 1 字も動かさない。
 ;       radeon 側の路は 1 字も変えない（本席の機体にも本体にも既に焼かれている）。
 ;   ⑶ **内部の識別子は 1 つも変えない**＝Flavor の id（cuda／radeon）・/DFlavor=・AppId の GUID・
 ;       setup の檔名（…-cuda.exe／…-radeon.exe）・台帳名（runtime-rocm-gfx1151）。英語の #error 文の
@@ -157,7 +161,9 @@ AppName={#MyAppName}
 AppVersion={#AppVersionNumeric}
 AppVerName={#MyAppName} {#AppVersion}
 VersionInfoVersion={#AppVersionNumeric}
-AppPublisher=irodori-tts-for-yomiwakechan（非公式・Aratako 氏とは無関係＝decisions.md 1）
+AppPublisher=irodori-tts-for-yomiwakechan（非公式・Aratako 氏とは無関係）
+; ↑ この値は「設定 → アプリ」と「プログラムと機能」の**発行元**として利用者の目に入る＝
+;   出典（裁定の番号）は出さない（憲章 §6-1・是正・段 G・medium 17）。理由の 2 語は残す。
 DefaultDirName={autopf}\{#MyDirName}
 DisableProgramGroupPage=yes
 ; ↑ これは効いている（既定＝auto なら「スタートメニューフォルダーを選ぶ」頁が出て、実射した 3 頁が 4 頁になる）。
@@ -289,18 +295,27 @@ Type: dirifempty;     Name: "{app}"
 ; 本席が台帳 json から FetchPlanner.cs:54,57-59,65 の式を踏み直した実測（§11-8 に逐語）。
 ; **名札は v2.0 段 F の綴り**（是正・2026-09-11・medium 15）＝この頁は DisableReadyPage を立てて
 ; いないので**利用者が読む**。窓題と近道が「… － RTX（CUDA）」なのに本文が「CUDA 版」では食い違う。
-; 数字は動かさない（ben-e §6-2＝準備完了頁が代金を言う規則）。隠す語（実行系・変種・gfx1151・
-; cu130／cu126）も同じ回に置き換えた＝憲章 §6-1。
+; **段 G（2026-09-11）で 4 行とも書き直した**（high 15・medium 18／26／27）＝段 F が替えたのは
+; ReadyLabel2a／2b の名札だけで、⑴ 完了頁の 4 行には「取得」「第三者物」「変種」「cu130」が、
+; ⑵ 準備完了頁には 1024 進の綴り（MiB／GiB）が残っていた。どちらも利用者が読む頁である
+; （憲章 §6-1＝画面は GB で通す・詳細と帳面は GiB のまま／v2-copy.md §9-2＝cu130・cu126 は出さない）。
+;   ・本体の量＝**約 96 MB**（旧「約 106 MiB」は 2026-09-05 の実測で、exe が 69,610,930 B・
+;     配布樹が 37,111,434 B だったころの値。v2.0.0 は exe 61,779,808 B（門 A-6）・樹 34,088,381 B（門 A-1）＝
+;     [Files] を足し直すと cuda 95,795,232 B・radeon 95,727,882 B、これに unins000 の対（実測 4,390,361 B）を
+;     足して 100,185,593 B／100,118,243 B＝**95.5 MiB**。丸めて 96 MB。実数はこの註と帳面に残す）。
+;   ・ダウンロードの量と空き＝台帳の実測（ledger/README.md §7）を GB の札に替えただけで、数は動かさない＝
+;     RTX（CUDA）5.26 GiB→**約 5.3 GB**・Radeon（ROCm）4.79 GiB→**約 4.8 GB**、
+;     空きは 14.45 GiB→**最大 15 GB ほど**・9.55 GiB→**最大 10 GB ほど**（4 通りの内訳は帳面へ）。
 #if Flavor == "radeon"
-ja.ReadyLabel2a=ここで入るのは本体（約 106 MiB）だけです。動かすための一式と声のデータ（Radeon（ROCm）で 4.79 GiB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
-ja.ReadyLabel2b=ここで入るのは本体（約 106 MiB）だけです。動かすための一式と声のデータ（Radeon（ROCm）で 4.79 GiB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」をクリックしてください。
-ja.FinishedLabel=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 9.55 GiB の空きが要ります（CPU 変種なら 4.53 GiB）。
-ja.FinishedLabelNoIcons=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 9.55 GiB の空きが要ります（CPU 変種なら 4.53 GiB）。
+ja.ReadyLabel2a=ここで入るのはアプリ本体（約 96 MB）だけです。動かすための一式と声のデータ（約 4.8 GB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
+ja.ReadyLabel2b=ここで入るのはアプリ本体（約 96 MB）だけです。動かすための一式と声のデータ（約 4.8 GB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」をクリックしてください。
+ja.FinishedLabel=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に開くと、お知らせが 1 つ出ます。同意すると、はじめの準備（約 4.8 GB のダウンロード・10 分ほど）が始まります。途中で最大 10 GB ほどの空きが要ります。
+ja.FinishedLabelNoIcons=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に開くと、お知らせが 1 つ出ます。同意すると、はじめの準備（約 4.8 GB のダウンロード・10 分ほど）が始まります。途中で最大 10 GB ほどの空きが要ります。
 #else
-ja.ReadyLabel2a=ここで入るのは本体（約 106 MiB）だけです。動かすための一式と声のデータ（RTX（CUDA）で 5.26 GiB・CUDA 12.6 なら 5.93 GiB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
-ja.ReadyLabel2b=ここで入るのは本体（約 106 MiB）だけです。動かすための一式と声のデータ（RTX（CUDA）で 5.26 GiB・CUDA 12.6 なら 5.93 GiB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」をクリックしてください。
-ja.FinishedLabel=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 14.45 GiB の空きが要ります（既定の cu130 なら 11.56 GiB・CPU 変種なら 4.53 GiB）。
-ja.FinishedLabelNoIcons=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に起動すると、取得する第三者物の通知が出ます。同意すると取得が始まります（100 Mbps 級で 10 分ほど）。取得の途中では最大 14.45 GiB の空きが要ります（既定の cu130 なら 11.56 GiB・CPU 変種なら 4.53 GiB）。
+ja.ReadyLabel2a=ここで入るのはアプリ本体（約 96 MB）だけです。動かすための一式と声のデータ（約 5.3 GB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」を、設定の確認や変更を行うには「戻る」をクリックしてください。
+ja.ReadyLabel2b=ここで入るのはアプリ本体（約 96 MB）だけです。動かすための一式と声のデータ（約 5.3 GB）は、最初にこのアプリを開いたときにダウンロードします。%n%nインストールを続行するには「インストール」をクリックしてください。
+ja.FinishedLabel=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に開くと、お知らせが 1 つ出ます。同意すると、はじめの準備（約 5.3 GB のダウンロード・10 分ほど）が始まります。途中で最大 15 GB ほどの空きが要ります。
+ja.FinishedLabelNoIcons=ご使用のコンピューターに [name] がセットアップされました。%n%n最初に開くと、お知らせが 1 つ出ます。同意すると、はじめの準備（約 5.3 GB のダウンロード・10 分ほど）が始まります。途中で最大 15 GB ほどの空きが要ります。
 #endif
 
 [Code]
@@ -326,16 +341,19 @@ const
     旧値 12413511598 はこのリポのどこからも導けない手作りの数字だった（同 low 2）。}
 #if Flavor == "radeon"
   PeakDiskBytes = 10252286678;
-  PeakDiskText  = '9.55 GiB';
-  FetchText     = '4.79 GiB';
+  PeakDiskText  = '10 GB';
+  FetchText     = '約 4.8 GB';
   VariantText   = 'Radeon（ROCm）';
 #else
   PeakDiskBytes = 15515873265;
-  PeakDiskText  = '14.45 GiB';
-  FetchText     = 'cu130 で 5.26 GiB・cu126 で 5.93 GiB';
+  PeakDiskText  = '15 GB';
+  FetchText     = '約 5.3 GB';
   VariantText   = 'RTX（CUDA）';
 #endif
   BytesPerGiB = 1073741824;
+  { 画面に出す桁は 10 進で丸める（憲章 §6-1＝画面は GB・詳細と帳面は GiB のまま）＝
+    上の PeakDiskBytes は 1 バイトも動かさない（空きの判定はバイトで行う）。 }
+  BytesPerGB = 1000000000;
 
 var
   SpaceNotified: Boolean;
@@ -398,11 +416,13 @@ begin
     Exit;
   if FreeBytes >= PeakDiskBytes then
     Exit;
-  SuppressibleMsgBox('取得したものは ' + DataDir() + ' に入ります。'
-       + 'このドライブの空きは約 ' + IntToStr(FreeBytes div BytesPerGiB) + ' GiB です。' + #13#10
-       + VariantText + ' の初回取得には途中で最大 ' + PeakDiskText + ' の空きが要ります'
-       + '（落とすバイトは ' + FetchText + '）。CPU 変種なら 4.53 GiB で足ります。' + #13#10
-       + '導入はこのまま続けられます。取得のときにランチャがもう一度確かめます。',
+  { 綴りは §6-1 の語彙（是正・段 G・medium 16）＝まっさらな機体でいちばん出やすい窓である。
+    「取得」「変種」「初回取得」「ランチャ」「落とすバイト」「GiB」を落とし、内訳は帳面へ回した。 }
+  SuppressibleMsgBox('ダウンロードした物は ' + DataDir() + ' に入ります。'
+       + 'このドライブの空きは約 ' + IntToStr(FreeBytes div BytesPerGB) + ' GB です。' + #13#10
+       + 'はじめの準備には途中で最大 ' + PeakDiskText + ' ほどの空きが要ります'
+       + '（' + VariantText + ' でダウンロードするのは ' + FetchText + '）。' + #13#10
+       + 'このまま入れられます。準備を始めるときに、アプリがもう一度確かめます。',
        mbInformation, MB_OK, IDOK);
 end;
 
@@ -438,9 +458,11 @@ begin
     両向きを見る＝導入先がデータ樹の中／データ樹が導入先の中。}
   if StartsWithDir(Dir, DataDir()) or StartsWithDir(DataDir(), Dir) then
   begin
-    MsgBox('その場所は取得物と話者の置き場（' + DataDir() + '）と重なっています。'
-         + 'ここに入れると、登録済みの話者台帳（voices\voices.json・voices\voices.ywk.json）が'
-         + '配布物の雛形で上書きされ、元に戻せません。別の場所を選んでください。既定は' + #13#10
+    { 綴りは §6-1・v2-copy.md §9-1 の語彙（是正・段 G・medium 20）＝「取得物」「話者」「台帳」
+      「配布物」と檔名 2 つを落とす（憲章 原則 6＝檔名は画面に出さず記録へ）。 }
+    MsgBox('その場所は、このアプリがダウンロードした物と声を置く場所（' + DataDir() + '）と重なっています。'
+         + 'ここに入れると、追加した声の一覧が新品の状態で上書きされ、元に戻せません。'
+         + '別の場所を選んでください。既定は' + #13#10
          + ExpandConstant('{autopf}') + '\' + '{#MyDirName}' + ' です。', mbError, MB_OK);
     Result := False;
     Exit;
@@ -452,9 +474,10 @@ begin
     Directory.Move しようとして錠で失敗し ⑵ 撤去のときの WipeTree(Legacy) が残りを消す。}
   if StartsWithDir(Dir, LegacyDataDir()) or StartsWithDir(LegacyDataDir(), Dir) then
   begin
+    { 同・是正・段 G・low 21＝「樹」（配布樹／データ樹と同じ内輪の言い方）と「話者」を落とす。 }
     MsgBox('その場所は以前の版の置き場（' + LegacyDataDir() + '）と重なっています。'
-         + 'この樹には登録済みの話者と設定が残っていることがあり、ここに入れると'
-         + '初回起動の引っ越しが通らなくなります。別の場所を選んでください。既定は' + #13#10
+         + 'そこには前に追加した声と設定が残っていることがあり、ここに入れると'
+         + '引き継ぎが通らなくなります。別の場所を選んでください。既定は' + #13#10
          + ExpandConstant('{autopf}') + '\' + '{#MyDirName}' + ' です。', mbError, MB_OK);
     Result := False;
     Exit;

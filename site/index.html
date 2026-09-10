@@ -22,8 +22,6 @@
     --rocm-ink:#ffffff;
     --note:#8a8279;
     --link:#1a5fb4;
-    --ph-bg:#f1ece4;
-    --ph-line:#cfc6b8;
   }
   @media (prefers-color-scheme: dark){
     :root{
@@ -38,8 +36,6 @@
       --rocm-ink:#1a0808;
       --note:#8f887f;
       --link:#8ab4f8;
-      --ph-bg:#26242b;
-      --ph-line:#413c47;
     }
   }
   *{box-sizing:border-box}
@@ -159,21 +155,9 @@
   ul.plain{margin:.6rem 0 0;padding-left:1.4rem}
   ul.plain li{margin:.5rem 0}
   figure{margin:.8rem 0 0}
-  .shot{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    aspect-ratio:16 / 10;
-    max-width:100%;
-    background:var(--ph-bg);
-    border:2px dashed var(--ph-line);
-    border-radius:.6rem;
-    color:var(--note);
-    font-size:.9rem;
-    line-height:1.7;
-    padding:1rem;
-  }
+  figure img{max-width:100%;height:auto;border-radius:.6rem}
+  /* 画像が入るまで、この 3 か所には何も置かない（枠だけの箱を公開しない）。
+     差し替え口は使い方（3 ステップ）の中の HTML コメントに逐語で残してある。 */
   kbd{
     font-family:ui-monospace,SFMono-Regular,Consolas,"Yu Gothic",monospace;
     font-size:.85em;
@@ -255,41 +239,26 @@
       <span class="step-title">ダウンロードして、インストールする</span><br>
       落ちてきたファイルをダブルクリックして、「次へ」「インストール」「完了」を押すだけです。管理者のパスワードは要りません。
       <!-- 画像 1 の差し替え口（撮影＝RTX 機・v2.0 の画面）。
-           この <figure> ごと、次の 1 行に置き換えてください。
+           撮れたら、この註のすぐ下に次の 1 行を置いてください（画像が入るまでは何も出しません）。
            <figure><img src="img/step1-setup.png" alt="インストーラの完了画面" width="1100" height="688" loading="lazy"></figure>
            ファイル＝site/img/step1-setup.png（横 1100 px 以上・表示は 960 px 目安） -->
-      <figure>
-        <div class="shot" role="img" aria-label="画像 1：インストーラの完了画面（準備中）">
-          <span>［ 画像 1：インストーラの完了画面 ］<br>あとで入ります</span>
-        </div>
-      </figure>
     </li>
     <li>
       <span class="step-title">アプリが開いたら、そのまま待つ</span><br>
       はじめの 1 回だけ、動かすための一式をダウンロードします（約 5.3 GB・10 分ほど）。途中で 1 度、Windows の許可の窓が出るので「はい」を押してください。「使えます。」と出たら終わりです。
       <!-- 画像 2 の差し替え口（撮影＝RTX 機・v2.0 の画面）。
-           この <figure> ごと、次の 1 行に置き換えてください。
+           撮れたら、この註のすぐ下に次の 1 行を置いてください（画像が入るまでは何も出しません）。
            <figure><img src="img/step2-setup.png" alt="はじめの準備の進み具合" width="1100" height="688" loading="lazy"></figure>
            ファイル＝site/img/step2-setup.png（横 1100 px 以上・表示は 960 px 目安） -->
-      <figure>
-        <div class="shot" role="img" aria-label="画像 2：はじめの準備の進み具合（準備中）">
-          <span>［ 画像 2：はじめの準備の進み具合 ］<br>あとで入ります</span>
-        </div>
-      </figure>
     </li>
     <li>
       <span class="step-title">しゃべらせてみる</span><br>
       声を選び、文を打って、〔しゃべらせる〕を押します。1〜2 秒で鳴ります。
       読み分けちゃん2 で使うときは、<strong>このアプリを開いたまま</strong>にしてください。
       <!-- 画像 3 の差し替え口（撮影＝RTX 機・v2.0 の画面）。
-           この <figure> ごと、次の 1 行に置き換えてください。
+           撮れたら、この註のすぐ下に次の 1 行を置いてください（画像が入るまでは何も出しません）。
            <figure><img src="img/step3-talk.png" alt="しゃべらせているところ" width="1100" height="688" loading="lazy"></figure>
            ファイル＝site/img/step3-talk.png（横 1100 px 以上・表示は 960 px 目安） -->
-      <figure>
-        <div class="shot" role="img" aria-label="画像 3：しゃべらせているところ（準備中）">
-          <span>［ 画像 3：しゃべらせているところ ］<br>あとで入ります</span>
-        </div>
-      </figure>
     </li>
   </ol>
 
@@ -318,7 +287,7 @@
     <summary>RTX（CUDA）と Radeon（ROCm）は何が違うの？</summary>
     <p>GPU の計算のしくみが違うだけで、<strong>できることも、入っている声も同じ</strong>です。
       NVIDIA のグラフィックスは CUDA、AMD の Radeon は ROCm を使うので、入れる物が別になっています。</p>
-    <p>まちがえて入れても、開いたときにアプリが教えます。そのときは、このページからもう一方をダウンロードして入れてください。まちがえた方は Windows の「<strong>設定 → アプリ</strong>」から消せます。</p>
+    <p>まちがえて入れても、<strong>はじめの準備の画面で</strong>アプリが教えます（「このパソコンのグラフィックスは、この版では使えません。」と出ます）。そのときは、ダウンロードを始める前に閉じて、このページからもう一方をダウンロードして入れてください。まちがえた方は Windows の「<strong>設定 → アプリ</strong>」から消せます。</p>
     <p><strong>2 つは別のアプリです。</strong>同じパソコンに両方入れられますが、設定も、追加した声も、ダウンロードした物もそれぞれ別に持ち、<strong>同時には開けません</strong>（あとから開いた方が、つなぎ口が塞がっていると出ます）。</p>
   </details>
 

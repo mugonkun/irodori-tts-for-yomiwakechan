@@ -83,7 +83,7 @@ public sealed class AppPaths
     /// 単一起動の錠の名（<b>版ごと</b>＝<c>decisions.md</c> 133 ⑷。別アプリなので互いを起こし直さない）。
     /// <c>.iss</c> の <c>AppMutex</c> と<b>1 字も違えない</b>。
     /// <para>
-    /// <b>鏡は <c>installer/irodori-tts-ywk.iss:161</c></b>（<c>AppMutex=Local\irodori-tts-ywk-launcher-{#Flavor}</c>）。
+    /// <b>鏡は <c>installer/irodori-tts-ywk.iss:177</c></b>（<c>AppMutex=Local\irodori-tts-ywk-launcher-{#Flavor}</c>）。
     /// Inno から C# の定数は引けないので、綴りは<b>手で揃えるしかない</b>＝ずれると
     /// 「走っているランチャを止めてください」の関門が黙って効かなくなる（Inno の照合は<b>大小を区別する</b>）。
     /// 4 本の逐語は <c>LegacyDataMigrationTests.版ごとの樹は互いに重ならない</c> が釘付けしている。

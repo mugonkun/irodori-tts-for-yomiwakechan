@@ -707,7 +707,7 @@ XAML の**要素の本文**を足した。1 巡目は UiStrings と可視属性�
   - `AppPaths` を作る所（`AppServices`・`LauncherComposition`・台本の期待値）に **flavor を渡す 1 本の道**を通す。
 - **単一起動の錠を版ごとに割る**＝`App.xaml.cs:34` の `Local\irodori-tts-ywk-launcher` **と `:37` の
   `ActivateEventName`（`Local\irodori-tts-ywk-launcher-activate`）の 2 つ**を `…-cuda`／`…-radeon` へ割る。
-  `.iss` の `AppMutex`（`:151`・註 `:152-159`）も**錠と同じ 2 つ**に割る
+  `.iss` の `AppMutex`（`:177`・註 `:178-190`）も**錠と同じ 2 つ**に割る
   （`MyAppName` を分けている所と同じ分岐で綴る＝**綴りの正本は 1 箇所**）。
   **2 個目の起動が 1 つ目の窓を前に出す合図は、版の中でだけ働く**（別アプリを起こし直さない）。
   ※ **合図の口を割り忘れると、錠だけ割れて事故になる**＝合図は `EventResetMode.AutoReset` の 1 本
@@ -790,7 +790,7 @@ XAML の**要素の本文**を足した。1 巡目は UiStrings と可視属性�
 | 触る所 | 内容 |
 |---|---|
 | `installer/irodori-tts-ywk.iss:221` | `docs\install.md` の行を**消し**、`docs\guide.md` を足す。**`docs\radeon.md` の行も同じ回に消した**（是正・2026-09-11・medium 16＝548 行の調べの帳面で、`install.md` と同じ理由＝憲章 原則 8。利用者に要る 2 文は `guide.md` §1 に畳んだ）。`README.md` の行だけが据え置き＝配布物の `docs\` は**両版とも 2 檔** |
-| 同 `:151`（`AppMutex`）と註 `:152-159` | **版ごとに割る**＝`Local\irodori-tts-ywk-launcher-cuda`／`…-radeon`（`App.xaml.cs:34` と同じ 2 語・段 E-3・裁定 133）。**註の 2 文が偽になる**＝`:155`「この錠は **両方の種で同じ**…裁定 109 でも変えない」と `:159`「同じ錠・同じ 127.0.0.1:18088」＝**書き直す**（錠は版ごと・つなぎ口だけが 1 つ） |
+| 同 `:177`（`AppMutex`）と註 `:178-190` | **版ごとに割る**＝`Local\irodori-tts-ywk-launcher-cuda`／`…-radeon`（`App.xaml.cs:34` と同じ 2 語・段 E-3・裁定 133）。**註の 2 文が偽になる**＝`:183`「この錠は **両方の種で同じ**…裁定 109 でも変えない」と `:187`「同じ錠・同じ 127.0.0.1:18088」＝**書き直す**（錠は版ごと・つなぎ口だけが 1 つ） |
 | 同 `:41-42`（内部識別子の錠の註） | `AppMutex` と **データ樹の名（`irodori-tts-ywk`）** を「1 つも変えない」側から**外す**（裁定 133 で両方とも版ごとに割れた）。Flavor の id・`/DFlavor=`・`AppId` の GUID・setup の檔名・台帳名は据え置き |
 | 同 `:291-296`（`DataDir()`・路の文字列は `:295`） | **版ごとの樹を返す**＝`…\irodori-tts-ywk-cuda`／`…-radeon`（`AppPaths` の新しい既定と**同じ場所**を固定で解く。env は見ないまま） |
 | 同 `:345`（導入前の断り） | 「取得したものは `<版の樹>` に入ります」の路が版ごとになるだけ（文はそのまま） |
@@ -953,6 +953,57 @@ settings 見本・`e-install-probe.ps1` の既定の setup 名・`.iss` と `ins
 ⑥ エラーの文に 3 部品が揃っているか
 ⑦ 詳細は 12 行以内か
 ⑧ リポを知らない人が文書を最後まで読めるか。
+
+#### 段 G の記帳（2026-09-11・版を切る前の最後の検分＝所見 30 件）
+
+**検分の形**＝reviewer 4 席（story／scenarios／words／installer＋host）が憲章・`decisions.md` 124-133・
+`v2-spec.md`／`v2-copy.md`／本檔を正典に、**編集せずに**所見を出し、是正席が 1 席で当て込んだ
+（commit はしない・アプリは 1 度も起こしていない・`yomiwakechan2` と `decisions.md` は 1 字も触っていない）。
+**決裁 130 と裁定 131／132／133 は 1 つも動かしていない。**
+
+**当て込んだ 28 件**
+
+| # | 所見 | 当て込んだ所 |
+|---|---|---|
+| high 1 | 憲章 §4-24 の E1（新しい版の差分取り直し）が**帯に出ない**＝導線が ⚙ の畳みの中だけだった | `BandContext.RebuildRuntimeLine` を新設し、`BandText.For` の `Ready`／`Warming` が**緑のまま**理由＋〔動かすための一式を入れ直す〕を返す。`StatusViewModel.ApplyRuntimeStamp` が帯を組み直す。詳しい状態 の 1 手は据え置き（`v2-spec.md` §2-1a の E1 に註を追記） |
+| high 7 | はじめの準備を閉じた機体が**行き止まり**（帯＝灰＋「準備しています…」＋釦なし・詳しい状態の釦も消えていた） | `BandContext.FirstRunPending` を新設し、`Stopped` で E-01 の 3 部品（「まだ準備が終わっていません。」＋理由＋〔はじめの準備をする〕）を返す。`MainViewModel.RefreshAcquisition` の `NeedsFirstRun` の枝が `ApplyAcquisition(false)` で潰していたのを `true` に直した |
+| high 8 | Radeon（ROCm）版が**見ていない AMD を名乗り、その括弧に NVIDIA の製品名**を入れていた | `FirstRunViewModel.WrongEditionFor` を新設（E-06b）。ROCm の枝は NVIDIA の名を 1 字も出さない |
+| high 14 | 設定 › 詳細と はじめの準備の「動かし方」の一覧に**台帳の生の綴り**（`cu130`／`rocm-gfx1151`）が出ていた | `Views/VariantDisplayConverter.cs` を新設し、2 つの `ComboBox` に `ItemTemplate` を噛ませた。**束縛の値は台帳の綴りのまま**＝`settings.json` の `variant` も `AutomationId` も 1 字も動かない |
+| high 15／medium 18／26／27 | setup の**完了頁と準備完了頁**に隠す語（取得・第三者物・変種・cu130）と 1024 進の綴り、しかも 10.4 MiB 古い実測が残っていた | `ja.ReadyLabel2a/2b`／`ja.FinishedLabel(NoIcons)` の 8 行を §6-1 の語彙と GB の丸めへ。本体の量は v2.0.0 の [Files] を足し直して **約 96 MB**（実数は `.iss` の註）。`e-install-probe.ps1` の門も `約 96 MB` ＋「GB が在り GiB が無い」に直した |
+| medium 2／9 | 帯の**連携の 1 行が 1 つの値で凍っていた**（段 D が契約に足した `requests.in_flight` が届いていない・2 文が到達不能） | `StatusViewModel.ApplyHost(fieldPresent, busy)` を新設（`_hostSeen` は据わり）、`MainViewModel.ApplyStatusSample` が **`Try.HostBusy` の濾したあとの値**を配る。古い註（「まだ契約に無い」）を消した |
+| medium 3 | 憲章 §4-21 後半の「配信中の × は 1 行だけ確かめる」が**無かった** | `UiStrings.ExitWhileHostBusy`（憲章の逐語）を新設し、`MainWindow.OnClosing` の**先頭**で `HostBusy` の回だけ YesNo（既定 No）を出す。「いいえ」は `e.Cancel` で**何も片づけずに**返る |
+| medium 10 | 素の機体で「**見た上で 0 台**」が作れず、憲章 §7 の 1 行（`NoGpuDecisionLine`）が実機では 1 度も出ないまま 5.3 GB を落としていた | `GpuEnumerator` に `IGpuAdapterInfoSource`（既定＝`DxgiGpuAdapters`＝実行系が無くても答える）を差し、NVIDIA も AMD も 1 枚も居ない回だけ `FailureReason` を落とす |
+| medium 11 | `AutoStartOffHint` が**設定の在り処を取り違えて**いた（印は ふだんの設定・詳細 › 読み上げの動作 には 3 釦しか無い） | 文を札そのもの（`UiStrings.SettingsAutoStart`）へ。`v2-spec.md` §2-5 末尾も同じ回に直した |
+| medium 12 | 公式ページの「まちがえて入れても、開いたときにアプリが教えます」を**果たすコードが無かった** | E-06b を両向きで実装（ROCm 版＋NVIDIA／CUDA 版＋AMD）。**片方の会社の板しか居ないときだけ**言う＝両社が同居した機体で誤爆しない。⑶ は釦ではなく公式ページの案内（§9 ⒅ に記帳）。`site/index.html` の FAQ も「はじめの準備の画面で」と場所を足した |
+| medium 16 | 空きが足りない機体の窓が隠す語だらけ（変種・初回取得・ランチャ・落とすバイト・GiB） | `NotifyFreeSpace` の本文と `PeakDiskText`／`FetchText` を GB の丸めと §6-1 の語彙へ（`PeakDiskBytes` は 1 バイトも動かさない） |
+| medium 17 | `AppPublisher` が「＝decisions.md 1」を**発行元**として Windows の「設定 → アプリ」に出していた | 出典だけ落とす（理由の 2 語は残す） |
+| medium 19 | `StatusRebuildRuntimeText`（**畳みの外**）が「取得キャッシュ」「原檔」「GiB」を出し、同じ物を 設定 › 詳細 では「一時ファイル」と呼んでいた | `UiStrings.Refetch*` 4 定数と `UiText.RoundedGigabytes` を新設（`Bytes`／`FetchPlanner.FormatBytes` は 1 字も触らない） |
+| medium 20／low 21 | 導入先が置き場と重なった 2 つの `MsgBox` に「取得物」「話者」「台帳」「配布物」「樹」と檔名 2 つ | 両方とも §6-1・`v2-copy.md` §9-1 の語彙へ書き直し |
+| medium 25 | `docs/ben-f-handoff.md` §1-2 が「**実装で確認した全 14 欄**」のまま＝段 D が足した `requests` が抜けて偽になっていた | 15 欄へ改め、逐語 JSON に `"requests":{"in_flight":0}` を足し、`docs/contract.md` :557-565 と同趣旨の 1 行（本体は読まなくてよい・欄が無ければ 0・`schema` は 1 のまま）を添えた |
+| medium 28 | 配布物に入る `README.md` §2 が v1.x のまま（共有の置き場・旧い表示名・変種を選ぶ段・「サーバ起動」） | 4 箇所を v2.0 の姿へ（版ごとの樹・` － RTX（CUDA）`／` － Radeon（ROCm）`・アプリが決める・起動釦は無い） |
+| low 5／6 | 憲章 §4-15（設定のふだんの 4 つ）と §4-12（主画面の並びと試聴）に**実装が合っていない**のに、`v2-spec.md` §9 が「合わせなかった所＝無し」と名乗っていた | **機能は足さず**、§9 に ⒄⒅ の 2 行を足して「無し」を訂正。音量と試聴は §4 の積み残しへ |
+| low 13 | `docs/guide.md` §6 の見出しが**画面に出ない文**を引いていた（症状引きなのに引けない） | 実物の 3 つ（「グラフィックスが使えませんでした」「このパソコンには対応する GPU が…」「この版では使えません」）へ。`v2-copy.md` §5 の見本も同じ回に揃えた |
+| low 22 | `Trail` の内輪の字は `v2-copy.md` §1-8 の決め（詳細へ・据え置き）だが、**憲章 §6-1 と `v2-spec.md` の検分文には例外が書かれていなかった** | `v2-spec.md` §10 原則 1 を「例外は 2 件」に改め、§9 ⒆ と `WordLintTests` の免除表の説明を実態（**畳みの中の ListBox として画面に出る記録**）へ。**憲章への 1 文の追記は決裁事項として下に申し送る** |
+| low 23 | `d-launch-probe.ps1` の変種の一覧の門が、**どちらの道でも通る**作りで high 14 を隠していた | 註を実態に、探し語を `ROCm` に、catch の握り潰しを**失敗として記録する**形に。あわせて「行に台帳の綴りが無い」門を 1 つ足した |
+| low 24 | `README.md` §0 が**棚ごと**（`docs/release-notes/`）を利用者に指していた＝旧語彙の面へ送り出していた | この版の 1 檔（`v2.0.0.md`）を指し、過去の版の棚は「ここから下は作る側の帳面です」の側へ移した |
+| low 26 | `.iss` の註が本体の候補の順を**逆に**記録していた（本体は 2026-09-10 の裁定で cuda 先頭） | 順を直し、正本（本体 `EngineLaunchDefaults.IrodoriYwkCandidates()`）と「両版が入っている機体では RTX（CUDA）版が起きる」を 1 行添えた。綴り 2 つと `MyDirName` は据え置き |
+| low 30 | 門 B-1 の内部帳面の網が**4 つの名の黒表**で、`ben-f-handoff.md` ほかを足せば 20 門緑のまま出ていた | 台帳の集合と同じ**白表**へ＝`docs\` に入った檔の集合が `{README.md, guide.md}` と一致しなければ落ちる |
+| low 31 | `AppPaths.cs` と `v2-plan.md` の `AppMutex` の鏡の行番号が古い | 実測に合わせて `:177`（註 `:178-190`）へ。**この行番号は錠が黙って効かなくなる箇所を指す**ので載せ続ける |
+| （指示） | `site/index.html` の**画像 3 枚の枠**が公開頁に出ていた | 破線の箱と `.shot` の CSS・使わなくなった色 2 つを消し、**差し替え口の `<figure><img …>` の 1 行は HTML の註として逐語で残した**。3 ステップの本文は画像が無くても読み通せる |
+
+**卓へ回した 2 件（reviewer の求めどおり・この席では直さない）**
+
+| # | 何を | なぜ回すか |
+|---|---|---|
+| ⑴ | **憲章 §6-1 に「詳細の畳みの中の記録は字を据え置く」の 1 文を足すか**（low 22） | `charter.md` は裁可済みの正本（決裁 130）である。`v2-copy.md` §1-8 の決めと憲章の文面が食い違っているので**どちらが正かの裁定が要る**。`v2-spec.md` と `WordLintTests` の 2 檔は先に実態へ揃えた |
+| ⑵ | **憲章 §4-15 の「音量」と §4-12 の「その場で試聴」を入れるか**（low 5／6） | 版の直前に機能を足さない判断でこの回は見送り、§9 ⒄⒅ に逸脱として記帳した。入れるなら次の版の持ち場（§4 の積み残し） |
+
+**段 G の門**＝`dotnet build launcher -c Release` **0 警告 0 エラー**／
+`dotnet test` **929 合格＋1 スキップ**（段 F の 903 から **+26**＝新設 `StageGCorrectionTests` **24**（帯 10・連携 3・版の取り違え 5・一覧の札 5・× の確かめ 1）
+＋ `GpuEnumerationTests` **+2**（0 台の意味を 3 つに割った）。既存で綴りを付け替えたのは
+`RoundThreeCorrectionTests` の 1 本だけ。**削除 0**）／契約テスト **372 passed**／
+`WordLintTests` 緑／台本は構文 0 エラー・`d-launch-probe -DryRun` が「nothing was touched.」／
+`build/installer-build.ps1 -All` **20 門 0 失敗 WARN 0**。**アプリは 1 度も起こしていない。**
 
 ---
 

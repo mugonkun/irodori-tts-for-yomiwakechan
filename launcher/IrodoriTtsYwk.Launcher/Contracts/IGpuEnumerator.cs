@@ -71,11 +71,19 @@ public sealed record GpuEnumerationRequest(string? PythonExe, TimeSpan Timeout);
 /// <param name="Source">実際に使った路。</param>
 /// <param name="Elapsed">所要。</param>
 /// <param name="FailureReason">1 台も読めなかった理由 1 行。</param>
+/// <param name="HasNvidiaAdapter">
+/// <b>OS のアダプタ一覧に NVIDIA の板が居たか</b>（null＝見ていない）。
+/// <c>nvidia-smi</c> も torch も答えられない機体で「本当に GPU が 1 枚も無い」と
+/// 「版を間違えて入れた」を分けるための欄である（是正・段 G・medium 10／12）。
+/// </param>
+/// <param name="HasAmdAdapter">同・AMD の板（null＝見ていない）。</param>
 public sealed record GpuEnumerationResult(
     IReadOnlyList<GpuInfo> Gpus,
     GpuSource Source,
     TimeSpan Elapsed,
-    string? FailureReason);
+    string? FailureReason,
+    bool? HasNvidiaAdapter = null,
+    bool? HasAmdAdapter = null);
 
 /// <summary>
 /// 契約 ⑹＝GPU 列挙（設計書 §3）。

@@ -74,6 +74,19 @@ public enum BandActionKind
 /// 落ちた子プロセスの終了コード（D6 の ⑵ に差す<b>唯一の手がかり</b>＝利用者が報告に書ける数。
 /// 判らない回は null＝括弧ごと落とす）。
 /// </param>
+/// <param name="RebuildRuntimeLine">
+/// <b>台帳が動いた回の 1 行</b>（`v2-spec.md` §2-1a の <b>E1</b>＝
+/// <c>RuntimeStamp.Compare</c> が <c>LedgerChanged</c> を返した回・合っていれば null）。
+/// <b>これが帯に載らないと憲章 §4-24（v2.0 の必須要件）が起きない</b>＝上書き更新した機体は
+/// 古い一式のままでも起こせてしまうので、帯は緑の「使えます」のまま止まり、
+/// 差分の取り直しへの導線が 詳しい状態 の畳みの中にしか無くなる（是正・段 G・high 1）。
+/// </param>
+/// <param name="FirstRunPending">
+/// <b>はじめの準備が最後まで済んでいない</b>（<c>MainViewModel.NeedsFirstRun</c> ないし
+/// <c>NeedsAcquisition</c>）。<b>これが無いと行き止まりになる</b>（是正・段 G・high 7）＝
+/// ウィザードを閉じた機体はサーバを起こさないので <see cref="ServerState.Stopped"/> のまま、
+/// 帯が「準備しています…」と<b>嘘をついたまま釦を 1 つも出さない</b>。
+/// </param>
 public sealed record BandContext(
     bool RuntimeLoaded = false,
     bool UserStopped = false,
@@ -83,7 +96,9 @@ public sealed record BandContext(
     string? AlternativeVariant = null,
     string? GpuName = null,
     int? MissingModelCount = null,
-    int? ExitCode = null);
+    int? ExitCode = null,
+    string? RebuildRuntimeLine = null,
+    bool FirstRunPending = false);
 
 /// <summary>帯の 1 行（丸・ひとこと・理由 1 行・1 手）。</summary>
 /// <param name="Severity">丸の色。</param>
@@ -139,14 +154,31 @@ public static class BandText
     /// <summary>利用者が止めた（灰）。</summary>
     public const string StoppedByUser = "止まっています";
 
+    /// <summary>
+    /// はじめの準備が済んでいない（灰・E-01 の ⑴）。<b>綴りは A 群の ⑴ と同じ</b>＝
+    /// 同じ事情に 2 通りの名乗りを出さない。
+    /// </summary>
+    public const string NotPreparedYet = "まだ準備が終わっていません。";
+
+    /// <summary>同・⑵（E-01 の理由の行）。</summary>
+    public const string NotPreparedYetWhy = "はじめの準備が最後まで済んでいません。";
+
     /// <summary>止まりました（赤）。</summary>
     public const string Failed = "止まりました。";
 
     /// <summary>
     /// 自動で起こさない設定の機体への導線（<b>行き止まりを作らない</b>＝`v2-spec.md` §2-5 末尾）。
     /// </summary>
+    /// <remarks>
+    /// <b>指す先は札そのもの</b>（是正・段 G・medium 11）＝この印は
+    /// <c>SettingsAutoStartCheck</c> であって、<c>SettingsView.xaml</c> の**ふだんの設定**
+    /// （畳みの外）に在る。「詳細 › 読み上げの動作」には〔いったん止める〕〔もう一度動かす〕
+    /// 〔はじめの準備をやり直す〕の 3 釦しか無いので、そこを指すとこの 1 行が在る理由
+    /// （行き止まりにしない）が丸ごと消える。
+    /// </remarks>
     public const string AutoStartOffHint =
-        "アプリを開いても自動で準備しない設定になっています。（設定 › 詳細 › 読み上げの動作 で変えられます）";
+        "アプリを開いても自動で準備しない設定になっています。（設定 の「"
+        + UiStrings.SettingsAutoStart + "」で変えられます）";
 
     /// <summary>連携の 1 行＝呼べる状態である。</summary>
     public const string HostAvailable = "読み分けちゃん2 から使えます";
@@ -214,6 +246,13 @@ public static class BandText
 
         return state switch
         {
+            // E1＝台帳が動いた回（憲章 §4-24）＝**緑のまま**理由と 1 手を載せる（E 群は赤にしない）。
+            ServerState.Ready when facts.RebuildRuntimeLine is not null => new BandLine(
+                BandSeverity.Ok, Ready, facts.RebuildRuntimeLine,
+                UiStrings.StatusRebuildButton, BandActionKind.RebuildRuntime),
+            ServerState.Warming when facts.RebuildRuntimeLine is not null => new BandLine(
+                BandSeverity.Ok, ReadyWarming, facts.RebuildRuntimeLine,
+                UiStrings.StatusRebuildButton, BandActionKind.RebuildRuntime),
             ServerState.Ready => new BandLine(BandSeverity.Ok, Ready, null, null, BandActionKind.None),
             ServerState.Warming =>
                 new BandLine(BandSeverity.Ok, ReadyWarming, null, null, BandActionKind.None),
@@ -223,6 +262,15 @@ public static class BandText
                 null,
                 null,
                 BandActionKind.None),
+            // E-01＝**はじめの準備が終わっていない機体**（`v2-copy.md` §3-2 の E-01）。
+            // ウィザードを閉じた回は誰もサーバを起こさないので Stopped のまま止まる＝
+            // ここが無いと「準備しています…」＋釦なしの行き止まりになる（是正・段 G・high 7）。
+            ServerState.Stopped when facts.FirstRunPending => new BandLine(
+                BandSeverity.Neutral,
+                NotPreparedYet,
+                NotPreparedYetWhy,
+                UiStrings.StatusAcquireButton,
+                BandActionKind.FirstRun),
             ServerState.Stopped when facts.UserStopped || facts.AutoStartDisabled => new BandLine(
                 BandSeverity.Neutral,
                 StoppedByUser,

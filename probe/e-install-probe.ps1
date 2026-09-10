@@ -140,8 +140,12 @@ $T = [ordered]@{
     AskVoices    = New-JpText 0x8A71,0x8005,0x3068,0x8A2D,0x5B9A
     # ^ both markers are kept ONLY so stage 7 and 8 can prove the two questions are GONE (decisions
     #   132/133 removed them from CurUninstallStepChanged). Nothing answers them any more.
-    # .iss [Messages] ja.ReadyLabel2a/2b: the 'about' of 'about 106 MiB' (U+7D04). The full phrase the
-    # ready page must carry is built from this plus ASCII: '<U+7D04> 106 MiB'.
+    # .iss [Messages] ja.ReadyLabel2a/2b: the 'about' of 'about 96 MB' (U+7D04). The full phrase the
+    # ready page must carry is built from this plus ASCII: '<U+7D04> 96 MB'.
+    # Stage G (2026-09-11) re-based both halves of this sentence: the {app} figure moved 106 MiB ->
+    # 96 MB (v2.0.0 ships a 61,779,808 B exe and a 34,088,381 B tree, so [Files] + the unins000 pair
+    # comes to 100,185,593 B / 100,118,243 B = 95.5 MiB), and the units on this page are now the
+    # decimal ones the charter 6-1 demands of a user-read screen ('GB', not 'GiB').
     ReadySize    = New-JpText 0x7D04
     # launcher FirstRunViewModel.Title(Notices) marker: 'the third party notices'
     NoticeTitle  = New-JpText 0x7B2C,0x4E09,0x8005,0x7269,0x306E,0x901A,0x77E5
@@ -1241,13 +1245,18 @@ function Invoke-Stage2 {
         $readyText = (($p2.texts) -join ' | ')
         # '*106*' was too loose to mean anything: any three digits anywhere on the page passed it,
         # including a path or a version. Match the phrase the .iss actually writes, and demand the
-        # second half of the sentence (the fetch size in GiB) as well -- that pair IS the promise
+        # second half of the sentence (the fetch size) as well -- that pair IS the promise
         # design 6-2 makes to the user on this page.
-        $wantSize = $T.ReadySize + ' 106 MiB'
-        $sizeOk = ($readyText -like ('*' + $wantSize + '*')) -and ($readyText -like '*GiB*')
+        # Stage G: the page now rounds to GB (charter 6-1: the screen says GB, the ledger keeps GiB),
+        # so this gate looks for 'GB' and REFUSES a 'GiB' anywhere on the page -- that way the gate
+        # catches a relapse instead of locking the stale 1024-based spelling in (medium 18 / 26).
+        $wantSize = $T.ReadySize + ' 96 MB'
+        $sizeOk = ($readyText -like ('*' + $wantSize + '*')) -and
+                  ($readyText -like '*GB*') -and -not ($readyText -like '*GiB*')
         Add-Step 'stage 2: the ready page carries the size sentence from [Messages]' $sizeOk (
-            'looking for "' + $wantSize + '" and a GiB figure; found size=' +
-            ($readyText -like ('*' + $wantSize + '*')) + ' gib=' + ($readyText -like '*GiB*'))
+            'looking for "' + $wantSize + '" and a GB figure with no GiB; found size=' +
+            ($readyText -like ('*' + $wantSize + '*')) + ' gb=' + ($readyText -like '*GB*') +
+            ' gib=' + ($readyText -like '*GiB*'))
         $null = Invoke-InnoButton -Window $wiz -NamePattern ([regex]::Escape($T.BtnInstall))
 
         $p3 = Wait-InnoPage -Window $wiz -Pattern ([regex]::Escape($T.PageFinished)) -TimeoutSeconds 180

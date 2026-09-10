@@ -334,6 +334,12 @@ public sealed class GpuEnumerator : IGpuEnumerator
     private readonly Func<string, bool> _fileExists;
     private readonly ITorchProbe _torchProbe;
 
+    /// <summary>
+    /// OS のアダプタ一覧（<b>実行系が無くても答える</b>＝是正・段 G・medium 10／12）。
+    /// 差し替えられるのは試験のためで、実機は <see cref="DxgiGpuAdapters"/> である。
+    /// </summary>
+    private readonly IGpuAdapterInfoSource _adapters;
+
     /// <summary>実機用。</summary>
     public GpuEnumerator()
         : this(new ProcessRunner(), null, null)
@@ -345,10 +351,29 @@ public sealed class GpuEnumerator : IGpuEnumerator
     /// <param name="fileExists">実行檔が在るかの判定（既定＝実際の檔検査）。</param>
     /// <param name="scriptDirectory">torch の台本を書き出す場所（既定＝<c>%TEMP%</c>）。</param>
     public GpuEnumerator(IProcessRunner runner, Func<string, bool>? fileExists, string? scriptDirectory)
+        : this(runner, fileExists, scriptDirectory, null)
+    {
+    }
+
+    /// <summary>試験用（アダプタ一覧まで差せる継ぎ目）。</summary>
+    /// <param name="runner">外の実行檔を起こす口。</param>
+    /// <param name="fileExists">実行檔が在るかの判定（既定＝実際の檔検査）。</param>
+    /// <param name="scriptDirectory">torch の台本を書き出す場所（既定＝<c>%TEMP%</c>）。</param>
+    /// <param name="adapters">
+    /// OS のアダプタ一覧（既定＝<see cref="DxgiGpuAdapters"/>）。<b>0 台の理由を分けるためだけ</b>に
+    /// 読む＝ここから <see cref="GpuInfo"/> は作らない（DXGI は VRAM の総量しか持たず、
+    /// UUID も compute の可否も判らない＝保存に使える値ではない）。
+    /// </param>
+    public GpuEnumerator(
+        IProcessRunner runner,
+        Func<string, bool>? fileExists,
+        string? scriptDirectory,
+        IGpuAdapterInfoSource? adapters)
     {
         ArgumentNullException.ThrowIfNull(runner);
         _runner = runner;
         _fileExists = fileExists ?? (path => path == "nvidia-smi" || File.Exists(path));
+        _adapters = adapters ?? new DxgiGpuAdapters();
 
         // 台本を書いて撃つ手は 1 本（変種の門＝VariantGate も同じ物を使う）。
         _torchProbe = new TorchProbeRunner(runner, scriptDirectory);
@@ -371,8 +396,8 @@ public sealed class GpuEnumerator : IGpuEnumerator
         // ② 変種の python で torch 列挙 1 回（AMD も読める）
         if (string.IsNullOrWhiteSpace(request.PythonExe))
         {
-            return new GpuEnumerationResult(
-                [], GpuSource.None, Stopwatch.GetElapsedTime(started),
+            return Empty(
+                started,
                 "グラフィックスを調べられませんでした（動かすための一式がまだ入っていません）。");
         }
 
@@ -384,9 +409,40 @@ public sealed class GpuEnumerator : IGpuEnumerator
                 probe.Gpus, GpuSource.TorchProbe, Stopwatch.GetElapsedTime(started), null);
         }
 
+        return Empty(started, probe.Error ?? "GPU が 1 台も見つかりませんでした。");
+    }
+
+    /// <summary>
+    /// <b>0 台で返るときに、その 0 台の意味を OS のアダプタ一覧で言い分ける</b>
+    /// （是正・段 G・medium 10／12）。
+    /// <list type="bullet">
+    /// <item>NVIDIA も AMD も<b>1 枚も居ない</b>＝<b>見た上で 0 台</b>なので理由を落とす（null）。
+    /// これで <see cref="VariantRecommendation.Recommend"/> の CPU の枝が実機でも通り、
+    /// はじめの準備が憲章 §7 の 1 行（<c>NoGpuDecisionLine</c>）を出してから始まる。</item>
+    /// <item>どちらかが居る＝<b>道具が無いだけ</b>なので理由は残す（＝勝手に CPU へ倒さない）。
+    /// 会社の 2 欄は、はじめの準備が「版を間違えて入れた」を言うために持ち帰る。</item>
+    /// <item>一覧そのものが空（<c>dxgi.dll</c> が無い・COM が落ちた）＝<b>何も判らない</b>ので
+    /// 今までどおり理由を残し、2 欄は null（＝見ていない）にする。</item>
+    /// </list>
+    /// </summary>
+    private GpuEnumerationResult Empty(long started, string reason)
+    {
+        var adapters = _adapters.Adapters();
+        if (adapters.Count == 0)
+        {
+            return new GpuEnumerationResult(
+                [], GpuSource.None, Stopwatch.GetElapsedTime(started), reason);
+        }
+
+        var nvidia = GpuVendors.AnyNvidia(adapters);
+        var amd = GpuVendors.AnyAmd(adapters);
         return new GpuEnumerationResult(
-            [], GpuSource.None, Stopwatch.GetElapsedTime(started),
-            probe.Error ?? "GPU が 1 台も見つかりませんでした。");
+            [],
+            GpuSource.None,
+            Stopwatch.GetElapsedTime(started),
+            nvidia || amd ? reason : null,
+            nvidia,
+            amd);
     }
 
     /// <summary>

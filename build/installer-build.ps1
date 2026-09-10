@@ -843,6 +843,13 @@ if (-not (Test-Path -LiteralPath $setupPath)) {
 }
 $shippedLedgers = New-Object System.Collections.Generic.List[string]
 $sawGuideDoc = $false
+# Stage G (low 30): every file the compile put under {app}\docs, by name. The gate below refuses
+# anything that is not one of the two user-facing documents.
+$shippedDocs = [System.Collections.Generic.List[string]]::new()
+$allowedDocs = @('README.md', 'guide.md')
+# Everything the .iss ships into {app}\docs is sourced from the repo root ({#Repo}), never from
+# build\out\app -- that is what makes this prefix the right sieve.
+$docSourcePrefix = $repo.TrimEnd('\') + '\'
 foreach ($line in $compressing) {
     $t = $line.Trim()
     if ($t -match '__pycache__') {
@@ -854,10 +861,27 @@ foreach ($line in $compressing) {
     # v2.0 stage F-2 moved install.md and radeon.md back to the maker's side (the .iss [Files]
     # note and each file's own header say so), but no gate enforced that: re-adding either
     # Source: line would have kept all 20 gates green. A-1 cannot see it (docs\ never enters
-    # build\out\app) and B-2's +-4 MiB band would not move for a 40 KB file. So the list of
-    # names this gate refuses is the enforcement (是正 2026-09-11, medium 11).
-    if ($t -match '(?i)\\docs\\(acceptance|contract|install|radeon)\.md$') {
-        $b1problems.Add('an internal doc was compressed into the setup: ' + $t)
+    # build\out\app) and B-2's +-4 MiB band would not move for a 40 KB file (是正 2026-09-11,
+    # medium 11).
+    #
+    # Stage G (2026-09-11, low 30) turns that four-name blacklist into a POSITIVE assertion, the way
+    # the ledger set is checked below: docs\ also holds ben-f-handoff.md (68 KB),
+    # preset-voices-listening.md (103 KB), design\*.md and release-notes\*.md, and a Source: line
+    # for any of them would still have shipped with 20 green gates. Collect every file the .iss puts
+    # under {app}\docs and demand the set is exactly {README.md, guide.md}.
+    #
+    # The Compressing: line prints the SOURCE path, not the destination, and the two documents that
+    # land in {app}\docs come from two different places: <repo>\README.md and <repo>\docs\guide.md.
+    # So sieve on the repo root, not on the word 'docs' -- otherwise build\out\app\ledger\README.md
+    # and the two upstream READMEs would be counted as shipped documents.
+    $src = ($t -replace '^\s*Compressing:\s*', '')
+    if ($src.StartsWith($docSourcePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $rest = $src.Substring($docSourcePrefix.Length)
+        if ($rest -notmatch '\\') {
+            $shippedDocs.Add($rest)            # <repo>\README.md
+        } elseif ($rest -match '(?i)^docs\\([^\\]+)$') {
+            $shippedDocs.Add($Matches[1])      # <repo>\docs\<name>
+        }
     }
     if ($t -match '(?i)\\docs\\guide\.md$') {
         $sawGuideDoc = $true
@@ -868,6 +892,16 @@ foreach ($line in $compressing) {
     }
 }
 if ($isccRun.ExitCode -eq 0) {
+    foreach ($name in $shippedDocs) {
+        if ($allowedDocs -notcontains $name) {
+            $b1problems.Add('an internal doc was compressed into the setup: docs\' + $name)
+        }
+    }
+    foreach ($name in $allowedDocs) {
+        if ($shippedDocs -notcontains $name) {
+            $b1problems.Add('a user-facing doc is missing from the setup: docs\' + $name)
+        }
+    }
     foreach ($name in $foreignRuntimes) {
         if ($shippedLedgers -contains $name) {
             $b1problems.Add('the ledger of the other flavour was shipped: ' + $name)

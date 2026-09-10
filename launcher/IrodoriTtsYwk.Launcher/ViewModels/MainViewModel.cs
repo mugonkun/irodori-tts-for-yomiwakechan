@@ -254,7 +254,12 @@ public sealed class MainViewModel : ObservableObject
         {
             NeedsAcquisition = false;
             AcquisitionSummary = string.Empty;
-            Status.ApplyAcquisition(false);
+
+            // **ここで断ってはいけない**（是正・段 G・high 7）＝はじめの準備を 1 度も通していない
+            // 機体こそ 1 手が要る。偽を配っていたころは、ウィザードを閉じた利用者から
+            // 帯の 1 手も 詳しい状態 の〔はじめの準備をする〕も同時に消えていた。
+            Status.ApplyAcquisition(true);
+            Status.ApplyFirstRunPending(true);
             return;
         }
 
@@ -270,6 +275,7 @@ public sealed class MainViewModel : ObservableObject
         Status.ApplyAcquisition(
             NeedsAcquisition
             || VariantRecommendation.IsBelowMinimum(_settings.Variant, _refusedDriverVersion));
+        Status.ApplyFirstRunPending(NeedsAcquisition);
     }
 
     /// <summary>
@@ -334,7 +340,17 @@ public sealed class MainViewModel : ObservableObject
             // **製品名も渡す**（v2.0 段 B）＝「動かし方を選びました」の 1 行が名乗る名前。
             // 判定には使わない（`VariantRecommendation.Recommend` は見ない）。
             var gpuName = gpus.Gpus.Count > 0 ? gpus.Gpus[0].Name : null;
-            return new DriverProbe(driver, gpus.Gpus.Count, Probed: true, gpus.FailureReason, gpuName);
+
+            // **会社の 2 欄も渡す**（是正・段 G・medium 12）＝勧める先は 1 字も変えないが、
+            // 「版を間違えて入れた」を告げられるのはこの 2 欄が在るときだけである。
+            return new DriverProbe(
+                driver,
+                gpus.Gpus.Count,
+                Probed: true,
+                gpus.FailureReason,
+                gpuName,
+                gpus.HasNvidiaAdapter,
+                gpus.HasAmdAdapter);
         };
 
         // モデル＝変種の python.exe で server/ywk_fetch_models.py を子プロセス実行する
@@ -780,10 +796,13 @@ public sealed class MainViewModel : ObservableObject
         // 本体が読み上げに使っている間は〔しゃべらせる〕を譲る（決裁 130 Q4）。
         // **同じ 2 秒の標本を配るだけ**＝新しい問い合わせは 1 本も足さない。
         // 標本が無い回（止まっている・口が無い）は偽＝押せない理由を残さない。
-        // 申し送り＝v2-plan D-4 の正本は `StatusViewModel.HostBusy` 経由（Status → Try）。
-        // 段 B が StatusViewModel に欄を建てたら `Try.HostBusy = Status.HostBusy;` へ寄せる
-        // （繋がりは Decision130HostBusyWiringTests が釘付けしているので移設しても守られる）。
         Try.HostBusy = status?.HostBusy == true;
+
+        // 帯の連携の 1 行も**同じ標本**から組む（§2-1c・是正・段 G・medium 2／9）。
+        // **濾したあとの値を渡す**＝`Try.HostBusy` の setter が自分の射を引いてから返すので、
+        // ランチャ自身の〔しゃべらせる〕を「読み分けちゃん2 が使っています」と読まない。
+        // 欄の在否は `Requests` が null かどうかで判る（古い個体は欄ごと無い＝§2-1c）。
+        Status.ApplyHost(status?.Requests is not null, Try.HostBusy);
     }
 
     /// <summary>
@@ -913,7 +932,7 @@ public sealed class MainViewModel : ObservableObject
         var missing = MissingCacheRequests(plan);
         if (missing.Count == 0)
         {
-            return line + "（原檔は取得キャッシュに揃っているので、取り直しはありません）";
+            return line + "（" + UiStrings.RefetchNothingToDo + "）";
         }
 
         var bytes = 0L;
@@ -922,9 +941,10 @@ public sealed class MainViewModel : ObservableObject
             bytes += request.ExpectedSize ?? 0;
         }
 
-        return line + "（取得キャッシュに原檔が "
-            + missing.Count.ToString(CultureInfo.InvariantCulture) + " 件足りません＝押すと "
-            + FetchPlanner.FormatBytes(bytes) + " を取り直します）";
+        return line + "（" + UiStrings.RefetchMissingHead
+            + missing.Count.ToString(CultureInfo.InvariantCulture)
+            + UiStrings.RefetchMissingMiddle + UiText.RoundedGigabytes(bytes)
+            + UiStrings.RefetchMissingTail + "）";
     }
 
     /// <summary>

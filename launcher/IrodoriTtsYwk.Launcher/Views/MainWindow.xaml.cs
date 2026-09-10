@@ -128,15 +128,38 @@ public partial class MainWindow : Window
     /// <summary>
     /// 窓を閉じる＝<b>アプリを終える</b>（裁定 124）。
     /// <para>
-    /// <b>ここでは取り消さない</b>（<c>e.Cancel</c> を真にしない・隠さない）＝鳴っている音を止め、
-    /// 見張りの購読を外して閉じる。閉じた窓が最後の 1 枚なら
-    /// （<c>App.xaml</c> の <c>ShutdownMode=OnLastWindowClose</c>）<c>App.OnExit</c> が続き、
-    /// そこで wrapper をツリー kill し切ってからプロセスが消える＝VRAM が返る
-    /// （<see cref="Services.Server.ShutdownSequence"/>）。起動中・読込中・暖機中に閉じても同じ。
+    /// <b>取り消すのは 1 つの回だけ</b>（憲章 §4-21 の後半・是正・段 G・medium 3）＝
+    /// <b>配信中に読み分けちゃん2 が読み上げに使っている間</b>に × を押したら 1 行だけ確かめる。
+    /// 「いいえ」なら <c>e.Cancel</c> を真にして<b>何も片づけずに</b>返る（購読も
+    /// <c>_player</c> も生かしたままにする＝ここで外すと、閉じるのをやめた窓が抜け殻になる）。
+    /// 走っていない回・無人の回（<c>WizardSilent</c> 相当）は今までどおり素通りする。
+    /// </para>
+    /// <para>
+    /// そのほかは<b>取り消さない</b>（隠さない）＝鳴っている音を止め、見張りの購読を外して閉じる。
+    /// 閉じた窓が最後の 1 枚なら（<c>App.xaml</c> の <c>ShutdownMode=OnLastWindowClose</c>）
+    /// <c>App.OnExit</c> が続き、そこで wrapper をツリー kill し切ってからプロセスが消える
+    /// ＝VRAM が返る（<see cref="Services.Server.ShutdownSequence"/>）。
+    /// 起動中・読込中・暖機中に閉じても同じ。
     /// </para>
     /// </summary>
     protected override void OnClosing(CancelEventArgs e)
     {
+        ArgumentNullException.ThrowIfNull(e);
+
+        // 確かめは**片づけより先**（片づけたあとで取り消すと、窓は生きているのに標本が届かない）。
+        if (_model.Status.HostBusy
+            && MessageBox.Show(
+                this,
+                UiStrings.ExitWhileHostBusy,
+                Title,
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question,
+                MessageBoxResult.No) != MessageBoxResult.Yes)
+        {
+            e.Cancel = true;
+            return;
+        }
+
         _player.Stop();
 
         AppServices.Server.StateChanged -= OnServerStateChanged;

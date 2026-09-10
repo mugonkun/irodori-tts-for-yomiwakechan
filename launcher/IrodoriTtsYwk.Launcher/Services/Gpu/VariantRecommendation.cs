@@ -20,12 +20,22 @@ namespace IrodoriTtsYwk.Launcher.Services.Gpu;
 /// <b>判定には一切使わない</b>（v2.0 段 B）＝はじめの準備の「動かし方を選びました」の 1 行が
 /// 名乗るためだけの欄である（`v2-copy.md` §2 段 2）。
 /// </param>
+/// <param name="HasNvidiaAdapter">
+/// <b>OS のアダプタ一覧に NVIDIA の板が居たか</b>（null＝見ていない＝
+/// <see cref="Contracts.GpuEnumerationResult.HasNvidiaAdapter"/> の写し）。
+/// <b>勧める先の判定には一切使わない</b>（是正・段 G）＝これは
+/// <c>FirstRunViewModel.DecisionLineFor</c> が<b>版を間違えて入れた機体</b>に
+/// 嘘をつかないためだけの欄である。
+/// </param>
+/// <param name="HasAmdAdapter">同・AMD の板（null＝見ていない）。</param>
 public sealed record DriverProbe(
     string? DriverVersion,
     int GpuCount,
     bool Probed,
     string? FailureReason = null,
-    string? GpuName = null)
+    string? GpuName = null,
+    bool? HasNvidiaAdapter = null,
+    bool? HasAmdAdapter = null)
 {
     /// <summary>まだ何も見ていない（ウィザードを開いた直後の値）。</summary>
     public static readonly DriverProbe Unknown = new(null, 0, false);

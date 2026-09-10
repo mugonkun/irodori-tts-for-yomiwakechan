@@ -94,8 +94,14 @@ public sealed class WordLintTests
     /// ⑴ <b>見分けの標識</b>（<c>BandText</c> の <c>*Marker</c>・<c>MainViewModel</c> の
     /// <c>RuntimeMissingPrefix</c>＝内部の 1 行の綴りの写しで、画面には <c>BandText.For</c> の
     /// 言い直しが出る）
-    /// ⑵ <b>記録へ落とす 1 行</b>（<c>AppendLog</c>・<c>Log</c>・<c>Fail</c> の第 2 引数・
-    /// <c>Record</c> の畳みの中の記録＝`v2-copy.md` §1-8 が「詳細へ・字は据え置き」と書いた行）
+    /// ⑵ <b>詳細（上級者向け）の畳みの中の記録</b>（<c>AppendLog</c>・<c>Log</c>・<c>Fail</c> の
+    /// 第 2 引数・はじめの準備の <c>Record</c>＝`v2-copy.md` §1-8 が「詳細へ・字は据え置き」と
+    /// 書いた行）。<b>ここは「檔にしか出ない」ではない</b>（是正・段 G・low 22）＝はじめの準備の
+    /// <c>Trail</c> は <c>FirstRunTrailList</c>／<c>FirstRunDoneTrailList</c> という
+    /// <b>ListBox として画面に出る</b>。出るが<b>記録であって本文ではない</b>ので字を据え置く、
+    /// というのがこの表の言い分である（`v2-spec.md` §9 ⒆ と §10 原則 1 の「例外は 2 件」の行）。
+    /// <b>憲章 §6-1 にはこの例外がまだ書かれていない</b>＝1 文の追記は決裁事項として卓へ回した
+    /// （`v2-plan.md` 段 G の申し送り）
     /// ⑶ <b>数の書式</b>（<see cref="UiText"/> の <c>GiB</c>／<c>MiB</c>／<c>RTF</c>＝
     /// `v2-copy.md` §1-8 の「1 文字も触らない＝置き場を 詳細 に限る」）。
     /// </para>

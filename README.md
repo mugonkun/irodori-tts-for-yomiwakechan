@@ -26,7 +26,7 @@ Python も pip も、黒い画面も要りません。同梱の 12 人の声か�
   一度すませば、次からはすぐ使えます。
 - **必要なもの**＝Windows 11 / 10（64 ビット）・NVIDIA か AMD のグラフィックス・空き 12 GB ほど・
   はじめの準備のときだけネット接続。入れ終わったあとにこのアプリが使うのは約 8 GB です。
-- 版ごとの案内＝[`docs/release-notes/`](docs/release-notes/)。
+- この版の案内＝[`docs/release-notes/v2.0.0.md`](docs/release-notes/v2.0.0.md)。
 
 ---
 
@@ -65,6 +65,8 @@ Python も pip も、黒い画面も要りません。同梱の 12 人の声か�
 > にだけ置きます（正典＝`decisions.md` 裁定 3）。
 > 着地頁の実体＝`site/index.html`（`gh-pages` 枝の根に写して GitHub Pages で出す・`site/README.md`）。
 > Release の一覧（過去の版・`SHA256SUMS.txt`）＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases
+> 過去の版のリリース文の棚＝[`docs/release-notes/`](docs/release-notes/)（**記録なので書き替えない**。
+> 旧い語彙＝「CUDA 版」「gfx1151」「5.26 GiB」がそのまま残っている＝§0 から指さないのはそのためである）。
 
 ---
 
@@ -77,19 +79,23 @@ Python も pip も、黒い画面も要りません。同梱の 12 人の声か�
 > 実測は RTX 機の 1 周で採る（`docs/design/v2-plan.md` 段 H の 2）。**改訂前の実測＝5 押下**。
 
 1. Release からインストーラ（ランチャ＋埋め込み Python の取得台帳＋自作分・数十 MB）を落として実行する。
-2. インストーラが `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（ROCm 版は `…\irodori-tts-ywk-radeon\`）
-   に本体を置く（per-user・管理者権限なし）。**アプリ名も版で分かれる**＝
-   「irodori-TTS for 読み分けちゃん（CUDA 版）」／「…（ROCm 版）」（`decisions.md` 109。
-   **v2.0 で表示名は `… － RTX（CUDA）`／`… － Radeon（ROCm）` へ改まる**＝`docs/design/charter.md` §7）。
+2. インストーラが `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（Radeon（ROCm）版は
+   `…\irodori-tts-ywk-radeon\`）に本体を置く（per-user・管理者権限なし）。**アプリ名も版で分かれる**＝
+   「irodori-TTS for 読み分けちゃん － RTX（CUDA）」／「… － Radeon（ROCm）」
+   （`decisions.md` 109 の名札を v2.0 段 F-1 が改めた＝`docs/design/charter.md` §6-2）。
    2 本は同じ機体に**同居できる**（v2.0 からは置き場も設定も共有しない＝`decisions.md` 133）。
 3. 初回起動でランチャが**実行系とモデルを取得**する（合計 ≈5.4 GiB・100 Mbps 級で 10 分以内が目標）。
-   取得先は `%LOCALAPPDATA%\irodori-tts-ywk\`（`runtime\<variant>\`・`models\`・`voices\`・`logs\`）。
+   取得先は**版ごとの樹**＝`%LOCALAPPDATA%\irodori-tts-ywk-cuda\`／`…\irodori-tts-ywk-radeon\`
+   （`runtime\<variant>\`・`models\`・`voices\`・`logs\`＝`decisions.md` 133 ⑶・
+   利用者向けの綴りは `docs/guide.md` §8）。
    - 実行系＝torch は `download.pytorch.org` の版固定 URL、依存は PyPI、いずれも sha256 で検証。
    - モデル＝Hugging Face（revision 固定）。
    - `vc_redist.x64.exe`（Microsoft 公式・≈25 MB）＝torch が `msvcp140.dll` を要求するため必須。
-4. ランチャで GPU と CUDA 版を選ぶ（ドライバ 580 以上なら cu130・528.33 以上 580 未満なら cu126 を
-   最初から選ぶ＝`decisions.md` 126。下限に届かない変種は選べない）。
-5. 「サーバ起動」を押すと `127.0.0.1:18088` で待ち受ける。読み上げの準備完了まで最長 120 秒。
+4. **動かし方はアプリが決める**（`decisions.md` 130 Q1＝はじめの準備の道の上に選ぶ段は無い）＝
+   ドライバ 580 以上なら cu130・528.33 以上 580 未満なら cu126・Radeon 版は rocm-gfx1151。
+   決めた結果は 1 行で告げ、変える口は 設定 › 詳細 › 動かし方 にだけ残す（`decisions.md` 126）。
+5. **起動の釦は無い**（`decisions.md` 130 Q2）＝アプリを開くと帯が「準備しています…」→「使えます」と
+   進み、`127.0.0.1:18088` で待ち受ける。読み上げの準備完了まで最長 120 秒。
    **ランチャの窓を閉じるとサーバも一緒に落ちる**（`decisions.md` 124）。
 6. 本体（読み分けちゃん2）側は、配布版のエンジンを有効にするだけ。
 

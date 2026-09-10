@@ -50,7 +50,7 @@
 `auto` のまま返り、**実際に載った device は `/health` からは分からない**。
 **`/health.voices.files` は話者数ではなく音声拡張子の檔数**＝ここから話者数を数えると外れる。
 
-### 1-2 `GET /ywk/status` の逐語（**実装で確認した全 14 欄**）
+### 1-2 `GET /ywk/status` の逐語（**実装で確認した全 15 欄**）
 
 `server/ywk_server.py` の `ywk_status()` が返す鍵の並びそのまま（`docs/contract.md` ⑹ の逐語＋
 その後に足った欄。**欄を足すのは `schema` を上げない**＝⑻）：
@@ -69,9 +69,16 @@
  "torch":{"version":"2.13.0+rocm10.0.0","cuda":"…|null","hip":"…|null"},
  "voices":{"count":13,"dir":"<末尾 1 段のみ>","error":"…|null"},
  "memory":{…§4-4…},
+ "requests":{"in_flight":0},
  "warmup":{…§5-2…},
  "precompute":{…§5-3…}}
 ```
+
+**`requests` は段 D（v2.0）が足した欄である**（是正・段 G・medium 25＝便 F の申し送りが
+14 欄のまま止まっていた）＝`requests.in_flight` は**本物の `POST /v1/audio/speech` の走行数**で、
+配布版のランチャが〔しゃべらせる〕を譲る判定（`decisions.md` 130 Q4）に使う。
+**本体は読まなくてよい**。欄が無い個体（v1.1.0 以前）は **0 と読む**。
+**欄の追加なので `schema` は 1 のまま**（契約 ⑻＝`docs/contract.md` :557-565 と同趣旨）。
 
 本体が読むのは太字の 6 つだけでよい：
 

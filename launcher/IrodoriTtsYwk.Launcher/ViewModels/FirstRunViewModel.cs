@@ -502,6 +502,15 @@ public sealed class FirstRunViewModel : ObservableObject
         var chosen = variant?.Trim();
         var driver = probe?.DriverVersion;
 
+        // ⑶ **版を間違えて入れた回**＝いちばん先に言う（E-06b・是正・段 G・high 8／medium 12）。
+        // 公式ページ（site/index.html）が「まちがえて入れても、開いたときにアプリが教えます」と
+        // 約束している 1 行はここである。**片方の会社の板しか居ないとき**にだけ言う＝
+        // NVIDIA と AMD が同居した機体（ノートの内蔵 Radeon ＋ GeForce）で誤爆しない。
+        if (WrongEditionFor(chosen, probe) is { } wrongEdition)
+        {
+            return wrongEdition;
+        }
+
         // ⑵ **判らないまま並びの先頭に落ちた回**＝決めたふりをしない（`v2-spec.md` §1-2）。
         if (probe is not null
             && string.IsNullOrWhiteSpace(driver)
@@ -518,8 +527,12 @@ public sealed class FirstRunViewModel : ObservableObject
                 VariantRecommendation.IsBelowMinimum(RuntimeVariants.Cu126, driver)
                     ? DriverTooOldDecisionLine(name, driver)
                     : NoGpuDecisionLine,
+            // **「AMD の Radeon」の後ろに NVIDIA の製品名を置かない**（是正・段 G・high 8）＝
+            // 上の E-06b が拾いきれない回（両社の板が同居していて、名前だけが NVIDIA だった回）
+            // でも、名乗る名前と会社が食い違わないようにする。
             RuntimeVariants.RocmGfx1151 =>
-                DecisionLead + "AMD の Radeon" + name + "・ROCm で動かします。",
+                DecisionLead + "AMD の Radeon"
+                + (Services.Gpu.GpuVendors.IsNvidia(gpuName) ? null : name) + "・ROCm で動かします。",
             RuntimeVariants.Cu126 =>
                 DecisionLead + "NVIDIA の GPU" + name + "・CUDA 12.6 で動かします"
                 + "（グラフィックスドライバの版が " + DriverRequirement.Minimum(RuntimeVariants.Cu130)
@@ -535,6 +548,66 @@ public sealed class FirstRunViewModel : ObservableObject
     /// <b>アプリが決めた</b>ことを告げる 1 文（決裁 130 Q1 が届けたい 1 文はこれである）。
     /// </summary>
     public const string DecisionLead = "このパソコンに合わせて、動かし方を選びました。";
+
+    /// <summary>
+    /// <b>版を間違えて入れた機体の 1 行</b>（`v2-copy.md` §3-2 の <b>E-06b</b>・
+    /// 是正・段 G・high 8／medium 12）＝null＝間違えていない／判らない。
+    /// <para>
+    /// <b>言うのは片方の会社の板しか居ないときだけ</b>である。
+    /// ⑴ Radeon（ROCm）版なのに NVIDIA しか居ない＝<c>nvidia-smi</c> が答えた
+    /// （＝ドライバの版か製品名が読めた）か、OS のアダプタ一覧が NVIDIA だけを返した。
+    /// ⑵ RTX（CUDA）版なのに AMD しか居ない＝OS のアダプタ一覧が AMD だけを返した
+    /// （素の機体では実行系がまだ無いので、torch も <c>nvidia-smi</c> も答えられない）。
+    /// </para>
+    /// <para>
+    /// <b>ROCm の枝にこれが要る理由</b>＝<see cref="VariantRecommendation.Recommend"/> は
+    /// 選択肢に <c>rocm-*</c> が在れば<b>ドライバも GPU も見ずに</b> <c>rocm-gfx1151</c> を返す。
+    /// それを受けた ⑴ の枝は「AMD の Radeon（NVIDIA GeForce RTX 3090）・ROCm で動かします。」と
+    /// <b>見ていない事実を、しかも相手の製品名つきで</b>名乗っていた。
+    /// </para>
+    /// </summary>
+    public static string? WrongEditionFor(string? variant, DriverProbe? probe)
+    {
+        if (probe is null || !probe.Probed)
+        {
+            return null;
+        }
+
+        var nvidia = Services.Gpu.GpuVendors.IsNvidia(probe.GpuName)
+                     || !string.IsNullOrWhiteSpace(probe.DriverVersion)
+                     || probe.HasNvidiaAdapter == true;
+        var amd = Services.Gpu.GpuVendors.IsAmd(probe.GpuName) || probe.HasAmdAdapter == true;
+
+        if (string.Equals(variant?.Trim(), RuntimeVariants.RocmGfx1151, StringComparison.Ordinal))
+        {
+            return nvidia && !amd ? WrongEditionNeedsCuda : null;
+        }
+
+        if (variant?.Trim() is RuntimeVariants.Cu130 or RuntimeVariants.Cu126)
+        {
+            return amd && !nvidia ? WrongEditionNeedsRocm : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// E-06b＝Radeon（ROCm）版を NVIDIA の機体に入れた回（⑴⑵⑶ の 3 部品・憲章 原則 6）。
+    /// <b>⑶ は釦ではなく公式ページの案内</b>である＝版を入れ替える手はこのアプリの外に在る
+    /// （`v2-plan.md` 段 G の記帳・`v2-spec.md` §9 ⒅）。
+    /// </summary>
+    public const string WrongEditionNeedsCuda =
+        "このパソコンのグラフィックスは、この版では使えません。"
+        + "このパソコンに入っているのは NVIDIA のグラフィックスですが、"
+        + "いま入れてあるのは Radeon（ROCm）版です。"
+        + "公式ページから RTX（CUDA）版をダウンロードして入れ直してください。";
+
+    /// <summary>E-06b＝RTX（CUDA）版を AMD の機体に入れた回。</summary>
+    public const string WrongEditionNeedsRocm =
+        "このパソコンのグラフィックスは、この版では使えません。"
+        + "このパソコンに入っているのは AMD の Radeon ですが、"
+        + "いま入れてあるのは RTX（CUDA）版です。"
+        + "公式ページから Radeon（ROCm）版をダウンロードして入れ直してください。";
 
     /// <summary>GPU が見つからなかった機体の 1 行（憲章 §7・`v2-copy.md` §2 段 2）。</summary>
     public const string NoGpuDecisionLine =
