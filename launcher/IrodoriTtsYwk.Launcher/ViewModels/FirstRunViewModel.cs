@@ -73,7 +73,13 @@ public sealed class FirstRunViewModel : ObservableObject
     private string _variant;
     private string _message = string.Empty;
     private string _progressText = UiText.Missing;
+    private string _progressDetailText = string.Empty;
+    private string _phaseText = string.Empty;
+    private bool _uacNoticeVisible;
     private double _progressFraction;
+    private double _stepFraction;
+    private TimeSpan? _eta;
+    private bool _noticesSkipped;
     private bool _isBusy;
     private string _sizeText = UiText.Missing;
     private string _driverText = UiText.Missing;
@@ -119,17 +125,31 @@ public sealed class FirstRunViewModel : ObservableObject
             : VariantChoices[0];
 
         NextCommand = new AsyncRelayCommand(NextAsync, CanGoNext);
-        BackCommand = new RelayCommand(Back, () => Step > FirstRunStep.Notices && !IsBusy);
+        BackCommand = new RelayCommand(Back, () => Step > FirstStep && !IsBusy);
         CancelCommand = new RelayCommand(CancelRunning, () => IsBusy);
 
         // 捕れなかった例外を握り潰さない（§20-5 ⑴）＝黙って止まったウィザードを作らない。
         NextCommand.Faulted += (_, line) =>
         {
             SetStepOk(false);
-            Message = "この段で予期しない失敗が起きました：" + line;
+
+            // W11（`v2-spec.md` §3）＝画面は 2 部品の平語・**生の 1 行はログへ**。
+            Fail(UnexpectedFailureLine, "この段で予期しない失敗が起きました：" + line);
         };
 
         LoadNotices();
+
+        // **同じ版のお知らせは二度と訊かない**（決裁 130 Q3・`v2-spec.md` §3 段 1 の ⑶）＝
+        // 読み込んだ全文の sha256 が既に同意済みの物と一致する回は、**通知の段を出さずに**
+        // 確認の段から始める。**acceptedNoticesSha256 は読むだけで上書きしない**
+        // （`v2-plan.md` 段 B の危険 ⑵）。錠（CanAcceptNotices・:606 の CanGoNext）は 1 行も触らない。
+        if (NoticesAlreadyAccepted)
+        {
+            _noticesSkipped = true;
+            _accepted = true;
+            _step = FirstRunStep.Variant;
+        }
+
         UpdateVariantNotes();
     }
 
@@ -233,15 +253,61 @@ public sealed class FirstRunViewModel : ObservableObject
             RaisePropertyChanged(nameof(IsVariantStep));
             RaisePropertyChanged(nameof(IsWorkStep));
             RaisePropertyChanged(nameof(IsDoneStep));
+            RaisePropertyChanged(nameof(HasAdvanced));
+            RaisePropertyChanged(nameof(BackVisible));
             NextCommand.RaiseCanExecuteChanged();
             BackCommand.RaiseCanExecuteChanged();
+
+            // 「いま何をしているか」は段に従う（働く段以外は空＝出す物が無い）。
+            PhaseText = PhaseLine(_step);
+            UacNoticeVisible = false;
+
+            // 1 本のバーは**段が変わった瞬間にも**組み直す（段ごとに 0 へ戻さない＝段 B-3）。
+            _stepFraction = 0;
+            _eta = null;
+            ApplyProgress();
         }
     }
 
+    /// <summary>段 1 の題（`v2-copy.md` §2）。</summary>
+    public const string TitleNotices = "お知らせ";
+
+    /// <summary>段 2 の題（`v2-copy.md` §2）。</summary>
+    public const string TitleVariant = "これからすること";
+
+    /// <summary>段 3 の題＝<b>働く 4 段で同じ 1 つ</b>（`v2-copy.md` §2）。</summary>
+    public const string TitlePreparing = "準備しています";
+
+    /// <summary>完了の題（`v2-copy.md` §2）。</summary>
+    public const string TitleDone = "使えます。";
+
+    /// <summary>
+    /// 見せる段の題（`v2-copy.md` §2＝<b>4 つ</b>）。
+    /// <para>
+    /// <b>内部の 7 段は 1 つも触らない</b>（<see cref="FirstRunStep"/>）＝ここは<b>表示用の対応表</b>である。
+    /// 働く 4 段（取得・展開・モデル・起動）は利用者からは 1 つの「準備しています」に見え、
+    /// いま何をしているかは <see cref="PhaseText"/> の 1 行が名乗る。
+    /// </para>
+    /// </summary>
     public static string Title(FirstRunStep step) => step switch
     {
-        FirstRunStep.Notices => "初回取得の前に（第三者物の通知）",
-        FirstRunStep.Variant => "実行系の種類を選ぶ",
+        FirstRunStep.Notices => TitleNotices,
+        FirstRunStep.Variant => TitleVariant,
+        FirstRunStep.Download or FirstRunStep.Install
+            or FirstRunStep.Models or FirstRunStep.Start => TitlePreparing,
+        FirstRunStep.Done => TitleDone,
+        _ => step.ToString(),
+    };
+
+    /// <summary>
+    /// 記録（<see cref="Trail"/>・ログ）に残す段の名（<b>内輪の 7 つのまま</b>）。
+    /// 画面の題（<see cref="Title"/>）が 4 つに畳まれても、詳細の中の記録は
+    /// どの段で何が起きたかを段ごとに残す（`v2-copy.md` §1-8＝記録の字は据え置き）。
+    /// </summary>
+    public static string TrailTitle(FirstRunStep step) => step switch
+    {
+        FirstRunStep.Notices => "通知",
+        FirstRunStep.Variant => "変種",
         FirstRunStep.Download => "取得（実行系）",
         FirstRunStep.Install => "展開",
         FirstRunStep.Models => "取得（モデル）",
@@ -252,24 +318,45 @@ public sealed class FirstRunViewModel : ObservableObject
 
     public string StepTitle => Title(Step);
 
+    /// <summary>
+    /// 見せる段の番号（1 起点・<b>完了は番号を持たない</b>＝0）。
+    /// <paramref name="noticesSkipped"/>＝同じ版のお知らせに同意済みで段 1 を飛ばした回。
+    /// </summary>
+    public static int VisibleStepNumber(FirstRunStep step, bool noticesSkipped) => step switch
+    {
+        FirstRunStep.Notices => 1,
+        FirstRunStep.Variant => noticesSkipped ? 1 : 2,
+        FirstRunStep.Done => 0,
+        _ => noticesSkipped ? 2 : 3,
+    };
+
+    /// <summary>見せる段の数（ふだん 3・お知らせを飛ばした回は 2）。</summary>
+    public int VisibleStepCount => _noticesSkipped ? 2 : 3;
+
+    /// <summary>お知らせの段を飛ばしたか（同じ版に同意済み＝決裁 130 Q3）。</summary>
+    public bool NoticesSkipped => _noticesSkipped;
+
+    /// <summary>段番号の綴り（<c>3 / 3</c>・完了は空＝番号を出さない）。</summary>
     public string StepNumberText =>
-        (((int)Step) + 1).ToString(CultureInfo.InvariantCulture) + " / "
-        + (((int)FirstRunStep.Done) + 1).ToString(CultureInfo.InvariantCulture);
+        VisibleStepNumber(Step, _noticesSkipped) is int number and > 0
+            ? number.ToString(CultureInfo.InvariantCulture) + " / "
+              + VisibleStepCount.ToString(CultureInfo.InvariantCulture)
+            : string.Empty;
 
     /// <summary>
-    /// 「次へ」の文言。
+    /// 「次へ」の文言（`v2-copy.md` §2・§1-8）。
     /// <para>
     /// <b>働く段には「次へ」が無い</b>（裁定 94 ⑴）＝取得→展開→モデル→起動は自動で繋がるので、
-    /// この文言が出るのは⑴ 通知 ⑵ 変種 ⑶ 完了 ⑷ <b>失敗した段（「もう一度」）</b>の 4 つだけである。
+    /// この文言が出るのは⑴ お知らせ ⑵ 確認 ⑶ 完了 ⑷ <b>失敗した段（「もう一度」）</b>の 4 つだけである。
     /// </para>
     /// </summary>
     public string NextButtonText => !_lastStepOk
         ? "もう一度"
         : Step switch
         {
-            FirstRunStep.Notices => "同意して次へ",
-            FirstRunStep.Variant => "この構成で取得を始める",
-            FirstRunStep.Done => "発話テストへ",
+            FirstRunStep.Notices => "次へ",
+            FirstRunStep.Variant => "準備を始める",
+            FirstRunStep.Done => "しゃべらせてみる",
             _ => "次へ",
         };
 
@@ -290,6 +377,30 @@ public sealed class FirstRunViewModel : ObservableObject
         or FirstRunStep.Models or FirstRunStep.Start;
 
     public bool IsDoneStep => Step is FirstRunStep.Done;
+
+    /// <summary>
+    /// 詳細の畳み（<c>FirstRunAdvancedExpander</c>）を出す段か。
+    /// お知らせの段には別の畳み（全文＝<c>FirstRunNoticesExpander</c>）が在るので出さない。
+    /// </summary>
+    public bool HasAdvanced => !IsNoticesStep;
+
+    /// <summary>
+    /// この画面が始まる段（＝<see cref="Back"/> がこれより手前へは戻らない）。
+    /// お知らせを飛ばした回は確認の段が最初になる。
+    /// </summary>
+    private FirstRunStep FirstStep => _noticesSkipped ? FirstRunStep.Variant : FirstRunStep.Notices;
+
+    /// <summary>
+    /// <b>同じ版のお知らせに既に同意している</b>か（決裁 130 Q3・<c>v2-spec.md</c> §3 段 1 の ⑶）。
+    /// <para>
+    /// 読み込んだ全文の sha256 と <c>settings.acceptedNoticesSha256</c> の突き合わせだけで決まる
+    /// ＝<b>新しい判定も新しい鍵も足していない</b>。文面が別の版になった回は偽に戻り、
+    /// もう 1 度お知らせの段から始まる。
+    /// </para>
+    /// </summary>
+    public bool NoticesAlreadyAccepted =>
+        _noticesSha256 is not null
+        && string.Equals(_settings.AcceptedNoticesSha256, _noticesSha256, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>通知文（<b>そのまま出す</b>＝席が要約しない＝裁定 46）。</summary>
     public string NoticesText
@@ -345,12 +456,308 @@ public sealed class FirstRunViewModel : ObservableObject
 
     public string VariantDisplayName => RuntimeVariants.DisplayName(_variant);
 
-    /// <summary>CPU 変種の注記（裁定 13＝「遅い」を明記する）。</summary>
+    /// <summary>
+    /// CPU 変種の注記（裁定 13＝「遅い」を明記する）。
+    /// <para>
+    /// <b>版の名は 2 つだけ</b>（`v2-copy.md` §0＝<c>RTX（CUDA）</c>／<c>Radeon（ROCm）</c>）＝
+    /// ここで「ROCm 版」という<b>3 つ目の名</b>を綴らない。「未保障」は帳面の語なので、
+    /// 憲章 根 6 の平語（どこまで試したか・どこは試していないか）に言い直す。
+    /// 技術語（bf16・製品名）は詳細の中なので出してよい（`v2-spec.md` §6-2）。
+    /// </para>
+    /// </summary>
     public string VariantNote => RuntimeVariants.IsCpu(_variant)
         ? "CPU は GPU の数百分の一の速さです。配信用途では勧めません（試すためだけの選択肢です）。"
         : RuntimeVariants.IsRocm(_variant)
-            ? "ROCm 版です（Radeon の GPU 向け）。精度は bf16 に固定されます（未保障・gfx1151 で確認済み）。"
+            ? "Radeon（ROCm）で動かします。精度は bf16 に固定されます"
+              + "（Ryzen AI MAX+ 395 ／ Radeon 8060S で確認済み。ほかの Radeon では試していません）。"
             : "NVIDIA の GPU で動きます。ドライバの版が下限に届いているか下の行を確かめてください。";
+
+    /// <summary>
+    /// <b>アプリが決めた動かし方を告げる 1 行</b>（決裁 130 Q1・`v2-copy.md` §2 段 2・<b>純関数</b>）。
+    /// <para>
+    /// <b>選ばせない</b>＝判定は <see cref="VariantRecommendation.Recommend"/> そのままで、
+    /// ここは<b>その結果を名乗るだけ</b>である（新しい判定は 1 行も書かない）。
+    /// 動かし方の名は <see cref="BandText.VariantName"/> の 4 語（CUDA 13.0／CUDA 12.6／ROCm／CPU）＝
+    /// 帯と同じ綴りを使う（同じ画面に 2 通りの名を並べない）。
+    /// </para>
+    /// <para>
+    /// <b>CPU は GPU が在る機体では一切見せない</b>（憲章 §7 既定）＝ここが CPU を名乗るのは
+    /// <see cref="VariantRecommendation.Recommend"/> が「見た上で 0 台」と決めた回だけである。
+    /// </para>
+    /// </summary>
+    /// <param name="variant">決まった動かし方（台帳の綴り）。</param>
+    /// <param name="gpuName">1 台目の製品名（読めなければ null＝括弧ごと落とす）。</param>
+    /// <param name="probe">
+    /// その判定の<b>もと</b>（null＝渡さない＝従来どおり結果だけを名乗る）。
+    /// <b>要る理由</b>（是正・検分）＝<see cref="VariantRecommendation.Recommend"/> の戻りは
+    /// 3 通りの事情を 1 つの綴りに畳む。⑴ <c>cpu</c> は「見た上で 0 台」だけでなく
+    /// <b>版が読めていて下限未満</b>（＝GPU は在る）でも返る ⑵ <c>cu130</c> は
+    /// <b>まだ何も見ていない・列挙が落ちた</b>回の<b>並びの先頭</b>としても返る。
+    /// 事情を見ずに名乗ると、GeForce の機体に「GPU が見つかりませんでした」と告げたり、
+    /// 何も見ていないのに「このパソコンは CUDA 13.0 です」と言い切ったりする。
+    /// </param>
+    public static string DecisionLineFor(string? variant, string? gpuName, DriverProbe? probe = null)
+    {
+        var name = string.IsNullOrWhiteSpace(gpuName) ? null : "（" + gpuName.Trim() + "）";
+        var chosen = variant?.Trim();
+        var driver = probe?.DriverVersion;
+
+        // ⑵ **判らないまま並びの先頭に落ちた回**＝決めたふりをしない（`v2-spec.md` §1-2）。
+        if (probe is not null
+            && string.IsNullOrWhiteSpace(driver)
+            && (!probe.Probed || probe.FailureReason is not null)
+            && chosen is RuntimeVariants.Cu130 or RuntimeVariants.Cu126)
+        {
+            return UnknownDecisionLine(chosen);
+        }
+
+        return chosen switch
+        {
+            // ⑴ **版が読めていて下限未満**の cpu＝GPU は在る（A4）＝数字ごと名乗る。
+            RuntimeVariants.Cpu =>
+                VariantRecommendation.IsBelowMinimum(RuntimeVariants.Cu126, driver)
+                    ? DriverTooOldDecisionLine(name, driver)
+                    : NoGpuDecisionLine,
+            RuntimeVariants.RocmGfx1151 =>
+                DecisionLead + "AMD の Radeon" + name + "・ROCm で動かします。",
+            RuntimeVariants.Cu126 =>
+                DecisionLead + "NVIDIA の GPU" + name + "・CUDA 12.6 で動かします"
+                + "（グラフィックスドライバの版が " + DriverRequirement.Minimum(RuntimeVariants.Cu130)
+                + " 未満のためです）。",
+            RuntimeVariants.Cu130 =>
+                DecisionLead + "NVIDIA の GPU" + name + "・CUDA 13.0 で動かします。",
+            _ => DecisionLead + BandText.VariantName(chosen) + " で動かします。",
+        };
+    }
+
+    /// <summary>
+    /// 段 2 の本文の<b>頭の 1 文</b>（`v2-copy.md` §2 段 2 の逐語）＝
+    /// <b>アプリが決めた</b>ことを告げる 1 文（決裁 130 Q1 が届けたい 1 文はこれである）。
+    /// </summary>
+    public const string DecisionLead = "このパソコンに合わせて、動かし方を選びました。";
+
+    /// <summary>GPU が見つからなかった機体の 1 行（憲章 §7・`v2-copy.md` §2 段 2）。</summary>
+    public const string NoGpuDecisionLine =
+        "このパソコンには対応する GPU が見つかりませんでした。"
+        + "とても遅い方法（CPU）で試すこともできますが、配信には使えません。";
+
+    /// <summary>
+    /// <b>GPU は在るが、ドライバが古くて使えない</b>機体の 1 行（A4・`v2-spec.md` §3 段 2 の
+    /// 「下限未満で断られた回は、本文の 1 行にドライバのいまの版と必要な版の数字を入れ」）。
+    /// ⑵ の綴りは帯の E-02 と同じ形（`v2-copy.md` §3-2）にする。
+    /// </summary>
+    private static string DriverTooOldDecisionLine(string? name, string? driverVersion) =>
+        "このパソコンの GPU" + name + "は、いまのグラフィックスドライバでは使えません"
+        + "（いまの版 " + (driverVersion?.Trim() ?? UiText.Missing)
+        + "・必要なのは " + DriverRequirement.Minimum(RuntimeVariants.Cu126) + " 以上です）。"
+        + "とても遅い方法（CPU）で試すこともできますが、配信には使えません。"
+        + "グラフィックスドライバを新しくしてから、はじめの準備をやり直すこともできます。";
+
+    /// <summary>
+    /// <b>グラフィックスを確かめられなかった</b>回の 1 行（<see cref="VariantRecommendation.Recommend"/>
+    /// が「判らないことを勝手に決めない」で並びの先頭に落ちた回）＝
+    /// <b>決めたとは言わない</b>・既定で進むことと、あとから変えられることを告げる。
+    /// </summary>
+    private static string UnknownDecisionLine(string? variant) =>
+        "このパソコンのグラフィックスを確かめられませんでした。"
+        + "ひとまず " + BandText.VariantName(variant) + " で準備します。"
+        + "うまく動かないときは、設定の「詳細」で動かし方を変えてください。";
+
+    /// <summary>いま決まっている動かし方を告げる 1 行（<see cref="DecisionLineFor"/>）。</summary>
+    public string DecisionLine =>
+        DecisionLineFor(_variant, _probe.GpuName ?? _settings.GpuName, _probe);
+
+    /// <summary>
+    /// これから落とす量と時間の 1 行（`v2-copy.md` §2 段 2）。
+    /// <b>丸めた散文の定数</b>である（`v2-spec.md` §1-3＝実数は詳細の中に <c>GiB</c> のまま残す）。
+    /// 数は憲章 §4 の「数字の 1 枚表」だけを引く。
+    /// </summary>
+    public const string PlanLine =
+        "これから約 5.3 GB をダウンロードします。10 分ほどかかります（回線の速さによります）。";
+
+    /// <summary>
+    /// <b>なぜ落とすのか</b>の 1 行（`v2-copy.md` §2 段 1 の 3 行目と<b>同じ 1 文</b>）。
+    /// <para>
+    /// <b>段 2 にも要る</b>（憲章 原則 3 の机上の検分＝<b>釦を押す前の 1 画面</b>に
+    /// ⑴ 量 ⑵ 時間 ⑶ なぜ が全部載っていること・`v2-spec.md`:1172 の「§3 段 1 と段 2 も同じ 3 つを持つ」）。
+    /// お知らせに同意済みの回は段 1 を飛ばすので（決裁 130 Q3）、この 1 文が段 2 に無いと
+    /// 〔はじめの準備をやり直す〕から入った利用者は<b>なぜを 1 度も読まない</b>。
+    /// </para>
+    /// </summary>
+    public const string WhyLine = "ほかの方が作った物を勝手に配って回らない方針だからです。";
+
+    /// <summary>途中でやめられることを告げる 1 行（`v2-copy.md` §2 段 2）。</summary>
+    public const string ResumeLine = "途中でやめられます。次に開いたときは、続きから始めます。";
+
+    /// <summary>お知らせの段の要約（`v2-copy.md` §2 段 1＝全文は〔全文を見る〕で開く）。</summary>
+    public const string NoticesSummary =
+        "このアプリは、ほかの方が作ったプログラムと音声モデルを使って動きます。\n"
+        + "それらはこのアプリには入っていないので、これからこのパソコンへダウンロードします"
+        + "（約 5.3 GB・10 分ほど）。\n"
+        + "ほかの方が作った物を勝手に配って回らない方針だからです。\n"
+        + "それぞれに作者と利用条件があり、その全文はダウンロードのあと、このパソコンにも残ります。";
+
+    /// <summary>準備中に常設で出す 1 行（`v2-copy.md` §2 段 3）。</summary>
+    public const string WaitLine =
+        "このままお待ちください。ネットにつないだままにしてください。ほかの作業をしていてかまいません。";
+
+    /// <summary>Windows の許可の窓が出る直前の 1 行（憲章 §4-9・`v2-copy.md` §2 段 3）。</summary>
+    public const string UacNoticeLine =
+        "Microsoft の部品を入れます。Windows の許可の窓が 1 度出るので「はい」を押してください。";
+
+    /// <summary>完了の本文（`v2-copy.md` §2 完了）。</summary>
+    public const string DoneLine =
+        "さっそく、ひとことしゃべらせてみましょう。\n"
+        + "読み分けちゃん2 で使うときは、このアプリを開いたままにしてください"
+        + "（閉じると読み上げも止まります）。";
+
+    // ---- 画面が束縛する口（XAML から定数を直に引かない＝綴りが 2 つに割れない）----
+
+    /// <summary>お知らせの要約（<see cref="NoticesSummary"/>）。</summary>
+    public string NoticesSummaryText => NoticesSummary;
+
+    /// <summary>これから落とす量と時間の 1 行（<see cref="PlanLine"/>）。</summary>
+    public string PlanText => PlanLine;
+
+    /// <summary>なぜ落とすのかの 1 行（<see cref="WhyLine"/>）。</summary>
+    public string WhyText => WhyLine;
+
+    /// <summary>お知らせの全文が読めない（＝要約もチェックも出さない・`v2-copy.md` §2 段 1）。</summary>
+    public bool NoticesUnreadable => !CanAcceptNotices;
+
+    /// <summary>お知らせの全文が読めた（＝ふだんの段 1 を出す）。</summary>
+    public bool NoticesReadable => CanAcceptNotices;
+
+    /// <summary>全文が読めないときに<b>本文の代わりに出す</b> 1 行（`v2-copy.md` §2 段 1）。</summary>
+    public string NoticesUnreadableText => NoticesMissingLine;
+
+    /// <summary>
+    /// 〔戻る〕を<b>画面に出すか</b>（`v2-spec.md` §3 段 3＝働いている間の釦は〔やめる〕だけ・
+    /// `v2-copy.md` §2 完了＝完了の釦は〔しゃべらせてみる〕だけ）。
+    /// <b>押せる条件（<see cref="BackCommand"/>）と同じ式</b>に、完了の段を足しただけである
+    /// ＝要素も id も残る（灰色の釦を並べない）。
+    /// </summary>
+    public bool BackVisible => Step > FirstStep && !IsBusy && !IsDoneStep;
+
+    /// <summary>途中でやめられることを告げる 1 行（<see cref="ResumeLine"/>）。</summary>
+    public string ResumeText => ResumeLine;
+
+    /// <summary>準備中の常設 1 行（<see cref="WaitLine"/>）。</summary>
+    public string WaitText => WaitLine;
+
+    /// <summary>Windows の許可の予告（<see cref="UacNoticeLine"/>）。</summary>
+    public string UacNoticeText => UacNoticeLine;
+
+    /// <summary>完了の本文（<see cref="DoneLine"/>）。</summary>
+    public string DoneText => DoneLine;
+
+    // ---- 失敗の 1 行（`v2-spec.md` §3 段 3 の W 群＝⑴ 何が起きたか ＋ ⑵ なぜか）----
+    // ⑶ 次にやること は釦（`NextButtonText` が「もう一度」に変わる）が受け持つ。
+    // **元の内輪の 1 行は捨てない**＝`Fail` が檔へ落とす。
+
+    /// <summary>W1＝お知らせの全文が読めない（`v2-copy.md` §1-8 の :452）。</summary>
+    public const string NoticesUnreadableLine =
+        "お知らせの全文が読めないので、先へ進めません。アプリを入れ直してください。";
+
+    /// <summary>W1＝お知らせの全文が見つからない（`v2-copy.md` §1-8 の :700-716）。</summary>
+    public const string NoticesMissingLine =
+        "お知らせの全文が見つかりません。この状態でははじめの準備を始められません。"
+        + "アプリを入れ直してください。";
+
+    /// <summary>W2＝取得台帳が読めない（`v2-spec.md` §3 W2）。</summary>
+    public const string LedgerBrokenLine = "準備を始められません。アプリのファイルが壊れているようです";
+
+    /// <summary>
+    /// W2 の ⑵（`v2-copy.md` §3-2 E-03）＝<b>理由は平語 1 文に畳む</b>。
+    /// <b>台帳の檔名は画面に出さない</b>（`v2-copy.md` §3-2 の書き方の規則＝生の記録は画面に出さない・
+    /// 檔には残る）＝<c>runtime-cu130.json が読めません</c> は <see cref="Fail"/> の第 2 引数でログへ落ちる。
+    /// </summary>
+    public const string LedgerBrokenWhyLine = "必要なファイルの一覧が読めませんでした。";
+
+    /// <summary>
+    /// W3＝ディスクの空きが足りない（`v2-copy.md` §3-2 E-09 の 3 部品・<b>逐語</b>）。
+    /// <b>実数（GiB）は画面に出さない</b>（憲章 §6-1＝画面は「GB」で通す・詳細と帳面は GiB のまま）＝
+    /// 要る量は憲章 §4 の「数字の 1 枚表」の<b>約 12 GB</b> 1 つだけを綴る。
+    /// 実数の 3 つ組は <see cref="FreeSpaceShortfall"/> がログと <see cref="SizeText"/>（詳細の中）に残す。
+    /// </summary>
+    public const string FreeSpaceLine =
+        "ディスクの空きが足りません。準備には空き 約 12 GB が要ります。"
+        + "要らないファイルを消してから〔もう一度〕を押してください。";
+
+    /// <summary>W4＝ダウンロードできなかった（`v2-spec.md` §3 W4・E-10 の ⑶ を 1 文で添える）。</summary>
+    public const string DownloadFailedLine = "ダウンロードできませんでした。";
+
+    /// <summary>
+    /// W4 の ⑵（`v2-copy.md` §3-2 E-10 の<b>逐語</b>）。
+    /// <b>取り手が返した生の理由（<c>HTTP 404</c>・<c>sha256 が台帳と合わない</c>・例外の文）は
+    /// 画面に出さない</b>＝<see cref="Fail"/> の第 2 引数でログへ落ちる。
+    /// </summary>
+    public const string DownloadFailedWhyLine =
+        "ネットにつながらなくなったか、配布元が応答しませんでした。";
+
+    /// <summary>W4 の ⑶＝続きから始まることを告げる 1 文。</summary>
+    public const string ResumeHintLine = "〔もう一度〕を押すと、続きから始めます。最初からにはなりません。";
+
+    /// <summary>W5＝組み立てに失敗した（`v2-spec.md` §3 W5）。</summary>
+    public const string InstallFailedLine = "組み立てに失敗しました。";
+
+    /// <summary>
+    /// W5 の ⑵。<b>展開系の生の理由</b>（<c>変種ディレクトリに檔が 1 つも入っていない。</c>・
+    /// <c>展開の件数が台帳と合わない（*.dist-info N 件・台帳は M 件）。</c>）は画面に出さない
+    /// ＝<b>変種・台帳・配布樹</b>は憲章 §6-1 の隠す語である。生の 1 行はログに残る。
+    /// </summary>
+    public const string InstallFailedWhyLine =
+        "ダウンロードしたファイルが壊れているかもしれません。";
+
+    /// <summary>
+    /// <b>まだ組み込まれていない段</b>の 1 行（`v2-copy.md` §1-8 の :1000／:1083／:1189／:1251）。
+    /// 便・台帳・展開・実行系は憲章 §6-1 の隠す語なので、<b>内輪の 1 行はログだけ</b>に残す。
+    /// </summary>
+    public const string NotYetLine = "まだできません。";
+
+    /// <summary>W6＝声のデータを落とせなかった（`v2-spec.md` §3 W6）。</summary>
+    public const string ModelsFailedLine =
+        "声のデータをダウンロードできませんでした。途中で止まりました。";
+
+    /// <summary>W8＝Microsoft の部品を入れられなかった（`v2-spec.md` §3 W8）。</summary>
+    public const string VcRedistFailedLine =
+        "Microsoft の部品を入れられませんでした。Windows の確認が出なかったか、閉じられました。";
+
+    /// <summary>W9＝やめた（<b>失敗ではない</b>＝`v2-copy.md` §1-8 の :589）。</summary>
+    public const string CancelledLine = "やめました。次に開いたときは、続きから始めます。";
+
+    /// <summary>W10＝止める物が無い（`v2-copy.md` §1-8 の :584）。</summary>
+    public const string NothingToCancelLine = "いまはやめられません。";
+
+    /// <summary>W11＝予期しない失敗（`v2-spec.md` §3 W11）。</summary>
+    public const string UnexpectedFailureLine = "うまくいきませんでした。予期しない失敗です。";
+
+    /// <summary>
+    /// E-12＝<b>時間内に終わらなかった</b>回の 1 行（`v2-copy.md` §3-2 E-12）。
+    /// <b>これは「理由が判らない回」の文ではない</b>（是正・検分）＝口が埋まっている・
+    /// ドライバが下限未満・子が exit 2 で落ちた回は<b>別の理由</b>なので、
+    /// 起こす側が持っている 1 行を <see cref="StartFailureLine"/> から受けて
+    /// <see cref="BandText.For"/> の ⑴＋⑵ を出す。ここはその 1 行が無い回だけの文である。
+    /// </summary>
+    public const string StartFailedLine =
+        "準備に時間がかかりすぎました。時間内に、読み上げの準備が終わりませんでした"
+        + "（ほかのソフトが重いときに起きやすくなります）。";
+
+    /// <summary>
+    /// <b>下限に届かない動かし方を選んでいる</b>間の画面の 1 行（`v2-copy.md` §3-2 E-02・<b>純関数</b>）。
+    /// <para>
+    /// <b>内輪の 1 行をそのまま出さない</b>（是正・検分）＝<see cref="VariantRecommendation.BlockReason"/>
+    /// は「変種」を綴る（憲章 §6-1 の隠す語）。数字（いまの版・下限）は ⑵ に出してよい
+    /// （`v2-copy.md` §3-2 の書き方の規則）。⑶ は<b>この画面の畳み</b>を開く 1 手である。
+    /// </para>
+    /// </summary>
+    public static string VariantBlockedLine(string? variant, string? driverVersion) =>
+        "この GPU では、いまの動かし方が使えません。"
+        + "グラフィックスドライバが古いためです（いまの版 "
+        + (string.IsNullOrWhiteSpace(driverVersion) ? UiText.Missing : driverVersion.Trim())
+        + "・" + BandText.VariantName(variant) + " には "
+        + (DriverRequirement.Minimum(variant) ?? UiText.Missing) + " 以上が必要です）。"
+        + "〔詳細（上級者向け）〕を開いて、動かし方を変えてください。";
 
     /// <summary>取得の見積り（台帳の <c>size</c> の総和＋モデル）。</summary>
     public string SizeText
@@ -383,18 +790,105 @@ public sealed class FirstRunViewModel : ObservableObject
         }
     }
 
-    /// <summary>取得の進捗の 1 行（bytes／ETA＝受け入れ条件 D-5）。</summary>
+    /// <summary>
+    /// <b>画面に出す文と、檔に残す文を分ける</b>（`v2-spec.md` §3 段 3 の失敗表＝
+    /// 「内部の 1 行（ログはこのまま）」・憲章 §5「ログの綴りは変えない」）。
+    /// <para>
+    /// 画面には 3 部品（⑴ 何が起きたか ⑵ なぜか）に言い直した 1 行を出し、
+    /// <b>元の 1 行は捨てずに</b>ログへ落とす。⑶ 次にやること＝〔もう一度〕は
+    /// <see cref="NextButtonText"/> が出す（失敗した段では札がそう変わる）。
+    /// </para>
+    /// </summary>
+    private void Fail(string display, string internalLine)
+    {
+        // 記録が先＝画面の文だけが残って原因が消える、という順にしない。
+        if (!string.Equals(display, internalLine, StringComparison.Ordinal))
+        {
+            Log(internalLine);
+        }
+
+        Message = display;
+    }
+
+    /// <summary>
+    /// 進捗の 1 行（`v2-copy.md` §2 段 3＝<c>42 %　あと 6 分ほど</c>）。
+    /// <b>速さ・件数・バイト数の内訳は <see cref="ProgressDetailText"/>（詳細の中）へ</b>。
+    /// </summary>
     public string ProgressText
     {
         get => _progressText;
         private set => SetProperty(ref _progressText, value);
     }
 
-    /// <summary>0〜1（分母が無ければ 0）。</summary>
+    /// <summary>
+    /// 進捗の内訳 1 行（<b>詳細の畳みの中だけ</b>＝速さ・件数・バイト数・回数）。
+    /// 受け入れ条件 D-5 の「bytes／ETA」はこの行が引き続き満たす。
+    /// </summary>
+    public string ProgressDetailText
+    {
+        get => _progressDetailText;
+        private set => SetProperty(ref _progressDetailText, value);
+    }
+
+    /// <summary>
+    /// <b>いま何をしているか</b>の 1 行（憲章 §4-8・`v2-copy.md` §2 段 3）＝
+    /// 働く 4 段のうち 1 つだけを平語で名乗り、量が読める段は「（3.2 GB / 5.3 GB・残り 4 分）」を添える。
+    /// </summary>
+    public string PhaseText
+    {
+        get => _phaseText;
+        private set => SetProperty(ref _phaseText, value);
+    }
+
+    /// <summary>Windows の許可の窓の予告を出しているか（憲章 §4-9）。</summary>
+    public bool UacNoticeVisible
+    {
+        get => _uacNoticeVisible;
+        private set => SetProperty(ref _uacNoticeVisible, value);
+    }
+
+    /// <summary>
+    /// <b>1 本のバー</b>（0〜1）＝働く 4 段を <see cref="FirstRunProgress.Overall"/> で合成した値。
+    /// 段が変わっても 0 へ戻らない（`v2-plan.md` 段 B-3）。
+    /// </summary>
     public double ProgressFraction
     {
         get => _progressFraction;
         private set => SetProperty(ref _progressFraction, value);
+    }
+
+    /// <summary>
+    /// その段の進み（0〜1）を受けて、1 本のバーと進捗の 1 行を組み直す。
+    /// <b>合成は純関数に任せる</b>（<see cref="FirstRunProgress"/>）＝ここは値を配るだけ。
+    /// </summary>
+    private void ApplyProgress()
+    {
+        ProgressFraction = FirstRunProgress.Overall(Step, _stepFraction);
+        ProgressText = FirstRunProgress.Line(ProgressFraction, _eta);
+    }
+
+    /// <summary>
+    /// 「いま何をしているか」の 1 行を組む（<b>純関数</b>・`v2-copy.md` §2 段 3＝<b>5 文のどれか 1 つ</b>）。
+    /// <para>
+    /// <b>数を添えない</b>（是正・検分＝`v2-spec.md` §1-3）＝利用者向けの面に出す数は
+    /// ⑴ 割合（<c>42 %</c>）⑵ 丸めた残り（<c>あと 6 分ほど</c>）⑶ 散文の総量（<c>約 5.3 GB</c>）の
+    /// 3 つだけで、<b>この 3 つ以外の数を利用者向けの面に書かない</b>。実測の内訳は
+    /// <see cref="ProgressDetailText"/>／<see cref="SizeText"/>（＝詳細の中）に <c>GiB</c> のまま残る。
+    /// </para>
+    /// </summary>
+    /// <param name="step">いまの段。</param>
+    public static string PhaseLine(FirstRunStep step)
+    {
+        var head = step switch
+        {
+            FirstRunStep.Download => "必要な部品をダウンロードしています",
+            FirstRunStep.Install => "落とした物を組み立てています",
+            FirstRunStep.Models => "声のデータをダウンロードしています",
+            FirstRunStep.Start => "動くか確かめています",
+            _ => string.Empty,
+        };
+
+        return head.Length == 0 ? string.Empty : head + "。";
     }
 
     public bool IsBusy
@@ -404,6 +898,7 @@ public sealed class FirstRunViewModel : ObservableObject
         {
             if (SetProperty(ref _isBusy, value))
             {
+                RaisePropertyChanged(nameof(BackVisible));
                 NextCommand.RaiseCanExecuteChanged();
                 BackCommand.RaiseCanExecuteChanged();
                 CancelCommand.RaiseCanExecuteChanged();
@@ -414,8 +909,9 @@ public sealed class FirstRunViewModel : ObservableObject
     /// <summary>
     /// 「次へ」の 1 手。
     /// <para>
-    /// <b>成功した段は自動で次へ進む</b>（裁定 94 ⑴）。押下は<b>5</b> だけになる＝
-    /// 同意チェック・同意して次へ・変種・取得を始める・発話テストへ。取得→展開→モデル→起動は
+    /// <b>成功した段は自動で次へ進む</b>（裁定 94 ⑴）。押下は<b>4</b> だけになる＝
+    /// 同意チェック・次へ・準備を始める・しゃべらせてみる（v2.0 段 B-1／B-4＝<b>動かし方を選ぶ 1 押しは
+    /// 無くなった</b>＝アプリが決める）。取得→展開→モデル→起動は
     /// <see cref="AdvanceAsync"/> が繋ぎ、<b>失敗した段でだけ止まる</b>（そこで「もう一度」と理由 1 行）。
     /// 便 E（2）の E2E は 9 押下で、受け入れ条件の「利用者操作 ≤ 6」を落としていた
     /// （<c>docs/acceptance.md</c> 導入行・裁定 94 ⑴）。
@@ -433,7 +929,8 @@ public sealed class FirstRunViewModel : ObservableObject
         // （例＝`_store.Save` が投げた）だと、下限未満の変種のまま取得へ抜けられた。
         if (Step is FirstRunStep.Variant && VariantBlockReason is string blockedFirst)
         {
-            Message = blockedFirst;
+            // 画面は E-02 の 3 部品・**内輪の 1 行（「変種」を綴る）はログへ**（是正・検分）。
+            Fail(VariantBlockedLine(_variant, _probe.DriverVersion), blockedFirst);
             return;
         }
 
@@ -449,12 +946,14 @@ public sealed class FirstRunViewModel : ObservableObject
             case FirstRunStep.Notices:
                 if (_noticesSha256 is null)
                 {
-                    Message = "通知文を読み込めていないので同意できません（配布物を確かめてください）。";
+                    Fail(
+                        NoticesUnreadableLine,
+                        "通知文を読み込めていないので同意できません（配布物を確かめてください）。");
                     return;
                 }
 
                 _settings.AcceptedNoticesSha256 = _noticesSha256;
-                Record("通知に同意しました。");
+                Record("通知に同意しました。");         // 記録は畳みの中＋檔（画面には出さない）
                 Step = FirstRunStep.Variant;
                 break;
 
@@ -494,8 +993,12 @@ public sealed class FirstRunViewModel : ObservableObject
 
             if (IsWorkStep)
             {
+                // 「いま何をしているか」の 1 行は段ごとに言い直す（`v2-copy.md` §2 段 3）。
+                PhaseText = PhaseLine(step);
+
                 // 同じ段を「もう一度」で撃ち直しても行は重ねない（是正・便 D（3）の 3 巡目）。
-                var head = "― " + Title(step);
+                // **記録は内輪の 7 段の名のまま**（画面の題は 4 つに畳んだ＝`Title`）。
+                var head = "― " + TrailTitle(step);
                 if (Trail.Count == 0 || !string.Equals(Trail[^1], head, StringComparison.Ordinal))
                 {
                     Trail.Add(head);
@@ -559,7 +1062,7 @@ public sealed class FirstRunViewModel : ObservableObject
 
     public void Back()
     {
-        if (Step <= FirstRunStep.Notices || IsBusy)
+        if (Step <= FirstStep || IsBusy)
         {
             return;
         }
@@ -581,12 +1084,12 @@ public sealed class FirstRunViewModel : ObservableObject
     {
         if (_cancel is null)
         {
-            Message = "いま中断できる仕事はありません。";
+            Fail(NothingToCancelLine, "いま中断できる仕事はありません。");
             return;
         }
 
         _cancel.Cancel();
-        Message = "中断しました（続きから取り直せます）。";
+        Fail(CancelledLine, "中断しました（続きから取り直せます）。");
     }
 
     /// <summary>
@@ -617,10 +1120,27 @@ public sealed class FirstRunViewModel : ObservableObject
     /// </summary>
     public Action<string>? LogSink { get; set; }
 
-    private void Record(string line)
+    /// <summary>
+    /// 済んだ事実を<b>詳細の中の記録</b>（<see cref="Trail"/>）と檔に残す。
+    /// <para>
+    /// <b>画面の 1 行（<see cref="Message"/>）には出さない</b>（是正・検分＝憲章 §6-1）。
+    /// ここを通る字は内輪の綴りのまま（変種・初回取得・実行系・展開・GiB）で、
+    /// <see cref="Message"/> は畳みの<b>外</b>（<c>FirstRunMessageText</c>）に出るので、
+    /// 通していたころは隠す語がそのまま利用者の目に入っていた。
+    /// <paramref name="show"/>＝<b>文言表が画面に出すと決めた行</b>だけ真で呼ぶ。
+    /// </para>
+    /// </summary>
+    private void Record(string line, bool show = false)
     {
         Trail.Add(line);
-        Message = line;
+
+        if (show)
+        {
+            Message = line;      // setter が檔にも落とす
+            return;
+        }
+
+        Log(line);
     }
 
     /// <summary>檔に 1 行落とす（<b>ウィザードを止めない</b>＝IO の失敗は握り潰す）。</summary>
@@ -697,8 +1217,10 @@ public sealed class FirstRunViewModel : ObservableObject
         {
             if (!File.Exists(_paths.FirstRunNoticesPath))
             {
-                NoticesText = "通知文（licenses/first-run-notices.md）が配布物に見つかりません。"
-                    + "この状態では初回取得を始められません。";
+                // W1（`v2-spec.md` §3）＝画面は平語・**内輪の 1 行は檔へ**（路を捨てない）。
+                Log("通知文（licenses/first-run-notices.md）が配布物に見つかりません。"
+                    + "この状態では初回取得を始められません。");
+                NoticesText = NoticesMissingLine;
                 return;
             }
 
@@ -709,16 +1231,29 @@ public sealed class FirstRunViewModel : ObservableObject
         }
         catch (IOException ex)
         {
-            NoticesText = "通知文が読めませんでした：" + ex.Message;
+            Log("通知文が読めませんでした：" + ex.Message);
+            NoticesText = NoticesMissingLine;
         }
         catch (UnauthorizedAccessException ex)
         {
-            NoticesText = "通知文が読めませんでした：" + ex.Message;
+            Log("通知文が読めませんでした：" + ex.Message);
+            NoticesText = NoticesMissingLine;
         }
         finally
         {
             RaisePropertyChanged(nameof(CanAcceptNotices));
+            RaisePropertyChanged(nameof(NoticesReadable));
+            RaisePropertyChanged(nameof(NoticesUnreadable));
             NextCommand.RaiseCanExecuteChanged();
+
+            // **W1 は 1 度も押させずに着地させる**（是正・検分）＝要約もチェックも出さない
+            // （`v2-copy.md` §2 段 1）代わりに、この 1 行を画面の 1 行にも置く。
+            // 置かなかったころは「押せないチェックと効かない〔次へ〕」だけが残り、
+            // 差し替えの文は畳み（`FirstRunNoticesExpander`・既定は閉）の中で見えなかった。
+            if (!CanAcceptNotices)
+            {
+                Message = NoticesMissingLine;
+            }
         }
     }
 
@@ -726,6 +1261,7 @@ public sealed class FirstRunViewModel : ObservableObject
     {
         RaisePropertyChanged(nameof(VariantDisplayName));
         RaisePropertyChanged(nameof(VariantNote));
+        RaisePropertyChanged(nameof(DecisionLine));
         RaisePropertyChanged(nameof(DriverVersion));
         RaisePropertyChanged(nameof(VariantBlocked));
         RaisePropertyChanged(nameof(VariantBlockReason));
@@ -754,6 +1290,11 @@ public sealed class FirstRunViewModel : ObservableObject
 
     /// <summary>
     /// 空きが足りないときの 1 行（足りている・読めないなら null＝<b>純関数</b>）。
+    /// <para>
+    /// W3（`v2-spec.md` §3）の 3 部品＝⑴ 空き容量が足りません。 ⑵ あと &lt;c&gt; 足りません
+    /// （必要 &lt;a&gt;・いまの空き &lt;b&gt;）。 ⑶〔もう一度〕（空けてから押す）。
+    /// <b>実数はここだけ残す</b>＝どれだけ空ければよいかは、数が無いと利用者が動けない。
+    /// </para>
     /// </summary>
     public static string? FreeSpaceShortfall(long neededBytes, long? freeBytes)
     {
@@ -762,9 +1303,9 @@ public sealed class FirstRunViewModel : ObservableObject
             return null;
         }
 
-        return "【空き容量が足りません】必要 " + FetchPlanner.FormatBytes(neededBytes)
-            + "・いまの空き " + FetchPlanner.FormatBytes(free)
-            + "（あと " + FetchPlanner.FormatBytes(neededBytes - free) + "）。";
+        return "空き容量が足りません。あと " + FetchPlanner.FormatBytes(neededBytes - free)
+            + " 足りません（必要 " + FetchPlanner.FormatBytes(neededBytes)
+            + "・いまの空き " + FetchPlanner.FormatBytes(free) + "）。";
     }
 
     /// <summary>その場所が乗っているドライブの空き（読めなければ null＝黙る）。</summary>
@@ -977,12 +1518,12 @@ public sealed class FirstRunViewModel : ObservableObject
             _variant).LedgerChanged;
     }
 
-    /// <summary>飛ばしたことを告げる 1 行（<b>逐語</b>＝Trail に残る）。</summary>
+    /// <summary>飛ばしたことを告げる 1 行（<b>逐語</b>＝Trail に残る・`v2-copy.md` §1-8 の :982）。</summary>
     public const string RuntimeSoundSkipLine =
-        "実行系は揃っているので取得と展開は飛ばします（モデルだけ取り直します）。";
+        "必要な部品は揃っています。声のデータだけをダウンロードします。";
 
-    /// <summary>展開の段を飛ばしたときの 1 行（<b>逐語</b>）。</summary>
-    public const string InstallSkipLine = "実行系は揃っているので展開は飛ばします。";
+    /// <summary>展開の段を飛ばしたときの 1 行（<b>逐語</b>・`v2-copy.md` §1-8 の :985）。</summary>
+    public const string InstallSkipLine = "必要な部品は揃っています。";
 
     private async Task<bool> RunDownloadAsync()
     {
@@ -990,14 +1531,14 @@ public sealed class FirstRunViewModel : ObservableObject
         // 常態なので、ここを素通りさせると数 GiB の再取得と健全な樹の作り直しになる。
         if (RuntimeLooksSound())
         {
-            Record(RuntimeSoundSkipLine);
+            Record(RuntimeSoundSkipLine, show: true);   // 文言表が画面に出すと決めた行
             return true;
         }
 
         var downloader = _downloader();
         if (downloader is null)
         {
-            Message = "取得系がまだ組み込まれていません（便 D・取得席の実装待ち）。";
+            Fail(NotYetLine, "取得系がまだ組み込まれていません（便 D・取得席の実装待ち）。");
             return false;
         }
 
@@ -1018,8 +1559,12 @@ public sealed class FirstRunViewModel : ObservableObject
             var plan = TryPlan(_paths, _variant, _skipVcRedist, out var planReason);
             if (plan is null)
             {
-                Message = "取得台帳が読めないので取得を始められません"
-                    + (planReason is null ? "。" : "（" + planReason + "）。");
+                // W2＝⑴ 準備を始められません。 ⑵ アプリのファイルが壊れているようです。
+                // **檔名（runtime-cu130.json …）は画面に出さない**＝ログにだけ残す。
+                Fail(
+                    LedgerBrokenLine + "。" + LedgerBrokenWhyLine,
+                    "取得台帳が読めないので取得を始められません"
+                        + (planReason is null ? "。" : "（" + planReason + "）。"));
                 return false;
             }
 
@@ -1029,14 +1574,17 @@ public sealed class FirstRunViewModel : ObservableObject
             if (FreeSpaceShortfall(plan.EstimatedPeakDiskBytes, FreeBytes(_paths.DataDir))
                 is string shortfall)
             {
-                Message = shortfall + "空けてから「もう一度」を押してください。";
+                // W3＝E-09 の 3 部品（`v2-copy.md` §3-2）。**実数（GiB）はログと詳細の中だけ**。
+                Fail(FreeSpaceLine, shortfall + "空けてから「もう一度」を押してください。");
                 return false;
             }
 
             var requests = FetchPlanner.ToDownloadRequests(plan, _paths.DownloadCacheDir);
             if (requests.Count == 0)
             {
-                Message = "取得台帳が読めないので取得を始められません。";
+                Fail(
+                    LedgerBrokenLine + "。" + LedgerBrokenWhyLine,
+                    "取得台帳が読めないので取得を始められません。");
                 return false;
             }
 
@@ -1047,7 +1595,11 @@ public sealed class FirstRunViewModel : ObservableObject
             var failed = results.FirstOrDefault(static r => !r.Ok);
             if (failed is not null)
             {
-                Message = "取得に失敗しました：" + (failed.FailureReason ?? "理由が分かりません。");
+                // W4＝⑴ ダウンロードできませんでした。 ⑵ E-10 の 1 文 ⑶〔もう一度〕（続きから）。
+                // **取り手の生の 1 行（HTTP 404・sha256・例外）はログへ**（`v2-copy.md` §3-2 の規則）。
+                Fail(
+                    DownloadFailedLine + DownloadFailedWhyLine + ResumeHintLine,
+                    "取得に失敗しました：" + (failed.FailureReason ?? "理由が分かりません。"));
                 return false;
             }
 
@@ -1056,7 +1608,7 @@ public sealed class FirstRunViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            Message = "中断しました（続きから取り直せます）。";
+            Fail(CancelledLine, "中断しました（続きから取り直せます）。");
             return false;
         }
         finally
@@ -1080,15 +1632,25 @@ public sealed class FirstRunViewModel : ObservableObject
                 return true;
             }
 
-            Message = "vc_redist の導入系がまだ組み込まれていません（便 D・取得席の実装待ち）。";
+            Fail(
+                VcRedistFailedLine,
+                "vc_redist の導入系がまだ組み込まれていません（便 D・取得席の実装待ち）。");
             return false;
         }
 
-        ProgressText = "Visual C++ 再頒布可能パッケージを確かめています…";
+        // 憲章 §4-9＝Windows の許可の窓が出る**直前に**予告する。
+        // **この 1 行は借り物である**（是正・検分）＝出入りで必ず段の 1 行へ戻す。戻していなかった
+        // ころは、vc_redist の台帳が無い機体（Radeon 版・清潔導入の台本）でこの 1 行が居座り、
+        // 続く W2／W3 の失敗が「Microsoft の部品を確かめています…」の脇に出た（次に書くのは
+        // OnDownloadProgress だけで、1 件も注文していない回はそれが 1 度も撃たれない）。
+        PhaseText = "Microsoft の部品を確かめています…";
+        UacNoticeVisible = true;
         var result = await VcRedistRunner(false, progress, cancellationToken).ConfigureAwait(true);
         if (result is null)
         {
             _skipVcRedist = true;
+            UacNoticeVisible = false;
+            PhaseText = PhaseLine(FirstRunStep.Download);
             return true; // 台帳が無い＝この段は無い
         }
 
@@ -1102,29 +1664,35 @@ public sealed class FirstRunViewModel : ObservableObject
             var answer = AskVcRedist?.Invoke(result.Message);
             if (answer == false)
             {
-                Record("Visual C++ 再頒布可能パッケージの導入を飛ばしました（利用者の選択）。"
-                    + "torch の読み込みで msvcp140.dll が見つからないと出たら、"
-                    + "Microsoft の再頒布可能パッケージを手で入れてください。");
+                UacNoticeVisible = false;
+                PhaseText = PhaseLine(FirstRunStep.Download);
+                Record(
+                    "Microsoft の部品を入れずに進みました。"
+                    + "うまく動かないときは、はじめの準備をやり直してください。",
+                    show: true);   // 文言表が画面に出すと決めた行（`v2-copy.md` §1-8 の :1105-1107）
                 return true;
             }
 
             if (answer is null)
             {
                 // 問う口が無い（または利用者が答えなかった）＝1 巡目と同じ「止まる」。
-                Message = result.Message;
+                UacNoticeVisible = false;
+                Fail(VcRedistFailedLine, result.Message);
                 return false;
             }
 
-            ProgressText = "Visual C++ 再頒布可能パッケージを入れています…";
+            PhaseText = "Microsoft の部品を入れています…";
             result = await VcRedistRunner(true, progress, cancellationToken).ConfigureAwait(true)
                      ?? result;
         }
 
+        UacNoticeVisible = false;
+        PhaseText = PhaseLine(FirstRunStep.Download);
         Record(result.Message);
 
         if (!result.Ok)
         {
-            Message = result.Message;
+            Fail(VcRedistFailedLine, result.Message);
         }
 
         return result.Ok;
@@ -1132,8 +1700,16 @@ public sealed class FirstRunViewModel : ObservableObject
 
     private void OnDownloadProgress(DownloadProgress progress)
     {
-        ProgressFraction = progress.Fraction ?? 0;
-        ProgressText = Describe(progress);
+        // 段の中の進みは 1 本のバーへ合成する（段ごとに 0 へ戻さない＝段 B-3）。
+        _stepFraction = progress.Fraction ?? 0;
+        _eta = progress.Eta;
+        ApplyProgress();
+
+        // 画面の 1 行＝いま何をしているか（数は添えない＝`v2-spec.md` §1-3）。
+        PhaseText = PhaseLine(Step);
+
+        // 速さ・件数・バイト数・回数は詳細の中だけ（`v2-spec.md` §3 段 3）。
+        ProgressDetailText = Describe(progress);
     }
 
     /// <summary>進捗の 1 行（<b>純関数</b>＝受け入れ条件 D-5 の「bytes／ETA」）。</summary>
@@ -1177,7 +1753,7 @@ public sealed class FirstRunViewModel : ObservableObject
         // 揃っている樹をここへ通してはいけない。
         if (RuntimeLooksSound())
         {
-            Record(InstallSkipLine);
+            Record(InstallSkipLine, show: true);        // 文言表が画面に出すと決めた行
             return true;
         }
 
@@ -1185,9 +1761,19 @@ public sealed class FirstRunViewModel : ObservableObject
         var ledger = ReadLedgerFile<LedgerFile>(_paths.LedgerPath(RuntimeVariants.LedgerName(_variant)));
         if (installer is null || ledger is null)
         {
-            Message = installer is null
-                ? "展開系がまだ組み込まれていません（便 D・取得席の実装待ち）。"
-                : "取得台帳が読めないので展開できません。";
+            // 台帳が読めない方は W2（`v2-spec.md` §3 の 2 本目の内部の 1 行そのもの）＝
+            // 実装がまだの方だけ「まだできません。」に落とす。**どちらも内輪の 1 行はログへ**。
+            if (installer is null)
+            {
+                Fail(NotYetLine, "展開系がまだ組み込まれていません（便 D・取得席の実装待ち）。");
+            }
+            else
+            {
+                Fail(
+                    LedgerBrokenLine + "。" + LedgerBrokenWhyLine,
+                    "取得台帳が読めないので展開できません。");
+            }
+
             return false;
         }
 
@@ -1198,8 +1784,11 @@ public sealed class FirstRunViewModel : ObservableObject
         {
             var progress = new Progress<InstallProgress>(p =>
             {
-                ProgressFraction = p.Total > 0 ? Math.Clamp((double)p.Done / p.Total, 0, 1) : 0;
-                ProgressText = p.Phase + "：" + (p.ItemName ?? string.Empty)
+                _stepFraction = p.Total > 0 ? Math.Clamp((double)p.Done / p.Total, 0, 1) : 0;
+                _eta = null;
+                ApplyProgress();
+                PhaseText = PhaseLine(FirstRunStep.Install);
+                ProgressDetailText = p.Phase + "：" + (p.ItemName ?? string.Empty)
                     + "　" + UiText.Progress(p.Done, p.Total);
             });
 
@@ -1212,7 +1801,10 @@ public sealed class FirstRunViewModel : ObservableObject
 
             if (!result.Ok)
             {
-                Message = "展開に失敗しました：" + (result.FailureReason ?? "理由が分かりません。");
+                // W5＝⑴ 組み立てに失敗しました。 ⑵ 平語 1 文（**展開系の生の理由はログへ**）。
+                Fail(
+                    InstallFailedLine + InstallFailedWhyLine,
+                    "展開に失敗しました：" + (result.FailureReason ?? "理由が分かりません。"));
                 return false;
             }
 
@@ -1227,7 +1819,7 @@ public sealed class FirstRunViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            Message = "中断しました。";
+            Fail(CancelledLine, "中断しました。");
             return false;
         }
         finally
@@ -1248,7 +1840,7 @@ public sealed class FirstRunViewModel : ObservableObject
     {
         if (ModelFetcher is null)
         {
-            Message = "モデルの取得系がまだ組み込まれていません（便 D・取得席の実装待ち）。";
+            Fail(NotYetLine, "モデルの取得系がまだ組み込まれていません（便 D・取得席の実装待ち）。");
             return false;
         }
 
@@ -1256,7 +1848,10 @@ public sealed class FirstRunViewModel : ObservableObject
         _cancel = new CancellationTokenSource();
         try
         {
-            var progress = new Progress<string>(line => ProgressText = line);
+            // モデルの段は件数の分数を持たない（進捗は 1 行の文字列）＝
+            // 画面の 1 行は段の名乗りのまま、内訳だけを詳細の中で入れ替える。
+            PhaseText = PhaseLine(FirstRunStep.Models);
+            var progress = new Progress<string>(line => ProgressDetailText = line);
             var ok = await ModelFetcher(progress, _cancel.Token).ConfigureAwait(true);
             if (ok)
             {
@@ -1264,14 +1859,15 @@ public sealed class FirstRunViewModel : ObservableObject
             }
             else
             {
-                Message = "モデルの取得に失敗しました。";
+                // W6＝⑴ 声のデータをダウンロードできませんでした。 ⑵ 途中で止まりました。
+                Fail(ModelsFailedLine, "モデルの取得に失敗しました。");
             }
 
             return ok;
         }
         catch (OperationCanceledException)
         {
-            Message = "中断しました。";
+            Fail(CancelledLine, "中断しました。");
             return false;
         }
         finally
@@ -1292,36 +1888,58 @@ public sealed class FirstRunViewModel : ObservableObject
     /// <c>_cancel</c> を null にした後だからである）。ready 待ちはこの機体の設定で 600 秒。
     /// </para>
     /// </summary>
+    /// <summary>
+    /// <b>起こす側が持っている「なぜ止まったか」の 1 行</b>（W7＝`v2-spec.md` §3・§2-1a）。
+    /// <para>
+    /// 主窓が <see cref="StatusViewModel"/> の帯（<see cref="BandText.For"/> が組んだ ⑴＋⑵）を渡す。
+    /// null／空＝判らない回で、そのときだけ <see cref="StartFailedLine"/>（E-12）を出す。
+    /// <b>ここが帯の文を作り直さない</b>＝同じ事故に 2 通りの文を持たせない（§2-1b）。
+    /// </para>
+    /// <para>
+    /// ⑶（〔ドライバの入れ方を見る〕等の名指しの 1 手）は<b>まだ釦にしていない</b>＝
+    /// 案内を開く配線は段 F の管掌で、いまは〔もう一度〕がその席に居る（`v2-plan.md` 段 B の申し送り）。
+    /// </para>
+    /// </summary>
+    public Func<string?>? StartFailureLine { get; set; }
+
     private async Task<bool> RunStartAsync()
     {
         IsBusy = true;
         _cancel = new CancellationTokenSource();
         try
         {
-            ProgressText = "サーバを起こしています…";
+            PhaseText = PhaseLine(FirstRunStep.Start);
+            ProgressDetailText = "サーバを起こしています…";
             var ok = await _startServer(_cancel.Token).ConfigureAwait(true);
             if (_cancel.IsCancellationRequested)
             {
                 // 起こす側は取消を例外で返さない（IServerProcess.StartAsync の約束＝
                 // ツリー kill して Stopped で返る）ので、ここで「中断」に読み替える。
-                Message = "中断しました（続きから取り直せます）。";
+                Fail(CancelledLine, "中断しました（続きから取り直せます）。");
                 return false;
             }
 
             if (ok)
             {
-                Record("サーバが起動しました。");
+                Record("使えるようになりました。");
             }
             else
             {
-                Message = "サーバを起こせませんでした（状態タブの理由を見てください）。";
+                // W7（`v2-spec.md` §3）＝**§2-1a の A〜D 群を共用**（同じ純関数 `BandText.For` を通す）。
+                // 起こす側が持っている 1 行を受けて言い直す＝口が埋まっている（C1／D1）・
+                // ドライバが下限未満（A4）・python.exe が起こせない（C3）・声の読込が落ちた（D2／D5）を
+                // 「時間がかかりすぎました」と名乗らない（是正・検分＝⑶〔もう一度〕が永久に同じ所で失敗する）。
+                var reason = StartFailureLine?.Invoke();
+                Fail(
+                    string.IsNullOrWhiteSpace(reason) ? StartFailedLine : reason.Trim(),
+                    "サーバを起こせませんでした（状態タブの理由を見てください）。");
             }
 
             return ok;
         }
         catch (OperationCanceledException)
         {
-            Message = "中断しました（続きから取り直せます）。";
+            Fail(CancelledLine, "中断しました（続きから取り直せます）。");
             return false;
         }
         finally

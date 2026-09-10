@@ -156,15 +156,21 @@ $T = [ordered]@{
 
     # ---- round three (decisions 92 / 94) ----
     Estimate   = New-JpText 0x6982, 0x7B97                           # "estimate" (the word itself)
-    Ledger     = New-JpText 0x53F0, 0x5E33                           # "ledger"
-    Fetch      = New-JpText 0x53D6, 0x5F97                           # "fetch"  (the word alone)
-    # The FULL titles of the two fetch steps. "fetch" alone is a substring of BOTH of them
-    # ("fetch (runtime)" is step 3, "fetch (models)" is step 5), so a -like '*fetch*' test passes
-    # even when the wizard walked two pages past the step that failed. Match the whole title.
-    FetchRun   = New-JpText 0x53D6, 0x5F97, 0xFF08, 0x5B9F, 0x884C, 0x7CFB, 0xFF09   # "fetch (runtime)"
-    FetchModel = New-JpText 0x53D6, 0x5F97, 0xFF08, 0x30E2, 0x30C7, 0x30EB, 0xFF09   # "fetch (models)"
-    Finished   = New-JpText 0x5B8C, 0x4E86                           # "done"   (wizard step 7 title)
-    ToTry      = New-JpText 0x767A, 0x8A71, 0x30C6, 0x30B9, 0x30C8, 0x3078   # "to the speech test screen" (last press; decisions 116 renamed the tab)
+    # NOTE (v2.0 stage B): "ledger" and "fetch" are NO LONGER on-screen anchors. Both words are on
+    # the charter 6-1 hide list, so the wizard's user-facing lines were rewritten in plain language
+    # (the failure rows now anchor on $T.AppFile) and the internal wording lives only in the log
+    # file. Kept here as the LOG spelling -- do not point a screen assertion at either again.
+    Ledger     = New-JpText 0x53F0, 0x5E33                           # "ledger" (log wording only)
+    Fetch      = New-JpText 0x53D6, 0x5F97                           # "fetch"  (log wording only)
+    # ---- v2.0 stage B: the wizard shows THREE steps, not seven (v2-spec.md 3 / v2-copy.md 2) ----
+    # The four working steps (fetch / unpack / models / start) all carry ONE title now, so the
+    # title alone no longer says which of them the wizard is on. The step that is running is named
+    # by the one-line "what is happening" (FirstRunPhaseText), so the probe anchors on that instead.
+    Preparing  = New-JpText 0x6E96, 0x5099, 0x3057, 0x3066, 0x3044, 0x307E, 0x3059  # "preparing" (step 3 / 3)
+    PhaseParts = New-JpText 0x5FC5, 0x8981, 0x306A, 0x90E8, 0x54C1   # "the parts it needs" = the fetch phase line
+    AppFile    = New-JpText 0x30A2, 0x30D7, 0x30EA, 0x306E, 0x30D5, 0x30A1, 0x30A4, 0x30EB  # "the app's files" (W2)
+    Finished   = New-JpText 0x4F7F, 0x3048, 0x307E, 0x3059, 0x3002   # "it works." (the last page's title)
+    ToTry      = New-JpText 0x3057, 0x3083, 0x3079, 0x3089, 0x305B, 0x3066, 0x307F, 0x308B  # "let it say something" (last press)
     # "rebuild the runtime" -- the one move decisions 91 asks for when the ledger stops matching.
     Rebuild    = New-JpText 0x5B9F, 0x884C, 0x7CFB, 0x3092, 0x7D44, 0x307F, 0x76F4, 0x3059
     # "delete the download cache" -- the button of decisions 90 Q-E2 (3).
@@ -1080,8 +1086,10 @@ function Invoke-WizardPressProbe {
         The acceptance line is "operator presses <= 6" and convoy E (2) measured NINE:
         consent box, "agree and continue", the variant, "start fetching with this build", then FOUR
         times "next" (fetch / unpack / models / start), then "to the try screen". The ruling is that
-        every step which SUCCEEDS walks on by itself and only a step that FAILED stops, which takes
-        the count to FIVE.
+        every step which SUCCEEDS walks on by itself and only a step that FAILED stops, which took
+        the count to FIVE -- and v2.0 stage B took it to FOUR: the app decides the runtime from the
+        driver (decisions 130 Q1), so the press that picked it is gone. The combo itself is NOT
+        gone: it lives, id intact, inside the "details" fold, which this probe opens by hand.
         This probe pulls nothing. The wizard is driven against a private app tree whose runtime ledger
         cannot be planned from, so the fetch step fails on the spot with a one line reason, and what
         is measured is (a) the presses up to the failure and (b) that the failed step really does stop
@@ -1121,22 +1129,27 @@ function Invoke-WizardPressProbe {
 
         Write-Host ('[wizard] step = ' + (Get-TextById -Root $wizard -Id 'FirstRunStepTitle') +
             '  (' + (Get-TextById -Root $wizard -Id 'FirstRunStepNumber') + ')')
-        Write-Host ('[wizard] size = ' + (Get-TextById -Root $wizard -Id 'FirstRunSizeText'))
 
         # press 1 -- the consent box (decisions 46: it is only usable when the notices really loaded)
         $script:WizardPresses++
         Write-Host ('[wizard] press ' + $script:WizardPresses + ' = the consent box')
         $null = Set-ToggleById -Root $wizard -Id 'FirstRunAcceptCheck' -On $true
 
-        # press 2 -- "agree and continue"
+        # press 2 -- "next" (the consent is given, the notices step is done)
         $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'agree and continue'
         Start-Sleep -Milliseconds 800
 
-        # press 3 -- the variant
+        # ---- OFF THE NORMAL PATH (v2.0 stage B-1): the app decides the runtime from the driver
+        # (decisions 130 Q1), so THERE IS NO CHOOSING STEP any more and this is NOT a press. The
+        # combo still exists, id intact, inside the "details (for advanced users)" fold, which is
+        # closed by default -- and WPF does not build the contents of a closed Expander, so the
+        # fold has to be opened before UIA can see the combo at all.
+        Write-Host ('[wizard] decided = ' + (Get-TextById -Root $wizard -Id 'FirstRunDecisionText'))
+        $null = Open-YwkFold -Root $wizard -Id 'FirstRunAdvancedExpander' -TimeoutSeconds 5
         $choices = @(Get-ComboItemNames -Root $wizard -Id 'FirstRunVariantCombo')
         Write-Host ('[wizard] variants = ' + ($choices -join ' | '))
-        $script:WizardPresses++
-        Write-Host ('[wizard] press ' + $script:WizardPresses + ' = the variant')
+        Write-Host ('[wizard] size = ' + (Get-TextById -Root $wizard -Id 'FirstRunSizeText'))
+        Write-Host '[wizard] off-path = pick the runtime by hand in the fold (not counted as a press)'
         $token = Get-VariantComboToken -Variant $Variant
         $picked = ''
         try {
@@ -1148,7 +1161,7 @@ function Invoke-WizardPressProbe {
         }
         Write-Host ('[wizard] picked = ' + $picked)
 
-        # press 4 -- "start fetching with this build"
+        # press 3 -- "start preparing"
         # decisions 126 (B): a variant whose driver minimum is not met CANNOT start the fetch --
         # the button is disabled and the variant step carries a one line reason. Invoke-ButtonById
         # throws on a disabled control, so an unattended run with -Variant cu130 on a 537.58 seat
@@ -1166,7 +1179,7 @@ function Invoke-WizardPressProbe {
                 'picked=' + $picked + ' reason=' + $blockText)
             return
         }
-        $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'start fetching with this build'
+        $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'start preparing'
 
         if ($FullRun) {
             # E2E seat only. Nothing below presses anything: reaching the last step without a press is
@@ -1178,11 +1191,13 @@ function Invoke-WizardPressProbe {
                 'reached ' + $done.text + ' in ' + [math]::Round($done.elapsed, 1) + ' s with ' +
                 $script:WizardPresses + ' presses')
             if ($done.ok) {
-                $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'to the try screen'
+                $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'let it say something'
                 Start-Sleep -Seconds 2
             }
-            Add-Step 'the whole first run costs five presses' ($script:WizardPresses -eq 5) (
-                'presses = ' + $script:WizardPresses + ' (was 9 in convoy E (2), the acceptance line is 6)')
+            # v2.0 stage B-4: FOUR presses (the consent box, next, start preparing, let it say
+            # something). The fifth -- picking the runtime -- is gone: the app decides it.
+            Add-Step 'the whole first run costs four presses' ($script:WizardPresses -eq 4) (
+                'presses = ' + $script:WizardPresses + ' (9 in convoy E (2), 5 in v1.1.0, the acceptance line is 6)')
             $settings = Read-SettingsDoc -Path (Join-Path $DataDir 'settings.json')
             Add-Step 'the finished first run is written down' (
                 [bool](Get-JsonMember -Doc $settings -Name 'firstRunCompleted')) (
@@ -1191,43 +1206,53 @@ function Invoke-WizardPressProbe {
         }
 
         # ---- offline shape: the fetch step must fail here, at once, with a reason ----
-        $failed = Wait-ForPattern -Root $wizard -Id 'FirstRunMessageText' -Pattern ([regex]::Escape($T.Ledger)) `
+        # v2.0 stage B: the message the USER sees is W2 ("cannot start preparing -- the app's files
+        # look broken (<reason>)"); the internal ledger line still goes to the log file.
+        $failed = Wait-ForPattern -Root $wizard -Id 'FirstRunMessageText' -Pattern ([regex]::Escape($T.AppFile)) `
             -TimeoutSeconds 30 -IntervalMilliseconds 300
         $title = Get-TextById -Root $wizard -Id 'FirstRunStepTitle'
         $number = Get-TextById -Root $wizard -Id 'FirstRunStepNumber'
         $message = Get-TextById -Root $wizard -Id 'FirstRunMessageText'
+        $phase = Get-TextById -Root $wizard -Id 'FirstRunPhaseText'
         if ($null -eq $title) { $title = '' }
         if ($null -eq $number) { $number = '' }
         if ($null -eq $message) { $message = '' }
+        if ($null -eq $phase) { $phase = '' }
         Write-Host ('[wizard] step    = ' + $title + '  (' + $number + ')')
+        Write-Host ('[wizard] phase   = ' + $phase)
         Write-Host ('[wizard] message = ' + $message)
 
         Add-Step 'a ledger that cannot be planned from fails the fetch step with a reason' (
-            $failed.ok -and ($message -like ('*' + $T.Ledger + '*'))) (
+            $failed.ok -and ($message -like ('*' + $T.AppFile + '*'))) (
             $message + ' [' + [math]::Round($failed.elapsed, 2) + ' s]')
-        # The title must be the WHOLE "fetch (runtime)" and the counter must be step 3, not just
-        # "contains fetch": the models step is called "fetch (models)", so a substring test stays
-        # green after the wizard walked past the step that failed (proved with a deliberate break).
+        # The four working steps share ONE title now ("preparing", 3 / 3), so the title cannot say
+        # which of them stopped. The one-line "what is happening" (FirstRunPhaseText) can: only the
+        # fetch step says "the parts it needs". Test the pair, or a wizard that walked two pages on
+        # would still pass (that was the point of matching the WHOLE title before v2.0).
         Add-Step 'the failed step keeps the wizard where it failed' (
-            ($title -eq $T.FetchRun) -and ($number -eq '3 / 7')) (
-            'step = ' + $title + ' (' + $number + ')')
-        Add-Step 'the presses up to the failed step are four' ($script:WizardPresses -eq 4) (
+            ($title -eq $T.Preparing) -and ($number -eq '3 / 3') -and
+            ($phase -like ('*' + $T.PhaseParts + '*'))) (
+            'step = ' + $title + ' (' + $number + ') phase = ' + $phase)
+        Add-Step 'the presses up to the failed step are three' ($script:WizardPresses -eq 3) (
             'presses = ' + $script:WizardPresses +
-            ' (consent, agree, variant, start; the fifth is "to the try screen")')
+            ' (consent, next, start preparing; the fourth is "let it say something")')
         Add-Step 'the wizard fetched nothing at all' ((Get-DirBytes -Path $cacheDir) -eq 0) (
             'cache = ' + [string](Get-DirBytes -Path $cacheDir) + ' B')
 
-        # press 5 -- "next" on a failed step retries THAT step; it must not walk on to the next one.
-        $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'next, on the failed step'
+        # press 4 -- "again" on a failed step retries THAT step; it must not walk on to the next one.
+        $null = Invoke-WizardPress -Root $wizard -Id 'FirstRunNextButton' -What 'again, on the failed step'
         Start-Sleep -Seconds 2
         $title2 = Get-TextById -Root $wizard -Id 'FirstRunStepTitle'
         $number2 = Get-TextById -Root $wizard -Id 'FirstRunStepNumber'
+        $phase2 = Get-TextById -Root $wizard -Id 'FirstRunPhaseText'
         if ($null -eq $title2) { $title2 = '' }
         if ($null -eq $number2) { $number2 = '' }
-        Write-Host ('[wizard] step after the retry = ' + $title2 + '  (' + $number2 + ')')
+        if ($null -eq $phase2) { $phase2 = '' }
+        Write-Host ('[wizard] step after the retry = ' + $title2 + '  (' + $number2 + ') phase = ' + $phase2)
         Add-Step 'pressing next on a failed step retries it instead of walking on' (
-            ($title2 -eq $T.FetchRun) -and ($number2 -eq '3 / 7')) (
-            'step = ' + $title2 + ' (' + $number2 + ')')
+            ($title2 -eq $T.Preparing) -and ($number2 -eq '3 / 3') -and
+            ($phase2 -like ('*' + $T.PhaseParts + '*'))) (
+            'step = ' + $title2 + ' (' + $number2 + ') phase = ' + $phase2)
 
         try {
             ($wizard.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)).Close()
@@ -1970,16 +1995,47 @@ try {
         $accept = Find-ById -Root $wizard -Id 'FirstRunAcceptCheck' -TimeoutSeconds 10
         $acceptEnabled = $false
         if ($null -ne $accept) { $acceptEnabled = [bool]$accept.Current.IsEnabled }
-        Write-Host ('[wizard] notices file = ' + $haveNotices + '   accept enabled = ' + $acceptEnabled)
-        Add-Step 'consent is possible only when the notices file was read' (
-            $acceptEnabled -eq $haveNotices) (
-            'notices=' + $haveNotices + ' enabled=' + $acceptEnabled)
+        # v2.0 stage B-4 (decisions 130 Q3): the SAME notices are never asked about twice. On a seat
+        # whose settings already carry the sha256 of this very file, the wizard opens on step 2 and
+        # there is no consent box at all -- which is not the same thing as "the gate is broken".
+        # Stage B correction: there is now a THIRD shape. When the notices file cannot be read the
+        # summary AND the consent box are hidden (v2-copy.md 2, step 1) and one plain line takes
+        # their place -- so "no consent box" no longer implies "the wizard is on step 2".
+        $onNotices = $null -ne $accept
+        $unreadable = Get-TextById -Root $wizard -Id 'FirstRunNoticesUnreadableText' -TimeoutSeconds 2
+        Write-Host ('[wizard] notices file = ' + $haveNotices + '   accept enabled = ' + $acceptEnabled +
+            '   notices step shown = ' + $onNotices)
+        if ($onNotices) {
+            Add-Step 'consent is possible only when the notices file was read' (
+                $acceptEnabled -eq $haveNotices) (
+                'notices=' + $haveNotices + ' enabled=' + $acceptEnabled)
+        } elseif ($null -ne $unreadable) {
+            # No notices file: the wizard must SAY so on the page itself, without a press, and the
+            # gate stays shut (decisions 46 -- consenting would write null into acceptedNoticesSha256).
+            $message = Get-TextById -Root $wizard -Id 'FirstRunMessageText' -TimeoutSeconds 5
+            Add-Step 'a wizard that cannot read the notices says so without a press' (
+                (-not $haveNotices) -and ($null -ne $message) -and ($message.Trim().Length -gt 0)) (
+                'notices=' + $haveNotices + ' line=' + [string]$unreadable)
+        } else {
+            $decided = Get-TextById -Root $wizard -Id 'FirstRunDecisionText' -TimeoutSeconds 5
+            Add-Step 'the same notices are not asked about twice' ($null -ne $decided) (
+                'the wizard opened on "what happens next": ' + [string]$decided)
+        }
 
-        if ($acceptEnabled) {
-            $null = Set-ToggleById -Root $wizard -Id 'FirstRunAcceptCheck' -On $true
-            $null = Invoke-ButtonById -Root $wizard -Id 'FirstRunNextButton'
-            Start-Sleep -Milliseconds 800
+        # The size line lives on step 2, so it can only be read on a seat that can REACH step 2
+        # (the notices were readable, or they were already agreed to). The "cannot read them at
+        # all" seat stops on step 1 by design -- do not call that a missing size line.
+        if (($null -eq $unreadable) -and ($acceptEnabled -or (-not $onNotices))) {
+            if ($onNotices) {
+                $null = Set-ToggleById -Root $wizard -Id 'FirstRunAcceptCheck' -On $true
+                $null = Invoke-ButtonById -Root $wizard -Id 'FirstRunNextButton'
+                Start-Sleep -Milliseconds 800
+            }
 
+            # The breakdown in real numbers lives in the fold now (v2-spec.md 1-3): the page itself
+            # carries the rounded prose ("about 5.3 GB"). Open the fold before reading the numbers.
+            $null = Open-YwkFold -Root $wizard -Id 'FirstRunAdvancedExpander' -TimeoutSeconds 5
+            Write-Host ('[wizard] plan line = ' + (Get-TextById -Root $wizard -Id 'FirstRunPlanText'))
             $sizeText = Get-TextById -Root $wizard -Id 'FirstRunSizeText' -TimeoutSeconds 10
             Write-Host ('[wizard] size line = ' + $sizeText)
             # New-JpText 0x5FC5,0x8981,0x306A,0x7A7A,0x304D = "the free space it needs"

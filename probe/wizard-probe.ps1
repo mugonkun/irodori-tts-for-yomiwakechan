@@ -43,7 +43,12 @@ foreach ($procId in $pids) {
         try { $name = [string]$w.Current.Name } catch { }
         try { $aid = [string]$w.Current.AutomationId } catch { }
         $titles.Add(('[{0}] name="{1}" id="{2}"' -f $procId, $name, $aid))
-        if ($aid -eq 'FirstRunWizard' -or $name -eq '初回取得') { $wizard = $w }
+        # The id is the anchor. The title is only a fallback and it is DECORATED at run time
+        # (ReleaseFlavors.WizardTitle), so match its stem, not the whole string -- and accept both
+        # the old stem and the v2.0 one.
+        if ($aid -eq 'FirstRunWizard' -or $name -like '初回取得*' -or $name -like 'はじめの準備*') {
+            $wizard = $w
+        }
     }
 }
 # 2) fallback A: the process main window handle (RootElement children can miss windows in odd sessions)
@@ -70,9 +75,17 @@ if ($null -eq $wizard) {
 $pidText = ($pids -join ',')
 if ($null -ne $wizard) {
     $step = Get-TextById $wizard 'FirstRunStepTitle'
+    # v2.0 stage B: the counter reads "N / 3" (it was "N / 7"). The four working steps -- fetch,
+    # unpack, models, start -- are all shown as one "preparing" page, 3 / 3. It reads "N / 2" on a
+    # seat that already agreed to THIS version of the notices (decisions 130 Q3 skips that page),
+    # and it is EMPTY on the last page ("it works." carries no number). This line only prints what
+    # it read: the judging belongs to d-launch-probe.ps1, never here.
     $num = Get-TextById $wizard 'FirstRunStepNumber'
+    if ([string]::IsNullOrWhiteSpace($num)) { $num = '-' }
+    # The one-line "what is happening" is the only thing that says WHICH working step is running.
+    $phase = Get-TextById $wizard 'FirstRunPhaseText'
     $msg = Get-TextById $wizard 'FirstRunMessageText'
-    Write-Output ("launcher=pid {0} wizard=OPEN step=""{1}"" ({2}) message=""{3}"" listen{4}={5}" -f $pidText, $step, $num, $msg, $Port, $listen)
+    Write-Output ("launcher=pid {0} wizard=OPEN step=""{1}"" ({2}) doing=""{3}"" message=""{4}"" listen{5}={6}" -f $pidText, $step, $num, $phase, $msg, $Port, $listen)
     Write-Output ('windows: ' + ($titles -join ' | '))
     exit 0
 }

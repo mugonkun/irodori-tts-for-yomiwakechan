@@ -313,6 +313,99 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
 **検分の目**＝「**初回の道の上に、利用者が答えを持っていない問いが 1 つでも出ていないか**」（原則 4 の検分文）と
 「**釦を押す前の 1 画面に GB・分・理由の 3 つが全部載っているか**」（原則 3 の検分文）。
 
+#### 段 B の記帳（2026-09-11・実装 1 席・Opus 5）
+
+**入れた物**＝B-1（動かし方はアプリが決める＝`VariantRecommendation.Recommend` は**1 行も触らず**、
+結果を名乗る純関数 `FirstRunViewModel.DecisionLineFor(variant, gpuName)` を足した。名は
+`BandText.VariantName` の 4 語を借りる＝帯と同じ綴り。製品名は `DriverProbe` に**判定に使わない**
+欄 `GpuName` を 1 つ足して運ぶ。`FirstRunVariantCombo` ほか 6 つは新設 `FirstRunAdvancedExpander`
+（既定 閉）へ**要素ごと**移した＝下限未満の錠（裁定 126 B）は畳みの中でそのまま働く）・
+B-2（見せる段を 3 つに＝`Title` は 4 値（お知らせ／これからすること／準備しています／使えます。）、
+記録用に `TrailTitle`（内輪の 7 つ）を分けた。`StepNumberText` は `VisibleStepNumber`／
+`VisibleStepCount` で綴り、完了は**番号を持たない**）・B-3（新設 `ViewModels/FirstRunProgress.cs`＝
+`Overall`／`Line`／`Remaining` の純関数だけ。`ProgressText` は「42 %　あと 6 分ほど」に畳み、
+速さ・件数・バイト数は `ProgressDetailText`（詳細の中）へ。等幅フォントを外した）・
+B-4（要約 `FirstRunNoticesSummaryText` ＋〔全文を見る〕`FirstRunNoticesFullButton` →
+`FirstRunNoticesExpander` の全文。**同意チェックと錠は 1 行も触らない**。
+`NoticesAlreadyAccepted` が真なら段 1 を飛ばし、見せる段は 2 つになる＝
+`acceptedNoticesSha256` は**読むだけ**）。
+
+**憲章 §4-8 との突き合わせ**＝1 巡目は「いま何をしているか」の 1 行（新 id `FirstRunPhaseText`）に
+「（3.2 GB / 5.3 GB・残り 4 分ほど）」を添え、憲章 §4-8 の見本を正とした。**検分で覆した**（下の是正 ⑹）＝
+`v2-copy.md` §2 が段 3 の本文を「数の無い 5 文」と逐語で決めており、`v2-spec.md` §1-3 は
+「**表示用の別入口を足すとその欠陥に戻る**」と名指しで禁じている。憲章 §4-8 の 25 行は
+`v2-copy.md` §2 が上書きした製品の歩き見本（段 B-2 の「正は `v2-copy`」）なので、
+**`FirstRunProgress.Gb` は削り**、利用者向けの面に出る数は⑴ 割合 ⑵ 丸めた残り
+⑶ 散文の総量（約 5.3 GB＝`PlanLine` の定数）の 3 つだけになった。実数（`GiB`）は
+`ProgressDetailText`／`FirstRunSizeText`＝詳細の中のまま。
+
+**失敗の 1 行**＝W1〜W6・W8・W9・W11 と E-12 を 3 部品に言い直した（⑶ は釦＝
+`NextButtonText` が「もう一度」に変わる）。**内輪の 1 行は捨てていない**＝新設の `Fail(display, log)`
+が元の綴りを檔へ落とす（憲章 §5）。
+
+**id**＝**退役 0**。新設 12＝`FirstRunNoticesSummaryText`・`FirstRunNoticesFullButton`・
+`FirstRunNoticesExpander`・`FirstRunDecisionText`・`FirstRunPlanText`・`FirstRunPhaseText`・
+`FirstRunProgressDetailText`・`FirstRunUacNoticeText`・`FirstRunDoneText`・`FirstRunAdvancedExpander`
+＋（是正で 2 つ）`FirstRunNoticesUnreadableText`・`FirstRunWhyText`
+（XAML 実測 149 → 161・重複 0）。錠は `AutomationIdsTests.段Bで新設したidが揃っている`。
+
+**台本**＝`d-launch-probe.ps1`＝`$T` の `FetchRun`／`FetchModel` を廃し `Preparing`／`PhaseParts`／
+`AppFile` を立て、`Finished`（使えます。）と `ToTry`（しゃべらせてみる）を差し替え。
+段 3 の見分けは**題ではなく `FirstRunPhaseText`**（4 段が同じ題になったため）。
+押下は **4**（全走）／**3**（失敗まで）。変種を選ぶ手は**押下に数えない**（道の外＝
+`Open-YwkFold -Id 'FirstRunAdvancedExpander'` を先に撃つ）。2b の脚は
+「お知らせを飛ばした回」（決裁 130 Q3）でも落ちないように割り直した。
+`wizard-probe.ps1`＝段番号を `N / 3`（飛ばした回は `N / 2`・完了は空）で読み、`doing=` に
+`FirstRunPhaseText` を足した（**判定は持たせない**）。窓題の後詰めは幹の前方一致に緩めた。
+
+**実測**＝`dotnet test launcher -c Release --nologo` が **795 合格＋1 スキップ**（段 A の 781＋1・
+追加 14・削除 0）／`dotnet build launcher -c Release` が **0 警告 0 エラー**／
+`probe/d-launch-probe.ps1`・`wizard-probe.ps1` の構文解析 **0 エラー**・`-DryRun` が
+「nothing was touched.」で終わる。**アプリは 1 度も起こしていない**（実射は段 H）。
+
+**次の段へ申し送り**＝⑴ W10（「いまはやめられません。」）は `v2-spec.md` が「画面に出さない」と書くが、
+釦は `IsBusy` でしか押せない＝画面には出ない道なので文字列だけ平語にして残した
+⑵ W2／W3／W11／W7 の ⑶ にある〔入れ直す方法を見る〕〔ログを開く〕〔ドライバの入れ方を見る〕の**釦**は
+足していない（使い方の檔を開く導線は段 F。いまは〔もう一度〕がその席に居る）
+⑶ `docs/acceptance.md:30` の押下 5 → **4** の書き換えは別席。
+
+#### 段 B の是正（2026-09-11・検分 3 席＝流れ／id と台本／憲章・所見 21 件・Opus 5）
+
+**当て込み 21／21**（据え置き 0）。**画面に出る字が変わった所**が多いので、当てた物を残す。
+
+| # | 何が壊れていたか | 当てた物 |
+|---|---|---|
+| ⑴ | `DecisionLineFor` が `cpu` を**無条件に**「対応する GPU が見つかりませんでした」と読んだ。`Recommend` は**版が読めていて下限未満**（GeForce ＋ 470.00 など）でも `cpu` を返す＝画面が事実の逆を名乗り、下限の数字も出なかった | 第 3 引数に `DriverProbe` を渡し、下限未満で落ちた回は**いまの版と必要な版**を入れた 1 行に分けた（`v2-spec.md` §3 段 2 の A4）。試験＝`ドライバが古くてcpuに落ちた回は数字ごと名乗る` |
+| ⑵ | 同じく、**まだ撃っていない・列挙が落ちた**回は `Recommend` が「判らないことを勝手に決めない」で並びの先頭（`cu130`）を返すのに、画面は「CUDA 13.0 で動かします」と言い切った＝5.3 GB 落として門に断られる形 | 「確かめられませんでした。ひとまず 〈名〉 で準備します。…設定の『詳細』で動かし方を変えてください。」の枝を足した。試験＝`検分できなかった回は決めたと言わない` |
+| ⑶ | `v2-copy.md` §2 段 2 の**頭の 1 文**（このパソコンに合わせて、動かし方を選びました。）が既知の 4 変種の枝から抜けていた＝決裁 130 Q1 が届けたい 1 文が画面に出ない | `DecisionLead` を定数にして 4 枝の頭に置いた（GPU 無しの枝は `v2-copy.md` の綴りのまま） |
+| ⑷ | `RunVcRedistAsync` が `PhaseText` を「Microsoft の部品を確かめています…」で上書きしたまま**戻さない**枝が 2 つ（台帳が無くて `null` が返る回・成功の回）。次に書くのは `OnDownloadProgress` だけで、1 件も注文しない回は 1 度も撃たれない＝**台本の新しい錨 2 本（`必要な部品`）が実射で落ちる**（清潔導入は `-SkipVcRedistLedger`＝手は差さるが `null` が返る） | 3 つの出口すべてで `PhaseText = PhaseLine(Download)` に戻す。試験＝`vc_redistの段を抜けたら取得の1行に戻る`（`PhaseText` と `Message` の対を釘付け） |
+| ⑸ | W1（お知らせが読めない）が**画面に着かない**＝差し替えの文は `FirstRunNoticesBox`（既定で閉じた畳みの中）にしか無く、要約と押せないチェックだけが見えていた | `NoticesUnreadable`／`NoticesReadable` を足し、要約・〔全文を見る〕・全文の畳み・同意チェックを**まとめて隠し**、新 id `FirstRunNoticesUnreadableText` に `NoticesMissingLine` を出す。`LoadNotices` が `Message` にも置く（押す前に着く）。錠（`CanAcceptNotices`・裁定 46）は 1 行も触らない |
+| ⑹ | 「いま何をしているか」の 1 行に `（3.2 GB / 5.3 GB・残り 4 分ほど）` を添えていた（憲章 §4-8 の見本を正とした）＝`v2-spec.md` §1-3 が名指しで禁じた「表示用の別入口」 | `FirstRunProgress.Gb` を**削り**、`PhaseLine(step)` は 1 文だけを返す。実数は詳細の中（`GiB`）のまま。試験＝`実測のバイト数を綴る入口をここに持たない`（公開の静的手が `Line`／`Overall`／`Remaining` の 3 本だけであることを反射で釘付け） |
+| ⑺ | W3 が `FetchPlanner.FormatBytes`（`GiB`）の 3 つ組を**画面**に出していた（憲章 §6-1＝画面は `GB` で通す） | 画面は `FreeSpaceLine`（E-09 の 3 部品・**約 12 GB** の 1 つだけ）。実数の 3 つ組は `FreeSpaceShortfall` のままログと `SizeText`（詳細の中）へ |
+| ⑻ | W4／W5 が取り手・展開系の**生の理由**（`HTTP 404`・`sha256 が台帳と合わない`・`変種ディレクトリに檔が…`）を画面へ継いでいた。W2 も `runtime-cu130.json が読めません` を括弧で出していた | 画面は固定の ⑵（E-10 の 1 文／`ダウンロードしたファイルが壊れているかもしれません。`／E-03 の `必要なファイルの一覧が読めませんでした。`）。生の 1 行は `Fail` の第 2 引数＝**檔へ**。※ W5 の ⑵ は検分の言（「落とした物を組み立てられませんでした。」）だと ⑴ の言い直しになるので、**なぜ**を言う 1 文に替えた（`v2-copy.md` §3-2 の「⑵ は 1 行・技術語を出してよい」に沿う） |
+| ⑼ | `Record` が `Trail` と**同時に `Message`** を書いていた＝畳みの**外**（`FirstRunMessageText`）に「変種＝…」「初回取得が終わりました。」「展開しました（… GiB）。」が出ていた（憲章 §6-1 の隠す語がそのまま利用者の目に） | `Record(line, show:false)` は `Trail` と檔だけ。画面に出すのは文言表が決めた 2 行（`RuntimeSoundSkipLine`／`InstallSkipLine`）と vc_redist を飛ばした 1 行だけ `show:true`。試験＝`記録の内輪の1行は画面に出ない` |
+| ⑽ | 「取得系／展開系／モデルの取得系がまだ組み込まれていません（便 D…）」の 3 行が `Message` に直に載っていた（`v2-copy.md` §1-8 の :1000／:1189／:1251＝**まだできません。**）。うち `取得台帳が読めないので展開できません。` は**W2 の 2 本目の内部の 1 行**で、W 群の取りこぼしだった | 3 行は `Fail(NotYetLine, 元の 1 行)`・展開の台帳は W2 の 3 部品へ。1 巡目の申し送り ⑴（「段 C の仕事」）は**取り消す** |
+| ⑾ | W7（起動が通らない）が**あらゆる理由**を E-12（時間がかかりすぎました）と名乗った＝口が埋まっている・ドライバが下限未満・子が exit 2 の回まで嘘になり、〔もう一度〕が永久に同じ所で落ちる | `StartFailureLine`（主窓が `StatusViewModel` の帯の ⑴＋⑵ を渡す）を通す＝文を組むのは `BandText.For` の 1 箇所だけ。渡らなかった回だけ E-12。試験＝`起動が通らない回は起こす側の理由を出す` |
+| ⑿ | 段 2 に ⑶ **なぜ**が無かった（憲章 原則 3 の机上の検分・`v2-spec.md`:1172）。お知らせを飛ばす回（決裁 130 Q3）は「なぜ」を 1 度も読まない | 新 id `FirstRunWhyText`＝`WhyLine`（段 1 の 3 行目と同じ 1 文）。試験＝`段2は量と時間となぜを1画面に持つ` |
+| ⒀ | 下限未満を選んでいる間の `Message` が `VariantRecommendation.BlockReason`（「変種」を綴る）そのままだった | 画面は `VariantBlockedLine`（E-02 の 3 部品・数字は残す・⑶ は畳みを開く 1 手）、内輪の 1 行は檔へ。あわせて `BlockReason` の代わりが無い側の尾を「**設定の「詳細」で動かし方を変えてください。**」に（`v2-copy.md` §1-8 の `VariantGate.cs:382-387` と同文） |
+| ⒁ | `VariantNote` が「ROCm 版です」＝**3 つ目の版の名**（`v2-copy.md` §0 は `RTX（CUDA）`／`Radeon（ROCm）` の 2 つだけ）、「未保障」は帳面の語 | 「Radeon（ROCm）で動かします。…（Ryzen AI MAX+ 395 ／ Radeon 8060S で確認済み。ほかの Radeon では試していません）。」 |
+| ⒂ | 釦 3 つ（戻る／次へ／やめる）が**どの段でも**見えていた（`v2-spec.md` §3 段 3＝〔やめる〕だけ・完了＝〔しゃべらせてみる〕だけ） | `Visibility` を Command の可否と同じ式に束ねた（`BackVisible`／`IsBusy`）。**要素も id も残す**＝台本は従来どおり解決できる |
+| ⒃ | 完了の頁が「使えます。」を 2 度綴っていた（題＋直書きの `TextBlock`） | 直書きを落とした（題＝`TitleDone` の 1 箇所） |
+| ⒄ | `NextAsync` の註が押下 **5**（変種を選ぶ手を含む旧い並び）のままだった | 押下 **4**（同意チェック・次へ・準備を始める・しゃべらせてみる）へ |
+| ⒅ | `$T.Ledger`（台帳）が台本のどこからも読まれない字になっていた（`v2-plan.md`:307 ⑴ が「見直す」と書いた物） | **檔の中の綴り**として残し、「画面の錨に再び使わないこと」を註で釘付け（`$T.Fetch` も同じ） |
+
+**実測（是正の後）**＝`dotnet test launcher -c Release --nologo` が **803 合格＋1 スキップ**
+（段 B の 795＋1・追加 8・削除 0＝新設 `StageBCorrectionTests.cs` 6 本 ＋ 決めた 1 行の枝 2 本）／
+`dotnet build launcher -c Release` が **0 警告 0 エラー**／`probe/d-launch-probe.ps1`・
+`wizard-probe.ps1` の構文解析 **0 エラー**・`-DryRun` が「nothing was touched.」で終わる。
+**アプリは 1 度も起こしていない**。
+
+**段 F への申し送り（追加）**＝`probe/e-install-probe.ps1` の `Invoke-Stage3` で段 B が壊す行は
+**3 本**である（下の F-3 の表に 3 本目を足した）＝⑴ 段番号 `1 / 7` ⑵ `FirstRunNoticesBox` の
+バイト突き合わせ ⑶ **`:1206-1207`**＝`$T.NoticeTitle`（`第三者物の通知`）を `FirstRunStepTitle` に
+当てている行。題は `お知らせ`（`FirstRunViewModel.TitleNotices`）に変わったので、
+**3 本目を落とすと赤のまま残る**。
+
 ---
 
 ### 段 C — 文言（`UiStrings` を正本にする・語の検分試験・台本の語表）
@@ -619,7 +712,7 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
 |---|---|---|
 | 調整 | `ViewModelsTests.cs:172-173`（`FlavorLabel`）・`:180-181`（`AppTitle`）・`:188-189`（`WizardTitle`） | 期待値を新しい 2 語と ` － ` へ。**この 6 本だけが名札を釘付けしている** |
 | 調整 | `probe/e-install-probe.ps1:139-146`・`:210-222` | `Get-ExpectedAppName` を「幹 ＋ ` － ` ＋ `RTX（CUDA）`／`Radeon（ROCm）`」に組み直す（`AppStem` は使い回す・`ParenOpen`／`Edition` の組み立ては廃す） |
-| 調整 | `probe/e-install-probe.ps1` の `Invoke-Stage3`（段 B で必ず落ちる 2 本） | ⑴ **`:1204-1209`**＝`the step counter says 1 / 7`（`($number -replace '\s','') -eq '1/7'`）の期待値を新しい段数（`VisibleStepCount`＝`1 / 3`、同意済みなら `1 / 2`）へ。⑵ **`:1211-1223`**＝`FirstRunNoticesBox` の本文を `{app}\licensesirst-run-notices.md` のバイトと 1 字ずつ突き合わせる前に、`Invoke-ButtonById -Id 'FirstRunNoticesFullButton'`（**無ければ素通り**）を入れる＝B-4 で全文は畳みの中に入り、開くまで UIA から読めない |
+| 調整 | `probe/e-install-probe.ps1` の `Invoke-Stage3`（段 B で必ず落ちる **3 本**） | ⑴ **`:1204-1209`**＝`the step counter says 1 / 7`（`($number -replace '\s','') -eq '1/7'`）の期待値を新しい段数（`VisibleStepCount`＝`1 / 3`、同意済みなら `1 / 2`）へ。⑵ **`:1211-1223`**＝`FirstRunNoticesBox` の本文を `{app}\licensesirst-run-notices.md` のバイトと 1 字ずつ突き合わせる前に、`Invoke-ButtonById -Id 'FirstRunNoticesFullButton'`（**無ければ素通り**）を入れる＝B-4 で全文は畳みの中に入り、開くまで UIA から読めない。⑶ **`:1206-1207`**＝`step 1 is the third party notices step` が `$T.NoticeTitle`（`第三者物の通知`＝`:138`）を `FirstRunStepTitle` に当てている。段 B で題は **`お知らせ`**（`FirstRunViewModel.TitleNotices`）になった＝`$T.NoticeTitle` を新しい題に張り替える（段 B の是正の申し送り） |
 | 確認 | `installer-build -All` の門 | **A-6**（exe の版が v2.0.0）・**B-2**（`guide.md` が増えて `install.md` が減る＝差は数 KB・帯 68.0〜76.0 MiB の中）・**B-3**（`SHA256SUMS.txt` の作り直し） |
 
 **危険**＝⑴ `AppName` が変わると「アプリと機能」の表示名が変わる（`AppId` は同じなので上書き更新は通る）。

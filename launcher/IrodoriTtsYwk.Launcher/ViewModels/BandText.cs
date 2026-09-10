@@ -498,8 +498,12 @@ public static class BandText
     /// <b>RTX（CUDA）／Radeon（ROCm）の併記が正</b>）に反する。ここに置く 4 語は
     /// 憲章 §6-1 の「変種」の欄（CUDA 13.0／CUDA 12.6／ROCm／CPU）と同じ物である。
     /// </para>
+    /// <para>
+    /// <b>公開してあるのは、はじめの準備も同じ 4 語で名乗るためである</b>（v2.0 段 B・
+    /// <see cref="FirstRunViewModel.DecisionLineFor"/>）＝同じ画面に 2 通りの名が並ばない。
+    /// </para>
     /// </summary>
-    private static string VariantName(string? variant) => variant?.Trim() switch
+    public static string VariantName(string? variant) => variant?.Trim() switch
     {
         RuntimeVariants.Cu130 => "CUDA 13.0",
         RuntimeVariants.Cu126 => "CUDA 12.6",

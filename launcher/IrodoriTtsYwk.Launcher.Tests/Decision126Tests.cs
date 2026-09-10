@@ -346,6 +346,36 @@ public sealed class Decision126WizardVariantTests : IDisposable
     }
 
     [Fact]
+    public async Task 選ぶ段を廃しても畳みの中で下限の錠は働く()
+    {
+        // v2.0 段 B-1＝選ぶ段そのものは無くなり、動かし方はアプリが決める（決裁 130 Q1）。
+        // 変えたのは**置き場だけ**（詳細の畳みの中）で、裁定 126 の B の錠は 1 行も触っていない
+        // ＝畳みを開いて下限未満を選べば、「準備を始める」はやはり押せない。
+        var paths = MakeTree();
+        var settings = new LauncherSettings { Variant = RuntimeVariants.Cpu };
+        var vm = NewWizard(paths, settings, new DriverProbe("537.58", 1, Probed: true));
+
+        await vm.RefreshDriverAsync();
+        vm.Accepted = true;
+        await vm.NextAsync();                                    // お知らせ → これからすること
+
+        // アプリが決めた結果は 1 行で名乗る（選ばせない）。
+        Assert.Equal(FirstRunStep.Variant, vm.Step);
+        Assert.Equal("これからすること", vm.StepTitle);
+        Assert.Equal(FirstRunViewModel.DecisionLineFor(vm.Variant, null), vm.DecisionLine);
+        Assert.True(vm.NextCommand.CanExecute(null));
+
+        // 畳みの中で自分で選び直した＝錠がそのまま働く。
+        vm.Variant = RuntimeVariants.Cu130;
+        Assert.True(vm.VariantBlocked);
+        Assert.False(vm.NextCommand.CanExecute(null));
+
+        await vm.NextAsync();
+        Assert.Equal(FirstRunStep.Variant, vm.Step);
+        Assert.Equal(RuntimeVariants.Cpu, settings.Variant);
+    }
+
+    [Fact]
     public async Task cpuの変種はどのドライバでも選べる()
     {
         var paths = MakeTree();

@@ -15,8 +15,17 @@ namespace IrodoriTtsYwk.Launcher.Services.Gpu;
 /// 区別せずに ⑵ を「GPU 無し」と読むと、NVIDIA の機体に CPU 版（数百分の一の速さ）を
 /// 勧めてしまう。<b>理由が在る 0 台は「判らない」側</b>に倒す。
 /// </param>
+/// <param name="GpuName">
+/// 1 台目の製品名（<c>NVIDIA GeForce RTX 3090</c>／読めなければ null）。
+/// <b>判定には一切使わない</b>（v2.0 段 B）＝はじめの準備の「動かし方を選びました」の 1 行が
+/// 名乗るためだけの欄である（`v2-copy.md` §2 段 2）。
+/// </param>
 public sealed record DriverProbe(
-    string? DriverVersion, int GpuCount, bool Probed, string? FailureReason = null)
+    string? DriverVersion,
+    int GpuCount,
+    bool Probed,
+    string? FailureReason = null,
+    string? GpuName = null)
 {
     /// <summary>まだ何も見ていない（ウィザードを開いた直後の値）。</summary>
     public static readonly DriverProbe Unknown = new(null, 0, false);
@@ -129,7 +138,9 @@ public static class VariantRecommendation
 
         var alternative = Recommend(choices, new DriverProbe(driverVersion, 1, true));
         return string.Equals(alternative, variant?.Trim(), StringComparison.OrdinalIgnoreCase)
-            ? Head(variant!, driverVersion!) + "別の変種を選んでください。"
+            // **「変種」を綴らない**（`v2-copy.md` §1-8 の `VariantGate.cs:382-387` の行と同じ文）＝
+            // 勧める先が無い回のこの 1 行は、設定頁の錠の説明としてそのまま画面に出る。
+            ? Head(variant!, driverVersion!) + "設定の「詳細」で動かし方を変えてください。"
             : Head(variant!, driverVersion!) + RuntimeVariants.ShortDisplayName(alternative)
               + " を選んでください。";
     }

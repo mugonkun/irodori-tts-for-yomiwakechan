@@ -344,7 +344,16 @@ public sealed class Decision126WizardCorrectionTests : IDisposable
         await vm.NextAsync();
 
         Assert.Equal(FirstRunStep.Variant, vm.Step);
-        Assert.Equal(vm.VariantBlockReason, vm.Message);
+
+        // v2.0 段 B（是正・検分）＝画面は E-02 の 3 部品で、**内輪の 1 行（「変種」を綴る）は
+        // ログへ**（`v2-copy.md` §3-2 の書き方の規則・憲章 §6-1）。数字（いまの版・下限）は
+        // ⑵ に出してよいので、断りの理由そのものは画面からも読める。
+        Assert.Equal(
+            FirstRunViewModel.VariantBlockedLine(RuntimeVariants.Cu130, "537.58"), vm.Message);
+        Assert.DoesNotContain("変種", vm.Message, StringComparison.Ordinal);
+        Assert.Contains("537.58", vm.Message, StringComparison.Ordinal);
+        Assert.Contains(
+            DriverRequirement.Minimum(RuntimeVariants.Cu130)!, vm.Message, StringComparison.Ordinal);
     }
 
     [Fact]

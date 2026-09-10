@@ -204,7 +204,10 @@ public sealed class RoundThreeWizardTests : IDisposable
         Assert.Equal(FirstRunStep.Install, vm.Step);         // 取得は自動で通り、展開で止まった
         Assert.False(vm.LastStepOk);
         Assert.Equal("もう一度", vm.NextButtonText);
-        Assert.Contains("展開系", vm.Message, StringComparison.Ordinal);
+
+        // v2.0 段 B（是正・検分）＝画面は平語 1 行（「展開系」「便 D」は憲章 §6-1 の隠す語）。
+        // **内輪の 1 行は捨てない**＝ログへ落ちることは Decision126CorrectionTests が釘付けする。
+        Assert.Equal(FirstRunViewModel.NotYetLine, vm.Message);
         Assert.False(settings.FirstRunCompleted);            // 完了は焼かれない
     }
 
@@ -282,7 +285,7 @@ public sealed class RoundThreeWizardTests : IDisposable
 
         Assert.Equal(FirstRunStep.Download, wizard.Step);    // 展開へ進んでいない
         Assert.False(wizard.LastStepOk);
-        Assert.Contains("中断", wizard.Message, StringComparison.Ordinal);
+        Assert.Equal(FirstRunViewModel.CancelledLine, wizard.Message);   // v2.0 段 B＝「やめました。」
         Assert.False(settings.FirstRunCompleted);
     }
 

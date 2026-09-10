@@ -293,6 +293,14 @@ public sealed class MainViewModel : ObservableObject
         // StatusViewModel.LogSink だけでは logs\ がまさにその場合に空のままだった。
         vm.LogSink = LogFile.Append;
 
+        // **起動の確認が通らなかった理由は帯の文をそのまま使う**（W7＝`v2-spec.md` §3・§2-1a）。
+        // 起こせない事情は 1 つではない（口が埋まっている・ドライバが下限未満・子が exit 2）ので、
+        // ウィザードが自前の 1 文（E-12＝時間がかかりすぎました）で全部を名乗ると嘘になり、
+        // 〔もう一度〕が同じ所で永久に落ちる。文を組むのは `BandText.For` の 1 箇所だけである。
+        vm.StartFailureLine = () => Status.IsFailed && Status.HasBandReason
+            ? Status.BandStateText + " " + Status.BandReasonText
+            : null;
+
         // **ドライバを見てから変種を勧める**（裁定 126 の B）＝窓が RefreshDriverAsync を呼ぶ。
         // 初回取得の時点では実行系がまだ無いので、読めるのは nvidia-smi 経路（＝NVIDIA 機の
         // driver_version）だけである。AMD 機・nvidia-smi の無い機体では「読めなかった」に落ち、
@@ -317,7 +325,11 @@ public sealed class MainViewModel : ObservableObject
             // 読むと NVIDIA の機体に CPU 版を勧めてしまう（VariantRecommendation.Recommend）。
             var driver = GpuEnumerator.DriverVersionOf(gpus.Gpus);
             Settings.KnownDriverVersion = driver ?? Settings.KnownDriverVersion;
-            return new DriverProbe(driver, gpus.Gpus.Count, Probed: true, gpus.FailureReason);
+
+            // **製品名も渡す**（v2.0 段 B）＝「動かし方を選びました」の 1 行が名乗る名前。
+            // 判定には使わない（`VariantRecommendation.Recommend` は見ない）。
+            var gpuName = gpus.Gpus.Count > 0 ? gpus.Gpus[0].Name : null;
+            return new DriverProbe(driver, gpus.Gpus.Count, Probed: true, gpus.FailureReason, gpuName);
         };
 
         // モデル＝変種の python.exe で server/ywk_fetch_models.py を子プロセス実行する

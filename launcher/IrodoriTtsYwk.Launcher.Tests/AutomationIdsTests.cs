@@ -213,6 +213,34 @@ public sealed class AutomationIdsTests
     }
 
     /// <summary>
+    /// <b>段 B（はじめの準備）で新設した id</b>（`v2-spec.md` §3・`v2-plan.md` 段 B）。
+    /// <para>
+    /// <b>退役させた id は 1 つも無い</b>＝選ぶ段は消えたが、<c>FirstRunVariantCombo</c> ほか 6 つは
+    /// <c>FirstRunAdvancedExpander</c> の中へ<b>要素ごと</b>移した（規則＝改名しない・削除しない・移すだけ）。
+    /// 台本は畳みを開く 1 手（<c>Open-YwkFold</c>）で従来どおり触れる。
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void 段Bで新設したidが揃っている()
+    {
+        var found = AllIds();
+        string[] added =
+        [
+            "FirstRunNoticesSummaryText", "FirstRunNoticesFullButton", "FirstRunNoticesExpander",
+            "FirstRunDecisionText", "FirstRunPlanText", "FirstRunPhaseText",
+            "FirstRunProgressDetailText", "FirstRunUacNoticeText", "FirstRunDoneText",
+            "FirstRunAdvancedExpander",
+
+            // 是正・検分で足した 2 つ＝⑴ W1（全文が読めない回に要約とチェックの代わりに出す 1 行）
+            // ⑵ 段 2 の「なぜ落ちるのか」（憲章 原則 3 の 3 つ目・お知らせを飛ばした回に要る）。
+            "FirstRunNoticesUnreadableText", "FirstRunWhyText",
+        ];
+
+        var missing = added.Where(id => !found.Contains(id)).ToArray();
+        Assert.True(missing.Length == 0, "新設できていない AutomationId：" + string.Join("・", missing));
+    }
+
+    /// <summary>
     /// <b>写しが本当に届いているか</b>＝ここが空だと上の 3 本が「全部在る」と嘘をつく。
     /// <para>
     /// <b>枚数ではなく名前で釘付けする</b>＝写しは <c>PreserveNewest</c> で<b>消えない</b>ので、

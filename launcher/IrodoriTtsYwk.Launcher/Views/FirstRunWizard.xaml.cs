@@ -46,20 +46,32 @@ public partial class FirstRunWizard : Window
     }
 
     /// <summary>
-    /// vc_redist を入れるか飛ばすかを問う（<see cref="FirstRunViewModel.AskVcRedist"/> に差す手）。
+    /// 〔全文を見る〕＝お知らせの全文の畳みを開く／もう一度押すと畳む
+    /// （決裁 130 Q3・`v2-spec.md` §3 段 1）。
+    /// <para>
+    /// <b>要約で済ませない</b>＝全文は<b>1 押しで必ず見られる</b>。同意の錠
+    /// （<see cref="FirstRunViewModel.CanAcceptNotices"/>）はこの釦とは無関係に働く。
+    /// </para>
+    /// </summary>
+    private void OnNoticesFullClick(object sender, RoutedEventArgs e) =>
+        FirstRunNoticesExpander.IsExpanded = !FirstRunNoticesExpander.IsExpanded;
+
+    /// <summary>
+    /// Microsoft の部品を入れるか飛ばすかを問う（<see cref="FirstRunViewModel.AskVcRedist"/> に差す手）。
     /// 「はい」＝入れる・「いいえ」＝飛ばす・「キャンセル」＝答えない（先へ進まない）。
+    /// <para>
+    /// <b>内輪の 1 行（<paramref name="reason"/>）は窓に出さない</b>（`v2-copy.md` §1-8＝
+    /// <c>Views/FirstRunWizard.xaml.cs:57-62</c>）＝理由は檔（<c>Record</c>）に残っている。
+    /// </para>
     /// </summary>
     private bool? AskVcRedist(string reason)
     {
         var answer = MessageBox.Show(
             this,
-            reason + "\n\n"
-            + "「はい」＝Visual C++ 再頒布可能パッケージを入れます"
-            + "（Microsoft の公式 URL から取得し、管理者の確認が 1 回出ます）。\n"
-            + "「いいえ」＝入れずに先へ進みます"
-            + "（既に入っている機体なら問題ありません。無ければ torch の読み込みで"
-            + " msvcp140.dll が見つからないと出ます）。",
-            "Visual C++ 再頒布可能パッケージ",
+            "Microsoft の部品を 1 つ入れます。"
+            + "Windows の許可の窓が 1 度出るので「はい」を押してください。\n"
+            + "入れないと、しゃべらせられないことがあります。",
+            "Windows の許可について",
             MessageBoxButton.YesNoCancel,
             MessageBoxImage.Question);
 
@@ -77,8 +89,8 @@ public partial class FirstRunWizard : Window
         {
             var answer = MessageBox.Show(
                 this,
-                "取得が走っています。中断して閉じますか（続きから取り直せます）。",
-                "初回取得",
+                "準備の途中です。やめて閉じますか。次に開いたときは、続きから始めます。",
+                "はじめの準備",
                 MessageBoxButton.OKCancel,
                 MessageBoxImage.Question);
 

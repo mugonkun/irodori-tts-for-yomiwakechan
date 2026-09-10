@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Audio;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Mvvm;
+using IrodoriTtsYwk.Launcher.Services.Gpu;
 using IrodoriTtsYwk.Launcher.ViewModels;
 using Xunit;
 
@@ -1363,10 +1364,207 @@ public sealed class FirstRunViewModelTests : IDisposable
     }
 
     [Fact]
-    public void 段の名前は日本語()
+    public void 見せる段の題は4つに畳まれる()
     {
-        Assert.Equal("完了", FirstRunViewModel.Title(FirstRunStep.Done));
-        Assert.Contains("通知", FirstRunViewModel.Title(FirstRunStep.Notices), StringComparison.Ordinal);
+        // v2.0 段 B（`v2-copy.md` §2）＝内部の 7 段は据え置きで、**題だけ**が 4 つになる。
+        Assert.Equal("お知らせ", FirstRunViewModel.Title(FirstRunStep.Notices));
+        Assert.Equal("これからすること", FirstRunViewModel.Title(FirstRunStep.Variant));
+        Assert.Equal("使えます。", FirstRunViewModel.Title(FirstRunStep.Done));
+
+        // 働く 4 段は 1 つの題に見える（どこで止まったかは PhaseText と Trail が残す）。
+        foreach (var step in new[]
+                 {
+                     FirstRunStep.Download, FirstRunStep.Install,
+                     FirstRunStep.Models, FirstRunStep.Start,
+                 })
+        {
+            Assert.Equal("準備しています", FirstRunViewModel.Title(step));
+        }
+
+        // 記録の側は内輪の 7 つのまま（詳細の中・ログ）。
+        Assert.Equal("取得（実行系）", FirstRunViewModel.TrailTitle(FirstRunStep.Download));
+        Assert.Equal("取得（モデル）", FirstRunViewModel.TrailTitle(FirstRunStep.Models));
+    }
+
+    [Fact]
+    public void 段番号は3つ組で完了は番号を持たない()
+    {
+        var paths = MakePaths();
+        File.WriteAllText(paths.FirstRunNoticesPath, "通知の本文");
+        var vm = NewWizard(paths, new LauncherSettings());
+
+        Assert.Equal(3, vm.VisibleStepCount);
+        Assert.Equal("1 / 3", vm.StepNumberText);
+        Assert.Equal(2, FirstRunViewModel.VisibleStepNumber(FirstRunStep.Variant, noticesSkipped: false));
+
+        foreach (var step in new[]
+                 {
+                     FirstRunStep.Download, FirstRunStep.Install,
+                     FirstRunStep.Models, FirstRunStep.Start,
+                 })
+        {
+            Assert.Equal(3, FirstRunViewModel.VisibleStepNumber(step, noticesSkipped: false));
+        }
+
+        Assert.Equal(0, FirstRunViewModel.VisibleStepNumber(FirstRunStep.Done, noticesSkipped: false));
+    }
+
+    [Fact]
+    public void 同じ版のお知らせは二度と訊かない()
+    {
+        // 決裁 130 Q3＝sha256 が一致する回は段 1 を飛ばし、見せる段は 2 つになる。
+        // **acceptedNoticesSha256 は読むだけ**（上書きしない）。
+        var paths = MakePaths();
+        File.WriteAllText(paths.FirstRunNoticesPath, "通知の本文");
+        var first = NewWizard(paths, new LauncherSettings());
+        Assert.False(first.NoticesAlreadyAccepted);
+        Assert.False(first.NoticesSkipped);
+
+        var settings = new LauncherSettings { AcceptedNoticesSha256 = first.NoticesSha256 };
+        var again = NewWizard(paths, settings);
+
+        Assert.True(again.NoticesAlreadyAccepted);
+        Assert.True(again.NoticesSkipped);
+        Assert.Equal(FirstRunStep.Variant, again.Step);
+        Assert.Equal(2, again.VisibleStepCount);
+        Assert.Equal("1 / 2", again.StepNumberText);
+
+        // 飛ばした段へは「戻る」で降りられない（同意はもう済んでいる）。
+        Assert.False(again.BackCommand.CanExecute(null));
+        again.Back();
+        Assert.Equal(FirstRunStep.Variant, again.Step);
+        Assert.Equal(first.NoticesSha256, settings.AcceptedNoticesSha256);
+    }
+
+    [Fact]
+    public void 釦の札は決裁130の4押下に揃っている()
+    {
+        // 押下 4＝チェック → 次へ → 準備を始める → しゃべらせてみる（`v2-plan.md` 段 B-4）。
+        var paths = MakePaths();
+        File.WriteAllText(paths.FirstRunNoticesPath, "通知の本文");
+        var vm = NewWizard(paths, new LauncherSettings());
+
+        Assert.Equal("次へ", vm.NextButtonText);
+        vm.Accepted = true;
+
+        var settings = new LauncherSettings { AcceptedNoticesSha256 = vm.NoticesSha256 };
+        var atVariant = NewWizard(paths, settings);
+        Assert.Equal("準備を始める", atVariant.NextButtonText);
+    }
+
+    [Fact]
+    public void 動かし方を決めた1行は選ばせずに名乗る()
+    {
+        // 決裁 130 Q1＝判定は VariantRecommendation.Recommend のまま・ここは名乗るだけ。
+        // **頭の 1 文（アプリが決めた）を落とさない**（`v2-copy.md` §2 段 2 の逐語）＝
+        // 決裁 130 Q1 が画面に届けたい 1 文はこれである。
+        Assert.Equal(
+            "このパソコンに合わせて、動かし方を選びました。"
+            + "NVIDIA の GPU（GeForce RTX 3090）・CUDA 13.0 で動かします。",
+            FirstRunViewModel.DecisionLineFor(RuntimeVariants.Cu130, "GeForce RTX 3090"));
+
+        Assert.Equal(
+            FirstRunViewModel.DecisionLead + "AMD の Radeon（Radeon 8060S）・ROCm で動かします。",
+            FirstRunViewModel.DecisionLineFor(RuntimeVariants.RocmGfx1151, "Radeon 8060S"));
+
+        // 版が古い機体は、勧め直した理由（下限の数字）まで 1 行で名乗る（`v2-copy.md` §2 段 2）。
+        var cu126 = FirstRunViewModel.DecisionLineFor(RuntimeVariants.Cu126, "GeForce RTX 3090");
+        Assert.StartsWith(FirstRunViewModel.DecisionLead, cu126, StringComparison.Ordinal);
+        Assert.Contains("CUDA 12.6 で動かします", cu126, StringComparison.Ordinal);
+        Assert.Contains(
+            DriverRequirement.Minimum(RuntimeVariants.Cu130)!, cu126, StringComparison.Ordinal);
+
+        // 製品名が読めない回は括弧ごと落とす（推測の名前を出さない）。
+        Assert.Equal(
+            FirstRunViewModel.DecisionLead + "NVIDIA の GPU・CUDA 13.0 で動かします。",
+            FirstRunViewModel.DecisionLineFor(RuntimeVariants.Cu130, null));
+
+        // CPU を名乗るのは GPU が見つからなかった機体だけ（憲章 §7 既定）。
+        Assert.Equal(
+            FirstRunViewModel.NoGpuDecisionLine,
+            FirstRunViewModel.DecisionLineFor(RuntimeVariants.Cpu, "Intel UHD"));
+    }
+
+    /// <summary>
+    /// <b>cpu は「GPU が無い」だけの綴りではない</b>（是正・検分）＝
+    /// <see cref="VariantRecommendation.Recommend"/> は<b>版が読めていて下限未満</b>の機体でも
+    /// cpu を返す（GeForce が在るのに 470.00 のまま、など）。そこで「対応する GPU が
+    /// 見つかりませんでした」と告げると、画面が事実の逆を名乗る。
+    /// </summary>
+    [Fact]
+    public void ドライバが古くてcpuに落ちた回は数字ごと名乗る()
+    {
+        var probe = new DriverProbe("470.00", GpuCount: 1, Probed: true, null, "NVIDIA GeForce RTX 3090");
+
+        // 台帳の並びは配布物のまま（cu130／cu126／cpu）＝判定は 1 つも足していない。
+        Assert.Equal(
+            RuntimeVariants.Cpu,
+            VariantRecommendation.Recommend(
+                [RuntimeVariants.Cu130, RuntimeVariants.Cu126, RuntimeVariants.Cpu], probe));
+
+        var line = FirstRunViewModel.DecisionLineFor(
+            RuntimeVariants.Cpu, "NVIDIA GeForce RTX 3090", probe);
+
+        Assert.NotEqual(FirstRunViewModel.NoGpuDecisionLine, line);
+        Assert.Contains("470.00", line, StringComparison.Ordinal);
+        Assert.Contains(
+            DriverRequirement.Minimum(RuntimeVariants.Cu126)!, line, StringComparison.Ordinal);
+        Assert.Contains("NVIDIA GeForce RTX 3090", line, StringComparison.Ordinal);
+
+        // 見た上で 0 台だった機体は、これまでどおり「GPU が見つかりませんでした」。
+        Assert.Equal(
+            FirstRunViewModel.NoGpuDecisionLine,
+            FirstRunViewModel.DecisionLineFor(
+                RuntimeVariants.Cpu, null, new DriverProbe(null, 0, Probed: true)));
+    }
+
+    /// <summary>
+    /// <b>判らない回は決めたと言わない</b>（是正・検分）＝<c>nvidia-smi</c> が無い・落ちた・
+    /// まだ撃っていない回、<see cref="VariantRecommendation.Recommend"/> は
+    /// 「判らないことを勝手に決めない」で<b>並びの先頭</b>（cu130）を返す。
+    /// それを「このパソコンは CUDA 13.0 です」と名乗ると、5.3 GB 落としたあと門に断られる。
+    /// </summary>
+    [Fact]
+    public void 検分できなかった回は決めたと言わない()
+    {
+        foreach (var probe in new[]
+                 {
+                     DriverProbe.Unknown,                                          // まだ撃っていない
+                     new DriverProbe(null, 0, Probed: true, "nvidia-smi が無い"),   // 理由つきの 0 台
+                 })
+        {
+            var line = FirstRunViewModel.DecisionLineFor(RuntimeVariants.Cu130, null, probe);
+
+            Assert.DoesNotContain(FirstRunViewModel.DecisionLead, line, StringComparison.Ordinal);
+            Assert.Contains("確かめられませんでした", line, StringComparison.Ordinal);
+            Assert.Contains(BandText.VariantName(RuntimeVariants.Cu130), line, StringComparison.Ordinal);
+        }
+
+        // 版が読めた回は、これまでどおり結果を名乗る。
+        Assert.StartsWith(
+            FirstRunViewModel.DecisionLead,
+            FirstRunViewModel.DecisionLineFor(
+                RuntimeVariants.Cu130, null, new DriverProbe("580.00", 1, Probed: true)),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void いま何をしているかの1行は段ごとに1つ()
+    {
+        Assert.Equal("落とした物を組み立てています。", FirstRunViewModel.PhaseLine(FirstRunStep.Install));
+        Assert.Equal("声のデータをダウンロードしています。", FirstRunViewModel.PhaseLine(FirstRunStep.Models));
+        Assert.Equal("動くか確かめています。", FirstRunViewModel.PhaseLine(FirstRunStep.Start));
+
+        // 通知・確認・完了は「いま何をしているか」を持たない。
+        Assert.Equal(string.Empty, FirstRunViewModel.PhaseLine(FirstRunStep.Notices));
+        Assert.Equal(string.Empty, FirstRunViewModel.PhaseLine(FirstRunStep.Done));
+
+        // **数は添えない**（是正・検分＝`v2-spec.md` §1-3）＝利用者向けの面に出す数は
+        // 割合・丸めた残り・散文の総量の 3 つだけで、実測は詳細の中に GiB のまま残る。
+        var line = FirstRunViewModel.PhaseLine(FirstRunStep.Download);
+
+        Assert.Equal("必要な部品をダウンロードしています。", line);
+        Assert.DoesNotContain("GB", line, StringComparison.Ordinal);
     }
 
     [Fact]

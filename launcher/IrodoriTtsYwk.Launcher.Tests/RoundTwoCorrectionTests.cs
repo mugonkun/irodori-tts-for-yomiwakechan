@@ -465,7 +465,11 @@ public sealed class RoundTwoCorrectionTests : IDisposable
         await RunToDownloadAsync(vm);
 
         Assert.False(Assert.Single(calls));              // 入れ直しには行かない（1 度だけ・force なし）
-        Assert.Contains(vm.Trail, line => line.Contains("飛ばしました", StringComparison.Ordinal));
+
+        // v2.0 段 B＝記録の 1 行も平語にした（`v2-copy.md` §1-8 の :1105-1107）。
+        Assert.Contains(
+            vm.Trail,
+            line => line.Contains("Microsoft の部品を入れずに進みました", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -490,7 +494,10 @@ public sealed class RoundTwoCorrectionTests : IDisposable
         await RunToDownloadAsync(vm);
 
         Assert.False(Assert.Single(calls));
-        Assert.Contains("利用者に確かめてください", vm.Message, StringComparison.Ordinal);
+
+        // v2.0 段 B＝画面には W8 の 3 部品（`v2-spec.md` §3）を出す。**内輪の 1 行は檔へ**＝
+        // 「利用者に確かめてください」は VcRedistInstaller の綴りのままログに残る。
+        Assert.Equal(FirstRunViewModel.VcRedistFailedLine, vm.Message);
     }
 
     [Fact]

@@ -584,7 +584,7 @@ public sealed class CorrectionThreeWizardTests : IDisposable
         Assert.True(couldCancel);                    // その段で押せる
         Assert.Equal(FirstRunStep.Start, wizard.Step);   // Done へ進まない
         Assert.False(wizard.LastStepOk);
-        Assert.Equal("中断しました（続きから取り直せます）。", wizard.Message);
+        Assert.Equal(FirstRunViewModel.CancelledLine, wizard.Message);
         Assert.False(settings.FirstRunCompleted);    // 焼かれない
     }
 
@@ -606,7 +606,7 @@ public sealed class CorrectionThreeWizardTests : IDisposable
         await wizard.NextAsync();
         await wizard.NextAsync();
 
-        Assert.Equal("中断しました（続きから取り直せます）。", wizard.Message);
+        Assert.Equal(FirstRunViewModel.CancelledLine, wizard.Message);
         Assert.False(settings.FirstRunCompleted);
     }
 
@@ -620,7 +620,7 @@ public sealed class CorrectionThreeWizardTests : IDisposable
 
         wizard.CancelRunning();
 
-        Assert.Equal("いま中断できる仕事はありません。", wizard.Message);
+        Assert.Equal(FirstRunViewModel.NothingToCancelLine, wizard.Message);
     }
 
     [Fact]

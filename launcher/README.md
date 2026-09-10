@@ -177,10 +177,20 @@ launcher/IrodoriTtsYwk.Launcher/
 | 発話テスト | `TryInputBox`・`TryInputLengthText`・`TryVoiceCombo`・`TryStepsPreset10`／`TryStepsPreset40`／`TryStepsBox`・`TryCaptionBox`・`TryCfgTextBox`／`TryCfgCaptionBox`／`TryCfgSpeakerBox`・`TrySpeedBox`・`TrySeedBox`・`TrySynthesizeButton`・`TryReplayButton`・`TryStopButton`・`TrySaveButton`・`TryResultText`・`TryMessageText` |
 | 設定 | `SettingsGpuCombo`・`SettingsRefreshGpuButton`・`SettingsDriverText`・`SettingsVariantCombo`・`SettingsPrecisionCombo`・`SettingsPortBox`・`SettingsWarmupCheck`／`SettingsWarmupStagesBox`／`SettingsWarmupVoicesBox`・`SettingsPrecomputeCheck`・`SettingsEmptyCacheBox`・`SettingsAutoStartCheck`・`SettingsShowMemoryCheck`・`SettingsReadyTimeoutBox`・`SettingsDataDirText`／`SettingsModelDirText`／`SettingsVoicesDirText`／`SettingsRuntimeRootText`／`SettingsAppDirText`・`SettingsApplyButton`／`SettingsRevertButton`・`SettingsMessageText` |
 | このアプリについて | `AboutDisclaimerText`・`AboutVersionText`・`AboutUpstreamText`・`AboutWatermarkText`・`AboutEthicsText`・`AboutLicensesDirText`・`AboutNoticesPathText`・`AboutLicenseList` |
-| 初回取得 | `FirstRunWizard`・`FirstRunStepTitle`・`FirstRunStepNumber`・`FirstRunNoticesBox`・`FirstRunAcceptCheck`・`FirstRunVariantCombo`・`FirstRunVariantNoteText`・`FirstRunDriverText`・`FirstRunSizeText`・`FirstRunProgressBar`／`FirstRunProgressText`・`FirstRunTrailList`・`FirstRunBackButton`／`FirstRunNextButton`／`FirstRunCancelButton`・`FirstRunMessageText` |
+| 初回取得（v2.0＝はじめの準備） | `FirstRunWizard`・`FirstRunStepTitle`・`FirstRunStepNumber`・`FirstRunNoticesBox`・`FirstRunAcceptCheck`・`FirstRunVariantCombo`・`FirstRunVariantNoteText`・`FirstRunDriverText`・`FirstRunSizeText`・`FirstRunProgressBar`／`FirstRunProgressText`・`FirstRunTrailList`・`FirstRunBackButton`／`FirstRunNextButton`／`FirstRunCancelButton`・`FirstRunMessageText`　＋ **v2.0 段 B の新設 12**＝`FirstRunNoticesSummaryText`・`FirstRunNoticesFullButton`・`FirstRunNoticesExpander`・`FirstRunDecisionText`・`FirstRunPlanText`・`FirstRunPhaseText`・`FirstRunProgressDetailText`・`FirstRunUacNoticeText`・`FirstRunDoneText`・`FirstRunAdvancedExpander`・`FirstRunNoticesUnreadableText`（お知らせの全文が読めない回だけ出る 1 行）・`FirstRunWhyText`（段 2 の「なぜ落ちるのか」） |
 
 **タブの中身は選ぶまで作られない**（WPF の `TabControl` は遅延生成）＝台本は `SelectionItemPattern`
-でタブを選んでから、そのタブの id を探すこと。
+でタブを選んでから、そのタブの id を探すこと。**畳み（`Expander`）の中も同じ**＝開くまで実体が無いので
+UIA からは見えない。はじめの準備で動かし方を自分で選ぶ（`FirstRunVariantCombo`）には、
+先に `Open-YwkFold -Root <wizard> -Id 'FirstRunAdvancedExpander'` を撃つこと（v2.0 段 B＝
+選ぶ段そのものは廃した＝アプリがドライバから決める。**id は 1 つも消していない・移しただけ**）。
+
+**釦は出せる段にだけ出す**（v2.0 段 B の是正）＝`FirstRunBackButton` は戻れる段（＝`BackVisible`）、
+`FirstRunCancelButton` は走っている間（＝`IsBusy`）だけ**見える**。要素と id はどの段でも在るが、
+`Visibility` が畳まれている間は UIA から拾えない＝台本は「その段で出るはずの釦」だけを探すこと。
+同じく `FirstRunNoticesSummaryText`・`FirstRunNoticesFullButton`・`FirstRunNoticesExpander`・
+`FirstRunAcceptCheck` は**お知らせの全文が読めた回だけ**見え、読めない回は代わりに
+`FirstRunNoticesUnreadableText` が出る。
 
 **「発話テスト」のタブは裁定 116（2026-09-09）まで「試し撃ち」と名乗っていた**＝変えたのは利用者の目に入る札
 （タブの Header・ウィザードの完了文と「発話テストへ」の札・話者一覧のツールチップ）だけで、id（`TabTry`・`Try*`）と
