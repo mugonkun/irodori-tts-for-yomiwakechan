@@ -10,7 +10,7 @@ namespace IrodoriTtsYwk.Launcher.Audio;
 /// <para>
 /// <c>WaveOutEvent</c>（NAudio.WinMM）＋<c>WaveFileReader</c>＋<c>VolumeSampleProvider</c>
 /// （NAudio.Core）の 3 つだけを使う。窓のハンドルを要らない <c>WaveOutEvent</c> を選ぶのは、
-/// 本体 yomiwakechan2 と同じ選び方であり、常駐アプリで窓を閉じても鳴らし続けられるからである。
+/// 本体 yomiwakechan2 と同じ選び方である（窓を閉じる＝アプリが終わるので、そこで鳴りも止まる）。
 /// </para>
 /// <para>
 /// <b>利得は <see cref="WavGain"/> が決める</b>（純関数）＝ここは鳴らすだけ。檔は書き換えない。

@@ -2,9 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using IrodoriTtsYwk.Launcher.Contracts;
-using IrodoriTtsYwk.Launcher.ViewModels;
-using Forms = System.Windows.Forms;
+using IrodoriTtsYwk.Launcher.Services.Server;
 
 // Application.MainWindow（既存のプロパティ）と型名がぶつかるので別名で呼ぶ。
 using MainWindowView = IrodoriTtsYwk.Launcher.Views.MainWindow;
@@ -13,15 +11,18 @@ namespace IrodoriTtsYwk.Launcher;
 
 /// <summary>
 /// ランチャの入り口。<b>この檔が持つのは 3 つだけ</b>＝
-/// ⑴ 単一起動（Mutex）⑵ トレイ常駐（NotifyIcon）⑶ 終了時に wrapper をツリー kill。
+/// ⑴ 単一起動（Mutex）⑵ 2 個目の起動で 1 個目の窓を前に出す合図 ⑶ 終了時に wrapper をツリー kill。
 /// 画面の中身は <see cref="MainWindow"/> と 3 席の View が持つ。
 /// <para>
-/// <b>なぜ常駐か</b>＝常駐と後始末は配布版で（裁定 6・G-2）、本体（読み分けちゃん2）は <c>/health</c> で
-/// 見つける（裁定 103＝本体の一括起動が引数なしでこの exe を起こしてよい・プロセスは持たない）から。窓を閉じても wrapper は走り続けねばならない。
+/// <b>常駐しない</b>（裁定 124＝裁定 6 の反転・司令官の評価の逐語は
+/// <see cref="ShutdownSequence"/> に引いてある）＝窓の × でアプリが終わり、
+/// 終われば起こした wrapper をツリー kill して VRAM を返す。トレイのアイコンも常駐のメニューも無い。
+/// 最小化は<b>タスクバー</b>へ落ちる。本体（読み分けちゃん2）は従来どおり <c>/health</c> で見つける
+/// （裁定 103＝本体の一括起動が引数なしでこの exe を起こしてよい・プロセスは持たない）。
 /// </para>
 /// <para>
 /// <b>なぜ終了時にツリー kill か</b>＝上流に shutdown の路が無く（設計書 §2）、wrapper は窓を持たない
-/// ので利用者に閉じる口が無い。放置個体がポートを塞ぐ。本体
+/// ので利用者に閉じる口が無い。放置個体がポートを塞ぎ、VRAM を握り続ける。本体
 /// <c>IrodoriServerProcessRegistry</c> と同じ流儀で<b>自分が起こした個体だけ</b>を片付ける。
 /// </para>
 /// </summary>
@@ -35,20 +36,11 @@ public partial class App : Application
     /// <summary>2 個目が 1 個目に「窓を出せ」と伝える口。</summary>
     private const string ActivateEventName = @"Local\irodori-tts-ywk-launcher-activate";
 
-    /// <summary>終了時にサーバの後始末を待つ上限。</summary>
-    private static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(15);
-
     private Mutex? _singleInstance;
     private EventWaitHandle? _activateSignal;
     private CancellationTokenSource? _activateWatch;
-    private Forms.NotifyIcon? _trayIcon;
-    private Forms.ToolStripMenuItem? _startItem;
-    private Forms.ToolStripMenuItem? _stopItem;
     private MainWindowView? _window;
     private bool _shuttingDown;
-
-    /// <summary>この配布樹がどちらの版か（裁定 109＝吹き出しの名札に出す）。既定は CUDA 版。</summary>
-    private ReleaseFlavor _flavor = ReleaseFlavor.Cuda;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -65,17 +57,13 @@ public partial class App : Application
             return;
         }
 
-        // 版は配布樹の ledger/ から読む（裁定 109）。exe は 1 本で両リリースを兼ねるので焼き込まない。
-        _flavor = ReleaseFlavors.DetectFrom(AppServices.Paths.LedgerDir);
-
         AppServices.Paths.EnsureDataDirectories();
         _ = AppServices.Settings; // 早い段階で読む（壊れていても既定で立ち上がる）
 
-        // 実装を差すのはここ（トレイと窓が Server の StateChanged を購読する**前**）。
+        // 実装を差すのはここ（窓が Server の StateChanged を購読する**前**）。
         Services.LauncherComposition.Compose();
 
         StartActivateWatch();
-        CreateTrayIcon();
 
         _window = new MainWindowView();
         _window.Show();
@@ -85,42 +73,14 @@ public partial class App : Application
     {
         _shuttingDown = true;
 
-        // ⑶ 起こした個体をツリー kill してから消える。待ちには上限を置く
-        //    （落ちない個体のためにアプリが終われない、を作らない）。
-        try
-        {
-            using var cts = new CancellationTokenSource(StopTimeout);
-            AppServices.Server.StopAsync(cts.Token).GetAwaiter().GetResult();
-        }
-        catch (OperationCanceledException)
-        {
-            // 期限切れ＝諦めて進む（次の起動でポートが塞がっていれば裁定 52 の告知が出る）
-        }
-        catch (InvalidOperationException)
-        {
-            // 既に落ちている個体を止めようとしただけ
-        }
-
-        try
-        {
-            AppServices.Server.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        }
-        catch (InvalidOperationException)
-        {
-            // 同上
-        }
+        // ⑶ 起こした個体をツリー kill してから消える（VRAM を返す＝裁定 124）。
+        //    待ちには上限を置く（落ちない個体のためにアプリが終われない、を作らない）。
+        //    どの状態から閉じられても同じ 1 本を通る＝起動中・読込中・暖機中も止める。
+        ShutdownSequence.StopServerTree(AppServices.Server, ShutdownSequence.DefaultStopTimeout);
 
         _activateWatch?.Cancel();
         _activateWatch?.Dispose();
         _activateSignal?.Dispose();
-
-        if (_trayIcon is not null)
-        {
-            // Dispose しないとトレイにアイコンの残骸が残る
-            _trayIcon.Visible = false;
-            _trayIcon.Dispose();
-            _trayIcon = null;
-        }
 
         AppServices.Wrapper?.Dispose();
 
@@ -130,7 +90,7 @@ public partial class App : Application
         base.OnExit(e);
     }
 
-    /// <summary>窓を出して前に持ってくる（トレイの「開く」・2 個目の起動の合図）。</summary>
+    /// <summary>窓を出して前に持ってくる（2 個目の起動の合図）。</summary>
     public void ShowMainWindow()
     {
         if (_shuttingDown)
@@ -150,108 +110,6 @@ public partial class App : Application
         }
 
         _window.Activate();
-    }
-
-    // ---- トレイ -------------------------------------------------------------
-
-    private void CreateTrayIcon()
-    {
-        var menu = new Forms.ContextMenuStrip();
-
-        var openItem = new Forms.ToolStripMenuItem("開く(&O)");
-        openItem.Click += (_, _) => ShowMainWindow();
-
-        _startItem = new Forms.ToolStripMenuItem("サーバ起動(&S)");
-        _startItem.Click += (_, _) => RequestServerStart();
-
-        _stopItem = new Forms.ToolStripMenuItem("サーバ停止(&T)");
-        _stopItem.Click += (_, _) => RequestServerStop();
-
-        var exitItem = new Forms.ToolStripMenuItem("終了(&X)");
-        exitItem.Click += (_, _) => Shutdown();
-
-        menu.Items.Add(openItem);
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add(_startItem);
-        menu.Items.Add(_stopItem);
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add(exitItem);
-
-        _trayIcon = new Forms.NotifyIcon
-        {
-            // 専用アイコンはまだ無い（便 E の資産）。無い物を差すより、在る物を差す。
-            Icon = System.Drawing.SystemIcons.Application,
-            Visible = true,
-            ContextMenuStrip = menu,
-        };
-        _trayIcon.DoubleClick += (_, _) => ShowMainWindow();
-
-        AppServices.Server.StateChanged += OnServerStateChanged;
-        UpdateTray(AppServices.Server.State);
-    }
-
-    private void OnServerStateChanged(object? sender, ServerStateChangedEventArgs e) =>
-        Dispatcher.BeginInvoke(() => UpdateTray(e.Current));
-
-    /// <summary>メニューの可否と吹き出しの文言を状態に合わせる。</summary>
-    private void UpdateTray(ServerState state)
-    {
-        if (_trayIcon is null)
-        {
-            return;
-        }
-
-        var running = state is ServerState.Starting or ServerState.Listening
-            or ServerState.Ready or ServerState.Warming;
-
-        // 起こした個体が台帳に居る間は止められる（Failed でも＝是正・2026-09-05）。
-        // 窓の StatusViewModel.CanStop と同じ判定にする（片方だけ押せる状態を作らない）。
-        var stoppable = running || AppServices.Server.ProcessId is not null;
-
-        if (_startItem is not null)
-        {
-            _startItem.Enabled = !running;
-        }
-
-        if (_stopItem is not null)
-        {
-            _stopItem.Enabled = stoppable;
-        }
-
-        // Text は 63 字まで（Win32 の制約）＝短く保つ。組み立ては純関数に寄せてある
-        // （ReleaseFlavors.TrayText＝裁定 109 の名札つき・枠は xUnit が全状態で釘付けする）。
-        _trayIcon.Text = ReleaseFlavors.TrayText(_flavor, AppVersion.Display, StateLabel(state));
-    }
-
-    /// <summary>状態の日本語（UI は日本語のみ＝裁定 52）。</summary>
-    public static string StateLabel(ServerState state) => state switch
-    {
-        ServerState.Stopped => "停止",
-        ServerState.Starting => "起動中",
-        ServerState.Listening => "読込中",
-        ServerState.Ready => "待機",
-        ServerState.Warming => "暖機中",
-        ServerState.Failed => "失敗",
-        _ => state.ToString(),
-    };
-
-    private void RequestServerStart() =>
-        _window?.RequestServerStart();
-
-    private void RequestServerStop() =>
-        _ = StopServerAsync();
-
-    private async Task StopServerAsync()
-    {
-        try
-        {
-            using var cts = new CancellationTokenSource(StopTimeout);
-            await AppServices.Server.StopAsync(cts.Token).ConfigureAwait(true);
-        }
-        catch (OperationCanceledException)
-        {
-            // 期限切れは UI に出す仕事（窓側）
-        }
     }
 
     // ---- 2 個目の起動 -------------------------------------------------------

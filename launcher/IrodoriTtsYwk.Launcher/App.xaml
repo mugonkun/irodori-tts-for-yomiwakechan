@@ -1,10 +1,10 @@
 <Application x:Class="IrodoriTtsYwk.Launcher.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             ShutdownMode="OnExplicitShutdown">
+             ShutdownMode="OnLastWindowClose">
   <!--
-    ShutdownMode=OnExplicitShutdown＝**トレイ常駐**（裁定 6＝起動主体は配布版）。
-    窓を閉じてもアプリは残り、サーバは走り続ける。終わるのはトレイの「終了」だけ。
+    ShutdownMode=OnLastWindowClose＝**窓を閉じたらアプリが終わる**（裁定 124 が裁定 6 を覆した）。
+    終われば App.OnExit が wrapper をツリー kill する＝VRAM が返る。トレイには常駐しない。
     StartupUri は置かない＝窓は App.OnStartup が作る（単一起動の判定が先に立つため）。
   -->
   <Application.Resources>

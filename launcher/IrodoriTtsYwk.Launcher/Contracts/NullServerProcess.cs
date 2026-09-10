@@ -7,7 +7,7 @@ namespace IrodoriTtsYwk.Launcher.Contracts;
 /// <summary>
 /// 何も起こさない <see cref="IServerProcess"/>。
 /// <para>
-/// <b>骨組みが実装なしで通るための繋ぎ</b>＝トレイと窓は最初から動き、起動席（3 席のうちの 1 つ）が
+/// <b>骨組みが実装なしで通るための繋ぎ</b>＝窓は最初から動き、起動席（3 席のうちの 1 つ）が
 /// <see cref="AppServices.Server"/> を本物に差し替える。差し替え前に「サーバ起動」を押すと、
 /// Failed と理由 1 行が出る（黙って何も起きない、にはしない）。
 /// </para>

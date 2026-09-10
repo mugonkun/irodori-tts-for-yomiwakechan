@@ -12,8 +12,8 @@ namespace IrodoriTtsYwk.Launcher.Services;
 /// 起動席（便 D・L2）の実装を <see cref="AppServices"/> に差す 1 箇所。
 /// <para>
 /// <b>差し替えは起動の 1 度だけ</b>（走行中に入れ替えない）＝
-/// <c>App.OnStartup</c> の、トレイと窓を作る<b>前</b>に呼ぶ。後に呼ぶと、
-/// トレイと窓が <see cref="NullServerProcess"/> の <c>StateChanged</c> を購読したままになる。
+/// <c>App.OnStartup</c> の、窓を作る<b>前</b>に呼ぶ。後に呼ぶと、
+/// 窓が <see cref="NullServerProcess"/> の <c>StateChanged</c> を購読したままになる。
 /// </para>
 /// <para>
 /// ここが差すのは⑴ サーバの子プロセス ⑵ GPU 列挙 ⑶ 話者台帳と <c>voices.json</c> の書き手だけ。
@@ -114,7 +114,7 @@ public static class LauncherComposition
     /// ⑴ 旧い置き場（<c>voices_dir</c> 直下）に残っている参照 wav を <c>refs/</c> へ移す
     /// （是正・2026-09-05＝直下に置くと上流の走査が檔名の幹を話者 id にして同じ話者が一覧に 2 件出る）。
     /// ⑵ 初回だけプリセットを利用者データへ写す（配布樹は読むだけ）。
-    /// ⑶ <b>写した話者を <c>voices.json</c> にも載せる</b>（統合席 §19・裁定 78 ⑴）。
+    /// ⑶ <b>いまの台帳を <c>voices.json</c> に書く</b>（統合席 §19・裁定 78 ⑴・<b>毎回</b>＝裁定 125 の C（2））。
     /// ⑷ <b>改名の引き継ぎ</b>（裁定 108）＝配布側が <c>display_name</c>（＝話者 id）を変えた分を
     /// 利用者の台帳へ写す（<see cref="Voices.PresetVoices.MigrateRenamed"/>）。
     /// </para>
@@ -173,16 +173,18 @@ public static class LauncherComposition
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(writer);
 
-        var moved = store.MigrateReferences();
+        store.MigrateReferences();
         renamed = PresetVoices.MigrateRenamed(paths, store);
         var copied = PresetVoices.InstallIfFirstRun(paths, store);
         added = PresetVoices.InstallNew(paths, store);
 
-        if (moved > 0 || copied > 0 || renamed.Count > 0 || added.Count > 0
-            || !System.IO.File.Exists(paths.VoicesJsonPath))
-        {
-            writer.Write(paths.VoicesJsonPath, store.Load());
-        }
+        // **毎回書く**（裁定 125 の C（2））。1 巡目は「この回で何かが動いたか、檔が無いか」を
+        // 条件にしていたので、**サーバを止めている間に台帳を直した回**（話者一覧の編集・
+        // 手で戻した voices.ywk.json・別名表を消してしまった機体）が別名表に届かず、
+        // 起こし直しても `GET /v1/audio/voices` には古い顔ぶれが出た。ここは起動の前
+        //（サーバはまだ走っていない）なので、書き直しても走っている個体の読みとは競合しない。
+        // 書き手は既に在る檔を読み直して `ref_latent` を残す（契約 ⑷ 4-3）＝焼いた潜在は消えない。
+        writer.Write(paths.VoicesJsonPath, store.Load());
 
         return copied;
     }

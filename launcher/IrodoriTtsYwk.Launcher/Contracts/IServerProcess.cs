@@ -475,7 +475,7 @@ public interface IServerProcess : IAsyncDisposable
     /// <b>呼ばずに</b>「失敗」を画面へ直に書いていた。状態機械はそれを知らないので
     /// <c>State</c> は <c>Stopped</c> のまま＝⑴ 次に「サーバ起動」を押せてしまう
     /// ⑵ 窓を開き直すと（<c>ApplyServerState(Server.State, …)</c> を読む）理由が消える
-    /// ⑶ トレイの状態表示と帯が食い違う。<b>状態を書く者は状態機械 1 本</b>（low 3）の
+    /// ⑶ 状態機械の現在値と帯が食い違う。<b>状態を書く者は状態機械 1 本</b>（low 3）の
     /// 例外を作らないための口である。
     /// </para>
     /// </summary>

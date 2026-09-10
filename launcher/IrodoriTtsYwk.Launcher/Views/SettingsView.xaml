@@ -7,6 +7,7 @@
     変種の自動切替はしない（裁定 4）＝ドライバが下限に届かないときも勧めるだけ。
   -->
   <UserControl.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
     <Style x:Key="Head" TargetType="TextBlock">
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="Margin" Value="0,14,0,6" />
@@ -66,6 +67,11 @@
         <TextBlock Style="{StaticResource Note}"
                    AutomationProperties.AutomationId="SettingsVariantNameText"
                    Text="{Binding VariantDisplayName, Mode=OneWay}" />
+        <!-- 下限に届かないドライバの変種を選んでいる間の 1 行（裁定 125 の B）＝「適用」が断る。 -->
+        <TextBlock Style="{StaticResource Note}" FontWeight="Bold" Foreground="#B00020"
+                   AutomationProperties.AutomationId="SettingsVariantBlockText"
+                   Visibility="{Binding VariantBlocked, Converter={StaticResource BoolToVis}}"
+                   Text="{Binding VariantBlockReason, Mode=OneWay}" />
 
         <TextBlock Text="精度（上級者）" Style="{StaticResource Head}" />
         <ComboBox AutomationProperties.AutomationId="SettingsPrecisionCombo"

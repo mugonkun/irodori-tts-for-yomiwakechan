@@ -381,7 +381,7 @@ public sealed class StatusViewModel : ObservableObject
     /// <para>
     /// <see cref="IsRunning"/> だけで判定していたころは、ready 待ちが期限切れになって
     /// <c>Failed</c> に落ちた個体（子プロセスは生きたままモデルを載せ続ける）に対して
-    /// 停止も起動も押せなくなった＝逃げ道がトレイの「終了」だけになる。
+    /// 停止も起動も押せなくなった＝逃げ道が窓を閉じる（＝アプリを終える・裁定 124）だけになる。
     /// </para>
     /// </summary>
     public bool CanStop => IsRunning || HasProcess;
@@ -504,7 +504,7 @@ public sealed class StatusViewModel : ObservableObject
         private set => SetProperty(ref _upstreamMismatch, value);
     }
 
-    /// <summary>状態の日本語（トレイと共用＝1 箇所で綴る）。</summary>
+    /// <summary>状態の日本語（<b>1 箇所で綴る</b>＝状態帯と窓題の元）。</summary>
     public static string StateLabel(ServerState state) => state switch
     {
         ServerState.Stopped => "停止",
@@ -722,11 +722,42 @@ public sealed class StatusViewModel : ObservableObject
         return lines.Count == 0 ? null : string.Join(Environment.NewLine, lines);
     }
 
-    /// <summary>stderr の 1 行（畳んでから入れる）。</summary>
+    /// <summary>
+    /// <b>檔にも残す口</b>（裁定 125 の C（1）＝<see cref="Services.Logging.LauncherLogFile.Append"/>）。
+    /// null＝檔には残さない（試験の既定）。<b>ここが投げても画面は止めない</b>
+    /// （<see cref="AppendLog"/> が包む）。
+    /// </summary>
+    public Action<string>? LogSink { get; set; }
+
+    /// <summary>
+    /// stderr の 1 行（畳んでから入れる）。
+    /// <para>
+    /// 末尾 20 行の環（<see cref="LogTail"/>）に足すのと同じ 1 行を
+    /// <see cref="LogSink"/> にも渡す＝<b>画面に出た物が檔にも残る</b>（裁定 125 の C（1））。
+    /// 窓が構えるより前の行（<c>LauncherComposition.DrainNotes</c>）も、窓が引き取った時点で
+    /// ここを通るので同じ檔に載る。
+    /// </para>
+    /// </summary>
     public void AppendLog(string? line)
     {
         _log.Append(line);
         LogText = _log.Text;
+
+        if (LogSink is not { } sink || string.IsNullOrWhiteSpace(line))
+        {
+            return;
+        }
+
+        try
+        {
+            sink(line);
+        }
+#pragma warning disable CA1031 // ログが書けないことで画面を止めない（檔の書き手も自分で握り潰す）
+        catch (Exception)
+#pragma warning restore CA1031
+        {
+            // 檔に残せなかった＝画面には出ている（LogTail は上で足し終えている）
+        }
     }
 
     public void ClearLog()

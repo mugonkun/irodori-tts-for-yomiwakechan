@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Mvvm;
+using IrodoriTtsYwk.Launcher.Services.Gpu;
 using IrodoriTtsYwk.Launcher.Services.Ledger;
 
 namespace IrodoriTtsYwk.Launcher.ViewModels;
@@ -170,6 +171,8 @@ public sealed class SettingsViewModel : ObservableObject
             _draft.Variant = value;
             RaisePropertyChanged();
             RaisePropertyChanged(nameof(VariantDisplayName));
+            RaisePropertyChanged(nameof(VariantBlocked));
+            RaisePropertyChanged(nameof(VariantBlockReason));
             RaisePropertyChanged(nameof(PrecisionEnabled));
             RaisePropertyChanged(nameof(PrecisionNote));
             RaisePropertyChanged(nameof(PrecomputeNote));
@@ -180,6 +183,17 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     public string VariantDisplayName => RuntimeVariants.DisplayName(_draft.Variant);
+
+    /// <summary>
+    /// <b>いま選んでいる変種はこのドライバでは動かない</b>（裁定 125 の B）＝
+    /// 真の間は「適用」が断る（<see cref="Apply"/>）。ドライバの版は<b>選んでいる GPU</b>から読む
+    /// （<c>nvidia-smi</c> 経路でだけ埋まる＝AMD 機・未列挙では読めず、読めなければ止めない）。
+    /// </summary>
+    public bool VariantBlocked => VariantBlockReason is not null;
+
+    /// <summary>断る理由の 1 行（通るなら null）。</summary>
+    public string? VariantBlockReason => VariantRecommendation.BlockReason(
+        VariantChoices, _draft.Variant, _selectedGpu?.DriverVersion);
 
     /// <summary>精度を触らせるか（Radeon 版は bf16 固定＝裁定 5・36）。</summary>
     public bool PrecisionEnabled => RuntimeVariants.AllowsPrecisionOverride(_draft.Variant);
@@ -557,6 +571,15 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        // **下限に届かない GPU 変種は書かせない**（裁定 125 の B）。書けてしまうと、次の
+        // 「サーバ起動」で門（VariantGate）が断るだけの設定が settings.json に残る
+        // （司令官の実射＝ドライバ 537.58 の機体に cu130 が刺さったまま）。cpu はいつでも通る。
+        if (VariantBlockReason is string blocked)
+        {
+            Message = blocked;
+            return;
+        }
+
         _draft.WarmupStages = [.. stages];
         _draft.WarmupVoices = [.. voices];
 
@@ -628,6 +651,9 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void UpdateDriverText()
     {
+        RaisePropertyChanged(nameof(VariantBlocked));
+        RaisePropertyChanged(nameof(VariantBlockReason));
+
         var driver = _selectedGpu?.DriverVersion;
         var verdict = _driverCheck.Check(_draft.Variant, driver);
         DriverText = verdict.Message
@@ -641,6 +667,8 @@ public sealed class SettingsViewModel : ObservableObject
         RaisePropertyChanged(nameof(Draft));
         RaisePropertyChanged(nameof(Variant));
         RaisePropertyChanged(nameof(VariantDisplayName));
+        RaisePropertyChanged(nameof(VariantBlocked));
+        RaisePropertyChanged(nameof(VariantBlockReason));
         RaisePropertyChanged(nameof(PrecisionChoice));
         RaisePropertyChanged(nameof(PrecisionEnabled));
         RaisePropertyChanged(nameof(PrecisionNote));

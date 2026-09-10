@@ -3,11 +3,16 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
-    <!-- トレイ常駐は System.Windows.Forms.NotifyIcon（依頼文の作法・WPF に相当物が無い） -->
-    <UseWindowsForms>true</UseWindowsForms>
+    <!--
+      **WinForms は引かない**（裁定 124・125 の A）＝トレイ常駐をやめたので
+      System.Windows.Forms.NotifyIcon を使う箇所が 1 つも無くなった。
+      UseWindowsForms=true と、WinForms 専用の ApplicationHighDpiMode（WPF の DPI 認識は
+      .NET の WPF が既定で PerMonitorV2＝この属性は WPF には効かない）を落とす。
+      発行は SelfContained の 1 exe なので、引かない分そのまま exe が小さくなる
+      （**配布樹の外**＝installer-build の A-1 の記録値は動かない＝裁定 51）。
+    -->
     <RootNamespace>IrodoriTtsYwk.Launcher</RootNamespace>
     <AssemblyName>IrodoriTtsYwk.Launcher</AssemblyName>
-    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
 
   <!--

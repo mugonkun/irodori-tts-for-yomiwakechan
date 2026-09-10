@@ -89,9 +89,6 @@ public static class ReleaseFlavors
     /// <summary>版に依らないアプリの名（表示名の幹）。</summary>
     public const string AppBaseName = "irodori-TTS for 読み分けちゃん";
 
-    /// <summary>トレイの吹き出し用の短い幹（Win32 の 63 字の枠に収めるため）。</summary>
-    public const string TrayBaseName = "irodori-TTS";
-
     /// <summary>版の名札（<c>CUDA 版</c>／<c>ROCm 版</c>・純関数）。</summary>
     public static string FlavorLabel(ReleaseFlavor flavor) => flavor switch
     {
@@ -112,16 +109,8 @@ public static class ReleaseFlavors
     /// <summary>初回取得ウィザードの窓題。</summary>
     public static string WizardTitle(ReleaseFlavor flavor) => Decorate("初回取得", flavor);
 
-    /// <summary>
-    /// トレイの吹き出し（純関数＝<b>63 字の枠</b>を試験で釘付けするためにここに置く）。
-    /// 例＝<c>irodori-TTS（ROCm 版） v0.1.0／待機</c>。
-    /// <para>
-    /// 版の名札を足す前の「<c>irodori-TTS v0.1.0／待機</c>」と同じく、版と版数の間は半角空白で切る
-    /// （両版×全 ServerState の最長でも 30 字＝63 字の枠に 33 字の余りがあるので詰める理由が無い）。
-    /// </para>
-    /// </summary>
-    public static string TrayText(ReleaseFlavor flavor, string versionDisplay, string stateLabel) =>
-        Decorate(TrayBaseName, flavor) + " " + versionDisplay + "／" + stateLabel;
+    // トレイの吹き出し（TrayBaseName／TrayText）は裁定 124 で消えた＝常駐しないので
+    // NotifyIcon も 63 字の枠も無い。状態の日本語は StatusViewModel.StateLabel が 1 箇所で綴る。
 
     /// <summary>配布樹の <c>ledger/</c> を読んで版を決める（薄い殻＝読めなければ CUDA 版）。</summary>
     public static ReleaseFlavor DetectFrom(string? ledgerDir) =>

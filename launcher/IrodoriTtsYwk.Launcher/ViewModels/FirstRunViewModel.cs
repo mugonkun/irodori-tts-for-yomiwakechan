@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Mvvm;
+using IrodoriTtsYwk.Launcher.Services.Gpu;
 using IrodoriTtsYwk.Launcher.Services.Ledger;
 
 namespace IrodoriTtsYwk.Launcher.ViewModels;
@@ -79,6 +80,12 @@ public sealed class FirstRunViewModel : ObservableObject
     private bool _lastStepOk = true;
     private bool _skipVcRedist;
 
+    /// <summary>ドライバの検分（裁定 125 の B）。既定＝まだ何も見ていない。</summary>
+    private DriverProbe _probe = DriverProbe.Unknown;
+
+    /// <summary>利用者が変種を<b>自分で選んだ</b>か（真なら勧めで上書きしない）。</summary>
+    private bool _variantChosen;
+
     public FirstRunViewModel(
         AppPaths paths,
         LauncherSettings settings,
@@ -125,6 +132,62 @@ public sealed class FirstRunViewModel : ObservableObject
         LoadNotices();
         UpdateVariantNotes();
     }
+
+    /// <summary>
+    /// <b>ドライバの検分の手</b>（裁定 125 の B）＝<c>nvidia-smi</c>／torch 列挙を 1 度撃って
+    /// <see cref="DriverProbe"/> を返す。null＝撃たない（試験・列挙系が差さっていない配布）。
+    /// <para>
+    /// 窓が <see cref="RefreshDriverAsync"/> を呼ぶ。ここが <see cref="IGpuEnumerator"/> を
+    /// 名前で持たないのは、ViewModel を起動席の檔に縛らないため（<see cref="ModelFetcher"/> と同じ形）。
+    /// </para>
+    /// </summary>
+    public Func<CancellationToken, Task<DriverProbe>>? DriverProbeAsync { get; set; }
+
+    /// <summary>
+    /// ドライバを見て、<b>勧める変種を選び直す</b>（裁定 125 の B）。
+    /// <para>
+    /// <b>投げない</b>＝列挙が落ちても「判らない」（<see cref="DriverProbe.Unknown"/> のまま）で進む。
+    /// <b>利用者が既に自分で選んでいれば上書きしない</b>（裁定 4＝自動切替はしない。勧めるのは
+    /// <b>まだ選んでいない初期値</b>だけで、選び直す口は常に開いている）。
+    /// </para>
+    /// </summary>
+    public async Task RefreshDriverAsync(CancellationToken cancellationToken = default)
+    {
+        if (DriverProbeAsync is not { } probe)
+        {
+            return;
+        }
+
+        try
+        {
+            _probe = await probe(cancellationToken).ConfigureAwait(true) ?? DriverProbe.Unknown;
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+#pragma warning disable CA1031 // 列挙の失敗でウィザードを止めない（理由は下の 1 行に出る）
+        catch (Exception)
+#pragma warning restore CA1031
+        {
+            _probe = DriverProbe.Unknown;
+        }
+
+        if (!_variantChosen)
+        {
+            var recommended = VariantRecommendation.Recommend(VariantChoices, _probe);
+            if (VariantChoices.Contains(recommended, StringComparer.Ordinal)
+                && !string.Equals(recommended, _variant, StringComparison.Ordinal))
+            {
+                SetProperty(ref _variant, recommended, nameof(Variant));
+            }
+        }
+
+        UpdateVariantNotes();
+    }
+
+    /// <summary>いま見えているドライバの版（読めていなければ null）。</summary>
+    public string? DriverVersion => _probe.DriverVersion;
 
     public ReleaseFlavor Flavor { get; }
 
@@ -246,9 +309,25 @@ public sealed class FirstRunViewModel : ObservableObject
                 return;
             }
 
+            // 利用者が自分で選んだ＝以後は勧めで上書きしない（裁定 4・125 の B）。
+            _variantChosen = true;
             UpdateVariantNotes();
         }
     }
+
+    /// <summary>
+    /// <b>いま選んでいる変種はこのドライバでは動かない</b>（裁定 125 の B）＝
+    /// 真の間は「この構成で取得を始める」を押せない（<see cref="CanGoNext"/>）。
+    /// <c>cpu</c> はいつでも偽（GPU を見ない）。ドライバの版が読めない機体も偽＝止めない。
+    /// </summary>
+    public bool VariantBlocked => VariantBlockReason is not null;
+
+    /// <summary>
+    /// 押せない理由の 1 行（押せるなら null）。
+    /// 例＝<c>このドライバ（537.58）では CUDA 13.0 は動きません（下限 580.00）。CUDA 12.6 を選んでください。</c>
+    /// </summary>
+    public string? VariantBlockReason =>
+        VariantRecommendation.BlockReason(VariantChoices, _variant, _probe.DriverVersion);
 
     public string VariantDisplayName => RuntimeVariants.DisplayName(_variant);
 
@@ -346,6 +425,13 @@ public sealed class FirstRunViewModel : ObservableObject
                 break;
 
             case FirstRunStep.Variant:
+                // 押せないはずだが、束縛の外（試験・台本）から呼ばれても通さない（裁定 125 の B）。
+                if (VariantBlockReason is string blocked)
+                {
+                    Message = blocked;
+                    return;
+                }
+
                 _settings.Variant = _variant;
                 _store.Save(_settings);
                 Record("変種＝" + RuntimeVariants.DisplayName(_variant) + " を選びました。");
@@ -479,8 +565,18 @@ public sealed class FirstRunViewModel : ObservableObject
     /// 「次へ」を押せるか。通知の段は<b>通知文を読み込めていて</b>、かつ同意に印が要る
     /// （裁定 46＝檔が無ければ先へ進めない・<c>acceptedNoticesSha256</c> に null を残さない）。
     /// </summary>
+    /// <summary>
+    /// 「次へ」を押せるか。
+    /// <para>
+    /// 通知の段＝同意の印と、読めた通知文の sha256 が要る（裁定 46）。
+    /// <b>変種の段＝下限に届かないドライバの GPU 変種は押せない</b>（裁定 125 の B）＝
+    /// 数 GB 落としてから <see cref="Services.Gpu.VariantGate"/> に断られる形を作らない。
+    /// </para>
+    /// </summary>
     private bool CanGoNext() =>
-        !IsBusy && (Step is not FirstRunStep.Notices || (Accepted && CanAcceptNotices));
+        !IsBusy
+        && (Step is not FirstRunStep.Notices || (Accepted && CanAcceptNotices))
+        && (Step is not FirstRunStep.Variant || !VariantBlocked);
 
     private void Record(string line)
     {
@@ -539,9 +635,18 @@ public sealed class FirstRunViewModel : ObservableObject
     {
         RaisePropertyChanged(nameof(VariantDisplayName));
         RaisePropertyChanged(nameof(VariantNote));
+        RaisePropertyChanged(nameof(DriverVersion));
+        RaisePropertyChanged(nameof(VariantBlocked));
+        RaisePropertyChanged(nameof(VariantBlockReason));
+        NextCommand.RaiseCanExecuteChanged();
 
-        var verdict = _driverCheck.Check(_variant, null);
-        DriverText = verdict.Message;
+        // ドライバの版は**検分で読めた物**を渡す（裁定 125 の B）。1 巡目はここが常に null で、
+        // 検査は「読めませんでした」しか言えず、下限に届かない変種でも「始める」が押せた
+        // （司令官の実射＝RTX 3090・537.58・cu130 のまま取得が最後まで通り、起動で門に断られた）。
+        var verdict = _driverCheck.Check(_variant, _probe.DriverVersion);
+        DriverText = _probe.DriverVersion is null && _probe.Probed
+            ? verdict.Message + " " + VariantRecommendation.UnknownDriverNote
+            : verdict.Message;
 
         // 「必要な空き」は**実際の空きと突き合わせて**から出す（是正・便 D（3）の 3 巡目）。
         // 突き合わせていなかったころは、空きが足りない機体が 4.8 GiB を落とし切ってから

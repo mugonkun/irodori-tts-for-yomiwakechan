@@ -9,6 +9,7 @@ using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Mvvm;
 using IrodoriTtsYwk.Launcher.Services.Gpu;
 using IrodoriTtsYwk.Launcher.Services.Ledger;
+using IrodoriTtsYwk.Launcher.Services.Logging;
 using IrodoriTtsYwk.Launcher.Services.Models;
 using IrodoriTtsYwk.Launcher.Services.Server;
 
@@ -81,6 +82,13 @@ public sealed class MainViewModel : ObservableObject
             StopServerAsync,
             RebuildRuntimeAsync,
             CancelRebuildRuntime);
+
+        // **画面に出た 1 行を檔にも残す**（裁定 125 の C（1））＝<データ樹>\logs\launcher-<日>.log。
+        // 司令官の実射（v1.0.2 の清潔導入）では logs\ が空のままで、失敗の理由を後から読む路が
+        // 1 本も無かった。書き手は投げない（LauncherLogFile が握り潰す）。
+        LogFile = new LauncherLogFile(paths.LogDir);
+        Status.LogSink = LogFile.Append;
+
         Status.ApplySettings(settings);
 
         Voices = new VoicesViewModel(
@@ -146,6 +154,9 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public StatusViewModel Status { get; }
+
+    /// <summary>状態帯の 1 行を落とす檔（裁定 125 の C（1））。路は <c>AppPaths.LogDir</c> の下。</summary>
+    public LauncherLogFile LogFile { get; }
 
     public VoicesViewModel Voices { get; }
 
@@ -217,6 +228,29 @@ public sealed class MainViewModel : ObservableObject
             static () => AppServices.Downloader,
             static () => AppServices.RuntimeInstaller,
             StartServerAsync);
+
+        // **ドライバを見てから変種を勧める**（裁定 125 の B）＝窓が RefreshDriverAsync を呼ぶ。
+        // 初回取得の時点では実行系がまだ無いので、読めるのは nvidia-smi 経路（＝NVIDIA 機の
+        // driver_version）だけである。AMD 機・nvidia-smi の無い機体では「読めなかった」に落ち、
+        // 止めずに 1 行だけ名乗る。
+        vm.DriverProbeAsync = async token =>
+        {
+            if (AppServices.GpuEnumerator is not { } enumerator)
+            {
+                return DriverProbe.Unknown;
+            }
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(TimeSpan.FromSeconds(6));
+            var gpus = await enumerator
+                .EnumerateAsync(
+                    new GpuEnumerationRequest(paths.ResolvePythonExe(vm.Variant), TimeSpan.FromSeconds(5)),
+                    cts.Token)
+                .ConfigureAwait(true);
+
+            return new DriverProbe(
+                GpuEnumerator.DriverVersionOf(gpus.Gpus), gpus.Gpus.Count, Probed: true);
+        };
 
         // モデル＝変種の python.exe で server/ywk_fetch_models.py を子プロセス実行する
         // （取得席の ModelFetcher。展開が済んだ後の段なので python.exe はここで解決できる）。
@@ -358,6 +392,9 @@ public sealed class MainViewModel : ObservableObject
         // 1 つも無く、ドライバ 500.00 でも通っていた）。だから 3 つとも載せる。
         string? driverVersion = null;
 
+        // **この起動で実際に使う GPU**（裁定 125 の C（3）＝settings に UUID が無ければ焼く）。
+        GpuInfo? resolvedGpu = null;
+
         if (RuntimeVariants.UsesGpu(_settings.Variant) && AppServices.GpuEnumerator is { } enumerator)
         {
             try
@@ -370,6 +407,12 @@ public sealed class MainViewModel : ObservableObject
 
                 driverVersion = GpuEnumerator.DriverVersionOf(gpus.Gpus);
                 gpuIndex = GpuResolver.ResolveIndex(gpus.Gpus, _settings.GpuUuid);
+
+                // 焼くのは「いま解決した個体」＝保存した UUID が居ればそれ、
+                // まだ 1 度も選んでいなければ列挙の先頭（＝番号 0 で起こす個体）。
+                resolvedGpu = GpuResolver.Find(gpus.Gpus, _settings.GpuUuid)
+                    ?? (string.IsNullOrWhiteSpace(_settings.GpuUuid) ? gpus.Gpus.FirstOrDefault() : null);
+
                 if (gpuIndex is null && !string.IsNullOrWhiteSpace(_settings.GpuUuid))
                 {
                     var notFound = GpuResolver.NotFoundMessage(_settings.GpuName, _settings.GpuUuid);
@@ -393,7 +436,7 @@ public sealed class MainViewModel : ObservableObject
             catch (Exception ex)
             {
                 // **列挙が落ちても起動の判断は続ける**（是正・便 D（3）＝§20-5 ⑴）。
-                // ここで漏らすと、トレイの「サーバ起動」（`_ = StartServerAsync()`）では
+                // ここで漏らすと、投げ捨てで撃つ「サーバ起動」（`_ = StartServerAsync()`）では
                 // 誰も捕らずに消える＝押しても何も起きない。門は「読めなかった検分」として
                 // 扱えるので（cu130 は起こさない・cu126／rocm は注意 1 行）、理由を残して先へ進む。
                 Status.AppendLog("GPU の列挙が落ちました：" + AsyncRelayCommand.Describe(ex));
@@ -440,11 +483,41 @@ public sealed class MainViewModel : ObservableObject
 
         if (result.Ok)
         {
+            PersistResolvedGpu(resolvedGpu);
             AttachWrapper();
             await Voices.RefreshAsync().ConfigureAwait(true);
         }
 
         return result.Ok;
+    }
+
+    /// <summary>
+    /// <b>起きた個体が実際に掴んだ GPU を設定へ焼く</b>（裁定 125 の C（3））。
+    /// <para>
+    /// <b>なぜ要るか</b>（司令官の実射・2026-09-10＝v1.0.2 の清潔導入）＝設定頁を 1 度も開かずに
+    /// ウィザードだけで通した機体では <c>gpuUuid</c>／<c>gpuName</c> が <c>null</c> のまま残った。
+    /// 状態帯には GPU が出る（走っている個体が名乗る）のに設定には無い＝⑴ 2 台目の GPU を挿した日に
+    /// 「前回の GPU」が判らない ⑵ 引き渡しの settings.json から機体が読み取れない。
+    /// </para>
+    /// <para>
+    /// <b>上書きはしない</b>＝既に UUID が入っている設定には触らない（利用者の選択が正本）。
+    /// <b>書くのは起動が通った回だけ</b>＝断られた変種の GPU を焼かない。
+    /// </para>
+    /// </summary>
+    private void PersistResolvedGpu(GpuInfo? gpu)
+    {
+        if (gpu is null
+            || !RuntimeVariants.UsesGpu(_settings.Variant)
+            || !string.IsNullOrWhiteSpace(_settings.GpuUuid))
+        {
+            return;
+        }
+
+        Services.Settings.SettingsDefaults.ApplyGpu(_settings, gpu);
+        _store.Save(_settings);
+        Status.ApplySettings(_settings);
+        Settings.SyncFromLive();
+        Status.AppendLog("この起動で使う GPU を設定に覚えました（" + gpu.Label + "）。");
     }
 
     /// <summary>

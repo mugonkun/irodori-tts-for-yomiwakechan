@@ -32,6 +32,17 @@ public partial class FirstRunWizard : Window
         // 「入れる／飛ばす」の 2 択（裁定 87 ⑷）＝System32 の msvcp140.dll を確かめられなかった
         // ときだけ出る。窓が差す手なので ViewModel は WPF の型に触れない（§12-2 ⑴）。
         model.AskVcRedist = AskVcRedist;
+
+        // **ドライバを見てから変種を勧める**（裁定 125 の B）＝窓が開いたところで 1 度だけ撃つ。
+        // 待たない（nvidia-smi は 0.04 s だが、無い機体では期限まで掛かる）＝読めた時点で
+        // 変種の選びと「この構成で取得を始める」の可否が束縛経由で入れ替わる。
+        Loaded += OnLoadedProbeDriver;
+    }
+
+    private void OnLoadedProbeDriver(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnLoadedProbeDriver;
+        _ = _model.RefreshDriverAsync();
     }
 
     /// <summary>

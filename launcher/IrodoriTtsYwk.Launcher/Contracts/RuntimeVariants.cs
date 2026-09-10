@@ -93,4 +93,20 @@ public static class RuntimeVariants
         RocmGfx1151 => "Radeon gfx1151（未保障・bf16 固定）",
         _ => variant,
     };
+
+    /// <summary>
+    /// <b>文中に差す短い名</b>（括弧の註を落とした形＝裁定 125 の B）。
+    /// <see cref="DisplayName"/> は括弧に下限や注記を抱えているので、
+    /// 「このドライバ（537.58）では <b>CUDA 13.0</b> は動きません」のような 1 行にはそのまま置けない。
+    /// <b>名は 1 箇所で綴る</b>ので、短い形もここに置く。
+    /// </summary>
+    public static string ShortDisplayName(string variant) => variant switch
+    {
+        Cu130 => "CUDA 13.0",
+        Cu126 => "CUDA 12.6",
+        Cpu => "CPU",
+        RocmGfx1151 => "Radeon gfx1151",
+        CudaLabel => "CUDA 版",
+        _ => variant,
+    };
 }

@@ -18,8 +18,9 @@ namespace IrodoriTtsYwk.Launcher.Views;
 /// uvicorn の access log も、窓と状態機械の二重の書き手も消える。
 /// </para>
 /// <para>
-/// 判断も文言も <see cref="MainViewModel"/> 以下に在る。窓の × は閉じずにトレイへ隠す
-/// （常駐が主・裁定 6）。
+/// 判断も文言も <see cref="MainViewModel"/> 以下に在る。<b>窓の × はアプリを終える</b>
+/// （裁定 124＝裁定 6 の反転）＝閉じれば <c>App.OnExit</c> が wrapper をツリー kill して VRAM を返す。
+/// 隠す枝は無い（<see cref="Services.Server.ShutdownSequence.WindowCloseHidesToTray"/>）。
 /// </para>
 /// </summary>
 public partial class MainWindow : Window
@@ -81,19 +82,19 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
     }
 
-    /// <summary>トレイの「サーバ起動」から呼ばれる。</summary>
-    public void RequestServerStart() => _ = _model.StartServerAsync();
-
+    /// <summary>
+    /// 窓を閉じる＝<b>アプリを終える</b>（裁定 124）。
+    /// <para>
+    /// <b>ここでは取り消さない</b>（<c>e.Cancel</c> を真にしない・隠さない）＝鳴っている音を止め、
+    /// 見張りの購読を外して閉じる。閉じた窓が最後の 1 枚なら
+    /// （<c>App.xaml</c> の <c>ShutdownMode=OnLastWindowClose</c>）<c>App.OnExit</c> が続き、
+    /// そこで wrapper をツリー kill し切ってからプロセスが消える＝VRAM が返る
+    /// （<see cref="Services.Server.ShutdownSequence"/>）。起動中・読込中・暖機中に閉じても同じ。
+    /// </para>
+    /// </summary>
     protected override void OnClosing(CancelEventArgs e)
     {
-        // 常駐が主（裁定 6）＝窓の × は隠すだけ。終わるのはトレイの「終了」。
-        if (!e.Cancel && Application.Current is App)
-        {
-            e.Cancel = true;
-            _player.Stop();
-            Hide();
-            return;
-        }
+        _player.Stop();
 
         AppServices.Server.StateChanged -= OnServerStateChanged;
         AppServices.Server.LogLine -= OnServerLogLine;
