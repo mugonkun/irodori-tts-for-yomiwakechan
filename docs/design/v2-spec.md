@@ -299,9 +299,12 @@
 | E3 | 同梱の声の差分が在る（§11 ⑴） | **最初から入っている声が新しくなりました。** | 新しい版で録り直された声があります（**<n> 名**）。 | `[取り込む]`（押すと数秒。押さなくても使える） |
 | E4 | GPU の告知（`VariantGate` の `notices`・未実測の帯ほか） | **帯には出さない。**詳しい状態の**畳みの外**に 1 行（「動かない」に直結する告知だけ） | | |
 
-**「ログを開く」**＝`explorer.exe /select,%LOCALAPPDATA%\irodori-tts-ywk\logs\launcher-<年月日>.log`
+**「ログを開く」**＝`explorer.exe /select,<データ樹>\logs\launcher-<年月日>.log`
+＝**データ樹は版ごと**（RTX（CUDA）＝`%LOCALAPPDATA%\irodori-tts-ywk-cuda\`・Radeon（ROCm）＝
+`…\irodori-tts-ywk-radeon\`・`decisions.md` 133＝§11-8）。路は必ず `AppPaths.LogDir` から取り、**綴りを直書きしない**。
 （在り処ごと開く＝関連付けの無い機体でも必ず開く）。檔が無い回は「まだ記録がありません。」を出し、
-**開けない釦は出さない**。脇に薄字「うまくいかないときは、このファイルを添えてお知らせください。」
+**開けない釦は出さない**。脇に薄字「うまくいかないときは、このファイルを添えて X の @yomiwakechan までお知らせください。」
+（`decisions.md` 131・文は `v2-copy.md` §3-1 が正）
 **ログの中身の綴りは 1 字も変えない。**
 
 ### 2-1b 3 部品の作り方（実装の形）
@@ -439,7 +442,7 @@
 | 4 | **声の下ごしらえ** | 声を追加したときに、下ごしらえしておく（次から少し速くなります） | `SettingsPrecomputeCheck`・`SettingsPrecomputeNoteText` |
 | 5 | **読み上げの動作** | 〔いったん止める〕〔もう一度動かす〕〔はじめの準備をやり直す〕（**id は 1 字も替えない**＝`decisions.md` 130 Q2） | `MainStopButton`・`MainStartButton`・`MainFirstRunButton` |
 | 6 | **更新のとき、新しくなった分だけ取り直す** | チェック（既定 ON・§11） | `SettingsDifferentialUpdateCheck`（**新設**） |
-| 7 | **ファイルの場所** | データ／アプリ ＋〔フォルダを開く〕 | `SettingsDataDirText`・`SettingsAppDirText`（`SettingsModelDirText`・`SettingsRuntimeRootText` は「データ」に畳む・id 据え置き） |
+| 7 | **ファイルの場所** | データ／アプリ ＋〔フォルダを開く〕　※ **版ごとに別**（RTX（CUDA）＝`%LOCALAPPDATA%\irodori-tts-ywk-cuda\`／Radeon（ROCm）＝`…\irodori-tts-ywk-radeon\`＝`decisions.md` 133）。**場所は変えられません。** | `SettingsDataDirText`・`SettingsAppDirText`（`SettingsModelDirText`・`SettingsRuntimeRootText` は「データ」に畳む・id 据え置き） |
 | 8 | **一時ファイル** | 〔消す（◯ GB）〕 | `SettingsClearCacheButton`・`SettingsCacheMessageText` |
 | 9 | **記録** | 〔ログを開く〕〔報告用のログを保存〕 | `SettingsOpenLogButton`（**新設**） |
 | 10 | **変えた設定は、次にアプリを開いたときから効きます。** | 〔適用〕〔取り消し〕 | `SettingsApplyButton`・`SettingsRevertButton`・`SettingsMessageText` |
@@ -755,11 +758,17 @@ footer    非公式の断り・音の印
 
 ### 5-1 `docs/guide.md`（新設・利用者向け）
 
-`docs/install.md` は**作る側・保守用として据え置き**（1 字も替えない・**配布物からは外す**・利用者に指さない）。
+`docs/install.md` は**作る側・保守用として据え置き**（本文は 1 字も替えない・**配布物からは外す**・利用者に指さない。
+冒頭に「これは作る側の帳面である／利用者は `docs/guide.md` を読む」の 2 行だけを足した）。
 `guide.md` は**配布物にも入れる**（About の `[使い方を見る]` から開く）。画像は公式ページと共用。
 
+> **全文の正本は `v2-copy.md` §6 である。**この §5-1 は**節の並び（骨）**を決めるだけで、
+> 実際に配る `docs/guide.md` は §6 の全文から起こした（**作成済み**）。片方だけ直さないこと。
+> 裁定 133 で 3 件が増えている＝⑴ 2 つの版は別のアプリ（設定も声も別・同時には開けない）
+> ⑵ ファイルの場所（版ごと）⑶ 消したときに消える物と、**触れない物**（利用者が選んだ元の wav）。
+
 ```markdown
-# irodori-TTS for 読み分けちゃん 使い方ガイド
+# irodori-TTS for 読み分けちゃん 使い方
 
 ## 1. 入れる
 1. 公式ページから、お使いのパソコンに合う方を落とします。
@@ -813,12 +822,18 @@ footer    非公式の断り・音の印
 | 声が出ない・途中で切れる | 「発話テスト」の品質を「はやい」にしてお試しください。 |
 | それでも直らない | 帯の「ログを開く」を押すとファイルの場所が開きます。そのファイルを添えて、X の @yomiwakechan までお知らせください。 |
 
-## 8. 消す
-Windows の「設定 → アプリ」から消せます。
-このアプリが置いていた物（ダウンロードした一式・取り込んだ声・設定・記録）は**すべて一緒に消えます**。何も聞かれません。
-**声を追加するときに選んだ、あなたの音声ファイルには触れません。**そのまま残ります。
+## 8. ファイルの場所
+版ごとに別の場所です（RTX（CUDA）＝`%LOCALAPPDATA%\irodori-tts-ywk-cuda\`・
+Radeon（ROCm）＝`%LOCALAPPDATA%\irodori-tts-ywk-radeon\`）。設定の「詳細」から開けます。場所は変えられません。
 
-## 9. このアプリについて
+## 9. 消す
+Windows の「設定 → アプリ」から消せます。
+そのアプリが自分の場所に置いていた物（ダウンロードした一式・取り込んだ声・設定・記録）は
+**すべて一緒に消えます**。何も聞かれません。
+**声を追加するときに選んだ、あなたの音声ファイルには触れません。**そのまま残ります。
+両方の版を入れている場合、消えるのは消した方だけです。
+
+## 10. このアプリについて
 非公式のアプリです。もとになっている Irodori-TTS の作者（Aratako 氏）とは関係がありません。
 うまく動かないときも、Aratako 氏へは問い合わせないでください。
 出した音声には、AI が作った音であるという目印（人には聞こえません）が入ります。外す方法はありません。
@@ -1271,8 +1286,14 @@ private static bool CopyReference(VoiceStore store, PresetVoice preset)
 **足す物＝展開に使った台帳そのものの写し 1 檔**
 
 ```
-%LOCALAPPDATA%\irodori-tts-ywk\runtime\<variant>\.ledger.json    ← データ樹の中（配布樹には 1 檔も書かない）
+<データ樹>\runtime\<variant>\.ledger.json    ← データ樹の中（配布樹には 1 檔も書かない）
+
+  RTX（CUDA）  ＝ %LOCALAPPDATA%\irodori-tts-ywk-cuda\runtime\<variant>\.ledger.json
+  Radeon（ROCm）＝ %LOCALAPPDATA%\irodori-tts-ywk-radeon\runtime\<variant>\.ledger.json
 ```
+
+**データ樹は版ごとである**（`decisions.md` 133＝§11-8）。路は `AppPaths` から取り、**綴りを直書きしない**。
+2 つの版が同じ機体に入っていても、`.ledger.json` は互いに見えない＝**差分の判定も版ごとに独立する**。
 
 展開が通った直後、`RuntimeStamp.Burn` と**同じ回**で置く（片方だけ残さない）。
 
@@ -1374,7 +1395,7 @@ huggingface_hub の cache は **`blobs/<etag>` で中身を共有する**ので�
 | `Services/Ledger/RuntimeStamp.cs` | `.ledger.json` の置き換えを `Burn` と同じ回で。`RuntimeDiff.Plan` を新設 |
 | `Services/Models/AcquisitionCheck.cs` | 触らない。`ModelDiff.Plan`（**見積り専用の純関数**）を隣に新設。取得の道（`ywk_fetch_models.py` の blob 共有）は 1 行も替えない |
 | 利用者データの `voices.ywk.json` | 欄を 1 つ**足す**（`preset_md5`）。既存の欄は 1 つも変えない |
-| データ樹 | `runtime\<variant>\.ledger.json` を 1 檔**足す** |
+| データ樹（**版ごと**＝§11-8） | `<データ樹>\runtime\<variant>\.ledger.json` を 1 檔**足す**（路は `AppPaths` から取る） |
 | `SettingsView` | チェックを 1 つ足す（`SettingsDifferentialUpdateCheck`＝詳細の 6 行目・§2-5） |
 | `StatusView` | 〔古い声のデータを消す〕を〔動かすための一式を新しくする〕の隣に置く（**設定の詳細は 10 行で埋まっている**） |
 
@@ -1385,3 +1406,39 @@ huggingface_hub の cache は **`blobs/<etag>` で中身を共有する**ので�
 | 配布樹（アプリの場所） | **1 檔も書かない**（Program Files でも壊れない・`decisions.md` の per-user 導入の規律） |
 | `AppId`・導入先・資産の檔名 | 上書き更新の路が壊れる |
 | 利用者が追加した声・`settings.json`・`logs/` | **1 バイトも触らない** |
+| 声を追加するときに利用者が選んだ**元の wav** | **置き場の外にある利用者の檔**（`decisions.md` 133 ⑵）。アプリは `voices\refs\` へ写しを取り込んで使う。差分でも削除でも**触らない** |
+
+### 11-8 置き場は版ごと（`decisions.md` 133）― 差分の前に 1 度だけ走る移送
+
+**RTX（CUDA）と Radeon（ROCm）は別のアプリである**（`decisions.md` 109 で分けた線を徹底＝133 ⑶）。
+**データ樹も設定も声も共有しない。**§11 の差分は**この版の樹の中だけ**を見る。
+
+| 何 | いま（v1.x） | v2.0 |
+|---|---|---|
+| データ樹の既定 | `%LOCALAPPDATA%\irodori-tts-ywk\`（**両版で共有**・`AppPaths.DataDirName` の定数 1 つ） | **版ごと**＝`…\irodori-tts-ywk-cuda\`／`…\irodori-tts-ywk-radeon\`（既定を `ReleaseFlavor` で分ける。`settings.json` の `dataDir`／env `YWK_LAUNCHER_DATA_DIR` の明示指定は**従来どおり優先**） |
+| 単一起動の錠 | `Local\irodori-tts-ywk-launcher`（`App.xaml.cs:34`）と、窓を前に出す合図の口 `Local\irodori-tts-ywk-launcher-activate`（`:37`）＝**両方とも両版で 1 つ** | **どちらも版ごと**（別アプリなので互いを起こし直さない）。**錠だけ割って合図を残さない**＝合図は `AutoReset` の 1 本なので、共有のままだと一方の 2 個目の起動が**もう一方の窓**を前に出す。`.iss` の `AppMutex` も錠と同じ形に割る |
+| 2 つ同時に開いたとき | — | **後から起きた側がつなぎ口の塞がりで止まる**＝帯は §2-1a の **C1／D1**（`18088` を出す唯一の面・憲章 原則 5 の例外。`v2-copy.md` §3-2 では **E-05**） |
+| 旧い共有樹 | — | **初回の v2.0 起動で版の樹へ移す**（同じボリュームなら改名・両版が入っていた機体は写す）。移送は**差分の判定より前**に走る（順が逆だと「まっさらな樹」と読んで丸ごと落とし直す） |
+| 削除 | 問いが 2 つ・既定は残す | **その版の樹を丸ごと消す。問わない**（`decisions.md` 132／133 ⑴） |
+
+**削除の規則（`decisions.md` 133 ⑴⑵）**
+- **消すのは、そのアプリが自分の置き場に持っている物すべて**＝ダウンロードした一式・モデル・
+  取り込んだ声の写し（`voices\refs\`）・下ごしらえ（`.pt`）・`settings.json`・`logs\`・取得キャッシュ・MIOpen の db。
+- **置き場の外には 1 檔も触れない。** 声を追加するときに利用者が選んだ元の wav は**利用者の檔**であり、そのまま残る。
+- **問いは 1 つも出さない**（132 の「追加した声と設定を消しますか」も廃止）。無人（`/SUPPRESSMSGBOXES`）でも同じ。
+- **もう一方の版の樹には触れない**（共有が無くなったので「道連れ」の場合分けごと消える＝旧 `ben-e` §5-4 の規則は廃止）。
+- **旧い共有樹 `%LOCALAPPDATA%\irodori-tts-ywk\` も、もう一方の版が入っていないときだけ一緒に消す。**
+  移送は**初回の v2.0 起動**でしか走らないので、⑴ v1.1.0 に上書き導入して**一度も開かずに**撤去した機体、
+  ⑵ 下の ⑶（移送に失敗して旧樹を残した回）の機体では、消さないかぎり **約 8 GB が丸ごと居残る**＝
+  裁定 132 が起こされた当の状態。もう一方の版が入っている回は**触らない**（向こうがまだ移送で要る）。
+  判定は `.iss` に既にある `OtherFlavorKey` の `RegKeyExists`（`installer/irodori-tts-ywk.iss:418`）を使う。
+
+**この §11 への効き**＝⑴ `.ledger.json`・`preset_md5`・`HF_HOME` はすべて**版の樹の中**にあり、
+2 つの版は互いの差分を見ない（同じ機体で 2 度落とすことになるが、**別アプリだから正しい**）。
+⑵ 移送を通った回の樹は「v1.x が置いた樹」なので、§11-3 の**`.ledger.json` 不在の枝**（その 1 回だけ丸ごと）と
+§11-2 の**枝 e**（`preset_md5` の無い台帳）がそのまま効く＝**移送のために新しい枝を足さない**。
+⑶ 移送に失敗した回は**移送しなかったことにして**（旧い樹を消さない）新しい樹で始める＝
+利用者の声を失わない。旧い樹が残ったことはログに 1 行だけ残し、画面には出さない。
+
+> **実装の落とし所は `v2-plan.md` 段 E-3**（`AppPaths` の既定・Mutex・移送・`.iss` の削除）。
+> **路の綴りを増やさない**＝画面もログも `AppPaths` の値を通す（直書きの `irodori-tts-ywk` は 0 箇所にする）。

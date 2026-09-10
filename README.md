@@ -1,60 +1,70 @@
-# irodori-TTS for 読み分けちゃん2（配布版 irodori-TTS）
+# irodori-TTS for 読み分けちゃん
 
-> **これは非公式のソフトウェアです。上流 Irodori-TTS / Irodori-TTS-Server の作者である Aratako 氏とは
-> 一切関係がありません。**上流へ問い合わせないでください。不具合の報告先は本リポジトリです。
-> 上流のコードは `upstream/`（submodule）で版を固定して**無改変**のまま持ち、必要な差分は `patches/`
-> にだけ置きます（正典＝`decisions.md` 裁定 3）。
+**Windows のパソコンに入れて開くと、書いた文をその場でしゃべってくれるアプリです。**
+Python も pip も、黒い画面も要りません。同梱の 12 人の声から選んで、文を打って、鳴らす。それだけの道具です。
+配信ソフト「読み分けちゃん2」を使っている人は、このアプリを開いておけばコメントの読み上げに使えます。
+
+> **無料・非公式のソフトです。**もとになった音声合成 Irodori-TTS の作者である Aratako 氏とは関係がありません。
+> **うまく動かないときも、Aratako 氏へは問い合わせないでください。**
+> 連絡先は X の **[@yomiwakechan](https://x.com/yomiwakechan)** です。
 
 ---
 
-## 0. 最新版を落とす（配布ページ）
+## 0. 使う人はここから
 
-**配布ページ（版の数字を含まない固定 URL・つねに最新版）**
+| | |
+|---|---|
+| **落とす** | 公式ページ https://mugonkun.github.io/irodori-tts-for-yomiwakechan/ |
+| **使い方** | [`docs/guide.md`](docs/guide.md)（入れ方・はじめの準備・しゃべらせ方・困ったときは・消し方） |
+| **知らせる** | X の [@yomiwakechan](https://x.com/yomiwakechan) |
 
-https://mugonkun.github.io/irodori-tts-for-yomiwakechan/
+- お使いのパソコンに合う方を選びます＝**RTX（CUDA）**（NVIDIA の GeForce・RTX などのパソコンの方）／
+  **Radeon（ROCm）**（AMD の Radeon のパソコンの方。動作を確かめられているのは
+  Ryzen AI MAX+ 395 ／ Radeon 8060S のパソコンで、ほかの Radeon では試していません）。
+- **はじめて開いたときに、動かすための一式（約 5.3 GB）をダウンロードします**（10 分ほど）。
+  ほかの方が作ったプログラムや音声モデルを勝手に配って回らない方針なので、そのぶんをあなたのパソコンへ入れます。
+  一度すませば、次からはすぐ使えます。
+- **必要なもの**＝Windows 11 / 10（64 ビット）・NVIDIA か AMD のグラフィックス・空き 12 GB ほど・
+  はじめの準備のときだけネット接続。入れ終わったあとにこのアプリが使うのは約 8 GB です。
+- 版ごとの案内＝[`docs/release-notes/`](docs/release-notes/)。
 
-- **RTX など NVIDIA の機体 → CUDA 版**、**Radeon（gfx1151＝Ryzen AI MAX+ 395／Radeon 8060S）の機体 → ROCm 版**。
-  GPU が無い機体はどちらでもよい（CPU 変種を選べる・遅い）。
-- **初めて起動したときに、動かすための一式（実行系とモデル・数 GB）をネットから取り寄せます**（10 分程度）。
-  他の方が作ったプログラムやモデルは配布物に同梱しない方針（`decisions.md` 8）なので、そのぶんを初回にお使いの機体へ入れます。
-- Release の一覧（過去の版・`SHA256SUMS.txt`）＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases
-- 導入・更新・修復・削除の確定手順＝`docs/install.md`。版ごとの本文＝`docs/release-notes/`。
-- 着地頁の実体＝`site/index.html`（`gh-pages` 枝の根に写して GitHub Pages で出す・`site/README.md`）。
 ---
 
 ## 1. これは何をするアプリか
 
-**Python を知らなくても導入できる、単体で使える日本語 TTS アプリ**です。
+**VOICEROID2 や VOICEVOX と同じ感覚で置いておける、日本語の音声合成アプリ**です。
+開発者向けのツールキットでも、玄人向けの道具立てでもありません。
 
-- **Python 不要**＝埋め込み Python（python.org の embeddable package）と必要な wheel を、
-  ランチャが初回起動時に取得して組み立てます。利用者は Python も pip も uv も触りません。
-- **単体の TTS として使える**＝付属のランチャ UI で、GPU・CUDA 版・パラメータ・参照ボイスを
-  自分の環境で試せます（配信外の読み上げテスト＝`decisions.md` 15）。
-- **読み分けちゃん2（本体）の 10 番目のエンジンとしても使える**＝配布版は
-  `http://127.0.0.1:18088` で HTTP の口を開けて待ち受け、本体は `/health` でそれを見つけるだけです
-  （常駐と後始末＝配布版のランチャ・`decisions.md` 6→**124＝常駐はやめた**＝ランチャの窓を閉じると
-  アプリが終わり、子のサーバも落ちて GPU のメモリが返る。本体の一括起動で exe を起こすのは可＝103）。
-  **ポートは先に開きます**＝起動して数秒で `/health` が 200 を返し、モデルはその裏で載ります
-  （`decisions.md` 105）。合成が撃てるかどうかは `/ywk/status` の `runtime.loaded` で判り、
-  読込に失敗しても**プロセスは生きたまま** `runtime.error` に理由 1 行が出ます。本体が読み上げるときは、**ランチャで選んだ GPU と精度が
-  暗黙に使われます**（device は Server プロセスの環境変数でしか決まらない＝1 プロセス 1 デバイス）。
-- **既存の Irodori-TTS-Server（8088）とは別物・併用できます**。本体の 9 番目のアダプタ（`irodori`）は
-  今までどおり 8088 の個体を叩き、配布版は 18088 を使います（`decisions.md` 2）。ポートが違うだけで
-  なく、**配布版は上流に無い口（`/params`・`/ywk/status`・話者一覧の覆い）を足し、未知欄・範囲外を
-  400 で弾きます**（上流は黙って捨てます）。
+- **Python は要りません。** 入れて、開いて、打つだけです。
+- **12 人の声**が最初から入っています。自分の音声ファイル（wav）から声を増やすこともできます。
+  追加した声は、読み分けちゃん2 からも同じ名前で選べます。
+- **開けば使えます。**「起動」を押す釦はありません。窓を閉じればアプリは終わり、グラフィックスのメモリも返ります。
+- **読み分けちゃん2 の読み上げにも使えます。** このアプリを開いておくだけで、読み分けちゃん2 の側が見つけます。
+  こちら側で必要な操作はありません（アプリを閉じると読み上げも止まります）。
+- **RTX（CUDA）と Radeon（ROCm）は別のアプリです。** 同じパソコンに両方入れられますが、設定も、追加した声も、
+  ダウンロードした物もそれぞれ別に持ち、同時には開けません。片方を消しても、もう片方はそのまま使えます。
 
-**声の決まり方**＝参照ボイス（wav）＋名付け＝「話者」です。参照なしの話者は
-「**デフォルト**」という名前で一覧の先頭に常在します（`decisions.md` 16）。声色は `caption`
-（演技指示の自由文）と本文中の絵文字で作ります。
+**誰のための物か**＝Python を入れられない／入れたくない人。配信者。声を使いたいだけの人。
+**誰のための物ではないか**＝Python 環境を自分で組める人（その人は Irodori-TTS-Server をそのまま使えばよい）。
 
-**できないこと・注意**
+**注意**
 
-- CPU でも合成できますが**とても遅い**（実測 RTF 3.33・40 steps・cpu 変種＝`docs/acceptance.md`）＝配信用途には使えません
-  （`decisions.md` 13）。UI で選べるだけの露出にしています。
-- **Radeon（ROCm）は未保障**＝**ROCm 版**という別リリースです。保証できるのは「gfx1151
-  （Ryzen AI MAX+ 395／Radeon 8060S）で確認済み」という事実だけです（`docs/radeon.md`）。
-- 出力音声には **SilentCipher の非可聴透かし**が既定で乗ります（切る経路は持ちません＝
-  `decisions.md` 9）。
+- グラフィックスが無いパソコンでも動きますが、**とても遅い**ので配信には使えません。
+- 出した音声には、**AI が作った音であるという目印**（人には聞こえません）が入ります。外す方法はありません。
+- **実在する人の声を、本人の許しなくまねる目的では使えません**（もとになった音声合成の利用条件＝下の §4）。
+- 消すときは、そのアプリが自分の場所に置いていた物（ダウンロードした一式・取り込んだ声・設定・記録）が
+  すべて一緒に消えます。**声を追加するときに選んだ、あなたの音声ファイルには触れません。**
+
+くわしい使い方・困ったときの手引きは **[`docs/guide.md`](docs/guide.md)** にあります。
+
+---
+
+> **ここから下は作る側の帳面です**（設計・契約・ライセンス・保守の記録）。
+> 利用者向けの案内は上の 2 つ＝**公式ページ**と **`docs/guide.md`** にあります。
+> 上流のコードは `upstream/`（submodule）で版を固定して**無改変**のまま持ち、必要な差分は `patches/`
+> にだけ置きます（正典＝`decisions.md` 裁定 3）。
+> 着地頁の実体＝`site/index.html`（`gh-pages` 枝の根に写して GitHub Pages で出す・`site/README.md`）。
+> Release の一覧（過去の版・`SHA256SUMS.txt`）＝https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases
 
 ---
 
@@ -66,8 +76,9 @@ https://mugonkun.github.io/irodori-tts-for-yomiwakechan/
 1. Release からインストーラ（ランチャ＋埋め込み Python の取得台帳＋自作分・数十 MB）を落として実行する。
 2. インストーラが `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\`（ROCm 版は `…\irodori-tts-ywk-radeon\`）
    に本体を置く（per-user・管理者権限なし）。**アプリ名も版で分かれる**＝
-   「irodori-TTS for 読み分けちゃん（CUDA 版）」／「…（ROCm 版）」（`decisions.md` 109）。
-   2 本は同じ機体に**同居できる**（取得物の置き場だけは共有する）。
+   「irodori-TTS for 読み分けちゃん（CUDA 版）」／「…（ROCm 版）」（`decisions.md` 109。
+   **v2.0 で表示名は `… － RTX（CUDA）`／`… － Radeon（ROCm）` へ改まる**＝`docs/design/charter.md` §7）。
+   2 本は同じ機体に**同居できる**（v2.0 からは置き場も設定も共有しない＝`decisions.md` 133）。
 3. 初回起動でランチャが**実行系とモデルを取得**する（合計 ≈5.4 GiB・100 Mbps 級で 10 分以内が目標）。
    取得先は `%LOCALAPPDATA%\irodori-tts-ywk\`（`runtime\<variant>\`・`models\`・`voices\`・`logs\`）。
    - 実行系＝torch は `download.pytorch.org` の版固定 URL、依存は PyPI、いずれも sha256 で検証。
@@ -93,7 +104,8 @@ https://mugonkun.github.io/irodori-tts-for-yomiwakechan/
 | `decisions.md` | **正典**。裁定はここが正。 |
 | `docs/contract.md` | 配布版が本体に約束する HTTP 契約（本体が写す一枚）。 |
 | `docs/acceptance.md` | 受け入れ条件（数値）。 |
-| `docs/install.md` | 導入手順（**確定**・配布物にも入る）。 |
+| `docs/install.md` | 導入手順（**確定**・**作る側の帳面**＝利用者には指さない）。 |
+| `docs/guide.md` | **利用者向けの使い方**（配布物に入る・本文の正本＝`docs/design/v2-copy.md` §6）。 |
 | `docs/radeon.md` | ROCm 版の注記（gfx1151 で確認済みの事実だけ）。 |
 | `docs/design/` | 便ごとの設計書。 |
 | `upstream/` | 上流 2 本の submodule（**無改変**・`Irodori-TTS` `8224daf`／`Irodori-TTS-Server` `841fb7c`）。 |

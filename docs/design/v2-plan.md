@@ -36,6 +36,13 @@
 | **内部の識別子** | `settings.json` の既存の鍵・`variant`／`precision` の値・env `YWK_VARIANT`・`enum ReleaseFlavor`・`RuntimeVariants.*`・ログの語 | 既存機体の設定が読めない・契約テストが落ちる |
 | **既存の `AutomationId` 139 個** | `launcher/README.md` §7-3 の表・`Views/*.xaml` | 無人検分（`probe/d-launch-probe.ps1`・`wizard-probe.ps1`・`e-install-probe.ps1`）が落ちる |
 
+> **錠から外れた物が 1 つある＝データ樹の路**（`decisions.md` 133・2026-09-11）。
+> `%LOCALAPPDATA%\irodori-tts-ywk\`（両版で共有）は**もう固定ではない**＝**版ごとに分ける**
+> （`…\irodori-tts-ywk-cuda\`／`…\irodori-tts-ywk-radeon\`）。**単一起動の錠（Mutex）も版ごとに割る。**
+> **導入先・`AppId`・資産の檔名・台帳名は上の表のとおり据え置き**（動くのは**データ樹と Mutex の 2 つだけ**）。
+> 旧い共有樹が在る機体は、**初回の v2.0 起動で版の樹へ移す**（段 E-3）。
+> `settings.json` の `dataDir` と env `YWK_LAUNCHER_DATA_DIR` の明示指定は**従来どおり優先**＝鍵は 1 つも減らさない。
+>
 > **`AutomationId` の規則**＝**改名しない・削除しない。移すだけ。新設には新しい id を付ける。**
 > **畳み（`Expander`）と隠した層の中は、開くまで UIA から見えない**（WPF は展開まで実体化しない）。
 > ゆえに**台本に「開く 1 手」を先に足してから**要素を畳みへ移す（順を逆にすると無人走行が測る前に落ちる）。
@@ -450,6 +457,47 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
   `sha256` が `null`＝`size` と git blob sha1 で見るか、**毎回 `hf_hub_download` に任せる**（小さいので実害が無い）。
 - **全部落とし直す道は残す**＝`StatusRebuildRuntimeButton`（詳しい状態・畳みの外）。差分が壊れた機体の逃げ道である。
 
+#### E-3 置き場は版ごと（裁定 133）― データ樹・Mutex・移送・削除
+
+> **正本は `v2-spec.md` §11-8。**ここは差し込み口と工数だけを書く。
+> **路の綴りを増やさない**＝画面もログも `AppPaths` の値を通す（直書きの `irodori-tts-ywk` を 0 箇所にする）。
+
+- **データ樹の既定を flavor で分ける**＝`Contracts/AppPaths.cs`。いまは `DataDirName = "irodori-tts-ywk"` の
+  定数 1 つを `Resolve`（`:196-203`）が `%LOCALAPPDATA%` の下に組んでいる。ここを
+  **`ReleaseFlavor` から `irodori-tts-ywk-cuda`／`irodori-tts-ywk-radeon` を組む**形にする。
+  - 定数は**足す**＝`DataDirNameCuda`／`DataDirNameRadeon` と、**旧共有樹を指す `LegacyDataDirName = "irodori-tts-ywk"`**
+    （移送に要るので綴りは残す）。
+  - **明示指定は従来どおり優先**＝`settings.json` の `dataDir`・env `YWK_LAUNCHER_DATA_DIR`。**鍵は 1 つも減らさない。**
+  - `%LOCALAPPDATA%` が取れない機体の逃げ枝（`UserProfile\.<名>`）も同じ形で分ける。
+  - `AppPaths` を作る所（`AppServices`・`LauncherComposition`・台本の期待値）に **flavor を渡す 1 本の道**を通す。
+- **単一起動の錠を版ごとに割る**＝`App.xaml.cs:34` の `Local\irodori-tts-ywk-launcher` **と `:37` の
+  `ActivateEventName`（`Local\irodori-tts-ywk-launcher-activate`）の 2 つ**を `…-cuda`／`…-radeon` へ割る。
+  `.iss` の `AppMutex`（`:151`・註 `:152-159`）も**錠と同じ 2 つ**に割る
+  （`MyAppName` を分けている所と同じ分岐で綴る＝**綴りの正本は 1 箇所**）。
+  **2 個目の起動が 1 つ目の窓を前に出す合図は、版の中でだけ働く**（別アプリを起こし直さない）。
+  ※ **合図の口を割り忘れると、錠だけ割れて事故になる**＝合図は `EventResetMode.AutoReset` の 1 本
+  （`App.xaml.cs:155` で作り `:187` で開く）なので、両版が同時に走っていると **CUDA の 2 個目の起動が
+  Radeon の窓を前に出す**。錠と合図は**必ず同じ組**で割ること。
+- **2 つを同時に開いたとき**＝後から起きた側が **18088 の塞がり**で止まり、帯は `v2-spec.md` §2-1a の
+  **C1／D1**（＝`v2-copy.md` §3-2 の **E-05**）＝`ServerBindFailure` のいまの道をそのまま通る。
+  **新しい文も新しい判定も足さない。**
+- **旧い共有樹の移送**（**1 度だけ**・起動前の安い検査より**手前**・§11-8）＝
+  - **純関数 `LegacyDataMigration.Plan`**＝⑴ 版の樹が無い（または空）⑵ 旧共有樹 `%LOCALAPPDATA%\irodori-tts-ywk\` が在る
+    ⑶ 明示指定が無い、の 3 つが揃う回だけ「移す」を返す。
+  - **同じボリューム＝改名**（`Directory.Move`・秒で終わる）／**別ボリューム、または旧樹を片方が既に持っていった機体＝写す**。
+  - **写した回は旧樹を消さない**（両版が入っていた機体で、もう一方が同じ樹を要る）。
+  - **失敗したら移送しなかったことにして**新しい樹で始める＝**利用者の声を失わない**。ログに 1 行だけ残し、画面には出さない。
+  - 移送を通った樹は `.ledger.json` が無く `preset_md5` も無い＝**E-1 の枝 e と E-2 の「不在なら丸ごと」がそのまま効く**
+    （移送のために新しい枝を足さない）。
+- **削除は `.iss` の持ち場**＝問い 2 つを廃し、**版のデータ樹を丸ごと消す**（段 F-2）。
+- **試験**＝`AppPathsTests`（既定が flavor で分かれる・明示指定が勝つ・旧名が解決に出ない）と
+  `LegacyDataMigrationTests`（改名／写し／版の樹が在る回は何もしない／明示指定の回は何もしない）＝**約 8 本**。
+- **危険**＝⑴ **移送で利用者の声を失う事故**（旧樹を消さないことで受ける）⑵ 既存機体の設定の行方＝
+  `settings.json` は移送で一緒に動く。移送しなかった機体（明示指定つき）は**いままでの場所のまま**で正しい。
+  ⑶ `AppPaths` を作る所を 1 つでも取り違えると、**同じ起動の中で 2 つの樹を見る**＝台本と xUnit で釘付けにする。
+- **規模**＝`AppPaths` に定数 2 つと分岐（約 30 行）・移送 1 檔（約 90 行）・`App.xaml.cs` **2 行**（錠と合図）・
+  `.iss` 2 行・試験 約 8 本。**中**。
+
 **段 E の試験**
 
 | 種類 | 檔 | 内容 |
@@ -459,6 +507,7 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
 | 追加 | `ModelDiffTests.cs`（新設・**約 3 本**） | 見積りの和・`sha256` が `null` の檔を飛ばすこと・空の台帳 |
 | 調整 | `NewPresetsAndAcquisitionTests.cs`／`PresetRenameTests.cs`／`CorrectionSeatVoicesTests.cs` | `PrepareVoices` の呼び順に 1 段増えるので、既存の期待値（足した数・改名の数）に**影響が無いこと**を確かめる 2 本を足す |
 | 調整 | `RuntimeInstallerTests.cs`／`LedgerServiceTests.cs` | `.ledger.json` を書くこと・読めない回は従来どおり「組み直す」へ落ちること・差分の回は `CleanBeforeInstall=false` で呼ばれること |
+| 追加 | `AppPathsTests.cs`／`LegacyDataMigrationTests.cs`（**約 8 本**・E-3） | データ樹の既定が `cuda`／`radeon` で分かれる・`dataDir` と env の明示指定が勝つ・旧共有樹からの改名と写し・版の樹が在る回と明示指定の回は**何もしない**・移送に失敗した回は**旧樹を消さない** |
 
 **危険**（この段が一番大きい）＝⑴ **利用者の声を消す事故**は取り返しがつかない＝`origin=preset` の行以外に触らない・
 `file` が `refs/` の外を指す行は飛ばす、を**試験で釘付け**にする。⑵ 差分の取得が途中で切れた機体は
@@ -467,6 +516,8 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
 **変えない物**＝`ledger/*.json` の形・`voices/presets.json` の形（**読むだけ**）・`voices.json`（上流が読む別名表）の書き方・
 `settings.json` の既存の鍵・`ywk_fetch_models.py` の取得の道。
 **足すのは `voices.ywk.json` の 1 欄（`preset_md5`）と、データ樹の新しい 1 檔（`.ledger.json`）だけ。**
+**ただし E-3 は別枠**＝データ樹の路と単一起動の錠の綴りが**版ごとに分かれ**、旧共有樹からの移送が 1 度だけ走る（裁定 133）。
+差分（E-1／E-2）は**移送のあとの樹**を相手にするので、E-3 → E-1／E-2 の順を崩さない。
 **規模**＝新設 3 檔（約 220 行）・`PresetVoices` に約 90 行**＋ md5 の純関数と `PresetVoice` の欄**（約 30 行）・
 `FetchPlanner`／`WheelInstaller` の構え替えに約 60 行・試験 **約 20 本**。**大**。
 **検分の目**＝「**同じ版で 2 度目に開いたとき、1 バイトも落とさないか**」と
@@ -501,6 +552,12 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
 | 触る所 | 内容 |
 |---|---|
 | `installer/irodori-tts-ywk.iss:221` | `docs\install.md` の行を**消し**、`docs\guide.md` を足す（`docs\radeon.md` と `README.md` の行は据え置き） |
+| 同 `:151`（`AppMutex`）と註 `:152-159` | **版ごとに割る**＝`Local\irodori-tts-ywk-launcher-cuda`／`…-radeon`（`App.xaml.cs:34` と同じ 2 語・段 E-3・裁定 133）。**註の 2 文が偽になる**＝`:155`「この錠は **両方の種で同じ**…裁定 109 でも変えない」と `:159`「同じ錠・同じ 127.0.0.1:18088」＝**書き直す**（錠は版ごと・つなぎ口だけが 1 つ） |
+| 同 `:41-42`（内部識別子の錠の註） | `AppMutex` と **データ樹の名（`irodori-tts-ywk`）** を「1 つも変えない」側から**外す**（裁定 133 で両方とも版ごとに割れた）。Flavor の id・`/DFlavor=`・`AppId` の GUID・setup の檔名・台帳名は据え置き |
+| 同 `:291-296`（`DataDir()`・路の文字列は `:295`） | **版ごとの樹を返す**＝`…\irodori-tts-ywk-cuda`／`…-radeon`（`AppPaths` の新しい既定と**同じ場所**を固定で解く。env は見ないまま） |
+| 同 `:345`（導入前の断り） | 「取得したものは `<版の樹>` に入ります」の路が版ごとになるだけ（文はそのまま） |
+| 同 `:405-470`（`CurUninstallStepChanged`） | **問いを 2 つとも廃す**（`:424-425`「取得した実行系とモデルも削除しますか？」・`:460` の 2 段目）＝**版のデータ樹を丸ごと消す。問わない**（裁定 132 → 133 で 2 つ目も廃止）。無人（`/SUPPRESSMSGBOXES`）でも同じ。**もう一方の版の樹には触れない**＝共有が無くなったので「道連れにしない」場合分け（`ben-e` §5-4）は**規則ごと廃止**。**置き場の外には 1 檔も触れない**（利用者が声を追加するときに選んだ元の wav は `voices\refs\` の写しだけを消す＝`VoiceStore` の形をそのまま守る）。**旧い共有樹 `%LOCALAPPDATA%\irodori-tts-ywk\` も、もう一方の版が入っていないときだけ一緒に消す**＝移送は**初回の v2.0 起動**でしか走らない（`v2-spec.md` §11-8・段 E-3）ので、⑴ v1.1.0 に上書き導入して**一度も開かずに**撤去した機体 ⑵ 移送に失敗して旧樹が残った機体（`v2-spec.md` §11-8 ⑶）では、**約 8 GB が丸ごと居残る**＝裁定 132 が起こされた当の状態。判定には既にある `OtherFlavorKey`（`:418` の `RegKeyExists`）をそのまま使う（もう一方が入っていれば**触らない**＝向こうがまだ移送で要る） |
+| 同 `:383-385`（導入先が置き場と重なる断り） | 版ごとの樹で判定する（文はそのまま） |
 | `build/installer-build.ps1:105-113` の註 | 「.iss が docs\install.md を 1 檔ずつ名指す」の 1 行を新しい檔名へ。**`$ExpectedAppFiles`／`$ExpectedAppBytes` は動かない**＝`docs\` は `build\out\app` を通らない |
 | `docs/install.md` | **作る側の帳面へ戻す**（1 字も替えない・配布物から外す・利用者に指さない） |
 | `docs/guide.md` | **新設**（本文は `v2-copy.md` が正） |
@@ -533,12 +590,12 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
 | 物 | いま | 工事後の見込み | 走らせ方 |
 |---|---|---|---|
 | 契約テスト | 369 | **372**（段 D の +3） | `build/run-tests.ps1` |
-| xUnit | 743＋skip 1 | **+35 前後**（A 2・B 6・C（語の検分）1・D 4・E 約 20・F 0＝期待値の付け替えのみ） | 同上 |
+| xUnit | 743＋skip 1 | **+43 前後**（A 2・B 6・C（語の検分）1・D 4・E 約 28＝差分 20 ＋ 置き場と移送 8・F 0＝期待値の付け替えのみ） | 同上 |
 | `installer-build -All` | 20 門 0 失敗 WARN 0 | **20 門のまま**（門は増やさない）。A-1 の記録値は**動かない**・**A-6 の期待値は `v2.0.0`**・B-2 は帯の中 | `build/installer-build.ps1 -All` |
 | `probe/d-launch-probe.ps1` | 無人走行 | **A-0 の 3 つの助手 ＋ 段 B の段番号 ＋ 段 C の語表**を当てた版で 1 周 | 本機（Radeon）で 1 周・RTX 機で 1 周 |
 | `probe/wizard-probe.ps1` | ウィザードの窓が開いているかを答える**読み取り専用の 1 行**（`common.ps1` を読み込まず、押す関数を持たない） | **判定は持たせない**＝`:72-74` が読む 3 つ（`FirstRunStepTitle`／`FirstRunStepNumber`／`FirstRunMessageText`）の**出力の読み方だけ**を段番号の新しい綴りに合わせる | 同上 |
 | **ウィザードの検分先** | — | 「見える 3 段・同意 1 度・1 本のバー」は **`d-launch-probe.ps1` の h 節（`:986-1130`）**と **`e-install-probe.ps1` の `Invoke-Stage3`（`:1190-1235`）**が受け持つ | 段 B・段 F の後 |
-| `probe/e-install-probe.ps1` | 導入と削除 | `AppName` の新しい期待値・`{app}\docs\guide.md` が在り `install.md` が無いこと | 段 F の後 |
+| `probe/e-install-probe.ps1` | 導入と削除 | `AppName` の新しい期待値・`{app}\docs\guide.md` が在り `install.md` が無いこと・**データ樹が版ごとの名になっていること**・**削除で問いが 1 つも出ず、その版の樹が丸ごと消えること**・**旧い共有樹 `%LOCALAPPDATA%\irodori-tts-ywk\` を置いてから導入→（開かずに）撤去し、それも消えていること**（もう一方の版を入れてある回は**残る**ことも同じ門で見る）（裁定 132／133・段 E-3／F-2） | 段 F の後 |
 | **語の検分** | 無し | `WordLintTests` が**自動で**回る（§段 C-2） | xUnit に同居 |
 
 **手で見る 8 つ**（憲章 §2 の検分文をそのまま順に当てる）＝
@@ -567,7 +624,8 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
 | 8 | 歯車 → 詳しい状態 → 詳細を開く | 12 行以内・生ログはこの中だけ・〔ログを開く〕で檔の場所が開く |
 | 9 | v2.0.0 を**上書き**で入れ直す（同梱の声の wav を 1 本差し替えた版で） | **設定と自分で追加した声が残る**・開いたときに**その 1 本だけ**取り直す（全部を落とし直さない＝段 E） |
 | 10 | 設定 › 詳細で動かし方を `CUDA 12.6` に落とす | 先に「5 GB 前後を 10 分ほど落とす」と告げる・落として動く |
-| 11 | 削除 | **問いは 1 つも出ない**・自分の置き場の物（一式・取り込んだ声・設定・記録）がすべて消える・**声を追加するときに選んだ元の wav は残る**（憲章 §4-25＝裁定 132／133） |
+| 11 | 削除 | **問いは 1 つも出ない**・自分の置き場の物（一式・取り込んだ声・設定・記録）がすべて消える・**声を追加するときに選んだ元の wav は残る**（憲章 §4-25＝裁定 132／133）・**もう一方の版を入れてあるなら、その置き場は 1 檔も減らない** |
+| 12 | 旧い共有樹（`%LOCALAPPDATA%\irodori-tts-ywk\`）が在る機体で v2.0 を開く（**開発機だけ**） | **版の樹へ移る**（`…-cuda\`）・追加した声と設定が残る・移送のあとは 5.3 GB を落とし直さない・失敗した回は**旧樹が消えていない**（段 E-3・裁定 133 ⑸） |
 
 **記録**＝所要・押下の数・VRAM の返り・差分で落ちたバイト数。**これらは帳面の側の数**で、利用者向けの文には書かない。
 
@@ -614,3 +672,4 @@ public static double Overall(FirstRunStep step, double fraction);  // 重み Dow
 | 4 | **CPU の見せ方** | GPU が在る機体では**一切出さない**（憲章 §7 末尾）。`RuntimeVariants.CudaReleaseChoices` に `cpu` は残す（詳細の中の選択肢）＝**一覧の作りは触らず、出す場所だけを絞る** |
 | 5 | **段 E の実射が本機（Radeon）では足りない** | 上書き更新の射は**両方の機体**で要る（RTX 機の席・§2 段 H の 9） |
 | 6 | **`MainStateText` の 3 語化と台本の `:1666`** | 自動起動の機体では「止まっています」を通らない＝台本の期待値を**経路ごと**に割る（§2 段 C-4） |
+| 7 | **旧い共有樹を前提にした帳面が 2 つ残る** | `docs/design/ben-e-installer.md` §5-4（共有のデータ樹を道連れにしない）と `docs/install.md` の `%LOCALAPPDATA%\irodori-tts-ywk\` の記述は、裁定 133 で**規則ごと古くなった**。どちらもこの席の持ち場ではない（`install.md` は冒頭 2 行の断りだけを足した＝作る側の帳面・本文は据え置き）。**正しい形は `v2-spec.md` §11-8 と本檔 段 E-3／F-2 が持つ**＝実装席が段 F で 2 檔を直す |

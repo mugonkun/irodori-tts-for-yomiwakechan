@@ -1,12 +1,20 @@
 # install.md — 導入手順（**確定**・便 E 設計 2026-09-05）
 
+> **この檔は作る側の帳面である**（保守と検分のための記録＝憲章 原則 8）。**利用者に指し示さない。**
+> 利用者向けの入れ方・使い方・困ったときの手引きは **`docs/guide.md`** にある（本文は下記のまま据え置き）。
+> ※ **§2 の置き場の表と §5-4（アンインストール）は裁定 132／133 で古くなった**（データ樹は版ごと・
+> 錠も版ごと・問いは 0・道連れの規則は廃止）。現行の正本は `docs/design/v2-spec.md` §11-8 と
+> `docs/design/v2-plan.md` 段 E-3／F-2。**段 F で本文を直す。**
+
 > **この檔は確定文である。**便 A の時点では「案」だったが、便 D（ランチャ）と便 E（インストーラ）の設計で
 > 画面・文言・操作数・アンインストールの挙動が決まった。設計の全文＝`docs/design/ben-e-installer.md`。
 > 正典＝`decisions.md` 8・12・46・80・83・87・88。受け入れ条件＝`docs/acceptance.md` の「導入」「サイズ」
 > 「ドライバ」「起動」「起動失敗」の各行。事実の出典＝`research/`（調査便の写し）と、便 B・C・D・E の実射。
 >
-> **この檔は配布物に入る**（CUDA 版なら `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\docs\install.md`・
-> ROCm 版なら `…\Programs\irodori-tts-ywk-radeon\docs\install.md`＝`decisions.md` 109）。
+> **v1.1.0 までの配布物にはこの檔が入っている**（CUDA 版なら
+> `%LOCALAPPDATA%\Programs\irodori-tts-ywk-cuda\docs\install.md`・ROCm 版なら
+> `…\Programs\irodori-tts-ywk-radeon\docs\install.md`＝`decisions.md` 109）。
+> **v2.0 で配布物から外し、代わりに `docs/guide.md` を入れる**（`docs/design/charter.md` 根 7・`docs/design/v2-plan.md` 段 F-2）。
 
 ---
 

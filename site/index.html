@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>irodori-TTS for 読み分けちゃん</title>
-<meta name="description" content="Python を知らなくても入れられる、日本語のしゃべる（TTS）アプリ。読み分けちゃん2 のエンジンとしても使えます。無料・非公式。">
+<meta name="description" content="文字を打つと、しゃべります。Windows のパソコンで動く、無料の日本語 読み上げ（音声合成）アプリ。読み分けちゃん2 の読み上げにも使えます。非公式。">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="irodori-TTS for 読み分けちゃん">
-<meta property="og:description" content="Python を知らなくても入れられる、日本語のしゃべる（TTS）アプリ。無料・非公式。">
+<meta property="og:description" content="文字を打つと、しゃべります。Windows のパソコンで動く、無料の日本語 読み上げ（音声合成）アプリ。非公式。">
 <meta property="og:type" content="website">
 <style>
   :root{
@@ -22,6 +22,8 @@
     --rocm-ink:#ffffff;
     --note:#8a8279;
     --link:#1a5fb4;
+    --ph-bg:#f1ece4;
+    --ph-line:#cfc6b8;
   }
   @media (prefers-color-scheme: dark){
     :root{
@@ -36,6 +38,8 @@
       --rocm-ink:#1a0808;
       --note:#8f887f;
       --link:#8ab4f8;
+      --ph-bg:#26242b;
+      --ph-line:#413c47;
     }
   }
   *{box-sizing:border-box}
@@ -51,10 +55,16 @@
   }
   .wrap{max-width:44rem;margin:0 auto;padding:2.5rem 1.25rem 4rem}
   header{margin-bottom:2rem}
+  .brand{
+    color:var(--note);
+    font-size:.9rem;
+    letter-spacing:.02em;
+    margin:0 0 .6rem;
+  }
   h1{
-    font-size:1.9rem;
+    font-size:2rem;
     line-height:1.45;
-    margin:0 0 .2rem;
+    margin:0 0 .3rem;
     letter-spacing:-.01em;
   }
   .tagline{color:var(--ink-soft);font-size:1rem;margin:0}
@@ -76,7 +86,21 @@
     padding-bottom:.4rem;
     border-bottom:1px solid var(--line);
   }
-  .buttons{display:grid;gap:.9rem;margin:2.2rem 0 .8rem}
+  h3{
+    font-size:1.05rem;
+    margin:2.6rem 0 .2rem;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:.8rem;
+    padding:1.1rem 1.25rem;
+    margin-top:.8rem;
+  }
+  .notice{margin-top:1.8rem}
+  .notice p{margin:0}
+  .notice p + p{margin-top:.7rem;color:var(--ink-soft);font-size:.95rem}
+  .buttons{display:grid;gap:.9rem;margin:1.2rem 0 .8rem}
   .btn{
     display:block;
     text-decoration:none;
@@ -92,7 +116,7 @@
   .btn:hover{filter:brightness(1.08)}
   .btn:active{transform:translateY(1px)}
   .btn:focus-visible{outline:3px solid var(--link);outline-offset:3px}
-  .btn small{display:block;font-weight:400;font-size:.9rem;opacity:.9;margin-top:.15rem}
+  .btn small{display:block;font-weight:400;font-size:.88rem;opacity:.92;margin-top:.3rem;line-height:1.65}
   .btn-cuda{background:var(--cuda);color:var(--cuda-ink)}
   .btn-rocm{background:var(--rocm);color:var(--rocm-ink)}
   .version{
@@ -101,20 +125,64 @@
     font-size:.92rem;
     margin:.2rem 0 0;
   }
-  ol.steps{margin:.6rem 0 0;padding-left:1.4rem}
-  ol.steps li{margin:.5rem 0}
-  ul.plain{margin:.6rem 0 0;padding-left:1.4rem}
-  ul.plain li{margin:.5rem 0}
-  .card{
-    background:var(--panel);
+  details{
+    margin-top:.9rem;
     border:1px solid var(--line);
     border-radius:.8rem;
-    padding:1.1rem 1.25rem;
-    margin-top:.8rem;
+    background:var(--panel);
+    padding:0 1.1rem;
   }
-  .notice{margin-top:1.6rem}
-  .notice p{margin:0}
-  .notice p + p{margin-top:.6rem;color:var(--ink-soft);font-size:.95rem}
+  details + details{margin-top:.6rem}
+  summary{
+    cursor:pointer;
+    font-weight:700;
+    padding:.85rem 0;
+    line-height:1.6;
+    list-style:none;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::before{
+    content:"▸ ";
+    color:var(--ink-soft);
+    font-weight:400;
+  }
+  details[open] > summary::before{content:"▾ "}
+  summary:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:.3rem}
+  details > *:not(summary){margin-top:0}
+  details > p{margin:0 0 .9rem}
+  details > p:last-child{margin-bottom:1rem}
+  .aside{color:var(--ink-soft);font-size:.93rem}
+  ol.steps{margin:.6rem 0 0;padding-left:1.4rem}
+  ol.steps > li{margin:1.4rem 0}
+  ol.steps > li::marker{font-weight:700}
+  .step-title{font-weight:700}
+  ul.plain{margin:.6rem 0 0;padding-left:1.4rem}
+  ul.plain li{margin:.5rem 0}
+  figure{margin:.8rem 0 0}
+  .shot{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    aspect-ratio:16 / 10;
+    max-width:100%;
+    background:var(--ph-bg);
+    border:2px dashed var(--ph-line);
+    border-radius:.6rem;
+    color:var(--note);
+    font-size:.9rem;
+    line-height:1.7;
+    padding:1rem;
+  }
+  kbd{
+    font-family:ui-monospace,SFMono-Regular,Consolas,"Yu Gothic",monospace;
+    font-size:.85em;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-bottom-width:2px;
+    border-radius:.3rem;
+    padding:.1em .45em;
+  }
   a{color:var(--link)}
   a:focus-visible{outline:2px solid var(--link);outline-offset:2px}
   footer{
@@ -126,20 +194,12 @@
     line-height:1.8;
   }
   footer p{margin:.5rem 0}
-  code{
-    font-family:ui-monospace,SFMono-Regular,Consolas,"Yu Gothic",monospace;
-    font-size:.9em;
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:.3rem;
-    padding:.05em .35em;
-    word-break:break-all;
-  }
   @media (max-width:30rem){
     body{font-size:16px}
     .wrap{padding:2rem 1rem 3rem}
-    h1{font-size:1.55rem}
+    h1{font-size:1.6rem}
     .btn{font-size:1.05rem;padding:1.1rem 1rem}
+    details{padding:0 .9rem}
   }
 </style>
 </head>
@@ -147,61 +207,148 @@
 <div class="wrap">
 
   <header>
-    <h1>irodori-TTS for 読み分けちゃん</h1>
-    <p class="tagline">Windows で動く、日本語のしゃべるアプリ</p>
+    <p class="brand">irodori-TTS for 読み分けちゃん</p>
+    <h1>文字を打つと、しゃべります。</h1>
+    <p class="tagline">Windows のパソコンで動く、無料の日本語 読み上げ（音声合成）アプリ</p>
     <ul class="lead">
-      <li>Python を知らなくても入れられる、日本語の音声合成（TTS）アプリです。</li>
-      <li>読み分けちゃん2 のエンジンとしても使えます。</li>
-      <li>無料です。非公式のソフトで、上流 Irodori-TTS の作者 Aratako 氏とは関係がありません。</li>
+      <li>むずかしい準備は要りません。<strong>入れて、開いて、打つだけ</strong>です。Python も要りません。</li>
+      <li><strong>12 人の声（13 種類）</strong>が最初から入っています。自分の音声ファイルから声を増やすこともできます。</li>
+      <li>配信ソフト <strong>読み分けちゃん2</strong> の読み上げにも使えます。</li>
     </ul>
   </header>
 
   <div class="card notice">
-    <p><strong>初めて起動したときに、動かすための一式（実行系とモデル・数 GB）をネットから取り寄せます。</strong>
-      10 分程度かかります。ネットにつないだまま待ってください。</p>
-    <p>他の方が作ったプログラムやモデルは、この配布物には同梱しない方針です。そのぶんを、
-      初めて起動したときにお使いの機体へ取り寄せます。</p>
+    <p><strong>はじめて開いたときに、動かすための一式（約 5.3 GB）をインターネットからダウンロードします。10 分ほどかかります。</strong></p>
+    <p>ほかの方が作ったプログラムや音声モデルを、勝手に配って回らない方針だからです。そのぶんを、はじめて開いたときにあなたのパソコンへダウンロードします。
+      ネットにつないだままお待ちください。<strong>一度すませば、次からはすぐ使えます。</strong></p>
   </div>
+
+  <h3>お使いのパソコンに合う方を選んでください</h3>
 
   <div class="buttons">
     <a class="btn btn-cuda" id="dl-cuda"
        href="https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/latest">
-      CUDA 版を落とす（NVIDIA）
-      <small>GeForce RTX などの NVIDIA のグラフィックスを積んだ機体</small>
+      RTX（CUDA）をダウンロード
+      <small>NVIDIA のグラフィックス（GeForce・RTX など）が入っているパソコンの方</small>
     </a>
     <a class="btn btn-rocm" id="dl-rocm"
        href="https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/latest">
-      ROCm 版を落とす（Radeon gfx1151）
-      <small>Ryzen AI MAX+ 395／Radeon 8060S の機体</small>
+      Radeon（ROCm）をダウンロード
+      <small>AMD の Radeon が入っているパソコンの方。動作を確かめられているのは Ryzen AI MAX+ 395 ／ Radeon 8060S のパソコンで、ほかの Radeon では試していません。</small>
     </a>
   </div>
-  <p class="version" id="version-line">最新版のページを開きます</p>
+  <!-- 版の番号は直書きしない。下の JS が最新のリリースから tag_name を拾えたときだけ
+       「最新版 v…」へ書き換わる。拾えないとき（JS を切っている・API に届かない・
+       まだ公開していない）は番号を出さないまま、釦は releases のページへ送る。 -->
+  <p class="version" id="version-line">最新版</p>
 
-  <h2>入れ方</h2>
+  <details>
+    <summary>どちらか分からないときは</summary>
+    <p>キーボードの <kbd>Windows</kbd> キーを押しながら <kbd>X</kbd> を押し →「デバイス マネージャー」→「ディスプレイ アダプター」を開いてください。
+      <strong>NVIDIA</strong> や <strong>GeForce</strong> と書いてあれば <strong>RTX（CUDA）</strong>、<strong>Radeon</strong> と書いてあれば <strong>Radeon（ROCm）</strong> です。</p>
+    <p>それでも分からないときは <strong>RTX（CUDA）</strong> をお試しください。合わないときはアプリが教えます。</p>
+  </details>
+
+  <h2>使い方（3 ステップ）</h2>
   <ol class="steps">
-    <li>落とした setup を実行する（次へ・インストール・完了の 3 回押すだけ）。</li>
-    <li>アプリが開いたら初回取得をする（数 GB・10 分程度・ネットにつないだまま待つ）。</li>
-    <li>「発話テスト」のタブで、文と話者を選んで鳴らしてみる。</li>
+    <li>
+      <span class="step-title">ダウンロードして、インストールする</span><br>
+      落ちてきたファイルをダブルクリックして、「次へ」「インストール」「完了」を押すだけです。管理者のパスワードは要りません。
+      <!-- 画像 1 の差し替え口（撮影＝RTX 機・v2.0 の画面）。
+           この <figure> ごと、次の 1 行に置き換えてください。
+           <figure><img src="img/step1-setup.png" alt="インストーラの完了画面" width="1100" height="688" loading="lazy"></figure>
+           ファイル＝site/img/step1-setup.png（横 1100 px 以上・表示は 960 px 目安） -->
+      <figure>
+        <div class="shot" role="img" aria-label="画像 1：インストーラの完了画面（準備中）">
+          <span>［ 画像 1：インストーラの完了画面 ］<br>あとで入ります</span>
+        </div>
+      </figure>
+    </li>
+    <li>
+      <span class="step-title">アプリが開いたら、そのまま待つ</span><br>
+      はじめの 1 回だけ、動かすための一式をダウンロードします（約 5.3 GB・10 分ほど）。途中で 1 度、Windows の許可の窓が出るので「はい」を押してください。「使えます。」と出たら終わりです。
+      <!-- 画像 2 の差し替え口（撮影＝RTX 機・v2.0 の画面）。
+           この <figure> ごと、次の 1 行に置き換えてください。
+           <figure><img src="img/step2-setup.png" alt="はじめの準備の進み具合" width="1100" height="688" loading="lazy"></figure>
+           ファイル＝site/img/step2-setup.png（横 1100 px 以上・表示は 960 px 目安） -->
+      <figure>
+        <div class="shot" role="img" aria-label="画像 2：はじめの準備の進み具合（準備中）">
+          <span>［ 画像 2：はじめの準備の進み具合 ］<br>あとで入ります</span>
+        </div>
+      </figure>
+    </li>
+    <li>
+      <span class="step-title">しゃべらせてみる</span><br>
+      声を選び、文を打って、〔しゃべらせる〕を押します。1〜2 秒で鳴ります。
+      読み分けちゃん2 で使うときは、<strong>このアプリを開いたまま</strong>にしてください。
+      <!-- 画像 3 の差し替え口（撮影＝RTX 機・v2.0 の画面）。
+           この <figure> ごと、次の 1 行に置き換えてください。
+           <figure><img src="img/step3-talk.png" alt="しゃべらせているところ" width="1100" height="688" loading="lazy"></figure>
+           ファイル＝site/img/step3-talk.png（横 1100 px 以上・表示は 960 px 目安） -->
+      <figure>
+        <div class="shot" role="img" aria-label="画像 3：しゃべらせているところ（準備中）">
+          <span>［ 画像 3：しゃべらせているところ ］<br>あとで入ります</span>
+        </div>
+      </figure>
+    </li>
   </ol>
 
   <h2>必要なもの</h2>
   <ul class="plain">
-    <li>Windows x64</li>
-    <li>NVIDIA のグラフィックス、または Radeon gfx1151（Ryzen AI MAX+ 395／Radeon 8060S）</li>
-    <li>空き容量 15 GB ほど</li>
+    <li><strong>Windows 11 / 10（64 ビット）</strong> のパソコン</li>
+    <li><strong>NVIDIA のグラフィックス（GeForce / RTX など）</strong>、または <strong>AMD の Radeon</strong>
+      （Radeon で確かめられているのは Ryzen AI MAX+ 395 ／ Radeon 8060S です）</li>
+    <li><strong>グラフィックスドライバ</strong>が新しいこと。NVIDIA なら <strong>580.00 以上</strong>だと CUDA 13.0 で、
+      <strong>528.33 以上</strong>なら CUDA 12.6 で動きます。古いままだと、アプリが理由と直し方を出します。</li>
+    <li><strong>空き容量 12 GB</strong> ほど（準備のあいだだけ必要です。終わったあと、このアプリが使うのは <strong>約 8 GB</strong> です）</li>
+    <li><strong>インターネット接続</strong>（はじめの準備のときだけ必要です）</li>
   </ul>
+  <p class="aside">グラフィックスが無いパソコンでも動きますが、<strong>とても遅い</strong>ので配信には使えません。</p>
 
-  <h2>困ったら</h2>
-  <div class="card">
-    <p style="margin:0">入らない・動かないときは、
-      <a href="https://github.com/mugonkun/irodori-tts-for-yomiwakechan/blob/main/docs/install.md">導入と修復の手引き（install.md）</a>
-      を見てください。</p>
-  </div>
+  <h2>よくある質問</h2>
+
+  <details>
+    <summary>はじめの 1 回だけ時間がかかるのはなぜ？</summary>
+    <p>このアプリには、ほかの方が作ったプログラムと音声モデルが入っていません。勝手に配って回らない方針だからです。
+      そのぶんを、はじめて開いたときにあなたのパソコンへダウンロードします（約 5.3 GB・10 分ほど）。
+      <strong>2 回目からはすぐ使えます。</strong></p>
+  </details>
+
+  <details>
+    <summary>RTX（CUDA）と Radeon（ROCm）は何が違うの？</summary>
+    <p>GPU の計算のしくみが違うだけで、<strong>できることも、入っている声も同じ</strong>です。
+      NVIDIA のグラフィックスは CUDA、AMD の Radeon は ROCm を使うので、入れる物が別になっています。</p>
+    <p>まちがえて入れても、開いたときにアプリが教えます。そのときは、このページからもう一方をダウンロードして入れてください。まちがえた方は Windows の「<strong>設定 → アプリ</strong>」から消せます。</p>
+    <p><strong>2 つは別のアプリです。</strong>同じパソコンに両方入れられますが、設定も、追加した声も、ダウンロードした物もそれぞれ別に持ち、<strong>同時には開けません</strong>（あとから開いた方が、つなぎ口が塞がっていると出ます）。</p>
+  </details>
+
+  <details>
+    <summary>「WindowsによってPCが保護されました」と出ました</summary>
+    <p>「<strong>詳細情報</strong>」を押してから「<strong>実行</strong>」を押してください。個人が作った無料のソフトで、
+      Windows がまだ見慣れていないために出る画面です。</p>
+  </details>
+
+  <details>
+    <summary>読み分けちゃん2 ではどう使うの？</summary>
+    <p>このアプリを<strong>開いたまま</strong>にして、読み分けちゃん2 の設定でこのエンジンを有効にするだけです。
+      あとは読み分けちゃん2 の側が自動で見つけます。声は、このアプリに出ている名前がそのまま出ます。
+      <strong>アプリを閉じると読み上げも止まります</strong>ので、配信の間は開いたままにしてください。</p>
+    <p class="aside">※ このエンジンに対応した版の読み分けちゃん2 が要ります。</p>
+  </details>
+
+  <details>
+    <summary>消したいときは？</summary>
+    <p>Windows の「<strong>設定 → アプリ</strong>」から、ふつうのアプリと同じように消せます。
+      このアプリが置いていた物（ダウンロードした一式・取り込んだ声・設定・記録）は<strong>すべて一緒に消えます</strong>。<strong>何も聞かれません。</strong></p>
+    <p><strong>声を追加するときに選んだ、あなたの音声ファイルには触れません。</strong>そのまま残ります。</p>
+    <p>両方の版を入れている場合、消えるのは消した方だけです。もう片方はそのまま使えます。</p>
+  </details>
 
   <footer>
-    <p>非公式のソフトです。不具合の報告先は
-      <a href="https://github.com/mugonkun/irodori-tts-for-yomiwakechan">このリポジトリ</a>
-      で、上流 Aratako 氏へは問い合わせないでください。</p>
+    <p>このアプリは<strong>非公式</strong>です。もとになった音声合成 Irodori-TTS の作者 Aratako 氏とは関係がありません。
+      <strong>うまく動かないときも、Aratako 氏へは問い合わせないでください。</strong></p>
+    <p>出した音声には、人には聞こえない印が入ります。実在する人の声を、本人の許しなくまねる目的で使わないでください。</p>
+    <p>うまく動かないときは、X の <a href="https://x.com/yomiwakechan"><strong>@yomiwakechan</strong></a> までお知らせください。</p>
   </footer>
 
 </div>
@@ -243,7 +390,7 @@
     fetch(API, { headers: { "Accept": "application/vnd.github+json" } })
       .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (json) { if (json) { apply(json); } })
-      .catch(function () { /* そのままリリースページへ送る */ });
+      .catch(function () { /* そのままリリースのページへ送る */ });
   } catch (e) { /* 同上 */ }
 })();
 </script>
