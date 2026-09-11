@@ -54,6 +54,13 @@ public enum BandActionKind
 
     /// <summary>使い方（困ったときは）を開く。</summary>
     OpenGuide,
+
+    /// <summary>
+    /// Windows の設定の<b>スマート アプリ コントロール</b>の頁を開く
+    /// （<c>decisions.md</c> 140・v2.0.2）。<b>切る操作はこちらではしない</b>＝
+    /// 連れて行くだけで、決めるのは利用者である。
+    /// </summary>
+    OpenSmartAppControl,
 }
 
 /// <summary>
@@ -93,6 +100,13 @@ public enum BandActionKind
 /// <b>ここは数を受け取るだけで、数えない</b>（帯の文は純関数のまま）＝刻むのは
 /// <see cref="StatusViewModel"/> が持つ <see cref="ElapsedTicker"/> である。
 /// </param>
+/// <param name="SmartAppControlBlocked">
+/// <b>Smart App Control が部品を止めた</b>（<c>decisions.md</c> 140・v2.0.2）。
+/// <b>どの状態より先に効く</b>＝サーバが「使えます」のまま射だけが止められる形があるので
+/// （参照ボイスを選んだ 1 射で初めて <c>scipy</c> の拡張が読まれる）、
+/// <see cref="ServerState"/> では見分けられない。渡すのは判っている側
+/// （<see cref="StatusViewModel.ApplySmartAppControlBlock"/>）である。
+/// </param>
 public sealed record BandContext(
     bool RuntimeLoaded = false,
     bool UserStopped = false,
@@ -105,7 +119,8 @@ public sealed record BandContext(
     int? ExitCode = null,
     string? RebuildRuntimeLine = null,
     bool FirstRunPending = false,
-    int? ElapsedSeconds = null);
+    int? ElapsedSeconds = null,
+    bool SmartAppControlBlocked = false);
 
 /// <summary>帯の 1 行（丸・ひとこと・理由 1 行・1 手）。</summary>
 /// <param name="Severity">丸の色。</param>
@@ -262,6 +277,15 @@ public static class BandText
         if (reason?.Length == 0)
         {
             reason = null;
+        }
+
+        // **Smart App Control はどの状態より先に出す**（`decisions.md` 140・v2.0.2）＝
+        // ⑴ 止められたのは射だけで、サーバは「使えます」のまま立っていることがある
+        // ⑵ 起こす途中で止められた回は Failed の理由にも標識が載る（下の Explain も同じ枝へ落ちる）。
+        // どちらも、部品が読めない事実の方が先に要る 1 行である。
+        if (facts.SmartAppControlBlocked || SmartAppControlNotice.Blocked(reason))
+        {
+            return SmartAppControlNotice.Band();
         }
 
         // 応答が消えて降格した回は**赤にしない**（帯は「準備しています…」へ戻る＝§2-1a D3）。

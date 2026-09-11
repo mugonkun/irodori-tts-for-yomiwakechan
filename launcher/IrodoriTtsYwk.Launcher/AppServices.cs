@@ -23,6 +23,8 @@ public static class AppServices
     private static IServerProcess _server = new NullServerProcess();
     private static IDownloader? _downloader;
     private static IRuntimeInstaller? _runtimeInstaller;
+    private static Services.Security.ISmartAppControlPolicyReader? _smartAppControlReader;
+    private static Services.Security.SmartAppControlState? _smartAppControl;
 
     /// <summary>場所（exe の隣・利用者データ・変種ディレクトリ）。</summary>
     public static AppPaths Paths
@@ -82,6 +84,30 @@ public static class AppServices
     /// <summary>ドライバ検査（純関数なので既定を持たせておく）。</summary>
     public static IDriverCheck DriverCheck { get; set; } = new DriverRequirement();
 
+    /// <summary>
+    /// Smart App Control の状態を読む口（<c>decisions.md</c> 140・v2.0.2）。
+    /// 既定は本物の登録簿＝<b>読むだけ・投げない</b>。試験は偽物を差す。
+    /// </summary>
+    public static Services.Security.ISmartAppControlPolicyReader SmartAppControlReader
+    {
+        get => _smartAppControlReader ??= new Services.Security.RegistryPolicyReader();
+        set
+        {
+            _smartAppControlReader = value;
+            _smartAppControl = null;
+        }
+    }
+
+    /// <summary>
+    /// いまの Smart App Control の状態（<b>1 起動に 1 度だけ読む</b>）。
+    /// <para>
+    /// 走行中に切り替わる物ではない（切り替えには再起動が要る）ので覚えておく＝
+    /// ウィザードの告知・設定 › 詳細の 1 行・帯の畳みが同じ 1 つの事実を見る。
+    /// </para>
+    /// </summary>
+    public static Services.Security.SmartAppControlState SmartAppControl =>
+        _smartAppControl ??= Services.Security.SmartAppControl.Read(SmartAppControlReader);
+
     /// <summary>話者台帳（UI 席が差す）。</summary>
     public static IVoiceStore? VoiceStore { get; set; }
 
@@ -102,6 +128,8 @@ public static class AppServices
         (_downloader as IDisposable)?.Dispose();
         _downloader = null;
         _runtimeInstaller = null;
+        _smartAppControlReader = null;
+        _smartAppControl = null;
         GpuEnumerator = null;
         DriverCheck = new DriverRequirement();
         VoiceStore = null;

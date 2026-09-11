@@ -45,13 +45,21 @@ public sealed class SettingsViewModel : ObservableObject
     private int _cacheFiles;
     private long _cacheBytes;
     private string _cacheMessage = string.Empty;
+    private readonly Services.Security.SmartAppControlState _smartAppControl;
 
+    /// <param name="smartAppControl">
+    /// この機体の Smart App Control（<c>decisions.md</c> 140・v2.0.2）＝
+    /// 読むのは <see cref="AppServices"/> の側で、ここは<b>渡された事実を 1 行にするだけ</b>。
+    /// 既定は「無効」＝<b>渡されない回に警告を出さない</b>。
+    /// </param>
     public SettingsViewModel(
         LauncherSettings settings,
         ISettingsStore store,
         AppPaths paths,
         IGpuEnumerator? gpuEnumerator,
-        IDriverCheck driverCheck)
+        IDriverCheck driverCheck,
+        Services.Security.SmartAppControlState smartAppControl =
+            Services.Security.SmartAppControlState.Off)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(store);
@@ -63,6 +71,7 @@ public sealed class SettingsViewModel : ObservableObject
         _paths = paths;
         _gpuEnumerator = gpuEnumerator;
         _driverCheck = driverCheck;
+        _smartAppControl = smartAppControl;
 
         _draft = settings.Clone();
         _warmupStagesText = WarmupStagesText.Format(_draft.WarmupStages);
@@ -124,6 +133,24 @@ public sealed class SettingsViewModel : ObservableObject
         get => _message;
         private set => SetProperty(ref _message, value);
     }
+
+    /// <summary>
+    /// <b>Smart App Control の 1 行</b>（<c>decisions.md</c> 140・v2.0.2）＝
+    /// 詳細（上級者向け）の中に<b>状態だけ</b>を出す。無効な機体では出さない（<c>false</c>）。
+    /// <para>
+    /// <b>帯には常時出さない</b>（憲章 原則 7・「no nagging」）＝有効でもサーバが立って音が出る
+    /// 機体は在る（「デフォルト」の声だけを使う間は scipy の拡張が読まれない）。
+    /// 出すのは<b>止められた回の帯</b>と、この 1 行の 2 面だけである。
+    /// </para>
+    /// </summary>
+    public bool ShowSmartAppControl => SmartAppControlNotice.StatusLine(_smartAppControl) is not null;
+
+    /// <summary>その 1 行（無効な機体では空）。</summary>
+    public string SmartAppControlText =>
+        SmartAppControlNotice.StatusLine(_smartAppControl) ?? string.Empty;
+
+    /// <summary>その註（有効だと何が起きるかを 1 行で言う）。</summary>
+    public static string SmartAppControlNote => UiStrings.SmartAppControlStatusNote;
 
     /// <summary>ドライバ検査の 1 行（設計書 §3・受け入れ条件の「ドライバ」行）。</summary>
     public string DriverText

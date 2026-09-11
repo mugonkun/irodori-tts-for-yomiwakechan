@@ -897,4 +897,49 @@ public static class UiStrings
 
     /// <summary>まとめられなかった回。</summary>
     public const string AboutReportSaveFailed = "記録をまとめられませんでした。";
+
+    // ===================== Smart App Control（`decisions.md` 140・v2.0.2）=====================
+
+    // **なぜ「Smart App Control」と綴るのか**＝憲章 §6-2 の残す語である。
+    // 利用者が設定の画面で探す札そのものが「スマート アプリ コントロール」であり、
+    // 検索しても Microsoft の解説が先に出る（原則 1 の検分文の 2 段を通る）。
+    // **切れとは言わない**（所有者の規則＝防護の設定を決めるのは利用者）＝
+    // ここに並ぶ文は ⑴ 事実 ⑵ その結果できないこと ⑶ 設定の在り処と、戻せないこと、だけを言う。
+
+    /// <summary>設定 › 詳細に 1 行だけ出す状態（有効）。</summary>
+    public const string SmartAppControlStatusOn = "Smart App Control: 有効";
+
+    /// <summary>同・評価中（Windows が有効にするか見極めている途中）。</summary>
+    public const string SmartAppControlStatusEvaluation = "Smart App Control: 評価中";
+
+    /// <summary>設定 › 詳細のその 1 行に添える註（<b>この 1 行だけが「なぜ気にするのか」を言う</b>）。</summary>
+    public const string SmartAppControlStatusNote =
+        "有効なパソコンでは、このアプリが使う部品を読み込めないことがあります。";
+
+    /// <summary>
+    /// <b>はじめの準備の「これからすること」に出す告知</b>（有効な機体だけ・
+    /// ダウンロードが始まる<b>前</b>＝憲章 原則 3 の正直さ）。
+    /// </summary>
+    public const string SmartAppControlWizardNotice =
+        "このパソコンでは Windows の Smart App Control が有効です。"
+        + "このままダウンロードしても、このアプリが使う部品を読み込めないため、しゃべらせられません。"
+        + "Smart App Control は Windows の設定"
+        + "（Windows セキュリティ › アプリとブラウザー コントロール › スマート アプリ コントロール）で"
+        + "無効にできますが、一度無効にすると Windows を入れ直すまで元に戻せません。";
+
+    /// <summary>帯の ⑴ 何が起きたか（<b>生の ImportError は帯に出さない</b>＝記録へ落とす）。</summary>
+    public const string SmartAppControlFailedWhat = "読み上げに必要な部品が読み込めませんでした。";
+
+    /// <summary>
+    /// 帯の ⑵ なぜか（止められた檔の名は<b>例として</b>出す＝これが無いと
+    /// Windows セキュリティの通知と目の前の帯が同じ事件だと判らない）。
+    /// </summary>
+    public const string SmartAppControlFailedWhy =
+        "このパソコンの Smart App Control が、"
+        + "初回にダウンロードした部品（例＝_spline.cp312-win_amd64.pyd）を止めました。"
+        + "Smart App Control は Windows の設定で無効にできますが、"
+        + "一度無効にすると Windows を入れ直すまで元に戻せません。";
+
+    /// <summary>帯の ⑶ 次の 1 手（押すと Windows の設定が開く）。</summary>
+    public const string SmartAppControlOpenSettingsButton = "設定を開く";
 }

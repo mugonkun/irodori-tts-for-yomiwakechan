@@ -87,6 +87,8 @@ public sealed class FirstRunViewModel : ObservableObject
 
     private CancellationTokenSource? _cancel;
     private FirstRunStep _step = FirstRunStep.Notices;
+    private Services.Security.SmartAppControlState _smartAppControl =
+        Services.Security.SmartAppControlState.Off;
     private string _noticesText = string.Empty;
     private string? _noticesSha256;
     private bool _accepted;
@@ -399,6 +401,7 @@ public sealed class FirstRunViewModel : ObservableObject
             RaisePropertyChanged(nameof(IsDoneStep));
             RaisePropertyChanged(nameof(HasAdvanced));
             RaisePropertyChanged(nameof(BackVisible));
+            RaisePropertyChanged(nameof(SmartAppControlNoticeVisible));
             NextCommand.RaiseCanExecuteChanged();
             BackCommand.RaiseCanExecuteChanged();
 
@@ -537,6 +540,39 @@ public sealed class FirstRunViewModel : ObservableObject
     /// お知らせの段には別の畳み（全文＝<c>FirstRunNoticesExpander</c>）が在るので出さない。
     /// </summary>
     public bool HasAdvanced => !IsNoticesStep;
+
+    /// <summary>
+    /// この機体の Smart App Control（<c>decisions.md</c> 140・v2.0.2）。
+    /// 束ねる側（<see cref="MainViewModel.CreateFirstRun"/>）が <see cref="AppServices"/> から渡す＝
+    /// <b>ウィザードは登録簿を自分で読まない</b>（試験は値を直に置く）。
+    /// </summary>
+    public Services.Security.SmartAppControlState SmartAppControl
+    {
+        get => _smartAppControl;
+        set
+        {
+            if (SetProperty(ref _smartAppControl, value))
+            {
+                RaisePropertyChanged(nameof(SmartAppControlNoticeVisible));
+                RaisePropertyChanged(nameof(SmartAppControlNoticeText));
+            }
+        }
+    }
+
+    /// <summary>
+    /// <b>これからすることの段に告知を出すか</b>＝<b>有効な機体だけ</b>。
+    /// <para>
+    /// 出す場所がここなのは憲章 原則 3（押す前に正直に言う）である＝この段の次の 1 手が
+    /// 〔準備を始める〕＝<b>5 GB のダウンロードの開始</b>であり、Smart App Control が有効な機体では
+    /// <b>落とし終えてもしゃべらせられない</b>。落とさせてから告げるのは嘘に近い。
+    /// </para>
+    /// </summary>
+    public bool SmartAppControlNoticeVisible =>
+        IsVariantStep && SmartAppControlNotice.WizardNotice(SmartAppControl) is not null;
+
+    /// <summary>その 1 行（出さない回は空＝束縛が null を掴まない）。</summary>
+    public string SmartAppControlNoticeText =>
+        SmartAppControlNotice.WizardNotice(SmartAppControl) ?? string.Empty;
 
     /// <summary>
     /// この画面が始まる段（＝<see cref="Back"/> がこれより手前へは戻らない）。

@@ -130,6 +130,21 @@
           <StackPanel Margin="12,8,0,0">
             <TextBlock Style="{StaticResource Note}" Text="{x:Static vm:UiStrings.AdvancedIntro}" />
 
+            <!--
+              Smart App Control の状態 1 行（decisions.md 140・v2.0.2）＝有効／評価中の機体だけ出る。
+              **行の数には数えない**＝見出し（Head）を持たない註 2 行で、
+              憲章 原則 7 の「詳細は 12 行以内」の 8 行は動かない。
+              帯に常時出さない代わりの、唯一の「いつでも確かめられる場所」である。
+            -->
+            <StackPanel Margin="0,10,0,0"
+                        Visibility="{Binding ShowSmartAppControl, Converter={StaticResource BoolToVis}}">
+              <TextBlock FontWeight="Bold"
+                         AutomationProperties.AutomationId="SettingsSmartAppControlText"
+                         Text="{Binding SmartAppControlText, Mode=OneWay}" />
+              <TextBlock Style="{StaticResource Note}"
+                         Text="{x:Static vm:UiStrings.SmartAppControlStatusNote}" />
+            </StackPanel>
+
             <!-- 1＝使うグラフィックス（UUID の 1 行は消した） -->
             <TextBlock Text="{x:Static vm:UiStrings.SettingsGpuLabel}" Style="{StaticResource Head}" />
             <DockPanel>

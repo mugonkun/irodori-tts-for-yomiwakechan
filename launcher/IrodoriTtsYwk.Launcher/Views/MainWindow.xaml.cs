@@ -351,6 +351,13 @@ public partial class MainWindow : Window
                 OpenGuide();
                 break;
 
+            // Windows の設定のスマート アプリ コントロールの頁（decisions.md 140・v2.0.2）。
+            // **連れて行くだけ**＝こちらは 1 つも切らない。頁の綴りが無い版のために
+            // Windows セキュリティそのものへ落ちる道を持つ。
+            case BandActionKind.OpenSmartAppControl:
+                OpenSmartAppControlSettings();
+                break;
+
             case BandActionKind.None:
             default:
                 break;
@@ -499,6 +506,42 @@ public partial class MainWindow : Window
     private const string GuideFileName = "guide.md";
 
     private void OpenExternal(string url) => StartShell(url, null);
+
+    /// <summary>
+    /// スマート アプリ コントロールの頁を開く（<c>decisions.md</c> 140・v2.0.2）。
+    /// <para>
+    /// 開けなかったら Windows セキュリティそのものへ落ちる＝<b>押した釦が黙って何もしない形を作らない</b>。
+    /// どちらも開けない機体は、<see cref="StartShell"/> が理由を記録へ落とす。
+    /// </para>
+    /// </summary>
+    private void OpenSmartAppControlSettings()
+    {
+        if (TryStartShell(Services.Security.SmartAppControl.SettingsUri))
+        {
+            return;
+        }
+
+        StartShell(Services.Security.SmartAppControl.FallbackSettingsUri, null);
+    }
+
+    /// <summary>1 つ開いてみる（開けたら真・開けなければ<b>記録を汚さずに</b>偽）。</summary>
+    private static bool TryStartShell(string target)
+    {
+        try
+        {
+            var info = new ProcessStartInfo(target) { UseShellExecute = true };
+            using var started = Process.Start(info);
+            return true;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
 
     /// <summary>置き場を 1 つ開く（無ければ何もしない＝押せる釦が必ず失敗する形を作らない）。</summary>
     private void OpenFolder(string path)

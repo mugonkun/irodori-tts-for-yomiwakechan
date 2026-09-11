@@ -84,7 +84,9 @@ public sealed class TryViewModel : ObservableObject
         SynthesizeCommand.CanExecuteChanged += (_, _) => RaiseConcurrencyChanged();
 
         // 捕れなかった例外を握り潰さない（§20-5 ⑴）。
-        SynthesizeCommand.Faulted += (_, line) => Message = Fold(UiStrings.TryFailed, line);
+        // **ここも同じ畳みを通す**（`decisions.md` 140）＝止められた 1 行は例外の本文で届くこともある。
+        SynthesizeCommand.Faulted += (_, line) =>
+            Message = FoldFailure(line, () => Fold(UiStrings.TryFailed, line));
     }
 
     /// <summary>
@@ -96,6 +98,17 @@ public sealed class TryViewModel : ObservableObject
     /// </para>
     /// </summary>
     public event EventHandler? Succeeded;
+
+    /// <summary>
+    /// <b>Smart App Control に止められた</b>（<c>decisions.md</c> 140・v2.0.2）。
+    /// 引数は<b>生の 1 行</b>＝束ねる側（<see cref="MainViewModel"/>）が<b>記録へ</b>落とし、
+    /// 帯へは <see cref="StatusViewModel.ApplySmartAppControlBlock"/> で報せる。
+    /// <b>この字が画面へ出る道は 1 本も無い。</b>
+    /// </summary>
+    public event EventHandler<string>? SmartAppControlBlocked;
+
+    /// <summary>音が出た＝止められていない（帯の 1 行を下ろす）。</summary>
+    public event EventHandler? SmartAppControlCleared;
 
     /// <summary>話者の候補（<see cref="VoicesViewModel"/> の一覧から流し込む）。</summary>
     public ObservableCollection<string> Voices { get; } = [VoiceIds.Default];
@@ -484,9 +497,18 @@ public sealed class TryViewModel : ObservableObject
 
         if (!result.Ok || result.Audio is null || result.Audio.Length == 0)
         {
-            Message = SpeechRequestBuilder.DescribeError(result.Error, result.StatusCode);
+            // **Smart App Control に止められた射は、同じ畳みへ落とす**（`decisions.md` 140・v2.0.2）。
+            // ここに来る生の 1 行は上流の例外の本文（例＝「ImportError: DLL load failed while
+            // importing _spline: アプリケーション制御ポリシーによってこのファイルがブロックされました。」）で、
+            // v2.0.1 まではそれが括弧に入って画面に出ていた。**生の字は記録へ、画面は 3 部品へ。**
+            Message = FoldFailure(
+                result.Error?.Message,
+                () => SpeechRequestBuilder.DescribeError(result.Error, result.StatusCode));
             return;
         }
+
+        // 音が出た＝止められていない（帯の 1 行を下ろす合図）。
+        SmartAppControlCleared?.Invoke(this, EventArgs.Empty);
 
         _lastAudio = result.Audio;
         _lastSeed = result.Seed;
@@ -517,6 +539,27 @@ public sealed class TryViewModel : ObservableObject
         // 200 が返って音になった＝原檔を捨ててよい合図（再生の可否には掛けない＝
         // 音が出ないのは機体の音源の話で、実行系が組み上がった事実は変わらない）。
         Succeeded?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// <b>失敗の 1 行を畳む</b>（<c>decisions.md</c> 140・v2.0.2）。
+    /// <para>
+    /// <paramref name="raw"/> に「アプリケーション制御ポリシー」などの標識が在れば
+    /// <see cref="SmartAppControlNotice.Message"/>（3 部品）を返し、
+    /// <see cref="SmartAppControlBlocked"/> を上げる（帯が〔設定を開く〕を出す・
+    /// 生の 1 行は束ねる側が記録へ落とす）。標識が無ければ
+    /// <paramref name="otherwise"/> が組む従来どおりの 1 行を返す。
+    /// </para>
+    /// </summary>
+    private string FoldFailure(string? raw, Func<string> otherwise)
+    {
+        if (!SmartAppControlNotice.Blocked(raw))
+        {
+            return otherwise();
+        }
+
+        SmartAppControlBlocked?.Invoke(this, raw ?? string.Empty);
+        return SmartAppControlNotice.Message();
     }
 
     /// <summary>

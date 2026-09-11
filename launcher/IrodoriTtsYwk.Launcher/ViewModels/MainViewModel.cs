@@ -137,7 +137,8 @@ public sealed class MainViewModel : ObservableObject
         Try = new TryViewModel(static () => AppServices.Wrapper, player, settings);
 
         Settings = new SettingsViewModel(
-            settings, store, paths, AppServices.GpuEnumerator, AppServices.DriverCheck)
+            settings, store, paths, AppServices.GpuEnumerator, AppServices.DriverCheck,
+            AppServices.SmartAppControl)
         {
             // 段 C で欄ごと消した設定（準備運転の段・使う声）の検分は、画面に出す先が無い＝
             // 手で書いた settings.json が読めない回の理由は記録へ落とす（是正・段 C の検分）。
@@ -187,6 +188,19 @@ public sealed class MainViewModel : ObservableObject
 
         // 「発話テスト」で 1 射 200＝取得キャッシュを捨ててよい合図（裁定 90 Q-E2 ⑶）。
         Try.Succeeded += (_, _) => ClearCacheAfterFirstShot();
+
+        // **Smart App Control に止められた射**（`decisions.md` 140・v2.0.2）＝
+        // ⑴ 生の 1 行は<b>記録だけ</b>へ ⑵ 帯は 3 部品と〔設定を開く〕へ。
+        Try.SmartAppControlBlocked += (_, raw) =>
+        {
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                Status.AppendLog("Smart App Control が部品を止めました：" + raw);
+            }
+
+            Status.ApplySmartAppControlBlock(true);
+        };
+        Try.SmartAppControlCleared += (_, _) => Status.ApplySmartAppControlBlock(false);
 
         Voices.Reload();
         CheckRuntimeStamp();
@@ -304,6 +318,10 @@ public sealed class MainViewModel : ObservableObject
             static () => AppServices.RuntimeInstaller,
             StartServerAsync,
             openedForAcquisition);
+
+        // **押す前に告げる**（`decisions.md` 140・憲章 原則 3・v2.0.2）＝Smart App Control が
+        // 有効な機体では、5 GB を落とし終えても部品が読み込めない。落としてから言わない。
+        vm.SmartAppControl = AppServices.SmartAppControl;
 
         // **ウィザードの行も同じ檔へ落とす**（裁定 126 の C（1）・是正・検分）＝切符の元は
         // 清潔導入で、そこで詰まる回（取得・展開・モデル）は状態帯を 1 度も通らない＝
@@ -485,6 +503,10 @@ public sealed class MainViewModel : ObservableObject
     /// </param>
     public async Task<bool> StartServerAsync(CancellationToken cancellationToken = default)
     {
+        // 起こし直す回は、止められた札を 1 度下ろす（`decisions.md` 140・v2.0.2）＝
+        // 直っていれば次の射で音が出るし、直っていなければその射がまた立てる。
+        Status.ApplySmartAppControlBlock(false);
+
         var pythonExe = _paths.ResolvePythonExe(_settings.Variant);
         if (pythonExe is null)
         {

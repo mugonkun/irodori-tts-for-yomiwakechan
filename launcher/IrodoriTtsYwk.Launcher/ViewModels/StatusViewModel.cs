@@ -610,6 +610,7 @@ public sealed class StatusViewModel : ObservableObject
     private string? _alternativeVariant;
     private int? _missingModelCount;
     private int? _exitCode;
+    private bool _smartAppControlBlocked;
 
     /// <summary>帯の丸の色（灰／緑／赤）。</summary>
     public BandSeverity BandSeverity => _band.Severity;
@@ -670,6 +671,29 @@ public sealed class StatusViewModel : ObservableObject
         RefreshBand();
     }
 
+    /// <summary>
+    /// <b>Smart App Control が部品を止めた・止めていない</b>（<c>decisions.md</c> 140・v2.0.2）。
+    /// <para>
+    /// 真を渡すのは、射が「アプリケーション制御ポリシー」を含む 1 行で落ちた回
+    /// （<see cref="TryViewModel.SmartAppControlBlocked"/>）である。サーバ自体は
+    /// <see cref="ServerState.Ready"/> のまま立っているので、状態機械からは見えない＝
+    /// <b>判っている側が渡す</b>（§2-1b）。
+    /// </para>
+    /// <para>
+    /// 偽に戻すのは<b>音が出た回と、起こし直した回</b>だけ＝直っていないのに帯が黙らない。
+    /// </para>
+    /// </summary>
+    public void ApplySmartAppControlBlock(bool blocked)
+    {
+        if (_smartAppControlBlocked == blocked)
+        {
+            return;
+        }
+
+        _smartAppControlBlocked = blocked;
+        RefreshBand();
+    }
+
     /// <summary>いま集まっている材料で帯を組み直す。</summary>
     private void RefreshBand()
     {
@@ -685,7 +709,8 @@ public sealed class StatusViewModel : ObservableObject
             ExitCode: _exitCode,
             RebuildRuntimeLine: _rebuildRuntime,
             FirstRunPending: _firstRunPending,
-            ElapsedSeconds: PreparingTicker.IsRunning ? PreparingTicker.Seconds : null);
+            ElapsedSeconds: PreparingTicker.IsRunning ? PreparingTicker.Seconds : null,
+            SmartAppControlBlocked: _smartAppControlBlocked);
 
         var next = BandText.For(State, Reason, context);
         if (!Equals(_band, next))
