@@ -22,8 +22,9 @@
     <!--
       動かし方の一覧の行に出す札＝RuntimeVariants.ShortDisplayName（段 G・high 14 → 決裁 135 ⑶）。
       束縛の値は台帳の綴りのままなので settings.json の variant は 1 字も動かない。
-      ItemContainerStyle の 2 行は SettingsView.xaml と**同じ理由**（畳んだ一覧の行と
-      読み上げ機の名）＝是正・v2.0.1。
+      ItemContainerStyle の 2 行は SettingsView.xaml と**同じ理由**＝効いているのは
+      読み上げ機（UI Automation）の名の 1 行で、ContentTemplate は念のためである
+      （項目の器には ItemTemplate が局所値で入るので Style の Setter より強い）＝是正・v2.0.1。
     -->
     <v:VariantDisplayConverter x:Key="VariantDisplay" />
     <DataTemplate x:Key="VariantRow">

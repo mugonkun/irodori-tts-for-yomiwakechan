@@ -315,7 +315,11 @@ public static class ServerExitCodes
 /// <param name="Host">bind（<c>127.0.0.1</c> 固定＝裁定 2）。</param>
 /// <param name="Port">既定 18088。塞がっていたら止まって告知（裁定 52）。</param>
 /// <param name="Environment">子に載せる env の差分。</param>
-/// <param name="ReadyTimeout">ready 待ち（契約 ⑵＝120 s・CPU 変種は 300 s）。</param>
+/// <param name="ReadyTimeout">
+/// ready 待ちの<b>1 段目だけ</b>＝契約 ⑵ の期限（120 s・CPU 変種は 300 s）。
+/// 声を読み込んでいる最中は 2 段目（<c>ServerProcess.LoadingHardCap</c>＝600 s）まで
+/// 1 度だけ伸びる（決裁 135 ⑴・<c>launcher/README</c> §7-6）。
+/// </param>
 public sealed record ServerStartRequest(
     string PythonExe,
     string WorkingDirectory,

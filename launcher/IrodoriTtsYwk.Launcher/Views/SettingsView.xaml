@@ -35,12 +35,17 @@
       一覧の行に出す札＝RuntimeVariants.ShortDisplayName（是正・段 G・high 14 → 決裁 135 ⑶）。
       **束縛の値は台帳の綴りのまま**なので settings.json の variant は 1 字も動かない。
 
-      **畳んだ一覧の行にも札を当てる**（是正・v2.0.1＝RTX 機の段 H 射 10 で
-      「cu130」「cu126」「cpu」の生の綴りが見えた）＝ItemTemplate は
-      ⑴ 選んでいる 1 行（ComboBox の ContentPresenter）にしか効かないことが在り、
-      ⑵ 読み上げ機（UI Automation）の名は DataTemplate の中身ではなく**項目そのもの**から
-      採られる。だから ItemContainerStyle で ContentTemplate と
-      AutomationProperties.Name の 2 つを明示する（束縛の値も id も 1 字も動かない）。
+      **一覧の行の「名乗り」を直す**（是正・v2.0.1＝RTX 機の段 H 射 10 で
+      「cu130」「cu126」「cpu」の生の綴りが読み取られた）。
+      効いているのは **AutomationProperties.Name の 1 行**である＝読み上げ機
+      （UI Automation）の名は DataTemplate の中身ではなく**項目そのもの**（台帳の綴りの
+      文字列）から採られるので、何もしないと生の綴りが名になる（台本 probe\common.ps1 も
+      その名で掴む＝報告にも生の綴りが載る）。
+      ContentTemplate の Setter は**念のため**である＝WPF は項目の器を作るときに
+      ItemTemplate を ContentTemplate へ**局所値**として書き込み、局所値は Style の Setter より
+      強いので、**描かれる**行はこの Setter が無くても ItemTemplate で綴られている。
+      ＝画面に生の綴りが「描かれて」いたのなら原因はまだ見つかっていない（v2-plan 段 H）。
+      束縛の値も AutomationId も settings.json の variant も 1 字も動かない。
     -->
     <v:VariantDisplayConverter x:Key="VariantDisplay" />
     <DataTemplate x:Key="VariantRow">

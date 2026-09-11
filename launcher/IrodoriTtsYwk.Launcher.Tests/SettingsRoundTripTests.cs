@@ -55,6 +55,7 @@ public sealed class SettingsRoundTripTests : IDisposable
             VoiceOrder = ["デフォルト", "つくよみちゃん"],
             ReadyTimeoutSeconds = 180,
             FirstRunCompleted = true,
+            VariantChosenByUser = true,
             AcceptedNoticesSha256 = new string('a', 64),
             AutoStartServer = false,
             ShowMemoryPanel = false,
@@ -70,6 +71,9 @@ public sealed class SettingsRoundTripTests : IDisposable
         Assert.Equal(written.GpuName, read.GpuName);
         Assert.Equal(written.Variant, read.Variant);
         Assert.Equal(written.Precision, read.Precision);
+
+        // 決裁 135 ⑵ の欄（是正・検分）＝**3 値**（真／偽／無い＝判らない）が戻る。
+        Assert.True(read.VariantChosenByUser);
         Assert.Equal(written.Port, read.Port);
         Assert.Equal(written.HfHome, read.HfHome);
         Assert.True(read.WarmupOnStart);
@@ -173,6 +177,10 @@ public sealed class SettingsRoundTripTests : IDisposable
 
         Assert.Null(store.LastLoadError);
         Assert.Equal(18096, settings.Port);
+
+        // 逆向き＝v2.0.1 で足した欄が**無い**古い檔は「判らない」（null）で読む
+        // （偽と読むと、選んだはずの動かし方をアプリが勧めで上書きする＝決裁 135 ⑵・是正・検分）。
+        Assert.Null(settings.VariantChosenByUser);
     }
 
     [Fact]

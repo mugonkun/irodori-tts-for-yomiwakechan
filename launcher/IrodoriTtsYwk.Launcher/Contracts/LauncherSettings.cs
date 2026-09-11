@@ -101,6 +101,28 @@ public sealed class LauncherSettings
     [JsonPropertyName("firstRunCompleted")]
     public bool FirstRunCompleted { get; set; }
 
+    /// <summary>
+    /// <b>この動かし方を選んだのは利用者か</b>（決裁 135 ⑵・是正・検分・v2.0.1）。
+    /// <para>
+    /// <b>真</b>＝設定 › 詳細 の一覧か、ウィザードの畳みの中で<b>利用者が動かした</b>。
+    /// <b>偽</b>＝アプリが勧めて決めた（<c>VariantRecommendation.Recommend</c>）。
+    /// <b><c>null</c></b>＝この欄より古い <c>settings.json</c>（v2.0.0 まで）＝<b>判らない</b>。
+    /// </para>
+    /// <para>
+    /// この欄が要るのは、<see cref="Variant"/> だけでは
+    /// <b>「アプリが決めて焼いた値」と「利用者が選んだ値」が見分けられない</b>からである。
+    /// 見分けずに「設定に在る＝選ばれた」と読むと、⑴ 一度も選んでいない利用者に
+    /// 「設定で選んだ … で動かします。」と名乗り ⑵ 〔はじめの準備をやり直す〕を押しても
+    /// アプリが決め直さない（ドライバを上げても古い変種のまま）。
+    /// 読む所＝<c>FirstRunViewModel.IsExplicitChoice</c>。
+    /// </para>
+    /// <para>
+    /// <b>契約 ⑻＝欄を足すのは schema を上げない</b>＝古いランチャはこの欄を黙って読み飛ばす。
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("variantChosenByUser")]
+    public bool? VariantChosenByUser { get; set; }
+
     /// <summary>同意した通知文の sha256（<c>licenses/first-run-notices.md</c>・裁定 46）。</summary>
     [JsonPropertyName("acceptedNoticesSha256")]
     public string? AcceptedNoticesSha256 { get; set; }
@@ -324,6 +346,7 @@ public sealed class LauncherSettings
         VoiceOrder = [.. VoiceOrder],
         ReadyTimeoutSeconds = ReadyTimeoutSeconds,
         FirstRunCompleted = FirstRunCompleted,
+        VariantChosenByUser = VariantChosenByUser,
         AcceptedNoticesSha256 = AcceptedNoticesSha256,
         RuntimeLedgers = CopyMap(RuntimeLedgers),
         InstalledAppVersions = CopyMap(InstalledAppVersions),

@@ -287,7 +287,12 @@ public sealed class MainViewModel : ObservableObject
     /// <c>MSVCP140.dll</c> を解決できずに起動が落ちる）。
     /// </para>
     /// </summary>
-    public FirstRunViewModel CreateFirstRun()
+    /// <param name="openedForAcquisition">
+    /// <b>取得のために開いた回か</b>（決裁 135 ⑵ の但し書き・是正・検分）＝状態帯の〔取得へ進む〕・
+    /// 起動時の自動・裁定 126 ⑽ の求めは真。設定 › 詳細 の〔はじめの準備をやり直す〕は<b>偽</b>＝
+    /// 利用者はアプリに決め直させたくて押しているので、設定の値を明示の選択として固めない。
+    /// </param>
+    public FirstRunViewModel CreateFirstRun(bool openedForAcquisition = true)
     {
         var paths = _paths;
         var vm = _firstRun = new FirstRunViewModel(
@@ -297,7 +302,8 @@ public sealed class MainViewModel : ObservableObject
             AppServices.DriverCheck,
             static () => AppServices.Downloader,
             static () => AppServices.RuntimeInstaller,
-            StartServerAsync);
+            StartServerAsync,
+            openedForAcquisition);
 
         // **ウィザードの行も同じ檔へ落とす**（裁定 126 の C（1）・是正・検分）＝切符の元は
         // 清潔導入で、そこで詰まる回（取得・展開・モデル）は状態帯を 1 度も通らない＝
@@ -423,7 +429,7 @@ public sealed class MainViewModel : ObservableObject
 
         // **口が開いてまだ載っていない＝声を読み込んでいる最中**（決裁 135 ⑴・v2.0.1）。
         // ウィザードが「起動の確認」で待っている間は、その 1 行を名乗らせる＝
-        // 冷えた円盤からの 1 回目（実測 36.62 秒・段 H 射 2 では 120 秒でも足りなかった）に
+        // 取得の直後の 1 回目（実測 36.62 秒・段 H 射 2 では 120 秒でも足りなかった）に
         // 「動くか確かめています。」のまま固まったように見せない。
         if (state is ServerState.Listening)
         {

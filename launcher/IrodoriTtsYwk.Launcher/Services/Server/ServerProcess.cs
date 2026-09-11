@@ -17,7 +17,9 @@ namespace IrodoriTtsYwk.Launcher.Services.Server;
 /// ⑵ <b>変種の門</b>＝GPU 変種はその <c>python.exe</c> で torch を検分し、GPU を見られなければ
 /// <b>起こさない</b>（裁定 88 ⑴＝<see cref="VariantGate"/>）
 /// ⑶ <c>python.exe -m ywk_server --host 127.0.0.1 --port N</c> を env つきで起こす
-/// ⑷ stdout／stderr を<b>非同期に</b>読んで状態機械へ流す ⑸ ready まで待つ（120 s・CPU 300 s）
+/// ⑷ stdout／stderr を<b>非同期に</b>読んで状態機械へ流す ⑸ ready まで待つ
+/// （120 s・CPU 300 s＝<b>声を読み込んでいる最中だけ 600 s まで伸びる</b>＝
+/// <see cref="LoadingHardCap"/>・<c>launcher/README</c> §7-6）
 /// ⑹ 停止＝<b>自分が起こした個体だけ</b>をツリー kill（上流に shutdown の路は無い）。
 /// </para>
 /// <para>
@@ -69,12 +71,18 @@ public sealed class ServerProcess : IServerProcess
     /// <summary>
     /// <b>声を読み込んでいる間だけ伸ばせる硬い上限</b>（決裁 135 ⑴・v2.0.1）。
     /// <para>
-    /// <b>なぜ要るか</b>＝取得の直後の 1 回目は 3.06 GB の重みを<b>冷えた円盤から</b>読む。
-    /// RTX 機の段 H 射 2（清浄な機体・ドライバ 616.92）では
+    /// <b>なぜ要るか</b>＝RTX 機の段 H 射 2（清浄な機体・ドライバ 616.92）では
     /// <c>runtime load started</c>／<c>checkpoint resolved</c> の後、契約 ⑵ の 120 秒では
     /// <c>runtime loaded</c> が来ず、ウィザードが「止まりました。」で終わった
     /// （〔もう一度〕で 36.62 秒・その次の起動は 12 秒）。<b>子は生きていて口も開いていた</b>＝
     /// 期限が事実と合っていなかったのであって、機体が壊れていたのではない。
+    /// </para>
+    /// <para>
+    /// <b>遅さそのものの原因はここでは直らない</b>（決裁 136）＝「円盤が冷えていた」説は撤回され、
+    /// 本命は <b>Windows Defender のオンアクセス初回スキャン</b>（そのとき初めて書かれた
+    /// 実行系 25,300 檔・3.3 GB とモデル 3.06 GB を import／mmap の瞬間に同期スキャンする）である。
+    /// この上限は<b>「壊れない」ための緩和</b>で、展開の最後に檔を温める段と待ちの 1 行の言い換えは
+    /// 別の工事（決裁 136 ⒜⒝・137）が入れる。
     /// </para>
     /// <para>
     /// <b>伸ばす条件は 3 つ揃ったときだけ</b>（<see cref="IsLoadingInProgress"/>）＝
@@ -85,7 +93,7 @@ public sealed class ServerProcess : IServerProcess
     /// </para>
     /// <para>
     /// <b>利用者が <c>readyTimeoutSeconds</c> でこれより長い値を書いていればそちらが勝つ</b>
-    /// （<c>launcher/README</c> §7-3）＝この定数は<b>下限としての硬い上限</b>である。
+    /// （<c>launcher/README</c> §7-6）＝この定数は<b>下限としての硬い上限</b>である。
     /// </para>
     /// </summary>
     public static readonly TimeSpan LoadingHardCap = TimeSpan.FromSeconds(600);
@@ -628,10 +636,19 @@ public sealed class ServerProcess : IServerProcess
         // **期限は 2 段**（決裁 135 ⑴）＝⑴ 契約 ⑵ の期限（既定 120 s・CPU 300 s・設定で上書き可）
         // ⑵ 声を読み込んでいる最中にだけ伸びる硬い上限（<see cref="LoadingHardCap"/>）。
         // ⑵ が ⑴ より短い機体は無い（長い方を採る）＝設定で 900 秒と書いた機体を縮めない。
+        // **2 段の起点は同じ**（是正・検分）＝硬い上限もこの待ちの頭から数える。
+        // `started`（＝StartAsync の頭）から数えると、ポート検め・変種の門
+        // （<c>python -c import torch</c>・最長 15 s）・spawn（3 s）のぶんだけ
+        // 硬い上限が短くなる＝約束した 600 秒に 18 秒ほど届かない。
         var limit = request.ReadyTimeout;
         var hardCap = limit > _loadingHardCap ? limit : _loadingHardCap;
-        var deadline = Stopwatch.GetTimestamp() + (long)(limit.TotalSeconds * Stopwatch.Frequency);
+        var waitStarted = Stopwatch.GetTimestamp();
+        var deadline = waitStarted + (long)(limit.TotalSeconds * Stopwatch.Frequency);
         var extended = false;
+
+        // 期限に立った瞬間の 1 標本だけで決めない（是正・検分）＝<see cref="CanExtendForLoading"/>。
+        var loadingSeen = false;
+        var unreachableStreak = 0;
 
         while (true)
         {
@@ -680,17 +697,40 @@ public sealed class ServerProcess : IServerProcess
                     _machine.FailureReason);
             }
 
+            // 標本の履歴を持つ（是正・検分）＝期限に立った回の 1 標本が、たまたま
+            // 5 秒で返らなかっただけ（<c>WrapperClient.DefaultTimeout</c>＝届かない扱い）で
+            // 緩和ごと捨てないため。見張りが Ready を降ろす基準と同じ 3 標本を許す。
+            if (sample.Reachable)
+            {
+                unreachableStreak = 0;
+                if (IsLoadingInProgress(sample))
+                {
+                    loadingSeen = true;
+                }
+            }
+            else
+            {
+                unreachableStreak++;
+            }
+
             if (Stopwatch.GetTimestamp() >= deadline)
             {
                 // **まだ載せている最中なら、1 度だけ硬い上限まで伸ばす**（決裁 135 ⑴）。
                 // 子が生きていて、口が開いていて、理由も無い＝壊れてはいない個体を
                 // 「止まりました。」で放り出さない。帯は Listening のまま
                 // （<see cref="ViewModels.BandText.PreparingVoices"/>）＝1 行は変わらない。
-                if (!extended && IsLoadingInProgress(sample) && !HasExited(process))
+                // **伸びしろが無いときは入らない**（是正・検分）＝利用者が
+                // <c>readyTimeoutSeconds</c> に 600 以上を書いた機体では <c>hardCap == limit</c> で、
+                // 入ると「900 秒では終わりませんでした。…900 秒まで待ちます。」という
+                // 自家撞着の 1 行を記録に残したうえで同じ数字で断ることになる。
+                if (!extended
+                    && hardCap > limit
+                    && CanExtendForLoading(sample, loadingSeen, unreachableStreak)
+                    && !HasExited(process))
                 {
                     extended = true;
                     limit = hardCap;
-                    deadline = started + (long)(hardCap.TotalSeconds * Stopwatch.Frequency);
+                    deadline = waitStarted + (long)(hardCap.TotalSeconds * Stopwatch.Frequency);
                     LogLine?.Invoke(this, new ServerLogLineEventArgs(new ServerLogEvent(
                         ServerLogSignal.Other, LoadingStillRunningLine(request.ReadyTimeout, hardCap))));
                     await Task.Delay(_pollInterval, cancellationToken).ConfigureAwait(false);
@@ -725,6 +765,33 @@ public sealed class ServerProcess : IServerProcess
         && sample.Reachable
         && !sample.Loaded
         && string.IsNullOrWhiteSpace(sample.RuntimeError);
+
+    /// <summary>
+    /// 期限に立ったその回に「<b>まだ伸ばしてよい</b>」か（<b>純関数</b>・是正・検分）。
+    /// <para>
+    /// 1 標本だけで決めない＝<c>/ywk/status</c> の 1 標本は
+    /// <c>WrapperClient.DefaultTimeout</c>（5 秒）で切れ、切れた標本は<b>届かない</b>扱いになる。
+    /// 決裁 136 が名指しする状態（Defender が 3.3 GB を初回スキャンする最中に torch が
+    /// 3.06 GB を mmap する）は、まさにその 1 標本が遅れ得る状態である。期限の回に
+    /// たまたま当たった 1 回の空振りで緩和ごと捨てると、直そうとした欠陥
+    /// （決裁 135 ⑴）がそのまま再現する。
+    /// </para>
+    /// <para>
+    /// そこで <b>⑴ いま載せている最中だと標本が言っている</b>（<see cref="IsLoadingInProgress"/>）か、
+    /// <b>⑵ 一度は載せている最中だと見えていて、届かない標本がまだ
+    /// <see cref="ServerStateMachine.UnreachableSamplesToDowngrade"/> 回未満</b>なら伸ばす。
+    /// ⑵ の 3 標本は見張りが <c>Ready</c> を降ろす基準と同じ値である＝ready 待ちだけが
+    /// 見張りより短気になる筋は無い。<c>runtime.error</c> が載った標本は
+    /// <see cref="ServerStateMachine.ApplyReadiness"/> が先に <c>Failed</c> にするので
+    /// ここには来ない。
+    /// </para>
+    /// </summary>
+    public static bool CanExtendForLoading(ReadinessSample? sample, bool loadingSeen, int unreachableStreak) =>
+        IsLoadingInProgress(sample)
+        || (loadingSeen
+            && unreachableStreak < ServerStateMachine.UnreachableSamplesToDowngrade
+            && (sample is null
+                || (!sample.Reachable && string.IsNullOrWhiteSpace(sample.RuntimeError))));
 
     /// <summary>
     /// 期限を伸ばしたことを記録に残す 1 行（<b>純関数</b>・画面には出ない＝帯は

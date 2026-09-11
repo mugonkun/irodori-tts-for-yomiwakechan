@@ -142,7 +142,17 @@ public static class BandText
     /// <summary>準備しています…（灰）。</summary>
     public const string Preparing = "準備しています…";
 
-    /// <summary>声を読み込んでいる間の 1 行（初回は長い）。</summary>
+    /// <summary>
+    /// 声を読み込んでいる間の 1 行（初回は長い）。
+    /// <para>
+    /// <b>綴りの食い違いを 1 つ記帳しておく</b>（是正・検分）＝決裁 135 ⑴ で ready 待ちが
+    /// 最長 600 秒まで伸びるようになったので、この括弧の「1〜2 分」は伸びた回には合わない
+    /// （同じ待ちでウィザードは <c>UiStrings.WizardLoadingVoices</c>＝「数分かかることがあります」と言う）。
+    /// <b>v2.0.1 では直さない</b>＝この綴りは <c>v2-spec.md</c> の帯の表と <c>v2-copy.md</c> の正本で、
+    /// 待ちの 1 行の言い換えは決裁 136 ⒝・137 ⒝ が持っている工事である。<b>2 行はそこで一緒に
+    /// 書き直す</b>（片方だけ動かすと正本が割れる）。
+    /// </para>
+    /// </summary>
     public const string PreparingVoices = "準備しています… 声を読み込んでいます（初回は 1〜2 分かかります）";
 
     /// <summary>使えます（緑）。</summary>

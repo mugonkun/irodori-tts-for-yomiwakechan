@@ -21,8 +21,12 @@ namespace IrodoriTtsYwk.Launcher.Views;
 /// <b>直すのは見た目だけ</b>（憲章 §6-3）＝<c>ItemTemplate</c> に噛ませるので
 /// <c>SelectedItem</c> は今までどおり<b>台帳の綴りの文字列</b>のままであり、
 /// <c>settings.json</c> の <c>variant</c> も <c>AutomationId</c> も 1 字も動かない。
-/// 札の綴りの正本は <see cref="RuntimeVariants.DisplayName"/> ただ 1 箇所である
-/// （すぐ下の <c>SettingsVariantNameText</c>／<c>FirstRunVariantNameText</c> と同じ物）。
+/// <b>綴りの正本は 2 つに分かれている</b>（是正・検分・v2.0.1）＝
+/// <b>一覧の行の札</b>は <see cref="RuntimeVariants.ShortDisplayName"/>（＝下の
+/// <see cref="Display"/>・4 語）、<b>一覧の下の 1 行</b>（<c>SettingsVariantNameText</c>／
+/// <c>FirstRunVariantNameText</c>＝<c>VariantDisplayName</c>）は
+/// <see cref="RuntimeVariants.DisplayName"/>（＝下限や注記を抱えた長い方）である。
+/// どちらも <c>RuntimeVariants</c> の 1 箇所ずつで、この器は綴りを持たない。
 /// </para>
 /// </summary>
 public sealed class VariantDisplayConverter : IValueConverter

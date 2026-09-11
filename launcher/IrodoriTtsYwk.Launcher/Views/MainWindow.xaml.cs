@@ -88,7 +88,10 @@ public partial class MainWindow : Window
 
         // 「初回取得をやり直す」は設定 › 詳細へ要素ごと移った（v2.0 段 A-1）。
         // **ウィザードは窓が要る仕事**なので、押された事実だけを受け取って窓側で開く。
-        SettingsPage.FirstRunRequested += (_, _) => ShowFirstRun();
+        // **この 1 押しだけは「アプリに決め直させる」回である**（是正・検分）＝利用者は
+        // やり直したくて押しているので、設定に残っている変種を明示の選択として固めない
+        // （固めると、ドライバを上げても古い変種のまま勧めが効かなくなる）。
+        SettingsPage.FirstRunRequested += (_, _) => ShowFirstRun(decideAgain: true);
 
         // v2.0 段 C＝設定 › ふだんの 4 つと このアプリについて の 2 釦。
         // **開ける仕事は窓が 1 箇所で持つ**（在り処ごと開く 1 本を 3 度書かない）。
@@ -216,10 +219,18 @@ public partial class MainWindow : Window
     /// 変種の段の初期値（裁定 126 ⑽＝勧める変種。null＝ウィザードの既定に任せる）。
     /// </param>
     /// <param name="driverVersion">その判断に使ったドライバの版（null＝ウィザード自身の検分に任せる）。</param>
-    private void ShowFirstRun(string? notice = null, string? preselect = null, string? driverVersion = null)
+    /// <param name="decideAgain">
+    /// 〔はじめの準備をやり直す〕から開いた回＝真（是正・検分）＝設定に残っている変種を
+    /// 「利用者の明示の選択」として固めない＝アプリがこの機体に合わせて決め直す。
+    /// </param>
+    private void ShowFirstRun(
+        string? notice = null,
+        string? preselect = null,
+        string? driverVersion = null,
+        bool decideAgain = false)
     {
         _firstRunShown = true;
-        var firstRun = _model.CreateFirstRun();
+        var firstRun = _model.CreateFirstRun(openedForAcquisition: !decideAgain);
         if (notice is not null)
         {
             firstRun.Note(notice);

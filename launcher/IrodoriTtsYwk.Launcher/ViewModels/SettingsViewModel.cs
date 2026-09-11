@@ -169,9 +169,22 @@ public sealed class SettingsViewModel : ObservableObject
                 return;
             }
 
-            _draft.Variant = value;
+            // **変種を選んだ瞬間に既定を敷く**（裁定 65・設計書 §5・是正・検分）＝
+            // 生の代入だと <see cref="Services.Settings.SettingsDefaults.ApplyVariant"/> が
+            // どこからも呼ばれず、Radeon に替えても暖機の既定 ON が入らない・
+            // cpu に替えても GPU の UUID／名が残る、という穴が開いたままになる。
+            // 写しに敷くので、画面の錠（暖機・精度・事前計算）もその場で新しい既定を映す。
+            Services.Settings.SettingsDefaults.ApplyVariant(_draft, value);
+
+            // **選んだのは利用者である**（決裁 135 ⑵・是正・検分）＝この 1 箇所と
+            // ウィザードの一覧だけが真を書く（アプリが勧めて決めた回は書かない）。
+            _draft.VariantChosenByUser = true;
+
             RaisePropertyChanged();
             RaisePropertyChanged(nameof(VariantDisplayName));
+            RaisePropertyChanged(nameof(WarmupOnStart));
+            RaisePropertyChanged(nameof(PrecisionChoice));
+            RaisePropertyChanged(nameof(PrecomputeOnStart));
             RaisePropertyChanged(nameof(VariantBlocked));
             RaisePropertyChanged(nameof(VariantBlockReason));
             RaisePropertyChanged(nameof(PrecisionEnabled));
@@ -784,6 +797,11 @@ public sealed class SettingsViewModel : ObservableObject
         to.GpuUuid = from.GpuUuid;
         to.GpuName = from.GpuName;
         to.Variant = from.Variant;
+
+        // **「選んだのは誰か」も設定頁が編集する欄である**（決裁 135 ⑵・是正・検分）＝
+        // 変種と一緒に移さないと、一覧で選び直した事実が本物に届かず、次にウィザードが
+        // 開いた回でアプリが勝手に勧め直す（＝RTX 機の段 H 射 10 の壊れ方が戻る）。
+        to.VariantChosenByUser = from.VariantChosenByUser;
         to.Precision = from.Precision;
         to.Port = from.Port;
         to.DataDir = from.DataDir;

@@ -35,7 +35,7 @@ public sealed class AboutViewModel : ObservableObject
 
     /// <summary>
     /// 〔このアプリについて〕の「バージョン」＝<b>番号 ＋ 版の名札</b>
-    /// （<c>v2.0.0 － RTX（CUDA）</c>・`v2-copy.md` §1-8 の <c>:39</c>／§8）。
+    /// （<c>v2.0.1 － RTX（CUDA）</c>・`v2-copy.md` §1-8 の <c>:39</c>／§8）。
     /// <para>
     /// <b>主窓の隅は番号だけ</b>（`v2-copy.md` §1-1 の 33 行目）＝そちらは
     /// <see cref="AppVersion.Display"/> を直に読む。名札を綴るのは

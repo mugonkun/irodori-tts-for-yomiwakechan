@@ -220,7 +220,7 @@ public sealed class ReleaseFlavorTests
     [Fact]
     public void このアプリについてのバージョンは番号に名札を添える()
     {
-        // `v2-copy.md` §1-8 の :39＝「バージョン v2.0.0 － RTX（CUDA）」。
+        // `v2-copy.md` §1-8 の :39＝「バージョン v2.0.1 － RTX（CUDA）」。
         // 主窓の隅は番号だけ（同 §1-1 の 33 行目）＝AboutViewModel.VersionText は通さない。
         Assert.Equal(
             AppVersion.Display + " － RTX（CUDA）", AboutViewModel.VersionText(ReleaseFlavor.Cuda));

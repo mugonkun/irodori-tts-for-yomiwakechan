@@ -102,6 +102,20 @@ public sealed class FirstRunViewModel : ObservableObject
     /// </summary>
     private bool _variantFromSettings;
 
+    /// <summary>
+    /// <b>檔に書く真偽</b>＝<see cref="LauncherSettings.VariantChosenByUser"/>（是正・検分）。
+    /// <para>
+    /// <see cref="_variantFromSettings"/> と分けてある＝あちらは
+    /// <b>この回の名乗り方</b>（古い檔では推測が混じる）で、こちらは
+    /// <b>利用者が実際に一覧を動かしたか</b>だけを持つ。推測を焼き付けないための分けである。
+    /// </para>
+    /// </summary>
+    private bool _variantChosenByUser;
+
+    /// <param name="openedForAcquisition">
+    /// 取得のために開いた回（状態帯の〔取得へ進む〕・起動時の自動・裁定 126 ⑽ の求め）＝真。
+    /// 設定 › 詳細 の〔はじめの準備をやり直す〕＝<b>偽</b>（アプリに決め直させる回）。
+    /// </param>
     public FirstRunViewModel(
         AppPaths paths,
         LauncherSettings settings,
@@ -109,7 +123,8 @@ public sealed class FirstRunViewModel : ObservableObject
         IDriverCheck driverCheck,
         Func<IDownloader?> downloader,
         Func<IRuntimeInstaller?> installer,
-        Func<CancellationToken, Task<bool>> startServer)
+        Func<CancellationToken, Task<bool>> startServer,
+        bool openedForAcquisition = true)
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(settings);
@@ -139,12 +154,24 @@ public sealed class FirstRunViewModel : ObservableObject
         // （cu126 の一式がまだ無いので正しく）ウィザードを開いた。そこで
         // `RefreshDriverAsync` の勧め（ドライバ 616.92 ⇒ cu130）が**黙って上書き**し、
         // 1 行は「…CUDA 13.0 で動かします。」・保存も cu130 に戻り、cu126 は 1 度も落ちなかった。
-        // ⇒ 一覧に在る綴りが設定に入っていれば、それが**明示の選択**である。
+        // ⇒ 設定に**利用者が選んだ**綴りが入っていれば、それが**明示の選択**である。
         // 勧めで決めてよいのは⑴ 本当の初回（まだ 1 度も通しておらず、配られたままの既定）
         // ⑵ その選択がドライバの下限に届かないとき（理由を添えて言い換える＝下の
-        // <see cref="RefreshDriverAsync"/>）の 2 つだけ。
-        _variantFromSettings = IsExplicitChoice(VariantChoices, settings);
+        // <see cref="RefreshDriverAsync"/>）⑶ **〔はじめの準備をやり直す〕で開いた回**
+        // （＝利用者はアプリに決め直させたくて押している・是正・検分）の 3 つ。
+        //
+        // **「アプリが焼いた値」と「利用者が選んだ値」を取り違えない**（是正・検分）＝
+        // <see cref="LauncherSettings.Variant"/> は前の回に**アプリ自身が**書いた値でもあるので、
+        // それだけを見て「設定で選んだ」と名乗ると、一度も選んでいない利用者に嘘をつく
+        // （Radeon 版では GPU の選択肢が ROCm 1 つしか無いのに「設定で選んだ ROCm」と言う）。
+        // 真偽は <see cref="LauncherSettings.VariantChosenByUser"/> が持つ＝この欄が無い
+        // 古い檔（v2.0.0 まで）だけ、従来どおりの推測に落ちる。
+        _variantFromSettings = IsExplicitChoice(VariantChoices, settings, openedForAcquisition);
         _variantChosen = _variantFromSettings;
+
+        // **推測は焼き付けない**＝檔へ書き戻す真偽は「利用者が実際に選んだ」回だけ真にする。
+        _variantChosenByUser = settings.VariantChosenByUser == true
+            && VariantChoices.Contains(settings.Variant, StringComparer.Ordinal);
 
         NextCommand = new AsyncRelayCommand(NextAsync, CanGoNext);
         BackCommand = new RelayCommand(Back, () => Step > FirstStep && !IsBusy);
@@ -243,6 +270,9 @@ public sealed class FirstRunViewModel : ObservableObject
                 SetProperty(ref _variant, recommended, nameof(Variant));
                 _variantChosen = false;
                 _variantFromSettings = false;
+
+                // **決めたのはアプリである**＝檔にもそう書く（是正・検分）。
+                _variantChosenByUser = false;
             }
         }
 
@@ -252,17 +282,25 @@ public sealed class FirstRunViewModel : ObservableObject
     /// <summary>
     /// <b>設定に残っている動かし方が「利用者の明示の選択」か</b>（<b>純関数</b>・決裁 135 ⑵）。
     /// <para>
-    /// 真＝この配布物が出せる一覧に在る綴りで、かつ<b>本当の初回ではない</b>。
-    /// 偽＝⑴ 一覧に無い綴り（別の版の設定を持ち込んだ機体）
-    /// ⑵ まだ 1 度も通しておらず（<see cref="LauncherSettings.FirstRunCompleted"/> が偽）、
-    /// 綴りが配られたままの既定（<see cref="LauncherSettings.DefaultVariant"/>）＝誰も選んでいない。
+    /// 見るのは 3 つ＝⑴ この配布物が出せる一覧に在る綴りか
+    /// ⑵ <b>取得のために開いた回か</b>（偽＝〔はじめの準備をやり直す〕＝アプリに決め直させる回・
+    /// 是正・検分）⑶ <see cref="LauncherSettings.VariantChosenByUser"/>。
+    /// </para>
+    /// <para>
+    /// ⑶ が <c>null</c>（この欄より古い <c>settings.json</c>＝v2.0.0 まで）の回だけ、
+    /// <b>従来どおりの推測</b>に落ちる＝「まだ 1 度も通しておらず
+    /// （<see cref="LauncherSettings.FirstRunCompleted"/> が偽）、綴りが配られたままの既定
+    /// （<see cref="LauncherSettings.DefaultVariant"/>）」でなければ選ばれた物とみなす。
+    /// <b>この推測は檔へ書き戻さない</b>（<c>_variantChosenByUser</c> の註）＝
+    /// 次の保存から本当の真偽が入る。
     /// </para>
     /// <para>
     /// <b>下限の判定はここでしない</b>＝ドライバの版はこの時点ではまだ読めていない
     /// （<see cref="RefreshDriverAsync"/> が読む）。下限未満だった回はそちらが勧めで言い換える。
     /// </para>
     /// </summary>
-    public static bool IsExplicitChoice(IReadOnlyList<string> choices, LauncherSettings settings)
+    public static bool IsExplicitChoice(
+        IReadOnlyList<string> choices, LauncherSettings settings, bool openedForAcquisition = true)
     {
         ArgumentNullException.ThrowIfNull(choices);
         ArgumentNullException.ThrowIfNull(settings);
@@ -270,6 +308,17 @@ public sealed class FirstRunViewModel : ObservableObject
         if (!choices.Contains(settings.Variant, StringComparer.Ordinal))
         {
             return false;
+        }
+
+        // 〔はじめの準備をやり直す〕＝**アプリが決め直す**回である（勧めを殺さない）。
+        if (!openedForAcquisition)
+        {
+            return false;
+        }
+
+        if (settings.VariantChosenByUser is bool chosen)
+        {
+            return chosen;
         }
 
         var untouched = !settings.FirstRunCompleted
@@ -495,6 +544,9 @@ public sealed class FirstRunViewModel : ObservableObject
             // 利用者が自分で選んだ＝以後は勧めで上書きしない（裁定 4・126 の B）。
             _variantChosen = true;
 
+            // **檔にもそう書く**（是正・検分）＝次に開いたときアプリが決め直さない。
+            _variantChosenByUser = true;
+
             // **この画面で選び直した**＝もう「設定で選んだ」ではない（決裁 135 ⑵）。
             _variantFromSettings = false;
             UpdateVariantNotes();
@@ -560,7 +612,9 @@ public sealed class FirstRunViewModel : ObservableObject
     /// <param name="chosenInSettings">
     /// <b>設定で選ばれた動かし方をそのまま使う回</b>（決裁 135 ⑵・v2.0.1）＝
     /// この 1 行は「アプリが決めました」ではなく<b>「設定で選んだ … で動かします。」</b>になる。
-    /// 版を間違えて入れた回（⑶）だけは先に言う＝そちらは設定より重い事実である。
+    /// <b>先に言う枝が 2 つある</b>＝⑶ 版を間違えて入れた回（E-06b）と
+    /// ⑵ グラフィックスを検められなかった回（<see cref="UnknownDecisionLine"/>・是正・検分）＝
+    /// どちらも設定より重い事実で、消すと画面が知らない事を言い切ることになる。
     /// </param>
     public static string DecisionLineFor(
         string? variant, string? gpuName, DriverProbe? probe = null, bool chosenInSettings = false)
@@ -578,19 +632,23 @@ public sealed class FirstRunViewModel : ObservableObject
             return wrongEdition;
         }
 
-        // ⑷ **設定で選んだ物をそのまま使う回**（決裁 135 ⑵）＝決めたのはアプリではない。
-        if (chosenInSettings)
-        {
-            return ChosenInSettingsLine(chosen);
-        }
-
         // ⑵ **判らないまま並びの先頭に落ちた回**＝決めたふりをしない（`v2-spec.md` §1-2）。
+        // **⑷ より先に言う**（是正・検分）＝この枝が持っている 2 つの事実
+        // （グラフィックスを検められなかった・うまく動かないときは 詳細 で替えられる）は、
+        // 設定に何が入っていようと消えない。順を逆にすると、検分が落ちた機体に
+        // 「設定で選んだ CUDA 13.0 で動かします。」とだけ告げて、知らない事を 2 つ言い切ることになる。
         if (probe is not null
             && string.IsNullOrWhiteSpace(driver)
             && (!probe.Probed || probe.FailureReason is not null)
             && chosen is RuntimeVariants.Cu130 or RuntimeVariants.Cu126)
         {
             return UnknownDecisionLine(chosen);
+        }
+
+        // ⑷ **設定で選んだ物をそのまま使う回**（決裁 135 ⑵）＝決めたのはアプリではない。
+        if (chosenInSettings)
+        {
+            return ChosenInSettingsLine(chosen);
         }
 
         return chosen switch
@@ -732,7 +790,7 @@ public sealed class FirstRunViewModel : ObservableObject
     /// が「判らないことを勝手に決めない」で並びの先頭に落ちた回）＝
     /// <b>決めたとは言わない</b>・既定で進むことと、あとから変えられることを告げる。
     /// </summary>
-    private static string UnknownDecisionLine(string? variant) =>
+    public static string UnknownDecisionLine(string? variant) =>
         "このパソコンのグラフィックスを確かめられませんでした。"
         + "ひとまず " + BandText.VariantName(variant) + " で準備します。"
         + "うまく動かないときは、設定の「詳細」で動かし方を変えてください。";
@@ -1025,8 +1083,9 @@ public sealed class FirstRunViewModel : ObservableObject
     /// 主窓（<c>MainViewModel.ApplyServerState</c>）が、起こした個体の口が開いて
     /// まだ載っていない状態（<see cref="ServerState.Listening"/>）を見たときに呼ぶ。
     /// <b>「起動の確認」の段の間だけ</b> 1 行を差し替える＝ほかの段の文言は 1 字も動かない。
-    /// 取得の直後の 1 回目は冷えた円盤から 3 GB 級を読むので、ここで黙っていると
-    /// 「動くか確かめています。」のまま数分固まったように見える（段 H 射 2）。
+    /// 取得の直後の 1 回目は読み込みが数分に延びうるので、ここで黙っていると
+    /// 「動くか確かめています。」のまま固まったように見える（段 H 射 2＝実測 約 2 分の静止）。
+    /// 毎秒動かす経過秒は決裁 137 ⒝ の持ち場（別の工事）である。
     /// </para>
     /// </summary>
     public void ReportLoadingVoices()
@@ -1156,7 +1215,14 @@ public sealed class FirstRunViewModel : ObservableObject
 
             case FirstRunStep.Variant:
                 // 門はこの手の頭でもう見た（束縛の外＝試験・台本から呼ばれても通さない＝裁定 126 の B）。
-                _settings.Variant = _variant;
+                // **変種の既定はここで敷く**（裁定 65・設計書 §5・是正・検分）＝
+                // 生の代入だと <see cref="Services.Settings.SettingsDefaults.ApplyVariant"/> が
+                // 1 度も走らず、Radeon 版に暖機の既定 ON が届かない・cpu に替えても GPU の
+                // UUID／名が残る、という穴が開く（綴りが同じ回は何もしない＝利用者の意思を消さない）。
+                Services.Settings.SettingsDefaults.ApplyVariant(_settings, _variant);
+
+                // **選んだのが誰かも檔に残す**（是正・検分）＝古い檔の推測は書き戻さない。
+                _settings.VariantChosenByUser = _variantChosenByUser;
                 _store.Save(_settings);
 
                 // **記録の 1 行にも「変種」を綴らない**（決裁 135 ⑵・憲章 §6-1）＝
@@ -1412,6 +1478,9 @@ public sealed class FirstRunViewModel : ObservableObject
             // **主窓の勧めで替えた＝もう「設定で選んだ」ではない**（決裁 135 ⑵）。
             // ここへ来るのは下限未満で断った回だけ（裁定 126 ⑽）＝理由は帯と Trail に在る。
             _variantFromSettings = false;
+
+            // 決めたのはアプリである＝檔にもそう書く（是正・検分）。
+            _variantChosenByUser = false;
         }
 
         UpdateVariantNotes();

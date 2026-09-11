@@ -1026,14 +1026,31 @@ settings 見本・`e-install-probe.ps1` の既定の setup 名・`.iss` と `ins
 
 **記録**＝所要・押下の数・VRAM の返り・差分で落ちたバイト数。**これらは帳面の側の数**で、利用者向けの文には書かない。
 
-**記帳（RTX 機・2026-09-11・決裁 135）**＝別席が清浄な機体（ドライバ **616.92**）で 12 射を通し、
-**合格 9・不合格 3**（〔あとにする〕＝射 3 は未実施）。不合格の 3 つと、v2.0.1 で当てた物は次のとおり。
+**記帳（RTX 機・2026-09-11・決裁 135）**＝別席が清浄な機体（ドライバ **616.92**）で 12 射を撃ち、
+**合格 7・不合格 3・飛ばし 2**（＝`decisions.md` 135 の数え。飛ばした 2 つは
+**射 5**（読み分けちゃん2 が要る）と **射 12**（開発機だけ））。
+**不合格の 3 つ**＝⑴ 射 2 ⑵ 射 10 ⑶ 射 3（〔あとにする〕→ 開き直す＝**未実施**）。
+下の表に挙げるのは、そのうち**コードの欠陥になった 2 射（射 2 と射 10）の 3 件**である。
 
 | 射 | 実測（RTX 機） | 見立て | v2.0.1 で当てた物 |
 |---|---|---|---|
-| 2 | 取得（2 分）の直後の 1 回目の起動で `runtime load started`／`checkpoint resolved` は出たが、**120 秒以内に `runtime loaded` が来ず**「止まりました。準備に時間がかかりすぎました。待っても声の読み込みが終わりませんでした。」＝`firstRunCompleted` は偽のまま。〔もう一度〕で **36.62 秒**・以後の起動は **12 秒** | **3.06 GB の safetensors を冷えた円盤から読む**回だけ 120 秒に届かない＝機体ではなく**期限が事実と合っていない** | `ServerProcess.LoadingHardCap`（600 s）＝⑴ 子が生きている ⑵ 口が開いている ⑶ `runtime.loaded=false` かつ `runtime.error` 無し、の 3 つが揃った回だけ 1 度伸ばす。待っている間の 1 行＝`UiStrings.WizardLoadingVoices`。帯は `Listening` のまま「準備しています…」で、赤にも 1 手にもならない |
-| 10 | 設定 › 詳細で **CUDA 12.6** に替え（告知は出た・`variant=cu126` が保存された）、次の起動でウィザードが開いた（cu126 の一式がまだ無い＝**正しい**）。ところが 1 行は「…**CUDA 13.0** で動かします。」・記録は「変種＝CUDA 13.0 を選びました。」・保存は `variant=cu130` に戻り、**cu126 は 1 度も落ちなかった** | `FirstRunViewModel` は `_variantChosen` が偽の間は `VariantRecommendation.Recommend` で上書きする。設定から来た綴りに印が無かった | `FirstRunViewModel.IsExplicitChoice`＝一覧に在る綴りが設定に入っていれば**明示の選択**（＝本当の初回＝`FirstRunCompleted` 偽かつ配られたままの既定、のときだけ勧めが勝つ）。下限未満の回は今までどおり勧めで言い換える（理由つき）。1 行は「**設定で選んだ CUDA 12.6 で動かします。**」・記録の綴りからも「変種」を落とした（`ChosenVariantLogLine`） |
-| 10 | 設定 › 詳細の動かし方の一覧が **「cu130」「cu126」「cpu」**（内部の綴り）のまま | 段 G が `VariantDisplayConverter` と `ItemTemplate` を入れたのに、実機では**畳んだ一覧の行**に当たっていなかった（読み上げ機の名は DataTemplate ではなく項目そのものから採られる） | 両方のコンボ（`SettingsVariantCombo`／`FirstRunVariantCombo`）に `ItemContainerStyle` を足し、`ContentTemplate` と `AutomationProperties.Name` の 2 つを明示。札は `RuntimeVariants.ShortDisplayName`（**CUDA 13.0／CUDA 12.6／ROCm／CPU**）＝`v2-spec.md` §2-5 の 2 行目に揃えた。`SelectedItem`・`AutomationId`・`settings.json` の `variant` は **1 字も動かない** |
+| 2 | 取得（2 分）の直後の 1 回目の起動で `runtime load started`／`checkpoint resolved` は出たが、**120 秒以内に `runtime loaded` が来ず**「止まりました。準備に時間がかかりすぎました。待っても声の読み込みが終わりませんでした。」＝`firstRunCompleted` は偽のまま。〔もう一度〕で **36.62 秒**・以後の起動は **12 秒** | **期限が事実と合っていない**＝子は生きていて口も開いていた（機体が壊れていたのではない）。**遅さそのものの原因は別**＝「冷えた円盤」説は決裁 136 で撤回され、本命は **Defender のオンアクセス初回スキャン**（温め段と 1 行の言い換えは決裁 136 ⒜⒝・137 の別工事） | `ServerProcess.LoadingHardCap`（600 s）＝⑴ 子が生きている ⑵ 口が開いている ⑶ `runtime.loaded=false` かつ `runtime.error` 無し、の 3 つが揃った回だけ 1 度伸ばす。待っている間の 1 行＝`UiStrings.WizardLoadingVoices`。帯は `Listening` のまま「準備しています…」で、赤にも 1 手にもならない |
+| 10 | 設定 › 詳細で **CUDA 12.6** に替え（告知は出た・`variant=cu126` が保存された）、次の起動でウィザードが開いた（cu126 の一式がまだ無い＝**正しい**）。ところが 1 行は「…**CUDA 13.0** で動かします。」・記録は「変種＝CUDA 13.0 を選びました。」・保存は `variant=cu130` に戻り、**cu126 は 1 度も落ちなかった** | `FirstRunViewModel` は `_variantChosen` が偽の間は `VariantRecommendation.Recommend` で上書きする。設定から来た綴りに印が無かった | `FirstRunViewModel.IsExplicitChoice`＝**利用者が選んだ**綴りが設定に入っていれば勧めで上書きしない。真偽は新しい欄 **`settings.json` の `variantChosenByUser`**（契約 ⑻＝欄を足すだけ・schema は上げない）が持ち、真を書くのは**設定 › 詳細の一覧**と**ウィザードの畳みの一覧**の 2 箇所だけ＝アプリが勧めて決めた回は偽を書く（**是正・検分**＝変種だけを見ると「アプリが焼いた値」と「利用者が選んだ値」が見分けられず、一度も選んでいない利用者に「設定で選んだ …」と名乗り、〔はじめの準備をやり直す〕でも決め直さなくなる）。勧めが勝つのは⑴ 本当の初回 ⑵ 下限未満（理由つきで言い換える）⑶ **〔はじめの準備をやり直す〕で開いた回**（`openedForAcquisition=false`）。1 行は「**設定で選んだ CUDA 12.6 で動かします。**」＝ただし**グラフィックスを検められなかった回はそちらを先に言う**（是正・検分）。記録の綴りからも「変種」を落とした（`ChosenVariantLogLine`） |
+| 10 | 設定 › 詳細の動かし方の一覧が **「cu130」「cu126」「cpu」**（内部の綴り）のまま **読み取られたのは「描かれた行」ではなく「読み上げ機の名」である**（是正・検分＝`rtx\logs\step-v200-shot10-variant.log` の頭「選択肢 = 3 件 / - cu130 / - cu126 / - cpu」は台本 `probe\common.ps1` が UI Automation の `Current.Name` を並べた行である）。WPF は項目の器を作るときに `ItemTemplate` を `ContentTemplate` へ**局所値**で書き込むので、**描かれる**行は段 G の時点で既に札になっていた。名だけが項目そのもの（台帳の綴りの文字列）から採られていた | 両方のコンボ（`SettingsVariantCombo`／`FirstRunVariantCombo`）に `ItemContainerStyle` を足し、**`AutomationProperties.Name`** を明示（＝効いているのはこの 1 行）。`ContentTemplate` の Setter は**念のため**（局所値に負けるので効かない）。札は `RuntimeVariants.ShortDisplayName`（**CUDA 13.0／CUDA 12.6／ROCm／CPU**）＝`v2-spec.md` §2-5 の 2 行目に揃えた。`SelectedItem`・`AutomationId`・`settings.json` の `variant` は **1 字も動かない** |
+
+**是正（検分）で締め直した 3 つ**＝⑴ **2 段の期限の起点を揃えた**（硬い上限も ready 待ちの頭から数える＝
+`StartAsync` の頭から数えると、変種の門の `import torch`（最長 15 s）と spawn（3 s）のぶんだけ
+**いちばん遅い機体で**約束の 600 秒が短くなる）⑵ **期限に立った 1 標本だけで緩和を捨てない**
+（`ServerProcess.CanExtendForLoading`＝一度でも「読み込み中」を見ていれば、届かない標本が
+3 回続くまでは伸ばせる＝見張りが `Ready` を降ろす基準と同じ数。`/ywk/status` の 1 標本は 5 秒で切れるので、
+Defender がスキャンしている最中はまさにその 1 標本が落ちやすい）⑶ **伸びしろが無い回は 2 段目に入らない**
+（`readyTimeoutSeconds` に 600 以上を書いた機体で「900 秒では終わりませんでした。…900 秒まで待ちます。」という
+自家撞着の 1 行を記録に残さない）。
+
+**据え置いた 1 件（記帳）**＝帯の 1 行 `BandText.PreparingVoices` の括弧は「初回は **1〜2 分**かかります」のままで、
+同じ待ちのウィザードの 1 行は「**数分**かかることがあります」と言う＝**綴りが食い違っている**。
+帯の綴りは `v2-spec.md` の帯の表と `v2-copy.md` の正本であり、待ちの 1 行の言い換えは
+**決裁 136 ⒝・137 ⒝ が持っている工事**なので、**2 行はそこで一緒に書き直す**（片方だけ動かすと正本が割れる）。
 
 **この回に裁いた 1 件**＝射 11 の「問いは 1 つも出ない」は**データを消すかの問い**の話であって、
 Inno の標準の確認（「本当に削除しますか」）と完了の窓は出てよい＝表の 11 行目をその綴りに直した。
