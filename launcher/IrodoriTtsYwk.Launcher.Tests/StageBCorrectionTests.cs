@@ -227,8 +227,13 @@ public sealed class StageBCorrectionTests : IDisposable
         Assert.Equal(FirstRunStep.Done, vm.Step);
 
         // 記録は畳みの中（Trail）と檔に在る。
-        Assert.Contains(vm.Trail, line => line.Contains("変種＝", StringComparison.Ordinal));
-        Assert.Contains(log, line => line.Contains("変種＝", StringComparison.Ordinal));
+        // **綴りは「動かし方＝…（cpu）」**（決裁 135 ⑵・v2.0.1）＝記録の 1 行からも
+        // 「変種」を落とした（Trail は畳みの中とはいえ画面に出る ListBox である）。
+        // 内輪の id（cpu）は括弧に残す＝報告のときに要る。
+        var chosen = FirstRunViewModel.ChosenVariantLogLine(RuntimeVariants.Cpu, chosenInSettings: true);
+        Assert.Contains(vm.Trail, line => string.Equals(line, chosen, StringComparison.Ordinal));
+        Assert.Contains(log, line => string.Equals(line, chosen, StringComparison.Ordinal));
+        Assert.DoesNotContain(vm.Trail, line => line.Contains("変種＝", StringComparison.Ordinal));
         Assert.Contains(log, line => line.Contains("初回取得が終わりました。", StringComparison.Ordinal));
 
         // 画面には出ない（1 つでも漏れたら憲章 §6-1 の隠す語が利用者の目に入る）。

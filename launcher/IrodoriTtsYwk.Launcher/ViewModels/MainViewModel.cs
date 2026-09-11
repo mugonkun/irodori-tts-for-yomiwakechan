@@ -421,6 +421,15 @@ public sealed class MainViewModel : ObservableObject
             Try.NotifyServerFailed(AppServices.Server.ExitCode, reason ?? AppServices.Server.FailureReason);
         }
 
+        // **口が開いてまだ載っていない＝声を読み込んでいる最中**（決裁 135 ⑴・v2.0.1）。
+        // ウィザードが「起動の確認」で待っている間は、その 1 行を名乗らせる＝
+        // 冷えた円盤からの 1 回目（実測 36.62 秒・段 H 射 2 では 120 秒でも足りなかった）に
+        // 「動くか確かめています。」のまま固まったように見せない。
+        if (state is ServerState.Listening)
+        {
+            _firstRun?.ReportLoadingVoices();
+        }
+
         // 口は「起きている個体」にしか意味が無い＝listen したら開き、止まったら閉じる。
         if (state is ServerState.Listening or ServerState.Ready or ServerState.Warming)
         {

@@ -35,9 +35,15 @@ public sealed class LauncherSettings
     [JsonPropertyName("gpuName")]
     public string? GpuName { get; set; }
 
+    /// <summary>
+    /// <b>配られたままの変種</b>（＝利用者がまだ 1 度も選んでいない印・決裁 135 ⑵）。
+    /// <see cref="Variant"/> の初期値そのものである＝2 箇所に綴らない。
+    /// </summary>
+    public const string DefaultVariant = RuntimeVariants.Cu130;
+
     /// <summary>取得台帳の変種名（<see cref="RuntimeVariants"/>）。<c>YWK_VARIANT</c> ではない。</summary>
     [JsonPropertyName("variant")]
-    public string Variant { get; set; } = RuntimeVariants.Cu130;
+    public string Variant { get; set; } = DefaultVariant;
 
     /// <summary>上級者設定。null＝device 連動（裁定 7）に任せる。</summary>
     [JsonPropertyName("precision")]

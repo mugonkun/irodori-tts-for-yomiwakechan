@@ -67,6 +67,30 @@ public sealed class ServerProcess : IServerProcess
     public static readonly TimeSpan StopGrace = TimeSpan.FromSeconds(10);
 
     /// <summary>
+    /// <b>声を読み込んでいる間だけ伸ばせる硬い上限</b>（決裁 135 ⑴・v2.0.1）。
+    /// <para>
+    /// <b>なぜ要るか</b>＝取得の直後の 1 回目は 3.06 GB の重みを<b>冷えた円盤から</b>読む。
+    /// RTX 機の段 H 射 2（清浄な機体・ドライバ 616.92）では
+    /// <c>runtime load started</c>／<c>checkpoint resolved</c> の後、契約 ⑵ の 120 秒では
+    /// <c>runtime loaded</c> が来ず、ウィザードが「止まりました。」で終わった
+    /// （〔もう一度〕で 36.62 秒・その次の起動は 12 秒）。<b>子は生きていて口も開いていた</b>＝
+    /// 期限が事実と合っていなかったのであって、機体が壊れていたのではない。
+    /// </para>
+    /// <para>
+    /// <b>伸ばす条件は 3 つ揃ったときだけ</b>（<see cref="IsLoadingInProgress"/>）＝
+    /// ⑴ 子プロセスが生きている ⑵ 口が開いている（<c>/health</c> が返る）
+    /// ⑶ <c>runtime.loaded=false</c> かつ <c>runtime.error</c> が無い（＝いま載せている最中）。
+    /// 1 つでも欠ければ<b>従来どおり</b>その場で終わる＝口が開かない機体は 120 秒で断る
+    /// （契約 ⑵ の「ポートが開く」期待は 1 秒も伸ばさない）。
+    /// </para>
+    /// <para>
+    /// <b>利用者が <c>readyTimeoutSeconds</c> でこれより長い値を書いていればそちらが勝つ</b>
+    /// （<c>launcher/README</c> §7-3）＝この定数は<b>下限としての硬い上限</b>である。
+    /// </para>
+    /// </summary>
+    public static readonly TimeSpan LoadingHardCap = TimeSpan.FromSeconds(600);
+
+    /// <summary>
     /// 子が消えたあと stderr を読み切るのを待つ上限（low 2）。
     /// <para>
     /// <b>引数なしの <see cref="Process.WaitForExit()"/></b> は、<c>BeginErrorReadLine</c> の読みが
@@ -96,6 +120,9 @@ public sealed class ServerProcess : IServerProcess
     private readonly Func<ServerStartRequest, ProcessStartInfo> _startInfo;
     private readonly TimeSpan _pollInterval;
     private readonly TimeSpan _watchInterval;
+
+    /// <summary>声を読み込んでいる間だけ伸ばせる硬い上限（既定＝<see cref="LoadingHardCap"/>）。</summary>
+    private readonly TimeSpan _loadingHardCap;
     private readonly object _gate = new();
 
     /// <summary>OS の GPU 計数（裁定 110）。null＝この個体では数えない（テスト）。</summary>
@@ -150,6 +177,10 @@ public sealed class ServerProcess : IServerProcess
     /// （<see cref="LatestOsGpuMemory"/> が <see cref="StatusSampled"/> の前に置かれる・
     /// Stopped／Failed と <see cref="StartAsync"/> の頭で空へ戻る）を釘付けできる。
     /// </param>
+    /// <param name="loadingHardCap">
+    /// 声を読み込んでいる間だけ伸ばせる硬い上限（既定＝<see cref="LoadingHardCap"/>＝600 s）。
+    /// <b>試験の継ぎ目</b>＝実機の 600 秒を待たずに「伸ばす／伸ばし切って断る」の両方を釘付けする。
+    /// </param>
     public ServerProcess(
         IPortProbe portProbe,
         IReadinessProbe readinessProbe,
@@ -157,7 +188,8 @@ public sealed class ServerProcess : IServerProcess
         TimeSpan? watchInterval = null,
         ITorchProbe? torchProbe = null,
         Func<ServerStartRequest, ProcessStartInfo>? startInfoFactory = null,
-        OsGpuMemorySampler? osGpuMemory = null)
+        OsGpuMemorySampler? osGpuMemory = null,
+        TimeSpan? loadingHardCap = null)
     {
         ArgumentNullException.ThrowIfNull(portProbe);
         ArgumentNullException.ThrowIfNull(readinessProbe);
@@ -168,6 +200,7 @@ public sealed class ServerProcess : IServerProcess
         _startInfo = startInfoFactory ?? BuildStartInfo;
         _pollInterval = pollInterval ?? PollInterval;
         _watchInterval = watchInterval ?? WatchInterval;
+        _loadingHardCap = loadingHardCap ?? LoadingHardCap;
 
         _machine.StateChanged += (_, e) =>
         {
@@ -592,8 +625,13 @@ public sealed class ServerProcess : IServerProcess
         long started,
         CancellationToken cancellationToken)
     {
-        var deadline = Stopwatch.GetTimestamp()
-            + (long)(request.ReadyTimeout.TotalSeconds * Stopwatch.Frequency);
+        // **期限は 2 段**（決裁 135 ⑴）＝⑴ 契約 ⑵ の期限（既定 120 s・CPU 300 s・設定で上書き可）
+        // ⑵ 声を読み込んでいる最中にだけ伸びる硬い上限（<see cref="LoadingHardCap"/>）。
+        // ⑵ が ⑴ より短い機体は無い（長い方を採る）＝設定で 900 秒と書いた機体を縮めない。
+        var limit = request.ReadyTimeout;
+        var hardCap = limit > _loadingHardCap ? limit : _loadingHardCap;
+        var deadline = Stopwatch.GetTimestamp() + (long)(limit.TotalSeconds * Stopwatch.Frequency);
+        var extended = false;
 
         while (true)
         {
@@ -644,8 +682,23 @@ public sealed class ServerProcess : IServerProcess
 
             if (Stopwatch.GetTimestamp() >= deadline)
             {
+                // **まだ載せている最中なら、1 度だけ硬い上限まで伸ばす**（決裁 135 ⑴）。
+                // 子が生きていて、口が開いていて、理由も無い＝壊れてはいない個体を
+                // 「止まりました。」で放り出さない。帯は Listening のまま
+                // （<see cref="ViewModels.BandText.PreparingVoices"/>）＝1 行は変わらない。
+                if (!extended && IsLoadingInProgress(sample) && !HasExited(process))
+                {
+                    extended = true;
+                    limit = hardCap;
+                    deadline = started + (long)(hardCap.TotalSeconds * Stopwatch.Frequency);
+                    LogLine?.Invoke(this, new ServerLogLineEventArgs(new ServerLogEvent(
+                        ServerLogSignal.Other, LoadingStillRunningLine(request.ReadyTimeout, hardCap))));
+                    await Task.Delay(_pollInterval, cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
                 var reason = "起動が "
-                    + request.ReadyTimeout.TotalSeconds.ToString("0", CultureInfo.InvariantCulture)
+                    + limit.TotalSeconds.ToString("0", CultureInfo.InvariantCulture)
                     + " 秒で終わりませんでした。"
                     + (sample.FailureReason ?? "モデルの読み込みが終わっていません。");
                 _machine.ApplyFailure(reason);
@@ -656,6 +709,33 @@ public sealed class ServerProcess : IServerProcess
             await Task.Delay(_pollInterval, cancellationToken).ConfigureAwait(false);
         }
     }
+
+    /// <summary>
+    /// その標本が「<b>いま声を読み込んでいる最中</b>」を告げているか（<b>純関数</b>・決裁 135 ⑴）。
+    /// <para>
+    /// 口は開いている（<see cref="ReadinessSample.Reachable"/>）が、まだ載っていない
+    /// （<see cref="ReadinessSample.Loaded"/> が偽）＝<b>理由が無い</b>
+    /// （<see cref="ReadinessSample.RuntimeError"/> が空）。理由が載った標本は
+    /// <see cref="ServerStateMachine.ApplyReadiness"/> が Failed に落とすので、
+    /// ここで伸ばしても意味が無い（＝伸ばさない）。
+    /// </para>
+    /// </summary>
+    public static bool IsLoadingInProgress(ReadinessSample? sample) =>
+        sample is not null
+        && sample.Reachable
+        && !sample.Loaded
+        && string.IsNullOrWhiteSpace(sample.RuntimeError);
+
+    /// <summary>
+    /// 期限を伸ばしたことを記録に残す 1 行（<b>純関数</b>・画面には出ない＝帯は
+    /// 「準備しています…」のままである）。
+    /// </summary>
+    public static string LoadingStillRunningLine(TimeSpan readyTimeout, TimeSpan hardCap) =>
+        "モデルの読み込みが "
+        + readyTimeout.TotalSeconds.ToString("0", CultureInfo.InvariantCulture)
+        + " 秒では終わりませんでした。まだ読み込んでいるので "
+        + hardCap.TotalSeconds.ToString("0", CultureInfo.InvariantCulture)
+        + " 秒まで待ちます。";
 
     private async Task<ReadinessSample> SampleAsync(Uri baseAddress, CancellationToken cancellationToken)
     {

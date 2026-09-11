@@ -124,7 +124,9 @@ public sealed class WordLintTests
         "開発ビルド（上流 pin は焼かれていません）",
 
         // ⑵ はじめの準備＝畳みの中の記録（TrailTitle）と Fail／Log の第 2 引数
-        "変種", "取得（実行系）", "変種＝",
+        // **「変種＝」は退役した**（決裁 135 ⑵・v2.0.1）＝記録の 1 行は
+        // `FirstRunViewModel.ChosenVariantLogLine`＝「動かし方＝CUDA 12.6（cu126）…」になった。
+        "変種", "取得（実行系）",
         "通知文を読み込めていないので同意できません（配布物を確かめてください）。",
         "通知文（licenses/first-run-notices.md）が配布物に見つかりません。",
         "取得系がまだ組み込まれていません（便 D・取得席の実装待ち）。",

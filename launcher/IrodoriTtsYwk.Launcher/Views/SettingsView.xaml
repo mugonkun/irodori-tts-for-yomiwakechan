@@ -32,13 +32,25 @@
   <UserControl.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
     <!--
-      一覧の行に出す札＝RuntimeVariants.DisplayName（是正・段 G・high 14）。
+      一覧の行に出す札＝RuntimeVariants.ShortDisplayName（是正・段 G・high 14 → 決裁 135 ⑶）。
       **束縛の値は台帳の綴りのまま**なので settings.json の variant は 1 字も動かない。
+
+      **畳んだ一覧の行にも札を当てる**（是正・v2.0.1＝RTX 機の段 H 射 10 で
+      「cu130」「cu126」「cpu」の生の綴りが見えた）＝ItemTemplate は
+      ⑴ 選んでいる 1 行（ComboBox の ContentPresenter）にしか効かないことが在り、
+      ⑵ 読み上げ機（UI Automation）の名は DataTemplate の中身ではなく**項目そのもの**から
+      採られる。だから ItemContainerStyle で ContentTemplate と
+      AutomationProperties.Name の 2 つを明示する（束縛の値も id も 1 字も動かない）。
     -->
     <v:VariantDisplayConverter x:Key="VariantDisplay" />
     <DataTemplate x:Key="VariantRow">
       <TextBlock Text="{Binding Converter={StaticResource VariantDisplay}}" />
     </DataTemplate>
+    <Style x:Key="VariantItem" TargetType="ComboBoxItem">
+      <Setter Property="ContentTemplate" Value="{StaticResource VariantRow}" />
+      <Setter Property="AutomationProperties.Name"
+              Value="{Binding Converter={StaticResource VariantDisplay}}" />
+    </Style>
     <Style x:Key="Head" TargetType="TextBlock">
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="Margin" Value="0,14,0,6" />
@@ -137,6 +149,7 @@
             <ComboBox AutomationProperties.AutomationId="SettingsVariantCombo"
                       ItemsSource="{Binding VariantChoices}"
                       ItemTemplate="{StaticResource VariantRow}"
+                      ItemContainerStyle="{StaticResource VariantItem}"
                       SelectedItem="{Binding Variant, Mode=TwoWay}" />
             <TextBlock Style="{StaticResource Note}"
                        AutomationProperties.AutomationId="SettingsVariantNameText"

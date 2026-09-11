@@ -20,13 +20,20 @@
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
     <!--
-      動かし方の一覧の行に出す札＝RuntimeVariants.DisplayName（是正・段 G・high 14）。
+      動かし方の一覧の行に出す札＝RuntimeVariants.ShortDisplayName（段 G・high 14 → 決裁 135 ⑶）。
       束縛の値は台帳の綴りのままなので settings.json の variant は 1 字も動かない。
+      ItemContainerStyle の 2 行は SettingsView.xaml と**同じ理由**（畳んだ一覧の行と
+      読み上げ機の名）＝是正・v2.0.1。
     -->
     <v:VariantDisplayConverter x:Key="VariantDisplay" />
     <DataTemplate x:Key="VariantRow">
       <TextBlock Text="{Binding Converter={StaticResource VariantDisplay}}" />
     </DataTemplate>
+    <Style x:Key="VariantItem" TargetType="ComboBoxItem">
+      <Setter Property="ContentTemplate" Value="{StaticResource VariantRow}" />
+      <Setter Property="AutomationProperties.Name"
+              Value="{Binding Converter={StaticResource VariantDisplay}}" />
+    </Style>
   </Window.Resources>
 
   <DockPanel Margin="16">
@@ -89,6 +96,7 @@
                     AutomationProperties.AutomationId="FirstRunVariantCombo"
                     ItemsSource="{Binding VariantChoices}"
                     ItemTemplate="{StaticResource VariantRow}"
+                    ItemContainerStyle="{StaticResource VariantItem}"
                     SelectedItem="{Binding Variant, Mode=TwoWay}" />
           <TextBlock Margin="0,8,0,0" TextWrapping="Wrap"
                      AutomationProperties.AutomationId="FirstRunVariantNameText"

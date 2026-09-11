@@ -27,10 +27,23 @@ namespace IrodoriTtsYwk.Launcher.Views;
 /// </summary>
 public sealed class VariantDisplayConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is string variant && variant.Length > 0
-            ? RuntimeVariants.DisplayName(variant)
+    /// <summary>
+    /// <b>札の綴りの正本</b>（<b>純関数</b>＝XAML を組まずに釘付けできる・決裁 135 ⑶）。
+    /// <para>
+    /// <b>短い名を使う</b>（是正・v2.0.1）＝<see cref="RuntimeVariants.DisplayName"/> は
+    /// 括弧に下限（<c>ドライバ 580.00 以上</c>）や注記を抱えているので、
+    /// `v2-spec.md` §2-5 の 2 行目が定めた一覧の表示（<b>CUDA 13.0／CUDA 12.6／ROCm／CPU</b>）と
+    /// 食い違う。下限と注記は一覧の<b>下の 1 行</b>（<c>SettingsVariantNameText</c>／
+    /// <c>FirstRunVariantNameText</c>＝<c>VariantDisplayName</c>）が今までどおり名乗る。
+    /// </para>
+    /// </summary>
+    public static string Display(object? value) =>
+        value is string variant && variant.Trim().Length > 0
+            ? RuntimeVariants.ShortDisplayName(variant.Trim())
             : string.Empty;
+
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        Display(value);
 
     /// <summary>戻す道は無い（<c>ItemTemplate</c> の片道である）。</summary>
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>

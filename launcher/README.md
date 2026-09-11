@@ -374,7 +374,7 @@ pwsh -File build\release-build.ps1                 # exe 69,608,415 B（66.4 MiB
 ```json
 { "runtimeLedgers":       { "rocm-gfx1151": "<ledger/runtime-rocm-gfx1151.json の sha256（小文字 hex 64 字）>",
                             "cu126":        "<ledger/runtime-cu126.json の sha256>" },
-  "installedAppVersions": { "rocm-gfx1151": "v2.0.0", "cu126": "v2.0.0" } }
+  "installedAppVersions": { "rocm-gfx1151": "v2.0.1", "cu126": "v2.0.1" } }
 ```
 
 **鍵は変種**（是正・便 D（3）の 3 巡目）。1 巡目は `runtimeLedgerSha256`／`installedAppVersion` の
@@ -660,7 +660,7 @@ powershell -File probe\d-launch-probe.ps1 -DryRun    # 構文 0 エラー・「n
 `ViewModels/ReleaseFlavor.cs` の `FlavorLabel` が **`RTX（CUDA）`／`Radeon（ROCm）`**、
 `Decorate` が `幹 － 名札`（全角ダッシュ・前後に半角空白 1 つ＝新設の `Separator`）。
 `AppTitle`（主窓と〔このアプリについて〕の見出し）・`WizardTitle`（**`はじめの準備 － …`**）・
-`AboutViewModel.VersionText(flavor)`（**`v2.0.0 － RTX（CUDA）`**）はここを読むので自動で揃う。
+`AboutViewModel.VersionText(flavor)`（**`v2.0.1 － RTX（CUDA）`**）はここを読むので自動で揃う。
 **主窓の隅は番号だけ**（`v2-copy.md` §1-1 の 33 行目）＝`MainWindow.xaml.cs` は `AppVersion.Display` を直に読む。
 
 - 併記が正である（所有者の指示 2026-09-10）＝「CUDA 版」だけ・「ROCm 版」だけ・「NVIDIA 版」だけは使わない。

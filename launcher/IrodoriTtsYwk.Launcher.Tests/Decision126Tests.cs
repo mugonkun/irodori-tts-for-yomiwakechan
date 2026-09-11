@@ -359,10 +359,14 @@ public sealed class Decision126WizardVariantTests : IDisposable
         vm.Accepted = true;
         await vm.NextAsync();                                    // お知らせ → これからすること
 
-        // アプリが決めた結果は 1 行で名乗る（選ばせない）。
+        // 決まった結果は 1 行で名乗る（選ばせない）。
+        // **この機体は設定に cpu を持っている**＝配られたままの既定ではないので、
+        // v2.0.1（決裁 135 ⑵）からは「設定で選んだ …」と名乗る＝
+        // 勧め（Recommend）で黙って上書きしない。
         Assert.Equal(FirstRunStep.Variant, vm.Step);
         Assert.Equal("これからすること", vm.StepTitle);
-        Assert.Equal(FirstRunViewModel.DecisionLineFor(vm.Variant, null), vm.DecisionLine);
+        Assert.True(vm.VariantFromSettings);
+        Assert.Equal(FirstRunViewModel.ChosenInSettingsLine(vm.Variant), vm.DecisionLine);
         Assert.True(vm.NextCommand.CanExecute(null));
 
         // 畳みの中で自分で選び直した＝錠がそのまま働く。

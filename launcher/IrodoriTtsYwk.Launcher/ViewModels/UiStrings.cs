@@ -749,6 +749,17 @@ public static class UiStrings
     /// <summary>段 3 の詳細＝起こしてみて動くか見ている間（`v2-copy.md` §1-8 の :1301-1324）。</summary>
     public const string WizardVerifyingRun = "動くか確かめています…";
 
+    /// <summary>
+    /// <b>声を読み込んでいる間の 1 行</b>（決裁 135 ⑴・v2.0.1）。
+    /// <para>
+    /// 取得の直後の 1 回目は、3 GB 級の声のデータを<b>冷えた円盤から</b>読む＝
+    /// 実測（RTX 機・段 H 射 2）で 120 秒では終わらず、次の起動は 36.62 秒・その次は 12 秒だった。
+    /// 待っている間は「止まりました。」ではなく<b>まだ働いていること</b>を名乗る。
+    /// </para>
+    /// </summary>
+    public const string WizardLoadingVoices =
+        "声を読み込んでいます。初めてのときは数分かかることがあります。";
+
     /// <summary>落とす量が判らない回（推測の数字を出さない・詳しい字は記録へ）。</summary>
     public const string WizardSizeUnknown = "必要な大きさが分かりませんでした。";
 
