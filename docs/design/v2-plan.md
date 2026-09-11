@@ -1145,6 +1145,39 @@ setup cuda **75,528,535 B**（`80cf6bab…`）／radeon **75,530,096 B**（`c576
 
 ---
 
+## §2-3 v2.0.3＝語と文の是正（`decisions.md` 145〜147・2026-09-11・実装 1 席・Opus 5）
+
+**切符**＝司令官の 2 つの指示。⑴ **語**（裁定 147・逐語「**SAC という語句ではなくスマートアプリコントロールと
+本来の語句で表現する。**」）⑵ **文**（裁定 145／146）＝決定実験で**同一の未署名ハッシュが同じ起動セッションの中で
+block → allow に反転した**（原因は ISG＝クラウドの評判の揺れ）＝有効な機体でも、評判が許可へ振れている間は
+部品が読み込めて鳴る。だから v2.0.2 の言い切り「読み込め**ません**」は**事実でない**。
+着地頁・`docs/guide.md`・v2.0.2 のリリース文は主席が即時に当て込み済み（裁定 147）で、
+**残っていたのはアプリの中の文字列**である＝この版がそれを片づける。
+
+**当て込み（3 つ）**
+
+| # | 何 | 実物 |
+|---|---|---|
+| ⑴ | **語を「スマート アプリ コントロール」に** | `UiStrings` の `SmartAppControl*` 8 本のうち、英語の名を含んでいた 4 本＝`SmartAppControlStatusOn`（「**スマート アプリ コントロール: 有効**」）・`…StatusEvaluation`（「…: 評価中」）・`…WizardNotice`・`…FailedWhy`。**`Views/*.xaml` は 1 文字も動かない**＝可視属性は全部 `Binding`／`x:Static` で、英語の名が在るのは**註の 2 行**（`FirstRunWizard.xaml:207`・`SettingsView.xaml:134`）だけだった＝作る側の帳面なので据え置き |
+| ⑵ | **文を「読み込めないことがあります」に** | `SmartAppControlWizardNotice`（はじめの準備の告知）と `SmartAppControlStatusNoteOn`（設定 › 詳細の註）＝どちらも「読み込めない**ため**、しゃべらせられません」→「**読み込めないことがあります。読み込めないと、しゃべらせられません。**」。`…StatusNoteEvaluation` も同じ綴りに揃えた。**帯の 2 本（`SmartAppControlFailedWhat`＝「読み込め**ませんでした**」・`…FailedWhy`＝「止めました」）は直さない**＝あれは**現に止められた後**に出る報告で、起きた事の 1 行だからである（裁定 145 が直させたのは**押す前の告知**）。`docs/guide.md` §「読み上げに必要な部品が読み込めませんでした」の見出しがこの逐語を引いているので、替えると頁と帯がずれる |
+| ⑶ | **錠を足す** | `WordLintTests` に `HiddenUserFacing`（「SAC」「Smart App Control」）＝**`UiStrings` と `Views/*.xaml` の可視属性の 2 本にだけ**掛ける。`Hidden` に足さないのは、この 2 語が**内輪では生きている**ためである＝`SmartAppControlNotice.Markers` の英字は**英語の機体の OS の文を見分ける標識**（替えると畳みが効かない）で、`MainViewModel`／`StatusViewModel` が `AppendLog` へ落とす 1 行は**記録**（生の字と同じ箱）。加えて `利用者に出る面の語はスマートアプリコントロールで揃っている`（新設 1 本）が、**本来の語が現に出ていること**も見る＝文ごと消して緑にする逃げ道を塞ぐ |
+
+**試験の直し**＝`Decision140Tests` の 3 箇所＝⒜ 状態 1 行の逐語（`"Smart App Control: 有効"` → `"スマート アプリ コントロール: 有効"`・評価中も足した）⒝ はじめの準備の告知（`Contains("Smart App Control")` → **`DoesNotContain`** ＋ `Contains("読み込めないことがあります")` ＋ `DoesNotContain("読み込めないため")`）⒞ 帯の理由に「SAC」「Smart App Control」が出ないこと。**裁定 143 の読み（言い切る）は 145／146 で退いた**ので、註もそう書き直した。
+
+**版**＝`v2.0.2` → `v2.0.3`（ben-e §18 の段 1 の当たり所＝`launcher/Directory.Build.props` の
+`AppDisplayVersion`・`server/ywk_server.py` の `YWK_VERSION`（**同じ字数**なので A-1 は不動）・
+契約 ⑻ の見本・`launcher/README.md` の `settings` 見本と版の名札の例・`probe/e-install-probe.ps1` の既定の setup 名・
+`.iss` と `installer-build.ps1` の註・`docs/ben-f-handoff.md` の 3 箇所）。
+**リリース文**＝`docs/release-notes/v2.0.3.md`（v2.0.2 の型・「この版で直したこと」2 件）。
+
+**していないこと（申し送り）**＝⑴ **署名**（裁定 146＝当面は未署名のまま）⑵ **有効な実機での実射**
+（この機体は `VerifiedAndReputablePolicyState=0`＝無効）⑶ **`site/index.html` と `docs/guide.md` は触っていない**
+（主席が裁定 146／147 で当て込み済み）⑷ **`gh-pages` の写しは不要**（`site/index.html` が動いていない）
+⑸ **記録の 1 行の綴りは据え置き**＝`AppendLog` の「Smart App Control が部品を止めました：」は
+生の字と同じ箱に落ちる記録で、利用者の目に入る**文**ではない（替えるなら別の決めが要る）。
+
+---
+
 ## §3 語の棚卸し（工学側に残す／利用者側で替える）
 
 **実測（この工事の前・`launcher/IrodoriTtsYwk.Launcher` の C# の文字列リテラルのみ・註と `///` は除く）**

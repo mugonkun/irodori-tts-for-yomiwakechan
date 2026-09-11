@@ -63,6 +63,28 @@ public sealed class WordLintTests
     ];
 
     /// <summary>
+    /// <b>利用者の目に入る面でだけ隠す語</b>（<c>decisions.md</c> 147・v2.0.3）。
+    /// <para>
+    /// 司令官の逐語＝「<b>SAC という語句ではなくスマートアプリコントロールと本来の語句で表現する。</b>」＝
+    /// 利用者に見える文は Windows の設定画面の札そのもの「<b>スマート アプリ コントロール</b>」で綴る。
+    /// </para>
+    /// <para>
+    /// <b>なぜ <see cref="Hidden"/> に足さないのか</b>＝この 2 つは<b>内輪では生きている語</b>である＝
+    /// ⑴ <c>SmartAppControlNotice.Markers</c> の <c>"Smart App Control"</c> は
+    /// <b>英語の機体の OS の文を見分ける標識</b>（画面には 1 度も出ない・替えると畳みが効かなくなる）
+    /// ⑵ <c>MainViewModel</c>／<c>StatusViewModel</c> が <c>AppendLog</c> へ落とす
+    /// 「Smart App Control が部品を止めました：」は<b>記録の 1 行</b>（生の字と同じ箱＝
+    /// この製品で唯一の生の記録の置き場）。<b>だから範囲は 2 本に限る</b>＝
+    /// <see cref="UiStrings"/> と <c>Views/*.xaml</c> の可視属性（＝<b>利用者に出る文の全部</b>）。
+    /// <c>ViewModels/*.cs</c> のリテラルはいままで通り <see cref="Hidden"/> だけで舐める。
+    /// </para>
+    /// </summary>
+    private static readonly string[] HiddenUserFacing =
+    [
+        "SAC", "Smart App Control",
+    ];
+
+    /// <summary>
     /// <b>語の一部にしか現れない隠す語</b>（前後を見ないと誤って弾く物）。
     /// <para>
     /// 「ポート」は「サポート」「レポート」「インポート」の中にも在り、
@@ -158,7 +180,7 @@ public sealed class WordLintTests
         var offences = new List<string>();
         foreach (var (name, value) in UiStringValues())
         {
-            foreach (var word in Offences(value))
+            foreach (var word in Offences(value, userFacing: true))
             {
                 offences.Add("UiStrings." + name + " に「" + word + "」");
             }
@@ -173,7 +195,7 @@ public sealed class WordLintTests
         var offences = new List<string>();
         foreach (var (file, attribute, value) in VisibleXamlValues())
         {
-            foreach (var word in Offences(value))
+            foreach (var word in Offences(value, userFacing: true))
             {
                 offences.Add(file + " の " + attribute + " に「" + word + "」＝" + value);
             }
@@ -183,13 +205,50 @@ public sealed class WordLintTests
         // 属性ではないので、属性だけを見る錠を素通りする。
         foreach (var (file, value) in XamlElementTexts())
         {
-            foreach (var word in Offences(value))
+            foreach (var word in Offences(value, userFacing: true))
             {
                 offences.Add(file + " の要素の本文に「" + word + "」＝" + value);
             }
         }
 
         Assert.True(offences.Count == 0, string.Join("／", offences));
+    }
+
+    /// <summary>
+    /// <b>利用者に出る面の語は「スマート アプリ コントロール」で揃っている</b>
+    /// （<c>decisions.md</c> 147・v2.0.3）。
+    /// <para>
+    /// 上の 2 本（隠す語）は「出ていないこと」しか見ないので、**文ごと消しても緑になる**＝
+    /// ここで<b>本来の語が現に出ていること</b>も釘付けする。
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void 利用者に出る面の語はスマートアプリコントロールで揃っている()
+    {
+        const string Canonical = "スマート アプリ コントロール";
+
+        var values = UiStringValues();
+        Assert.Contains(values, entry => entry.Value.Contains(Canonical, StringComparison.Ordinal));
+
+        foreach (var (name, value) in values)
+        {
+            foreach (var word in HiddenUserFacing)
+            {
+                Assert.False(
+                    value.Contains(word, StringComparison.Ordinal),
+                    "UiStrings." + name + " に「" + word + "」＝" + value);
+            }
+        }
+
+        foreach (var (file, attribute, value) in VisibleXamlValues())
+        {
+            foreach (var word in HiddenUserFacing)
+            {
+                Assert.False(
+                    value.Contains(word, StringComparison.Ordinal),
+                    file + " の " + attribute + " に「" + word + "」＝" + value);
+            }
+        }
     }
 
     /// <summary>
@@ -268,13 +327,30 @@ public sealed class WordLintTests
     private static bool IsJapanese(char c) =>
         c is >= '぀' and <= 'ヿ' || c is >= '一' and <= '鿿';
 
-    private static IEnumerable<string> Offences(string value)
+    /// <param name="value">舐める 1 行。</param>
+    /// <param name="userFacing">
+    /// <b>利用者の目に入る面か</b>（<c>decisions.md</c> 147）＝真の回だけ
+    /// <see cref="HiddenUserFacing"/>（「SAC」「Smart App Control」）も数える。
+    /// <see cref="UiStrings"/> と <c>Views/*.xaml</c> の可視属性だけが真である。
+    /// </param>
+    private static IEnumerable<string> Offences(string value, bool userFacing = false)
     {
         foreach (var word in Hidden)
         {
             if (value.Contains(word, StringComparison.Ordinal))
             {
                 yield return word;
+            }
+        }
+
+        if (userFacing)
+        {
+            foreach (var word in HiddenUserFacing)
+            {
+                if (value.Contains(word, StringComparison.Ordinal))
+                {
+                    yield return word;
+                }
             }
         }
 

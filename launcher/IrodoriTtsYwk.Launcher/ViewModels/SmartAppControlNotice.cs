@@ -5,7 +5,14 @@ using IrodoriTtsYwk.Launcher.Services.Security;
 namespace IrodoriTtsYwk.Launcher.ViewModels;
 
 /// <summary>
-/// <b>Smart App Control を利用者の言葉に直す</b>（<b>純関数だけ</b>・<c>decisions.md</c> 140・v2.0.2）。
+/// <b>スマート アプリ コントロールを利用者の言葉に直す</b>（<b>純関数だけ</b>・
+/// <c>decisions.md</c> 140・145〜147・v2.0.3）。
+/// <para>
+/// <b>利用者に出す文は 1 つもここに無い</b>＝この型が返すのは <see cref="UiStrings"/> の綴りの組み立てだけで、
+/// 語は「スマート アプリ コントロール」に揃えてある（`decisions.md` 147）。
+/// <b>この註と <see cref="Markers"/> の英字は据え置き</b>＝標識は<b>英語の機体の OS の文</b>の逐語であり、
+/// 1 文字でも替えると畳みが効かなくなる（画面には 1 度も出ない）。
+/// </para>
 /// <para>
 /// 持ち場は 2 つある＝
 /// ⑴ <b>押す前の告知</b>（はじめの準備の「これからすること」・設定 › 詳細の 1 行）＝
@@ -140,11 +147,14 @@ public static class SmartAppControlNotice
     };
 
     /// <summary>
-    /// その 1 行に添える註（<b>状態で言い切りを分ける</b>＝是正・検分 low 6）。
+    /// その 1 行に添える註（<b>状態で文を分ける</b>）。
     /// <para>
-    /// 有効な機体は<b>言い切る</b>（裁定 143＝「動かない前提で明示して告げる」）＝
+    /// <b>どちらも「ことがあります」</b>（`decisions.md` 145／146・v2.0.3）＝有効な機体でも、
+    /// 評判（ISG）が許可へ振れている間は部品が読み込めて鳴る＝<b>「読み込めません」は事実でない</b>。
+    /// 1 巡目の言い切り（是正・検分 low 6＝裁定 143 の読み）は、この 2 条で退いた＝
     /// 公式ページ・はじめの準備の告知・リリース文と同じ強さにする。
-    /// 評価中の機体だけが「ことがあります」＝Windows がまだ有効にするか決めていない。
+    /// 違うのは<b>時制</b>だけ＝有効は「読み込めないことがあります」、
+    /// 評価中は「有効になると…ことがあります」。
     /// </para>
     /// </summary>
     public static string? StatusNote(SmartAppControlState state) => state switch

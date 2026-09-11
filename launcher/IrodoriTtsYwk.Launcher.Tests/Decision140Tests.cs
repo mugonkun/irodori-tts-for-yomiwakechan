@@ -14,7 +14,7 @@ using Xunit;
 namespace IrodoriTtsYwk.Launcher.Tests;
 
 /// <summary>
-/// <b>裁定 140＝Smart App Control</b>（v2.0.2）。
+/// <b>裁定 140＝スマート アプリ コントロール</b>（v2.0.2・文言は 145〜147 で v2.0.3 に直した）。
 /// <para>
 /// 司令官の手動検分（RTX 機・v2.0.1）＝参照ボイスを選んで〔しゃべらせる〕と、Windows が
 /// <c>_spline.cp312-win_amd64.pyd</c>（scipy.signal の拡張）を止め、帯に<b>生の ImportError</b> が出た。
@@ -141,6 +141,11 @@ public sealed class Decision140FoldTests
         Assert.DoesNotContain("切ってください", band.Reason!, StringComparison.Ordinal);
         Assert.Contains("スマート アプリ コントロール", band.Reason!, StringComparison.Ordinal);
 
+        // **語は本来の綴りだけ**（`decisions.md` 147）＝利用者の目に入る面に「SAC」も
+        // 「Smart App Control」も出さない（標識と記録の側は据え置き＝`WordLintTests`）。
+        Assert.DoesNotContain("SAC", band.Reason!, StringComparison.Ordinal);
+        Assert.DoesNotContain("Smart App Control", band.Reason!, StringComparison.Ordinal);
+
         // **可逆性には触れない**（`decisions.md` 142＝最近の Windows の更新で再びオンにできる＝
         // 「一度無効にすると戻せません」は誤り）。6 面から外した綴りを、ここが二度と戻さない。
         Assert.DoesNotContain("戻せません", band.Reason!, StringComparison.Ordinal);
@@ -265,8 +270,23 @@ public sealed class Decision140FoldTests
         // 無効な機体には**出す物が無い**（帯にも詳細にも 1 行も足さない）。
         Assert.Null(SmartAppControlNotice.StatusLine(SmartAppControlState.Off));
 
-        // 「Smart App Control」は憲章 §6-2 の残す語＝伏せ字にしない。
-        Assert.Equal("Smart App Control: 有効", UiStrings.SmartAppControlStatusOn);
+        // **語は Windows の設定画面の札そのもの**（`decisions.md` 147・司令官の逐語
+        // 「SAC という語句ではなくスマートアプリコントロールと本来の語句で表現する。」）＝
+        // 伏せ字にはしない（利用者が設定で探す語である）が、綴りは「スマート アプリ コントロール」。
+        Assert.Equal("スマート アプリ コントロール: 有効", UiStrings.SmartAppControlStatusOn);
+        Assert.Equal("スマート アプリ コントロール: 評価中", UiStrings.SmartAppControlStatusEvaluation);
+
+        // **註はどちらも「ことがあります」**（`decisions.md` 145／146＝同一ハッシュが
+        // block → allow に反転する＝評判が許可へ振れている間は読み込めて鳴る）。
+        Assert.Contains(
+            "読み込めないことがあります",
+            SmartAppControlNotice.StatusNote(SmartAppControlState.On)!,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "読み込めないことがあります",
+            SmartAppControlNotice.StatusNote(SmartAppControlState.Evaluation)!,
+            StringComparison.Ordinal);
+        Assert.Null(SmartAppControlNotice.StatusNote(SmartAppControlState.Off));
     }
 
     [Fact]
@@ -344,10 +364,18 @@ public sealed class Decision140WizardTests : IDisposable
         Assert.True(vm.SmartAppControlNoticeVisible);
         Assert.Equal(UiStrings.SmartAppControlWizardNotice, vm.SmartAppControlNoticeText);
 
-        // ⑴ 事実 ⑵ 落としても動かないこと ⑶ 設定の在り処、の 3 つだけ。
-        Assert.Contains("Smart App Control", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
-        Assert.Contains("しゃべらせられません", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
+        // ⑴ 事実 ⑵ 落としても動かないことがあること ⑶ 設定の在り処、の 3 つだけ。
         Assert.Contains("スマート アプリ コントロール", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
+        Assert.Contains("しゃべらせられません", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
+
+        // **「読み込めません」とは言い切らない**（`decisions.md` 145／146＝評判（ISG）の揺れで
+        // 同一ハッシュが block → allow に反転する＝許可の間は読み込めて鳴る）。
+        Assert.Contains("読み込めないことがあります", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
+        Assert.DoesNotContain("読み込めないため", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
+
+        // **語は本来の綴りだけ**（`decisions.md` 147）。
+        Assert.DoesNotContain("SAC", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Smart App Control", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
 
         // **切れとは言わない・可逆性にも触れない**（`decisions.md` 142）。
         Assert.DoesNotContain("無効にしてください", vm.SmartAppControlNoticeText, StringComparison.Ordinal);

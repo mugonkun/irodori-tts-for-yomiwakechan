@@ -26,11 +26,11 @@
     版の一元定義（本体 yomiwakechan2.csproj の型を倣う）。AppDisplayVersion（v 前置の表示形）が
     唯一の定義箇所で、数値版はここから v を剥いで導出する。外部台本（build/release-build.ps1）は
     この行を機械読取する。IncludeSourceRevisionInInformationalVersion=false は SDK 既定の
-    「+コミット SHA」付加を止めて表示版を素の v2.0.2 に保つため。
-    2.0.2 は server/ywk_server.py の YWK_VERSION と揃えてある（/ywk/status.version と同じ数字）。
+    「+コミット SHA」付加を止めて表示版を素の v2.0.3 に保つため。
+    2.0.3 は server/ywk_server.py の YWK_VERSION と揃えてある（/ywk/status.version と同じ数字）。
   -->
   <PropertyGroup>
-    <AppDisplayVersion>v2.0.2</AppDisplayVersion>
+    <AppDisplayVersion>v2.0.3</AppDisplayVersion>
     <Version>$(AppDisplayVersion.TrimStart('v'))</Version>
     <InformationalVersion>$(AppDisplayVersion)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>

@@ -898,11 +898,22 @@ public static class UiStrings
     /// <summary>まとめられなかった回。</summary>
     public const string AboutReportSaveFailed = "記録をまとめられませんでした。";
 
-    // ===================== Smart App Control（`decisions.md` 140・v2.0.2）=====================
+    // ============ スマート アプリ コントロール（`decisions.md` 140・145〜147・v2.0.3）============
 
-    // **なぜ「Smart App Control」と綴るのか**＝憲章 §6-2 の残す語である。
-    // 利用者が設定の画面で探す札そのものが「スマート アプリ コントロール」であり、
-    // 検索しても Microsoft の解説が先に出る（原則 1 の検分文の 2 段を通る）。
+    // **語は「スマート アプリ コントロール」で綴る**（`decisions.md` 147・司令官の逐語
+    // 「SAC という語句ではなくスマートアプリコントロールと本来の語句で表現する。」）＝
+    // 利用者が設定の画面で探す札そのものがこの語である（間の空白も Windows の表記のまま）。
+    // **利用者の目に入る面では「SAC」とも「Smart App Control」とも書かない**＝この節の文字列・
+    // `Views/*.xaml` の可視属性・着地頁・`docs/guide.md`・リリース文の 5 面がその範囲で、
+    // 錠は `WordLintTests` の `HiddenUserFacing` が持つ。
+    // **識別子と内輪の帳面は据え置き**（`SmartAppControl.cs`・`SmartAppControlNotice`・
+    // この註・`Markers` の英字＝英語の機体の OS の文を見分ける標識）＝1 文字も替えない。
+    //
+    // **「読み込めないことがあります」と書く**（`decisions.md` 145／146）＝決定実験で、
+    // **同一の未署名ハッシュが同じ起動セッションの中で block → allow に反転した**（原因は
+    // ISG＝クラウドの評判の揺れ）。有効な機体でも評判が許可へ振れている間は読み込めて鳴る＝
+    // 「読み込め<b>ません</b>」は事実でない。1 巡目の言い切り（裁定 143 の読み）は**この条で退いた**。
+    //
     // **切れとは言わない**（所有者の規則＝防護の設定を決めるのは利用者）＝
     // ここに並ぶ文が言うのは ⑴ 事実 ⑵ その結果できないこと ⑶ 設定の在り処、の 3 つだけである。
     //
@@ -916,37 +927,40 @@ public static class UiStrings
     // 製品の中で「›」を使っている利用者向けの文字列は 1 つも無い（註だけ）＝こちらを揃える。
 
     /// <summary>設定 › 詳細に 1 行だけ出す状態（有効）。</summary>
-    public const string SmartAppControlStatusOn = "Smart App Control: 有効";
+    public const string SmartAppControlStatusOn = "スマート アプリ コントロール: 有効";
 
     /// <summary>同・評価中（Windows が有効にするか見極めている途中）。</summary>
-    public const string SmartAppControlStatusEvaluation = "Smart App Control: 評価中";
+    public const string SmartAppControlStatusEvaluation = "スマート アプリ コントロール: 評価中";
 
     /// <summary>
-    /// 設定 → 詳細のその 1 行に添える註（<b>有効な機体＝言い切る</b>）。
+    /// 設定 → 詳細のその 1 行に添える註（<b>有効な機体</b>）。
     /// <para>
-    /// <b>ぼかさない</b>（是正・検分 low 6＝裁定 143「SAC 有効機は『動かない前提で明示して告げる』」）＝
-    /// 1 巡目はここだけが「読み込めない<b>ことがあります</b>」で、はじめの準備の告知・公式ページ・
-    /// リリース文の言い切りと食い違っていた。**同じ事実は同じ強さで言う**（憲章 §6）。
+    /// <b>「ことがあります」と言う</b>（`decisions.md` 145／146）＝有効な機体でも、評判が許可へ
+    /// 振れている間は部品が読み込めて鳴る（決定実験で同一ハッシュの block → allow を実測した）。
+    /// 1 巡目の言い切り（是正・検分 low 6＝裁定 143 の読み）は、この 2 条で退いた＝
+    /// 着地頁「読み込めないことがあり、動かないことがあります」と<b>同じ強さ</b>に揃える。
     /// </para>
     /// </summary>
     public const string SmartAppControlStatusNoteOn =
-        "有効なパソコンでは、このアプリが使う部品を読み込めないため、しゃべらせられません。";
+        "有効なパソコンでは、このアプリが使う部品を読み込めないことがあります。"
+        + "読み込めないと、しゃべらせられません。";
 
     /// <summary>
-    /// 同・評価中（<b>ここだけが「ことがあります」</b>＝Windows がまだ有効にするか決めていない＝
+    /// 同・評価中（Windows がまだ有効にするか決めていない＝
     /// 止まると決まっていない機体に、止まると言い切らない）。
     /// </summary>
     public const string SmartAppControlStatusNoteEvaluation =
-        "有効になると、このアプリが使う部品を読み込めなくなることがあります。";
+        "有効になると、このアプリが使う部品を読み込めないことがあります。";
 
     /// <summary>
     /// <b>はじめの準備の「これからすること」に出す告知</b>（有効な機体だけ・
     /// ダウンロードが始まる<b>前</b>＝憲章 原則 3 の正直さ）。
     /// </summary>
     public const string SmartAppControlWizardNotice =
-        "このパソコンでは Windows の Smart App Control が有効です。"
-        + "このままダウンロードしても、このアプリが使う部品を読み込めないため、しゃべらせられません。"
-        + "Smart App Control の設定は、Windows セキュリティ → アプリとブラウザー コントロール → "
+        "このパソコンでは Windows のスマート アプリ コントロールが有効です。"
+        + "このままダウンロードしても、このアプリが使う部品を読み込めないことがあります。"
+        + "読み込めないと、しゃべらせられません。"
+        + "スマート アプリ コントロールの設定は、Windows セキュリティ → アプリとブラウザー コントロール → "
         + "スマート アプリ コントロール にあります。";
 
     /// <summary>帯の ⑴ 何が起きたか（<b>生の ImportError は帯に出さない</b>＝記録へ落とす）。</summary>
@@ -955,11 +969,15 @@ public static class UiStrings
     /// <summary>
     /// 帯の ⑵ なぜか（止められた檔の名は<b>例として</b>出す＝これが無いと
     /// Windows セキュリティの通知と目の前の帯が同じ事件だと判らない）。
+    /// <para>
+    /// <b>ここは「ことがあります」にしない</b>＝この文が出るのは<b>現に止められた後</b>で、
+    /// 起きた事の報告だからである（`decisions.md` 145 が直させたのは<b>押す前の告知</b>のほう）。
+    /// </para>
     /// </summary>
     public const string SmartAppControlFailedWhy =
-        "このパソコンの Smart App Control が、"
+        "このパソコンのスマート アプリ コントロールが、"
         + "初回にダウンロードした部品（例＝_spline.cp312-win_amd64.pyd）を止めました。"
-        + "Smart App Control の設定は、Windows セキュリティ → アプリとブラウザー コントロール → "
+        + "スマート アプリ コントロールの設定は、Windows セキュリティ → アプリとブラウザー コントロール → "
         + "スマート アプリ コントロール にあります。";
 
     /// <summary>帯の ⑶ 次の 1 手（押すと Windows の設定が開く）。</summary>
