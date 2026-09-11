@@ -33,7 +33,7 @@ gradio を依存から外すと配布サイズも 43〜82 MB 減る。
 | 2 | ポート **18088**・bind `127.0.0.1`・**api_key なし** | `decisions.md` 2 |
 | 3 | GPU は **UUID（と PCI bus id）で保存**し、起動時に index へ解決する（列挙 ≤ 5 s）。index は再起動で変わりうる | `docs/acceptance.md`「GPU」行 |
 | 4 | 精度は **device 連動**（GPU→bf16・CPU→fp32）。上級者設定で上書き可（Radeon 版を除く） | `decisions.md` 7・`docs/radeon.md` |
-| 5 | 焼く既定＝**`preload=false`**（裁定 105＝bind してから裏でモデルを載せる。裁定 7 の `preload=true` を覆した）・`empty_cache_interval=0`・`allow_no_ref_voice=false`＋alias「デフォルト」・v4.1-Small 決め打ち・`voices_dir` は絶対パス・ready 待ち 120 s | `decisions.md` 7・105 |
+| 5 | 焼く既定＝**`preload=false`**（裁定 105＝bind してから裏でモデルを載せる。裁定 7 の `preload=true` を覆した）・`empty_cache_interval=0`・`allow_no_ref_voice=false`＋alias「デフォルト」・v4.1-Small 決め打ち・`voices_dir` は絶対パス・ready 待ち 120 s（**声を読み込んでいる最中だけ 600 s まで伸びる**＝決裁 135 ⑴・§7-6） | `decisions.md` 7・105・135 |
 | 6 | **`voices/` と `voices.json` の所有者はランチャ**（上流の登録 API 4 口は使わない＝日本語名が 400 になる） | `docs/contract.md` ⑷ |
 | 7 | 話者メタ（表示名・caption 既定・既定パラメータ）は**配布版の台帳** `voices/voices.ywk.json`（上流に置き場が無い） | 同 |
 | 8 | 既定 steps は **40**（上流既定）。UI のプリセットで 10 を選べる。**本体の指定が来たら必ず勝つ** | `decisions.md` 10 |
@@ -227,6 +227,40 @@ dotnet test  launcher\IrodoriTtsYwk.sln --nologo   # 356 本（うち L3 が 130
 `autoStartServer:false`・`port:18094` の `settings.json` を置き、`YWK_LAUNCHER_RUNTIME_DIR` を
 **渡さずに**（＝`python.exe` が見つからず子プロセスが起きない形で）立てた。**8088・18088・7861 を
 含めどのポートも開いていないこと**を `Get-NetTCPConnection` で確認し、終わったらツリー kill した。
+
+### 7-6 ready 待ちの期限（決裁 135 ⑴・v2.0.1）
+
+**期限は 2 段である。**
+
+| 段 | 何秒 | いつ働くか | 綴っている所 |
+|---|---|---|---|
+| 契約 ⑵ の期限 | **120 s**（CPU 変種だけ 300 s） | 起こしてから **`/health` が返る**までの期待。ここは 1 秒も伸ばさない | `RuntimeVariants.ReadyTimeoutDefault`・`LauncherSettings.EffectiveReadyTimeout` |
+| 読み込みの硬い上限 | **600 s** | 上の期限を過ぎたとき、⑴ 子プロセスが生きている ⑵ 口が開いている ⑶ `runtime.loaded=false` かつ `runtime.error` が無い、の **3 つが揃った回だけ 1 度**伸ばす | `ServerProcess.LoadingHardCap`・`ServerProcess.IsLoadingInProgress` |
+
+`settings.json` の **`readyTimeoutSeconds`** の意味は変えていない＝**0 以下なら変種の既定**（120／300 s）、
+正なら**その秒数が契約 ⑵ の期限になる**。600 s より長い値を書いた機体では**そちらが勝つ**
+（硬い上限は「下限としての上限」＝`max(readyTimeoutSeconds, 600)`）。欄そのものは設定画面から退役してあり
+（`SettingsReadyTimeoutBox`／`SettingsReadyTimeoutNoteText`）、手で書けば従来どおり効く。
+
+**なぜ 2 段にしたか**＝RTX 機の段 H 射 2（清浄な機体・ドライバ 616.92）で、取得の直後の 1 回目が
+**3.06 GB の safetensors を冷えた円盤から読む**ぶん 120 秒に届かず、ウィザードが
+「止まりました。準備に時間がかかりすぎました。…」で終わって `firstRunCompleted` が偽のまま残った
+（〔もう一度〕では 36.62 秒・以後の起動は 12 秒）。**子は生きていて口も開いていた**＝壊れていない個体を
+断っていたのであって、期限が事実と合っていなかった。
+
+**伸ばしている間に出る物**
+
+- 状態帯＝`Listening` のまま「準備しています… 声を読み込んでいます（初回は 1〜2 分かかります）」
+  （`BandText.PreparingVoices`）。**赤にもならず、1 手も出さない。**
+- はじめの準備のウィザード＝「起動の確認」の 1 行が **`UiStrings.WizardLoadingVoices`**
+  （「声を読み込んでいます。初めてのときは数分かかることがあります。」）に変わる。
+  差し替えを起こすのは `MainViewModel.ApplyServerState` が `Listening` を見た回だけで、
+  ほかの段の文言は 1 字も動かない（`FirstRunViewModel.ReportLoadingVoices`）。
+- 記録（ログ）＝`ServerProcess.LoadingStillRunningLine` の 1 行（画面には出ない）。
+
+**それでも止まる 3 つ**＝⑴ 子プロセスが消えた（終了コードの理由 1 行）⑵ `runtime.error` が載った
+（「モデルの読込に失敗＝…」＝裁定 105 ⑷ の路・伸ばさない）⑶ 硬い上限まで伸ばしても載らなかった
+（「起動が 600 秒で終わりませんでした。…」＝帯は 3 部品に言い直す）。
 
 ## 9. 画面の 2 巡目（2026-09-05・便 D（2）・画面席 LB）
 
