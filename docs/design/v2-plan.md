@@ -1083,7 +1083,7 @@ _spline: アプリケーション制御ポリシーによってこのファイ�
 | # | 物 | 実物 |
 |---|---|---|
 | ⑴ | **状態の読み**（純・安い・投げない） | `Services/Security/SmartAppControl.cs`＝`HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy` の `VerifiedAndReputablePolicyState`（**1 有効／2 評価中／0 と欄無しは無効**）。読み手は口（`ISmartAppControlPolicyReader`）で差し替えられる＝試験は登録簿に触らない。**読むだけ・書かない・投げない**＝読めない機体（権限・Win10・鍵が無い）は「無効」に落ちる（**判らない回に警告を出さない**）。1 起動に 1 度だけ読んで `AppServices.SmartAppControl` が覚える |
-| ⑵ | **言い直しと畳み**（純） | `ViewModels/SmartAppControlNotice.cs`＝標識（**「アプリケーション制御ポリシー」／`blocked by your organization`／`Smart App Control`**・大小を問わない部分一致）が在る 1 行を憲章 原則 6 の 3 部品へ畳む。文は `UiStrings` が唯一の出所（`SmartAppControlWizardNotice`・`SmartAppControlFailedWhat`／`…Why`・`SmartAppControlOpenSettingsButton`・`SmartAppControlStatusOn`／`…Evaluation`／`…Note`） |
+| ⑵ | **言い直しと畳み**（純） | `ViewModels/SmartAppControlNotice.cs`＝標識（**「アプリケーション制御ポリシー」／`Application Control policy`／`blocked by your organization`／`Smart App Control`**・大小を問わない部分一致）が在る 1 行を憲章 原則 6 の 3 部品へ畳む。**表示言語がどちらでもない機体**は状態で救う（有効／評価中の機体に限り `DLL load failed` も標識に足す＝是正・下の表 ⑴）。文は `UiStrings` が唯一の出所（`SmartAppControlWizardNotice`・`SmartAppControlFailedWhat`／`…Why`・`SmartAppControlOpenSettingsButton`・`SmartAppControlStatusOn`／`…Evaluation`／`…NoteOn`／`…NoteEvaluation`） |
 | ⑶ | **出る面 3 つ** | ⒜ **はじめの準備の「これからすること」**（`FirstRunSmartAppControlText`・**有効な機体だけ**・**ダウンロードが始まる前**＝憲章 原則 3）⒝ **帯**（`BandActionKind.OpenSmartAppControl`＝〔設定を開く〕・`BandContext.SmartAppControlBlocked` と内部の 1 行の標識の**どちらでも**立つ・**どの状態より先に効く**＝`Ready` のまま射だけ止められる形が在る）⒞ **設定 › 詳細の状態 1 行**（`SettingsSmartAppControlText`＝有効／評価中の機体だけ・**見出しを持たない註 2 行なので 8 行は動かない**）。**帯に常時は出さない**（no nagging＝有効でも「デフォルト」の声だけなら音は出る） |
 | ⑷ | **発話テストの道** | `TryViewModel.FoldFailure`＝`SpeechRequestBuilder.DescribeError` が wrapper の `message` を括弧に入れる前に標識を見る。止められた回は 3 部品を出し、**生の 1 行は `SmartAppControlBlocked` で束ねる側へ渡って記録（`LauncherLogFile`）だけに残る**。音が出た回と起こし直した回に帯の札を下ろす |
 
@@ -1093,7 +1093,8 @@ _spline: アプリケーション制御ポリシーによってこのファイ�
 戻せるようになっている。」）＝裁定 140／141 の下書きに在った「一度無効にすると Windows を入れ直すまで
 戻せません」は**誤りなので書かない**。1 巡目はその文を 5 面（帯・ウィザードの告知・着地頁・
 `guide.md`・リリース文の 2 箇所）に置いていたので、**5 面とも外した**＝残したのは「設定はここにあります
-（Windows セキュリティ › アプリとブラウザー コントロール › スマート アプリ コントロール）」までである。
+（Windows セキュリティ → アプリとブラウザー コントロール → スマート アプリ コントロール）」までである。
+**道順の矢印は「→」に統一した**（是正・下の表 ⑸）＝`guide.md` と着地頁が前からこの矢印である。
 **試験は裏返した**＝「その綴りが出ないこと」を検める側にした（`Decision140FoldTests`・`Decision140WizardTests`）。
 **「Smart App Control」は伏せない**（憲章 §6-2 の残す語＝設定の画面の札そのもので、検索の助けになる）。
 
@@ -1108,18 +1109,39 @@ Windows 11 26200）。開けない版のために `ms-settings:windowsdefender` 
 契約 ⑻ の見本・`launcher/README.md` の `settings` 見本と版の名札の例・`probe/e-install-probe.ps1` の既定の setup 名・
 `.iss` と `installer-build.ps1` の註・`docs/ben-f-handoff.md` の 3 箇所）。
 
-**この回の実測**＝`dotnet build` **0 警告 0 エラー**／`dotnet test` **1,007 合格＋1 スキップ**
-（v2.0.1 の 987 から **+20**＝新設 `Decision140Tests`・削除 0）／契約テスト **372 passed**／
+#### §2-2 の是正（同日・検分 1 席・所見 10 件・Opus 5）
+
+**10 件すべて当て込み**（却下 0）。**直した物**＝
+
+| # | 所見 | 当て込み |
+|---|---|---|
+| ⑴ high | **英語の機体で畳みが 1 度も効かない**＝標識の英字 2 つ（`blocked by your organization`／`Smart App Control`）は SmartScreen ／ ストアの綴りで、**読み込みの失敗には出ない**。止めているのは Win32 の **4551**（`ERROR_SYSTEM_INTEGRITY_POLICY_VIOLATION`）で、`FormatMessageW` は日本語の機体に「アプリケーション制御ポリシーによって…」を、`lang 1033` に **`An Application Control policy has blocked this file.`** を返す（実測）＝英語の Win11＋SAC 有効機では v2.0.1 の生の ImportError がそのまま帯へ戻っていた | 標識に **`Application Control policy`** を足した（4551 の親類 4556／4558／4582 も同じ句で始まる）。**どちらの言語でもない機体**は状態で救う＝`Blocked(raw, state)` が有効／評価中の回に限り `DLL load failed` も見る（**無効な機体では効かない**＝欠けた DLL を SAC のせいにしない）。状態は `AppServices` から `StatusViewModel.ApplySmartAppControlState`・`TryViewModel.SmartAppControl`・`BandContext.SmartAppControl` へ配る。試験＝`英語の機体の綴りも畳む`・`日本語でも英語でもない機体は状態で救う`・`無効な機体では読めない部品をSACのせいにしない` |
+| ⑵ medium | **準備運転・声の下ごしらえの失敗が畳みを 1 度も通らない**＝Radeon 機は既定で起動時に焼く（`WarmupOnStartDefault(rocm)=true`・wrapper の precompute）ので、**この機体では止められた事実が最初にここへ出る**。`/ywk/status` の `warmup.error`／`precompute.error` は 詳しい状態 に**生のまま**出て、帯は緑の「使えます」のままだった | `StatusViewModel.ApplyStatus` が両方の `error` を同じ畳みに掛ける＝真なら帯を立て（3 部品＋〔設定を開く〕）、`Compose` は生の 1 行の代わりに ⑴ の文を出す。**生の字は記録へ 1 度だけ**（標本は数秒ごとに来る）。試験＝`準備運転の失敗も畳んで帯と設定を開くへ回す`・`声の下ごしらえの失敗も同じ道を通る`・`関係の無い焼きの失敗は1行もいじらない` |
+| ⑶⑻ low／medium | **止められた札が下りない**＝下ろすのは「音が出た射」と「起こし直した回」だけだったので、止めた後（`Stopped`）も落ちた後（`Failed`）も帯が SAC の 1 行に塗り潰され、〔もう一度動かす〕が主窓から消え、**次に起きた別の失敗**（裁定 83 の `0xC0000005` の終了コードの 1 行）が 1 度も出なくなっていた | 錠を 2 枚＝⒜ `ApplyState` が **`Ready`／`Warming`／`Listening` 以外へ動いた回に札を下ろす**（降格は同じ走行なので下ろさない）⒝ `BandText.For` は**札の枝を `Ready`／`Warming` でしか取らない**（理由そのものに標識が載る回はどの状態でも先のまま）。試験＝`止めた回は止まっていますともう一度動かすへ戻る`・`落ちた回は終了コードの1行が出て塗り潰されない`・`降格しただけの回は札を下ろさない` |
+| ⑷ medium | **立ったままの回に「止まりました。」と名乗っていた**＝`Band()` の見出しが固定で、`Ready` のまま射だけ止められた回（**この版が作られた当の形**）に、帯の左が「止まりました。」・右が「読み分けちゃん2 から使えます」と食い違った。サーバは listen していて「デフォルト」の声は鳴る＝**⑴ が事実でない**（憲章 原則 6・`v2-copy.md` §3-1 はこの語を失敗の行だけに充てる） | `Band(state)`＝`Ready`→**使えます**／`Warming`→**使えます（声を準備しています）**／それ以外→**止まりました。**。丸はどちらでも**赤**（直すまで参照ボイスは 1 本も鳴らない）・理由 1 行と〔設定を開く〕は同じ。試験＝`使えますのまま射だけ止められた回も帯に出る` に見出しの錠を足した |
+| ⑸ low | **同じ道順が 2 通りに見えた**＝画面の文だけ `›`、`guide.md` と着地頁は `→` | 画面の 2 本を `→` に揃えた（製品の利用者向けの文字列で `›` を使っている物は他に無い） |
+| ⑹ low | **設定 › 詳細の註だけが「ことがあります」**＝他の 4 面は言い切り（裁定 143＝「SAC 有効機は『動かない前提で明示して告げる』」） | 註を状態で分けた＝**有効**は言い切り（`SmartAppControlStatusNoteOn`）・**評価中**だけが「なることがあります」（`…NoteEvaluation`）。`SettingsViewModel.SmartAppControlNote` は状態から選ぶ（`x:Static` の束縛を `Binding` へ） |
+| ⑺ low | **註が実態より強く言っていた**＝「この字が画面へ出る道は 1 本も無い」と書いたが、生の 1 行は `AppendLog` 経由で **詳しい状態 の「記録」の箱**に出る（そこは設計どおり唯一の生の記録の置き場） | 2 本の註を実態に直した＝行き先は**記録の檔と 詳しい状態 の記録の箱**の 2 つ、**帯・はじめの準備・発話テストには出さない** |
+| ⑼ medium | **`build/out/installer/` に v2.0.1 の setup が残ったまま `SHA256SUMS.txt` が 4 行**＝そのまま資産にすると `sha256sum -c` が 2 行で「No such file」を出して非零で終わる（ben-e §18 段 3 が先に退かせと言っている理由） | **退かしてから `-All` を撃ち直した**＝旧 setup 2 本を `build/out/retired-v2.0.1/` へ移し、`SHA256SUMS.txt` を消してから作り直した＝**2 行**（v2.0.2 の cuda／radeon だけ） |
+| ⑽ low | **`gh-pages` の写しが申し送りに無かった**＝`site/index.html` を動かした回なのに、公開側の「必要なもの」に SAC の 1 行が入らないまま版を切れてしまう | 下の申し送りに ⑷ として足した |
+
+**この回の実測**＝`dotnet build` **0 警告 0 エラー**／`dotnet test` **1,017 合格＋1 スキップ**
+（v2.0.1 の 987 から **+30**＝新設 `Decision140Tests`（是正で +10）・削除 0・既存の書き替え 0）／契約テスト **372 passed**／
 `WordLintTests` 緑／台本 8 本とも構文 0 エラー・`d-launch-probe -DryRun`「nothing was touched.」／
 `build/installer-build.ps1 -All` **20 門 0 失敗 WARN 0**・**A-1 は 109 檔 34,088,381 B のまま不動**・
-A-6 `ProductVersion = v2.0.2`・exe 61,798,354 B・
-setup cuda **75,528,634 B**（`f3e9efc5…`）／radeon **75,530,189 B**（`9f9ebbd4…`）。
+A-6 `ProductVersion = v2.0.2`・exe 61,799,068 B・
+setup cuda **75,528,535 B**（`80cf6bab…`）／radeon **75,530,096 B**（`c5764fcd…`）・
+`SHA256SUMS.txt` は**この 2 行だけ**（是正 ⑼）。
 **アプリは 1 度も起こしていない。**
 
 **していないこと（申し送り）**＝⑴ **署名**（裁定 139＝未署名の setup そのものが SAC に弾かれる件は
 **別の決め**であり、この版は 1 文字も触っていない）⑵ **SAC が有効な実機での実射**（この機体は
 `VerifiedAndReputablePolicyState=0`＝無効なので、告知が出る側の道は試験でしか通っていない）
-⑶ `build/out/installer/` に v2.0.1 の setup 2 本が残っている（ben-e §18 の段 3＝**版を切る回に退かす**）。
+⑶ ~~`build/out/installer/` に v2.0.1 の setup 2 本が残っている~~＝**是正で片付けた**
+（`build/out/retired-v2.0.1/` へ退かし、`SHA256SUMS.txt` を作り直して **2 行**にした＝上の表 ⑼）
+⑷ **`gh-pages` の写し**（ben-e §21）＝この回は `site/index.html` が動いた（「必要なもの」に SAC の 1 行）ので、
+版を切る段（§18 段 6 の後）で **`site/index.html` を `gh-pages` へ写す**まで、公開側の「必要なもの」は
+1 行足りないままである＝**落とす前に読む頁**なので、裁定 141 の狙いがそこで欠ける。
 
 ---
 

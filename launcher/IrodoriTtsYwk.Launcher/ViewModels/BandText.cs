@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using IrodoriTtsYwk.Launcher.Contracts;
+using IrodoriTtsYwk.Launcher.Services.Security;
 using IrodoriTtsYwk.Launcher.Services.Server;
 
 namespace IrodoriTtsYwk.Launcher.ViewModels;
@@ -106,6 +107,17 @@ public enum BandActionKind
 /// （参照ボイスを選んだ 1 射で初めて <c>scipy</c> の拡張が読まれる）、
 /// <see cref="ServerState"/> では見分けられない。渡すのは判っている側
 /// （<see cref="StatusViewModel.ApplySmartAppControlBlock"/>）である。
+/// <b>効くのは立っている間だけ</b>（是正・検分 medium 8）＝
+/// <see cref="ServerState.Ready"/>／<see cref="ServerState.Warming"/> 以外の回は見ない。
+/// これが無いと、1 度止められた後の帯が<b>止まった回も落ちた回も同じ 1 行に塗り潰され</b>、
+/// 〔もう一度動かす〕が主窓から消え、次に起きた別の失敗（裁定 83 の 0xC0000005 など）を
+/// 利用者が 1 度も知らされなくなる（憲章 原則 6）。
+/// </param>
+/// <param name="SmartAppControl">
+/// <b>この機体の Smart App Control の状態</b>（是正・検分 high 1）＝
+/// 日本語でも英語でもない機体では、止められた 1 行に載る OS の文がその言語で返るので
+/// 標識で見分けられない。有効／評価中の機体に限り
+/// 「<c>DLL load failed</c>」を含む 1 行も畳む（<see cref="SmartAppControlNotice.Blocked"/>）。
 /// </param>
 public sealed record BandContext(
     bool RuntimeLoaded = false,
@@ -120,7 +132,8 @@ public sealed record BandContext(
     string? RebuildRuntimeLine = null,
     bool FirstRunPending = false,
     int? ElapsedSeconds = null,
-    bool SmartAppControlBlocked = false);
+    bool SmartAppControlBlocked = false,
+    SmartAppControlState SmartAppControl = SmartAppControlState.Off);
 
 /// <summary>帯の 1 行（丸・ひとこと・理由 1 行・1 手）。</summary>
 /// <param name="Severity">丸の色。</param>
@@ -283,9 +296,17 @@ public static class BandText
         // ⑴ 止められたのは射だけで、サーバは「使えます」のまま立っていることがある
         // ⑵ 起こす途中で止められた回は Failed の理由にも標識が載る（下の Explain も同じ枝へ落ちる）。
         // どちらも、部品が読めない事実の方が先に要る 1 行である。
-        if (facts.SmartAppControlBlocked || SmartAppControlNotice.Blocked(reason))
+        //
+        // **ただし ⑴ の札が効くのは立っている間だけ**（是正・検分 medium 8）＝射の失敗は
+        // 状態機械から見えないので札で運ぶが、その札は次の起動まで下りない。止まった回・落ちた回も
+        // この枝へ落ちていたころは、〔もう一度動かす〕が主窓から消え、別の失敗（裁定 83）が
+        // 1 行も出なくなっていた。理由そのものに標識が載る ⑵ は、どの状態でも先のままでよい。
+        var blockedWhileUp = facts.SmartAppControlBlocked
+            && state is ServerState.Ready or ServerState.Warming;
+        if (blockedWhileUp || SmartAppControlNotice.Blocked(reason, facts.SmartAppControl))
         {
-            return SmartAppControlNotice.Band();
+            // 名乗る語は状態が決める（是正・検分 medium 4）＝立ったままの回に「止まりました。」は嘘。
+            return SmartAppControlNotice.Band(state);
         }
 
         // 応答が消えて降格した回は**赤にしない**（帯は「準備しています…」へ戻る＝§2-1a D3）。

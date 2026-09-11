@@ -189,6 +189,13 @@ public sealed class MainViewModel : ObservableObject
         // 「発話テスト」で 1 射 200＝取得キャッシュを捨ててよい合図（裁定 90 Q-E2 ⑶）。
         Try.Succeeded += (_, _) => ClearCacheAfterFirstShot();
 
+        // **この機体の Smart App Control の状態を配る**（`decisions.md` 140・v2.0.2）＝
+        // 読むのは `AppServices` が 1 度だけ。帯と発話テストは**見分けの補助**にだけ使う
+        // （是正・検分 high 1＝日本語でも英語でもない機体では、止められた 1 行に載る OS の文が
+        // その言語で返るので、綴りの標識だけでは当たらない）。**状態だけでは 1 行も出さない。**
+        Try.SmartAppControl = AppServices.SmartAppControl;
+        Status.ApplySmartAppControlState(AppServices.SmartAppControl);
+
         // **Smart App Control に止められた射**（`decisions.md` 140・v2.0.2）＝
         // ⑴ 生の 1 行は<b>記録だけ</b>へ ⑵ 帯は 3 部品と〔設定を開く〕へ。
         Try.SmartAppControlBlocked += (_, raw) =>

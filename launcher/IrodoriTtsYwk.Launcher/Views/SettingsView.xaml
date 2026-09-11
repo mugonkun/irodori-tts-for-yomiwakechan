@@ -142,7 +142,7 @@
                          AutomationProperties.AutomationId="SettingsSmartAppControlText"
                          Text="{Binding SmartAppControlText, Mode=OneWay}" />
               <TextBlock Style="{StaticResource Note}"
-                         Text="{x:Static vm:UiStrings.SmartAppControlStatusNote}" />
+                         Text="{Binding SmartAppControlNote, Mode=OneWay}" />
             </StackPanel>
 
             <!-- 1＝使うグラフィックス（UUID の 1 行は消した） -->

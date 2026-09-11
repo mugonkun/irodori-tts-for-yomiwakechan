@@ -149,8 +149,12 @@ public sealed class SettingsViewModel : ObservableObject
     public string SmartAppControlText =>
         SmartAppControlNotice.StatusLine(_smartAppControl) ?? string.Empty;
 
-    /// <summary>その註（有効だと何が起きるかを 1 行で言う）。</summary>
-    public static string SmartAppControlNote => UiStrings.SmartAppControlStatusNote;
+    /// <summary>
+    /// その註（有効だと何が起きるかを 1 行で言う）。
+    /// <b>状態で言い切りが変わる</b>（是正・検分 low 6）＝有効なら言い切り、評価中なら「ことがあります」。
+    /// </summary>
+    public string SmartAppControlNote =>
+        SmartAppControlNotice.StatusNote(_smartAppControl) ?? string.Empty;
 
     /// <summary>ドライバ検査の 1 行（設計書 §3・受け入れ条件の「ドライバ」行）。</summary>
     public string DriverText

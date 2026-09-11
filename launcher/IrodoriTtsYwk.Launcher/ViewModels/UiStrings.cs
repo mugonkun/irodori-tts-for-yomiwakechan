@@ -910,6 +910,10 @@ public static class UiStrings
     // 戻せるようになっている。」）＝1 巡目のこの節は「一度無効にすると Windows を入れ直すまで
     // 戻せません」と書いていた。**それは誤りである**（裁定 140／141 の下書きから入った）。
     // オンにできるのか・できないのかは Windows の版で変わるので、**こちらは 1 文字も言わない**。
+    //
+    // **Windows の道順は「→」で綴る**（是正・検分 low 5）＝`docs/guide.md`（§1・§7・§9 ほか）と
+    // `site/index.html` が前からこの矢印なので、画面の文だけ「›」だと同じ道が 2 通りに見える。
+    // 製品の中で「›」を使っている利用者向けの文字列は 1 つも無い（註だけ）＝こちらを揃える。
 
     /// <summary>設定 › 詳細に 1 行だけ出す状態（有効）。</summary>
     public const string SmartAppControlStatusOn = "Smart App Control: 有効";
@@ -917,9 +921,23 @@ public static class UiStrings
     /// <summary>同・評価中（Windows が有効にするか見極めている途中）。</summary>
     public const string SmartAppControlStatusEvaluation = "Smart App Control: 評価中";
 
-    /// <summary>設定 › 詳細のその 1 行に添える註（<b>この 1 行だけが「なぜ気にするのか」を言う</b>）。</summary>
-    public const string SmartAppControlStatusNote =
-        "有効なパソコンでは、このアプリが使う部品を読み込めないことがあります。";
+    /// <summary>
+    /// 設定 → 詳細のその 1 行に添える註（<b>有効な機体＝言い切る</b>）。
+    /// <para>
+    /// <b>ぼかさない</b>（是正・検分 low 6＝裁定 143「SAC 有効機は『動かない前提で明示して告げる』」）＝
+    /// 1 巡目はここだけが「読み込めない<b>ことがあります</b>」で、はじめの準備の告知・公式ページ・
+    /// リリース文の言い切りと食い違っていた。**同じ事実は同じ強さで言う**（憲章 §6）。
+    /// </para>
+    /// </summary>
+    public const string SmartAppControlStatusNoteOn =
+        "有効なパソコンでは、このアプリが使う部品を読み込めないため、しゃべらせられません。";
+
+    /// <summary>
+    /// 同・評価中（<b>ここだけが「ことがあります」</b>＝Windows がまだ有効にするか決めていない＝
+    /// 止まると決まっていない機体に、止まると言い切らない）。
+    /// </summary>
+    public const string SmartAppControlStatusNoteEvaluation =
+        "有効になると、このアプリが使う部品を読み込めなくなることがあります。";
 
     /// <summary>
     /// <b>はじめの準備の「これからすること」に出す告知</b>（有効な機体だけ・
@@ -928,7 +946,7 @@ public static class UiStrings
     public const string SmartAppControlWizardNotice =
         "このパソコンでは Windows の Smart App Control が有効です。"
         + "このままダウンロードしても、このアプリが使う部品を読み込めないため、しゃべらせられません。"
-        + "Smart App Control の設定は、Windows セキュリティ › アプリとブラウザー コントロール › "
+        + "Smart App Control の設定は、Windows セキュリティ → アプリとブラウザー コントロール → "
         + "スマート アプリ コントロール にあります。";
 
     /// <summary>帯の ⑴ 何が起きたか（<b>生の ImportError は帯に出さない</b>＝記録へ落とす）。</summary>
@@ -941,7 +959,7 @@ public static class UiStrings
     public const string SmartAppControlFailedWhy =
         "このパソコンの Smart App Control が、"
         + "初回にダウンロードした部品（例＝_spline.cp312-win_amd64.pyd）を止めました。"
-        + "Smart App Control の設定は、Windows セキュリティ › アプリとブラウザー コントロール › "
+        + "Smart App Control の設定は、Windows セキュリティ → アプリとブラウザー コントロール → "
         + "スマート アプリ コントロール にあります。";
 
     /// <summary>帯の ⑶ 次の 1 手（押すと Windows の設定が開く）。</summary>

@@ -103,9 +103,21 @@ public sealed class TryViewModel : ObservableObject
     /// <b>Smart App Control に止められた</b>（<c>decisions.md</c> 140・v2.0.2）。
     /// 引数は<b>生の 1 行</b>＝束ねる側（<see cref="MainViewModel"/>）が<b>記録へ</b>落とし、
     /// 帯へは <see cref="StatusViewModel.ApplySmartAppControlBlock"/> で報せる。
-    /// <b>この字が画面へ出る道は 1 本も無い。</b>
+    /// <para>
+    /// <b>この字が行くのは 2 つだけ</b>（是正・検分 low 7）＝記録の檔（<c>LauncherLogFile</c>）と、
+    /// 詳しい状態 の「記録」の箱（<c>StatusViewModel.AppendLog</c>＝この製品で唯一、生の記録を
+    /// 置いてよい面である）。<b>帯・はじめの準備・発話テストには 1 文字も出さない。</b>
+    /// </para>
     /// </summary>
     public event EventHandler<string>? SmartAppControlBlocked;
+
+    /// <summary>
+    /// <b>この機体の Smart App Control の状態</b>（既定＝無効・<see cref="MainViewModel"/> が渡す）。
+    /// 畳みの見分けにだけ使う（是正・検分 high 1）＝有効／評価中の機体では、
+    /// 「<c>DLL load failed</c>」を含む 1 行も畳む＝日本語でも英語でもない機体を取りこぼさない。
+    /// </summary>
+    public Services.Security.SmartAppControlState SmartAppControl { get; set; } =
+        Services.Security.SmartAppControlState.Off;
 
     /// <summary>音が出た＝止められていない（帯の 1 行を下ろす）。</summary>
     public event EventHandler? SmartAppControlCleared;
@@ -553,7 +565,7 @@ public sealed class TryViewModel : ObservableObject
     /// </summary>
     private string FoldFailure(string? raw, Func<string> otherwise)
     {
-        if (!SmartAppControlNotice.Blocked(raw))
+        if (!SmartAppControlNotice.Blocked(raw, SmartAppControl))
         {
             return otherwise();
         }

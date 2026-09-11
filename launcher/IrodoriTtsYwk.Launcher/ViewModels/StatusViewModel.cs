@@ -611,6 +611,8 @@ public sealed class StatusViewModel : ObservableObject
     private int? _missingModelCount;
     private int? _exitCode;
     private bool _smartAppControlBlocked;
+    private Services.Security.SmartAppControlState _smartAppControl =
+        Services.Security.SmartAppControlState.Off;
 
     /// <summary>帯の丸の色（灰／緑／赤）。</summary>
     public BandSeverity BandSeverity => _band.Severity;
@@ -694,6 +696,27 @@ public sealed class StatusViewModel : ObservableObject
         RefreshBand();
     }
 
+    /// <summary>
+    /// <b>この機体の Smart App Control の状態</b>（<c>decisions.md</c> 140・v2.0.2）＝
+    /// 渡すのは起動のたびに 1 度（<see cref="MainViewModel"/>・値は <c>AppServices</c> が 1 回だけ読む）。
+    /// <para>
+    /// 帯はこの状態を<b>見分けの補助にだけ</b>使う（是正・検分 high 1）＝日本語でも英語でもない
+    /// 機体では、止められた 1 行に載る OS の文がその言語で返るので標識が当たらない。
+    /// 有効／評価中の回に限り「<c>DLL load failed</c>」も畳みの標識に足す。
+    /// <b>状態だけでは帯に 1 行も出さない</b>（有効なだけの機体を脅かさない）。
+    /// </para>
+    /// </summary>
+    public void ApplySmartAppControlState(Services.Security.SmartAppControlState state)
+    {
+        if (_smartAppControl == state)
+        {
+            return;
+        }
+
+        _smartAppControl = state;
+        RefreshBand();
+    }
+
     /// <summary>いま集まっている材料で帯を組み直す。</summary>
     private void RefreshBand()
     {
@@ -710,7 +733,8 @@ public sealed class StatusViewModel : ObservableObject
             RebuildRuntimeLine: _rebuildRuntime,
             FirstRunPending: _firstRunPending,
             ElapsedSeconds: PreparingTicker.IsRunning ? PreparingTicker.Seconds : null,
-            SmartAppControlBlocked: _smartAppControlBlocked);
+            SmartAppControlBlocked: _smartAppControlBlocked,
+            SmartAppControl: _smartAppControl);
 
         var next = BandText.For(State, Reason, context);
         if (!Equals(_band, next))
@@ -887,6 +911,16 @@ public sealed class StatusViewModel : ObservableObject
             _userStopped = false;
         }
 
+        // **止められた札は走行が終わるところで下ろす**（是正・検分 low 3／medium 8）＝
+        // 1 巡目は「音が出た射」と「起こし直した回」でしか下りなかったので、止めた後も落ちた後も
+        // 帯が SAC の 1 行のまま居座り、〔もう一度動かす〕も終了コードの 1 行も出なくなった。
+        // 起こし直す回に立て直すのは次の射である（直っていなければまた立つ）。
+        // **降格（Listening）では下ろさない**＝同じ走行の続きで、止められた事実は変わらない。
+        if (state is not (ServerState.Ready or ServerState.Warming or ServerState.Listening))
+        {
+            _smartAppControlBlocked = false;
+        }
+
         // 待っている間だけ秒を刻む（決裁 137 ⒞）＝使えるようになった・止まった回は 0 に戻す。
         if (state is ServerState.Starting or ServerState.Listening)
         {
@@ -1029,9 +1063,30 @@ public sealed class StatusViewModel : ObservableObject
 
         _serverAnswered = true;
         _runtimeLoaded = status.IsReady;
+
+        // **準備運転と声の下ごしらえの失敗も同じ畳みを通す**（是正・検分 medium 2）＝
+        // Radeon 機は起動時の焼き（`SettingsDefaults.WarmupOnStartDefault`＝rocm は真・
+        // `server/ywk_server.py` の precompute）で<b>本当の 1 射</b>を撃つので、参照 wav の道＝
+        // scipy の拡張がそこで読まれる。止められた事実がこの機体で最初に現れるのはここであり、
+        // 1 巡目は生の 1 行を 詳しい状態 にそのまま出したうえ、帯は緑の「使えます」のままだった。
+        var warmupBlocked = SmartAppControlNotice.Blocked(status.Warmup?.Error, _smartAppControl);
+        var precomputeBlocked =
+            SmartAppControlNotice.Blocked(status.Precompute?.Error, _smartAppControl);
+        if (warmupBlocked || precomputeBlocked)
+        {
+            // 生の 1 行は<b>記録だけ</b>へ。標本は数秒ごとに来るので、**立てる回の 1 度だけ**書く。
+            if (!_smartAppControlBlocked)
+            {
+                var raw = (warmupBlocked ? status.Warmup?.Error : status.Precompute?.Error) ?? string.Empty;
+                AppendLog("Smart App Control が部品を止めました：" + raw.Trim());
+            }
+
+            ApplySmartAppControlBlock(true);
+        }
+
         DeviceText = Compose(status.Device);
-        WarmupText = Compose(status.Warmup);
-        PrecomputeText = Compose(status.Precompute);
+        WarmupText = Compose(status.Warmup, warmupBlocked);
+        PrecomputeText = Compose(status.Precompute, precomputeBlocked);
         _memory = status.Memory;
         _osGpuRows = osGpuMemory ?? [];
         RepaintMemory();
@@ -1369,7 +1424,9 @@ public sealed class StatusViewModel : ObservableObject
         return text;
     }
 
-    private static string Compose(WarmupStatus? warmup)
+    // smartAppControlBlocked＝その失敗が Smart App Control のものか（是正・検分 medium 2）。
+    // 真なら**生の 1 行は載せず**、利用者の言葉の ⑴ に差し替える（生の字は記録の側へ）。
+    private static string Compose(WarmupStatus? warmup, bool smartAppControlBlocked = false)
     {
         if (warmup is null || string.IsNullOrWhiteSpace(warmup.State))
         {
@@ -1394,13 +1451,16 @@ public sealed class StatusViewModel : ObservableObject
 
         if (!string.IsNullOrWhiteSpace(warmup.Error))
         {
-            label += "：" + warmup.Error.Trim();
+            label += "：" + (smartAppControlBlocked
+                ? UiStrings.SmartAppControlFailedWhat
+                : warmup.Error.Trim());
         }
 
         return label;
     }
 
-    private static string Compose(PrecomputeStatus? precompute)
+    // smartAppControlBlocked＝同上（是正・検分 medium 2）。
+    private static string Compose(PrecomputeStatus? precompute, bool smartAppControlBlocked = false)
     {
         if (precompute is null || string.IsNullOrWhiteSpace(precompute.State))
         {
@@ -1425,7 +1485,9 @@ public sealed class StatusViewModel : ObservableObject
 
         if (!string.IsNullOrWhiteSpace(precompute.Error))
         {
-            label += "：" + precompute.Error.Trim();
+            label += "：" + (smartAppControlBlocked
+                ? UiStrings.SmartAppControlFailedWhat
+                : precompute.Error.Trim());
         }
 
         return label;
