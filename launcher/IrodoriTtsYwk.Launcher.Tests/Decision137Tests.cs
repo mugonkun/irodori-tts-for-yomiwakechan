@@ -538,7 +538,7 @@ public sealed class Decision137WizardTests : IDisposable
         File.WriteAllText(Path.Combine(tree, "big.bin"), "x");
 
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var tick = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var gate = new TickGate();
         var inside = new SemaphoreSlim(0);
         var lines = new List<string>();
 
@@ -550,11 +550,10 @@ public sealed class Decision137WizardTests : IDisposable
             release.Task.GetAwaiter().GetResult();
             return 1;
         };
-        vm.LoadingTicker.Delay = async _ =>
-        {
-            await tick.Task.ConfigureAwait(false);
-            tick = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        };
+        // **刻みは 1 つずつ手で送る**（是正＝ここも継ぎ目の札を差し替える隙で刻みを落としていた）。
+        // <see cref="TickGate"/> は「待ちへ入った→1 回放つ→<c>Ticked</c> が上がりきる」の 3 拍で
+        // ちょうど 1 刻みにするので、時間待ちも見張りも順序には使わない。
+        gate.Attach(vm.LoadingTicker);
         vm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(FirstRunViewModel.PhaseText)
@@ -571,9 +570,10 @@ public sealed class Decision137WizardTests : IDisposable
         Assert.True(await inside.WaitAsync(TimeSpan.FromSeconds(10)));
         for (var i = 1; i <= 3; i++)
         {
-            await WaitFor(() => vm.LoadingTicker.Seconds >= i - 1 && vm.LoadingTicker.IsRunning);
-            tick.TrySetResult();
-            await WaitFor(() => lines.Count >= i && vm.LoadingTicker.Seconds >= i);
+            // 1 回放てば 1 刻み＝この await が返った時には i 秒目の 1 行がもう積まれている
+            // （<c>PhaseText</c> は <c>Ticked</c> より先に書かれる＝購読の順）。
+            await gate.TickOnceAsync().ConfigureAwait(true);
+            Assert.Equal(i, vm.LoadingTicker.Seconds);
         }
 
         release.TrySetResult();
@@ -689,6 +689,16 @@ public sealed class Decision137WizardTests : IDisposable
 
     /// <summary>
     /// <b>待っている秒はウィザードの 1 行でも動く</b>（決裁 137 ⒝⒞）。
+    /// <para>
+    /// <b>刻みは 1 つずつ手で送る</b>（是正＝この試験は席によって落ちていた）＝
+    /// <see cref="ElapsedTicker.Delay"/> の継ぎ目を<b>握手</b>にして、
+    /// ⑴ 刻む側が待ちへ入ったのを見届け ⑵ <b>1 回だけ</b>放ち ⑶ <c>Ticked</c> が上がりきるまで待つ、
+    /// の 3 拍で<b>ちょうど 1 刻み</b>とする（<see cref="TickGate"/>）。
+    /// <b>時間待ち（<c>Task.Delay</c>）も見張り（<c>WaitFor</c>）も順序には使わない</b>ので、
+    /// 標本を採る側が刻みに追い抜かれることが<b>作りとして起きない</b>。
+    /// 1 行（<c>PhaseText</c>）は <c>Ticked</c> が上がる前に書かれている
+    /// （<c>ApplyTick</c> の購読が構築子で先に繋がっている）ので、⑶ の後に読めば必ず今の刻みの分である。
+    /// </para>
     /// </summary>
     [Fact]
     public async Task 起動の確認では秒が1秒ごとに動く()
@@ -697,12 +707,13 @@ public sealed class Decision137WizardTests : IDisposable
         var lines = new List<string>();
         var seconds = new List<int>();
         var beforeListening = string.Empty;
-        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var ticked = new SemaphoreSlim(0);
+        var gate = new TickGate();
 
         var vm = NewWizard(async _ =>
         {
             // **口が開く前**＝起こしている最中の 1 行（秒は段の頭から刻んである）。
+            // ここで 1 刻み送ってから読む＝「口が開く前から秒が動く」ことを<b>数で</b>見せる。
+            await gate.TickOnceAsync().ConfigureAwait(true);
             beforeListening = wizard!.PhaseText;
 
             // 主窓が Listening を見た瞬間（＝口は開いた・まだ載っていない）。
@@ -712,7 +723,7 @@ public sealed class Decision137WizardTests : IDisposable
 
             for (var i = 0; i < 3; i++)
             {
-                await ticked.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(true);
+                await gate.TickOnceAsync().ConfigureAwait(true);
                 lines.Add(wizard!.PhaseText);
                 seconds.Add(wizard!.LoadingTicker.Seconds);
             }
@@ -720,32 +731,21 @@ public sealed class Decision137WizardTests : IDisposable
             return true;
         });
         wizard = vm;
-        vm.LoadingTicker.Delay = async _ =>
-        {
-            await release.Task.ConfigureAwait(false);
-            release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        };
-        vm.LoadingTicker.Ticked += (_, _) => ticked.Release();
+        gate.Attach(vm.LoadingTicker);
 
         vm.Accepted = true;
         await vm.NextAsync();
-        var run = vm.NextAsync();
-        for (var i = 0; i < 3; i++)
-        {
-            await WaitFor(() => vm.LoadingTicker.IsRunning);
-            release.TrySetResult();
-            await Task.Delay(20);
-        }
-
-        await run;
+        await vm.NextAsync();
 
         Assert.Equal(FirstRunStep.Done, vm.Step);
 
         // **口が開く前から秒は動いている**（是正・検分）＝ここが constant だったころは、
         // 起こしてから口が開くまでの実測 12 秒以上が丸ごと静止していた。
         Assert.StartsWith("起動しています（", beforeListening, StringComparison.Ordinal);
+        Assert.Equal(FirstRunViewModel.StartingLine(1), beforeListening);
 
         // 口が開いた後は文言だけが替わる＝**秒は 0 へ戻らない**（刻みを止めて始め直さない）。
+        Assert.Equal(1, seconds[0]);
         Assert.Equal(
             "声を読み込んでいます（0 秒）… 初めてのときは、パソコンの安全機能が新しいファイルを確認するので数分かかります。",
             FirstRunViewModel.LoadingVoicesLine(0));
@@ -755,14 +755,14 @@ public sealed class Decision137WizardTests : IDisposable
         }
 
         // 刻むたびに<b>数が増えて 1 行が変わる</b>（＝5 秒を越える静止が作れない）。
-        // **「ちょうど 1 つ」とは言わない**＝標本を採る側（この試験）が遅れると刻みが先へ行く。
-        // 釘付けしたいのは「必ず進む」ことであって、試験の綱の速さではない。
+        // **「ちょうど 1 つ」と言い切れる**（是正）＝1 回放てば 1 刻みで、標本はその刻みの後に採る。
         for (var i = 1; i < lines.Count; i++)
         {
-            Assert.True(seconds[i] > seconds[i - 1], "秒が進んでいない：" + string.Join(", ", seconds));
+            Assert.Equal(seconds[i - 1] + 1, seconds[i]);
             Assert.NotEqual(lines[i - 1], lines[i]);
         }
 
+        Assert.Equal(4, lines.Count);
         Assert.True(lines.Count >= 4, "標本が足りない：" + lines.Count);
 
         // 待ちが終わったら刻みは止まる（止まった画面に古い秒が居座らない）。
@@ -810,13 +810,7 @@ public sealed class Decision137WizardTests : IDisposable
     private static string StepNumber(FirstRunStep step) =>
         FirstRunViewModel.VisibleStepNumber(step, noticesSkipped: false) + " / 3";
 
-    private static async Task WaitFor(Func<bool> condition)
-    {
-        for (var i = 0; i < 500 && !condition(); i++)
-        {
-            await Task.Delay(10);
-        }
-    }
+    // 見張り（時間で回る WaitFor）はこの席から無くした＝刻みの順序は <see cref="TickGate"/> が握る。
 
     private FirstRunViewModel NewWizard(Func<CancellationToken, Task<bool>> startServer)
     {
@@ -899,6 +893,94 @@ public sealed class Decision137WizardTests : IDisposable
             IProgress<InstallProgress>? progress,
             CancellationToken cancellationToken) =>
             Task.FromResult(new InstallResult(true, 12, 1_000, 3, [], null, null));
+    }
+
+    /// <summary>
+    /// <b>刻みを 1 つずつ手で送る握手</b>（<see cref="ElapsedTicker.Delay"/> の継ぎ目に挿す）。
+    /// <para>
+    /// 3 つの合図を持つ＝⑴ <c>entered</c>（刻む側が待ちへ入った）⑵ <c>release</c>（1 刻み放つ）
+    /// ⑶ <c>ticked</c>（<c>Ticked</c> が上がりきった）。<see cref="TickOnceAsync"/> は
+    /// ⑴ を見てから ⑵⑶ の札を<b>入れ替えてのち</b>放つので、次の待ちは必ず新しい札を掴む＝
+    /// <b>放った数と刻んだ数がずれない</b>。
+    /// </para>
+    /// <para>
+    /// <b>取消は素通しする</b>（<c>WaitAsync(token)</c>）＝段が終わって
+    /// <see cref="ElapsedTicker.Stop"/> が掛かれば、待ちは即座に解けて輪が畳まれる
+    /// （放置された待ちが次の段の札を横取りしない）。モデル・確認の段が同じ刻みを
+    /// 始めては止めるが、それらの待ちは取消で死んでおり、<c>ReferenceEquals</c> の門も
+    /// あるので刻みは 1 つも増えない。
+    /// </para>
+    /// </summary>
+    private sealed class TickGate
+    {
+        /// <summary>待ちぼうけを試験の失敗に変えるための上限（順序には使わない）。</summary>
+        private static readonly TimeSpan Patience = TimeSpan.FromSeconds(30);
+
+        private readonly Lock _gate = new();
+        private TaskCompletionSource _entered = Fresh();
+        private TaskCompletionSource _release = Fresh();
+        private TaskCompletionSource _ticked = Fresh();
+
+        public void Attach(ElapsedTicker ticker)
+        {
+            ticker.Delay = WaitForReleaseAsync;
+            ticker.Ticked += (_, _) => ReportTicked();
+        }
+
+        /// <summary><b>ちょうど 1 刻み</b>だけ送り、<c>Ticked</c> が上がりきるまで待つ。</summary>
+        public async Task TickOnceAsync()
+        {
+            TaskCompletionSource entered, release;
+            lock (_gate)
+            {
+                entered = _entered;
+                release = _release;
+            }
+
+            // ⑴ 刻む側は待ちへ入っている（＝いま放てば必ず 1 刻みになる）。
+            await entered.Task.WaitAsync(Patience).ConfigureAwait(false);
+
+            Task ticked;
+            lock (_gate)
+            {
+                _entered = Fresh();
+                _release = Fresh();
+                _ticked = Fresh();
+                ticked = _ticked.Task;
+            }
+
+            // ⑵ 1 回だけ放つ ⑶ 上がりきるまで待つ。
+            release.TrySetResult();
+            await ticked.WaitAsync(Patience).ConfigureAwait(false);
+        }
+
+        private Task WaitForReleaseAsync(CancellationToken token)
+        {
+            TaskCompletionSource entered, release;
+            lock (_gate)
+            {
+                entered = _entered;
+                release = _release;
+            }
+
+            entered.TrySetResult();
+            return release.Task.WaitAsync(token);
+        }
+
+        private void ReportTicked()
+        {
+            TaskCompletionSource ticked;
+            lock (_gate)
+            {
+                ticked = _ticked;
+            }
+
+            ticked.TrySetResult();
+        }
+
+        /// <summary>続きを<b>別の綱で</b>走らせる札（放った側の綱で刻ませない）。</summary>
+        private static TaskCompletionSource Fresh() =>
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 }
 
