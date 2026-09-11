@@ -366,16 +366,20 @@ public sealed class MainViewModel : ObservableObject
             var pythonExe = paths.ResolvePythonExe(vm.Variant);
             if (pythonExe is null)
             {
-                progress.Report(UiStrings.NotPreparedYet);
+                progress.Report(new ModelFetchProgress(UiStrings.NotPreparedYet));
                 return false;
             }
 
             var fetcher = new ModelFetcher(
                 pythonExe, paths.ServerDir, paths.LedgerPath("models"), paths.HfHomeDir);
 
-            var relay = new Progress<ModelFetchEvent>(e => progress.Report(e.ForUi()));
+            // **数も渡す**（決裁 137 の是正・検分）＝<c>ModelFetchEvent.Fraction</c> は
+            // 取得系が 0.5 秒ごとに配る <c>overall_downloaded</c> から出来ているのに、
+            // ここで 1 行の文字列へ畳んで捨てていた（＝ウィザードのバーが動く材料が無かった）。
+            var relay = new Progress<ModelFetchEvent>(
+                e => progress.Report(new ModelFetchProgress(e.ForUi(), e.Fraction)));
             var result = await fetcher.FetchAsync(relay, token).ConfigureAwait(false);
-            progress.Report(result.Message);
+            progress.Report(new ModelFetchProgress(result.Message));
             return result.Ok;
         };
 

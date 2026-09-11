@@ -42,13 +42,45 @@ public sealed class BandTextTests
     }
 
     [Fact]
-    public void 声を読み込んでいる間は待ち時間を添える()
+    public void 声を読み込んでいる間は理由の1行を添える()
     {
         var loading = BandText.For(ServerState.Listening, null, new BandContext(RuntimeLoaded: false));
         var loaded = BandText.For(ServerState.Listening, null, new BandContext(RuntimeLoaded: true));
 
-        Assert.Equal(BandText.PreparingVoices, loading.Headline);
+        // 名乗り（ひとこと）は 3 語のまま＝増やさない。**理由の 1 行**が待つ訳を言う。
+        Assert.Equal(BandText.Preparing, loading.Headline);
+        Assert.Equal(BandText.PreparingVoicesWhy, loading.Reason);
+        Assert.Equal(BandActionKind.None, loading.Action);
+
         Assert.Equal(BandText.Preparing, loaded.Headline);
+        Assert.Null(loaded.Reason);
+    }
+
+    /// <summary>
+    /// <b>待っている秒は名乗りの中で毎秒動く</b>（決裁 137 ⒞・v2.0.1（2））＝
+    /// 所有者の測り方 ⑶「目に見えて動く物が在れば固まってはいない」の帯側の持ち場。
+    /// </summary>
+    [Theory]
+    [InlineData(ServerState.Starting, null)]
+    [InlineData(ServerState.Listening, null)]
+    // **降格した回も同じ**（是正・検分）＝この枝は Listening のまま落ちてきて、刻みは走っている。
+    // 秒を落としていたころは帯を組み直しても同じ 1 行になり、束縛が動かず何分でも静止した。
+    [InlineData(ServerState.Listening, ServerStateMachine.UnreachableReason)]
+    public void 準備を待っている間は秒を添える(ServerState state, string? reason)
+    {
+        var band = BandText.For(state, reason, new BandContext(ElapsedSeconds: 12));
+
+        Assert.Equal("準備しています…（12 秒）", band.Headline);
+        Assert.StartsWith(BandText.Preparing[..^1], band.Headline, StringComparison.Ordinal);
+        Assert.Equal(BandSeverity.Neutral, band.Severity);
+        Assert.Equal(
+            reason is null ? BandActionKind.None : BandActionKind.Restart,
+            band.Action);
+
+        // 判らない回・負の回は**推測の数を出さない**（括弧ごと落とす）。
+        Assert.Equal(BandText.Preparing, BandText.PreparingWith(null));
+        Assert.Equal(BandText.Preparing, BandText.PreparingWith(-1));
+        Assert.Equal("準備しています…（0 秒）", BandText.PreparingWith(0));
     }
 
     [Fact]
@@ -369,6 +401,14 @@ public sealed class BandTextTests
         Assert.Equal(BandText.Preparing, band.Headline);
         Assert.Equal(BandActionKind.Restart, band.Action);
         Assert.Equal("いったん止めて、動かし直す", band.ActionLabel);
+
+        // 秒を持っている回はその数を添える（＝毎秒 1 行が変わる）。
+        Assert.Equal(
+            "準備しています…（7 秒）",
+            BandText.For(
+                ServerState.Listening,
+                ServerStateMachine.UnreachableReason,
+                new BandContext(ElapsedSeconds: 7)).Headline);
     }
 
     [Theory]

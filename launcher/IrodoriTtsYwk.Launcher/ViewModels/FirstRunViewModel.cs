@@ -34,12 +34,32 @@ public enum FirstRunStep
     /// <summary>モデル（<c>ywk_fetch_models.py</c> の進捗 JSON 行）。</summary>
     Models,
 
+    /// <summary>
+    /// <b>新しく書いた檔を 1 度ずつ読む</b>（決裁 136 ⒜・137 ⒜・v2.0.1（2））。
+    /// パソコンの安全機能の初回確認を<b>バーの下で</b>済ませてもらう段で、
+    /// 檔は 1 つも書き換えない（<see cref="Services.Ledger.NewFileScan"/>）。
+    /// </summary>
+    Warmup,
+
     /// <summary>起こして <c>/health</c> まで。</summary>
     Start,
 
     /// <summary>完了（「発話テスト」へ誘導）。</summary>
     Done,
 }
+
+/// <summary>
+/// モデルの取得の報せ 1 通（決裁 137 の是正・検分）。
+/// <para>
+/// <b>数を捨てないための継ぎ目である</b>＝以前は 1 行の文字列だけを渡していたので、
+/// <c>server/ywk_fetch_models.py</c> が 0.5 秒ごとに配る <c>overall_downloaded</c>／
+/// <c>overall_bytes</c>（＝<c>ModelFetchEvent.Fraction</c>）が窓に着く前に落ちていた。
+/// そのせいで数 GB を落とす数分の間、バーも割合の 1 行も 1 度も動かなかった。
+/// </para>
+/// </summary>
+/// <param name="Line">詳細（畳みの中）に出す 1 行。</param>
+/// <param name="Fraction">その段の進み（0〜1）。分母が判らない通は null。</param>
+public sealed record ModelFetchProgress(string Line, double? Fraction = null);
 
 /// <summary>
 /// 初回取得ウィザード（設計書 §6・受け入れ条件 D-5＝利用者操作 ≤ 6）。
@@ -85,6 +105,18 @@ public sealed class FirstRunViewModel : ObservableObject
     private string _driverText = UiText.Missing;
     private bool _lastStepOk = true;
     private bool _skipVcRedist;
+
+    /// <summary>
+    /// 口が開いた後か（＝「起動しています」から「声を読み込んでいます」へ替わった後）。
+    /// <b>刻みは止めない</b>ので、替わっても秒は続く（決裁 137 ⒝の是正・検分）。
+    /// </summary>
+    private bool _loadingVoices;
+
+    /// <summary>
+    /// 確認の段の最後の報せ（<b>秒を刻むたびに同じ数で 1 行を組み直す</b>ため）。
+    /// 3 GB の 1 檔を読んでいる間は <c>Done</c> が動かないので、動くのは秒だけになる。
+    /// </summary>
+    private Services.Ledger.NewFileScanProgress? _warmupSeen;
 
     /// <summary>ドライバの検分（裁定 126 の B）。既定＝まだ何も見ていない。</summary>
     private DriverProbe _probe = DriverProbe.Unknown;
@@ -172,6 +204,11 @@ public sealed class FirstRunViewModel : ObservableObject
         // **推測は焼き付けない**＝檔へ書き戻す真偽は「利用者が実際に選んだ」回だけ真にする。
         _variantChosenByUser = settings.VariantChosenByUser == true
             && VariantChoices.Contains(settings.Variant, StringComparer.Ordinal);
+
+        // 刻むたびに 1 行を書き直す（<b>組むのは純関数</b>＝ここは配るだけ・決裁 137 ⒝⒞）。
+        // **3 つの働く段が同じ刻みを使う**（同時には走らない）＝
+        // ⑴ モデル ⑵ 新しいファイルの確認 ⑶ 起動の確認。文言だけが段で替わる。
+        LoadingTicker.Ticked += (_, _) => ApplyTick(LoadingTicker.Seconds);
 
         NextCommand = new AsyncRelayCommand(NextAsync, CanGoNext);
         BackCommand = new RelayCommand(Back, () => Step > FirstStep && !IsBusy);
@@ -365,6 +402,14 @@ public sealed class FirstRunViewModel : ObservableObject
             NextCommand.RaiseCanExecuteChanged();
             BackCommand.RaiseCanExecuteChanged();
 
+            // 段を出たら秒は刻まない（決裁 137 ⒞）＝止まった画面に古い秒が居座らない。
+            // 刻みを持つのは<b>待たせる 3 段</b>だけ（モデル・確認・起動の確認）。
+            if (_step is not (FirstRunStep.Models or FirstRunStep.Warmup or FirstRunStep.Start))
+            {
+                LoadingTicker.Stop();
+                _loadingVoices = false;
+            }
+
             // 「いま何をしているか」は段に従う（働く段以外は空＝出す物が無い）。
             PhaseText = PhaseLine(_step);
             UacNoticeVisible = false;
@@ -391,7 +436,8 @@ public sealed class FirstRunViewModel : ObservableObject
     /// <summary>
     /// 見せる段の題（`v2-copy.md` §2＝<b>4 つ</b>）。
     /// <para>
-    /// <b>内部の 7 段は 1 つも触らない</b>（<see cref="FirstRunStep"/>）＝ここは<b>表示用の対応表</b>である。
+    /// <b>内部の段は 1 つも言い替えない</b>（<see cref="FirstRunStep"/>＝v2.0.1（2）で
+    /// 「新しいファイルの確認」を足して 8 段になった）＝ここは<b>表示用の対応表</b>である。
     /// 働く 4 段（取得・展開・モデル・起動）は利用者からは 1 つの「準備しています」に見え、
     /// いま何をしているかは <see cref="PhaseText"/> の 1 行が名乗る。
     /// </para>
@@ -400,8 +446,8 @@ public sealed class FirstRunViewModel : ObservableObject
     {
         FirstRunStep.Notices => TitleNotices,
         FirstRunStep.Variant => TitleVariant,
-        FirstRunStep.Download or FirstRunStep.Install
-            or FirstRunStep.Models or FirstRunStep.Start => TitlePreparing,
+        FirstRunStep.Download or FirstRunStep.Install or FirstRunStep.Models
+            or FirstRunStep.Warmup or FirstRunStep.Start => TitlePreparing,
         FirstRunStep.Done => TitleDone,
         _ => step.ToString(),
     };
@@ -418,6 +464,7 @@ public sealed class FirstRunViewModel : ObservableObject
         FirstRunStep.Download => "取得（実行系）",
         FirstRunStep.Install => "展開",
         FirstRunStep.Models => "取得（モデル）",
+        FirstRunStep.Warmup => "新しいファイルの確認",
         FirstRunStep.Start => "起動の確認",
         FirstRunStep.Done => "完了",
         _ => step.ToString(),
@@ -481,7 +528,7 @@ public sealed class FirstRunViewModel : ObservableObject
     public bool IsVariantStep => Step is FirstRunStep.Variant;
 
     public bool IsWorkStep => Step is FirstRunStep.Download or FirstRunStep.Install
-        or FirstRunStep.Models or FirstRunStep.Start;
+        or FirstRunStep.Models or FirstRunStep.Warmup or FirstRunStep.Start;
 
     public bool IsDoneStep => Step is FirstRunStep.Done;
 
@@ -1090,11 +1137,134 @@ public sealed class FirstRunViewModel : ObservableObject
     /// </summary>
     public void ReportLoadingVoices()
     {
-        if (Step is FirstRunStep.Start)
+        if (Step is not FirstRunStep.Start)
         {
-            PhaseText = UiStrings.WizardLoadingVoices;
+            return;
+        }
+
+        // **1 行を替えるだけでは足りない**（決裁 137 ⒝⒞）＝ここから先は数分動かない回が在るので、
+        // 秒を刻み始める（刻みは <see cref="ElapsedTicker"/>＝UI の綱を 1 度も塞がない）。
+        // **刻みは既に走っている**（段の頭で始めてある＝是正・検分）＝ここは<b>文言だけ</b>を替える。
+        // <see cref="ElapsedTicker.Start"/> は冪等なので、秒は 0 へ戻らず続く。
+        _loadingVoices = true;
+        LoadingTicker.Start();
+        PhaseText = LoadingVoicesLine(LoadingTicker.Seconds);
+    }
+
+    /// <summary>
+    /// 1 秒ごとに「いま何をしているか」の 1 行を組み直す（<b>組むのは純関数</b>＝ここは配るだけ）。
+    /// <para>
+    /// <b>3 つの段が刻みを共有する</b>（決裁 137 の是正・検分）＝
+    /// ⑴ <see cref="FirstRunStep.Models"/>（数 GB の取得＝バーは動くが遅い回線では 1 % が 5 秒を越える）
+    /// ⑵ <see cref="FirstRunStep.Warmup"/>（<b>1 檔が 3 GB</b> の間は檔の数が動かない）
+    /// ⑶ <see cref="FirstRunStep.Start"/>（口が開くまでも、開いてからも待つ）。
+    /// </para>
+    /// </summary>
+    private void ApplyTick(int seconds)
+    {
+        switch (Step)
+        {
+            case FirstRunStep.Models:
+                PhaseText = ModelsPhaseLine(seconds);
+                break;
+            case FirstRunStep.Warmup:
+                PhaseText = WarmupPhaseLine(
+                    _warmupSeen?.Done ?? 0,
+                    _warmupSeen?.Total ?? 0,
+                    _warmupSeen?.Counting ?? false,
+                    seconds);
+                break;
+            case FirstRunStep.Start:
+                PhaseText = _loadingVoices ? LoadingVoicesLine(seconds) : StartingLine(seconds);
+                break;
+            default:
+                break;
         }
     }
+
+    /// <summary>
+    /// <b>読み込みを待っている秒</b>（決裁 137 ⒞）。刻んでいない間は 0。
+    /// <para>
+    /// 試験は <see cref="ElapsedTicker.Delay"/> を差し替えて 1 秒も待たずに刻める
+    /// （＝この継ぎ目が公開されている理由）。
+    /// </para>
+    /// </summary>
+    public ElapsedTicker LoadingTicker { get; } = new();
+
+    /// <summary>
+    /// 待っている間の 1 行（<b>純関数</b>・決裁 137 ⒝＝<c>v2-copy.md</c> §2 段 3）。
+    /// 「声を読み込んでいます（12 秒）… 初めてのときは、パソコンの安全機能が
+    /// 新しいファイルを確認するので数分かかります。」
+    /// </summary>
+    public static string LoadingVoicesLine(int seconds) =>
+        UiStrings.WizardLoadingVoicesHead
+        + Math.Max(seconds, 0).ToString(CultureInfo.InvariantCulture)
+        + UiStrings.WizardLoadingVoicesTail;
+
+    /// <summary>
+    /// 口が開くまでの 1 行（<b>純関数</b>・決裁 137 ⒝の是正・検分）＝「起動しています（12 秒）…」。
+    /// <para>
+    /// ここは python.exe が起きて読み込みを始めるまでの窓で、実測で 12 秒以上ある。
+    /// 秒が無いころは <c>WizardVerifyingRun</c> のまま 1 行も数も動かなかった。
+    /// </para>
+    /// </summary>
+    public static string StartingLine(int seconds) =>
+        UiStrings.WizardStartingHead
+        + Math.Max(seconds, 0).ToString(CultureInfo.InvariantCulture)
+        + UiStrings.WizardStartingTail;
+
+    /// <summary>
+    /// モデルを落としている間の 1 行（<b>純関数</b>）＝「声のデータをダウンロードしています（63 秒）」。
+    /// </summary>
+    public static string ModelsPhaseLine(int seconds) =>
+        UiStrings.WizardModelsHead
+        + Math.Max(seconds, 0).ToString(CultureInfo.InvariantCulture)
+        + UiStrings.WizardModelsTail;
+
+    /// <summary>
+    /// 新しいファイルを確認している段の 1 行（<b>純関数</b>・決裁 137 ⒜）。
+    /// <para>
+    /// 数え上げの最中（<paramref name="counting"/>）は<b>見つかった数だけ</b>を出す＝
+    /// 総数がまだ増えるのに「n / 総数」と書くと、その分数が嘘になる。
+    /// どちらの形でも<b>数は必ず動く</b>（決裁 137 の測り方 ⑶）。
+    /// </para>
+    /// </summary>
+    /// <param name="done">読み終えた檔の数。</param>
+    /// <param name="total">読む檔の総数。</param>
+    /// <param name="counting">まだ数えている最中か。</param>
+    /// <param name="seconds">
+    /// 経過秒（<b>0 より大きい回だけ括弧の中に添える</b>＝決裁 137 ⒜の是正・検分）。
+    /// <b>これが無いと、3 GB の 1 檔を読んでいる間は何も動かない</b>＝檔の数は
+    /// <c>25,299 / 25,300</c> のまま数十秒止まり、この段が消したかった静止をこの段が作る。
+    /// </param>
+    public static string WarmupPhaseLine(int done, int total, bool counting = false, int seconds = 0)
+    {
+        var elapsed = seconds > 0
+            ? UiStrings.WizardSecondsJoin + seconds.ToString(CultureInfo.InvariantCulture)
+              + UiStrings.WizardSecondsTail
+            : string.Empty;
+
+        if (counting)
+        {
+            return UiStrings.WizardWarmupCountingHead + Count(Math.Max(total, done))
+                + elapsed + UiStrings.WizardWarmupCountingTail;
+        }
+
+        if (total <= 0)
+        {
+            return elapsed.Length == 0
+                ? PhaseLine(FirstRunStep.Warmup)
+                : UiStrings.WizardWarmupHead + seconds.ToString(CultureInfo.InvariantCulture)
+                  + UiStrings.WizardSecondsTail + UiStrings.WizardWarmupTail;
+        }
+
+        return UiStrings.WizardWarmupHead + Count(Math.Clamp(done, 0, total))
+            + UiStrings.WizardWarmupSeparator + Count(total) + elapsed + UiStrings.WizardWarmupTail;
+    }
+
+    /// <summary>件数の綴り（<c>25,300</c>＝3 桁ごとに区切る）。</summary>
+    private static string Count(int value) =>
+        value.ToString("N0", CultureInfo.InvariantCulture);
 
     /// <summary>Windows の許可の窓の予告を出しているか（憲章 §4-9）。</summary>
     public bool UacNoticeVisible
@@ -1140,6 +1310,7 @@ public sealed class FirstRunViewModel : ObservableObject
             FirstRunStep.Download => "必要な部品をダウンロードしています",
             FirstRunStep.Install => "落とした物を組み立てています",
             FirstRunStep.Models => "声のデータをダウンロードしています",
+            FirstRunStep.Warmup => "新しいファイルを確認しています",
             FirstRunStep.Start => "動くか確かめています",
             _ => string.Empty,
         };
@@ -1264,7 +1435,7 @@ public sealed class FirstRunViewModel : ObservableObject
                 PhaseText = PhaseLine(step);
 
                 // 同じ段を「もう一度」で撃ち直しても行は重ねない（是正・便 D（3）の 3 巡目）。
-                // **記録は内輪の 7 段の名のまま**（画面の題は 4 つに畳んだ＝`Title`）。
+                // **記録は内輪の 8 段の名のまま**（画面の題は 4 つに畳んだ＝`Title`）。
                 var head = "― " + TrailTitle(step);
                 if (Trail.Count == 0 || !string.Equals(Trail[^1], head, StringComparison.Ordinal))
                 {
@@ -1304,6 +1475,7 @@ public sealed class FirstRunViewModel : ObservableObject
             FirstRunStep.Download => await RunDownloadAsync().ConfigureAwait(true),
             FirstRunStep.Install => await RunInstallAsync().ConfigureAwait(true),
             FirstRunStep.Models => await RunModelsAsync().ConfigureAwait(true),
+            FirstRunStep.Warmup => await RunWarmupAsync().ConfigureAwait(true),
             FirstRunStep.Start => await RunStartAsync().ConfigureAwait(true),
             _ => true,
         };
@@ -1817,7 +1989,9 @@ public sealed class FirstRunViewModel : ObservableObject
     {
         // **揃っている実行系を落とし直さない**（是正・検分）＝裁定 90 で cache は空なのが
         // 常態なので、ここを素通りさせると数 GiB の再取得と健全な樹の作り直しになる。
-        if (RuntimeLooksSound())
+        // **檔を読むのは UI の綱の外**（決裁 137 ⒞・v2.0.1（2））＝この判定は台帳を読んで
+        // sha256 を取るので、円盤が初回スキャンで詰まっている最中は窓が応答しなくなる。
+        if (await Task.Run(RuntimeLooksSound).ConfigureAwait(true))
         {
             Record(RuntimeSoundSkipLine, show: true);   // 文言表が画面に出すと決めた行
             return true;
@@ -1844,7 +2018,16 @@ public sealed class FirstRunViewModel : ObservableObject
             }
 
             // ⑵ python-embed → runtime-<変種>（vc_redist は判定の結果で計画から外れる）。
-            var plan = TryPlan(_paths, _variant, _skipVcRedist, out var planReason);
+            // **台帳を読むのも UI の綱の外**（決裁 137 ⒞）。
+            var planned = await Task
+                .Run(() =>
+                {
+                    var value = TryPlan(_paths, _variant, _skipVcRedist, out var why);
+                    return (Plan: value, Reason: why);
+                })
+                .ConfigureAwait(true);
+            var plan = planned.Plan;
+            var planReason = planned.Reason;
             if (plan is null)
             {
                 // W2＝⑴ 準備を始められません。 ⑵ アプリのファイルが壊れているようです。
@@ -1859,8 +2042,9 @@ public sealed class FirstRunViewModel : ObservableObject
             UpdateVariantNotes();
 
             // **落とし始める前に空きを見る**（是正・便 D（3）の 3 巡目）。
-            if (FreeSpaceShortfall(plan.EstimatedPeakDiskBytes, FreeBytes(_paths.DataDir))
-                is string shortfall)
+            // 円盤への問い合わせも UI の綱の外（決裁 137 ⒞）。
+            var free = await Task.Run(() => FreeBytes(_paths.DataDir)).ConfigureAwait(true);
+            if (FreeSpaceShortfall(plan.EstimatedPeakDiskBytes, free) is string shortfall)
             {
                 // W3＝E-09 の 3 部品（`v2-copy.md` §3-2）。**実数（GiB）はログと詳細の中だけ**。
                 Fail(FreeSpaceLine, shortfall + "空けてから「もう一度」を押してください。");
@@ -2038,15 +2222,17 @@ public sealed class FirstRunViewModel : ObservableObject
     private async Task<bool> RunInstallAsync()
     {
         // 取得の段と同じ判断（是正・検分）＝展開は置き場を消してから入れ直すので、
-        // 揃っている樹をここへ通してはいけない。
-        if (RuntimeLooksSound())
+        // 揃っている樹をここへ通してはいけない。**檔読みは UI の綱の外**（決裁 137 ⒞）。
+        if (await Task.Run(RuntimeLooksSound).ConfigureAwait(true))
         {
             Record(InstallSkipLine, show: true);        // 文言表が画面に出すと決めた行
             return true;
         }
 
         var installer = _installer();
-        var ledger = ReadLedgerFile<LedgerFile>(_paths.LedgerPath(RuntimeVariants.LedgerName(_variant)));
+        var ledger = await Task
+            .Run(() => ReadLedgerFile<LedgerFile>(_paths.LedgerPath(RuntimeVariants.LedgerName(_variant))))
+            .ConfigureAwait(true);
         if (installer is null || ledger is null)
         {
             // 台帳が読めない方は W2（`v2-spec.md` §3 の 2 本目の内部の 1 行そのもの）＝
@@ -2122,7 +2308,7 @@ public sealed class FirstRunViewModel : ObservableObject
     /// モデルの取得（<c>server/ywk_fetch_models.py</c> を変種の python で走らせる＝設計書 §6）。
     /// 差し替えの口を開けてあるのは、子プロセスの扱いが取得席の管掌だからである。
     /// </summary>
-    public Func<IProgress<string>, CancellationToken, Task<bool>>? ModelFetcher { get; set; }
+    public Func<IProgress<ModelFetchProgress>, CancellationToken, Task<bool>>? ModelFetcher { get; set; }
 
     private async Task<bool> RunModelsAsync()
     {
@@ -2136,10 +2322,17 @@ public sealed class FirstRunViewModel : ObservableObject
         _cancel = new CancellationTokenSource();
         try
         {
-            // モデルの段は件数の分数を持たない（進捗は 1 行の文字列）＝
-            // 画面の 1 行は段の名乗りのまま、内訳だけを詳細の中で入れ替える。
-            PhaseText = PhaseLine(FirstRunStep.Models);
-            var progress = new Progress<string>(line => ProgressDetailText = line);
+            // **この段にも動く物を 2 つ置く**（決裁 137 の是正・検分）＝
+            // ⑴ バー（取得系が配る <c>overall_downloaded</c> の割合）⑵ 経過秒（1 秒ごと）。
+            // 以前は画面の 1 行が段の名乗りのまま、内訳だけが<b>畳みの中</b>で入れ替わっていた＝
+            // 数 GB を落とす数分の間、利用者に見える面では何一つ動かなかった。
+            _stepFraction = 0;
+            _eta = null;
+            ApplyProgress();
+            PhaseText = ModelsPhaseLine(0);
+            LoadingTicker.Start();
+
+            var progress = new Progress<ModelFetchProgress>(OnModelsProgress);
             var ok = await ModelFetcher(progress, _cancel.Token).ConfigureAwait(true);
             if (ok)
             {
@@ -2160,10 +2353,174 @@ public sealed class FirstRunViewModel : ObservableObject
         }
         finally
         {
+            // 待ちが終わった＝秒はもう刻まない（決裁 137 ⒞）。
+            LoadingTicker.Stop();
             _cancel?.Dispose();
             _cancel = null;
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// 取得系の報せを受ける（<b>バーはここでだけ動く</b>＝決裁 137 の是正・検分）。
+    /// <para>
+    /// <c>server/ywk_fetch_models.py</c> は <c>progress</c> を 0.5 秒ごとに配り、
+    /// その 1 通が <c>overall_downloaded</c>／<c>overall_bytes</c> を持つ＝
+    /// <b>間引きは要らない</b>（もともと毎秒 2 通である）。
+    /// </para>
+    /// </summary>
+    private void OnModelsProgress(ModelFetchProgress progress)
+    {
+        // 遅れて届いた 1 通で次の段の面を上書きしない（取消の後も同じ）。
+        if (Step is not FirstRunStep.Models || _cancel?.IsCancellationRequested == true)
+        {
+            return;
+        }
+
+        if (progress.Line.Length > 0)
+        {
+            ProgressDetailText = progress.Line;
+        }
+
+        if (progress.Fraction is { } fraction)
+        {
+            _stepFraction = Math.Clamp(fraction, 0, 1);
+            _eta = null;
+            ApplyProgress();
+        }
+    }
+
+    // ================= 新しいファイルの確認（決裁 136 ⒜・137 ⒜・v2.0.1（2）） =================
+
+    /// <summary>同時に読む本数（小さく保つ＝円盤と安全機能の列を詰まらせない）。</summary>
+    public const int WarmupParallelism = 2;
+
+    /// <summary>
+    /// 檔 1 つを読む手（<b>試験の継ぎ目</b>＝既定は <see cref="Services.Ledger.NewFileScan.ReadOnce"/>）。
+    /// <para>
+    /// ここが開いているのは「<b>1 檔が長い間も画面が動く</b>」を試験が作れるようにするためである
+    /// （3 GB の檔を実際に置くわけにいかない）。<b>本番では誰も差し替えない。</b>
+    /// </para>
+    /// </summary>
+    public Func<string, CancellationToken, long>? WarmupReader { get; set; }
+
+    /// <summary>
+    /// 確認する根（<b>展開した一式</b>と<b>落としたモデル</b>＝<b>いま初めて書かれた檔</b>）。
+    /// 無い根は <see cref="Services.Ledger.NewFileScan"/> が黙って飛ばす。
+    /// </summary>
+    /// <para>
+    /// <b>モデルの窖だけ決まりが違う</b>（是正・検分）＝<c>huggingface_hub</c> は
+    /// <c>blobs</c> に実体を置き、<c>snapshots</c> から<b>繋ぎ</b>で指す。繋ぎを作れない機体
+    /// （開発者モードでない Windows）では <c>snapshots</c> 側が<b>複製</b>になるので、
+    /// 両方を数えると同じ 3.5 GB を 2 度読む＝この段が縮めたかった待ちを倍にする。
+    /// そこで<b><c>blobs</c> を数えず、<c>snapshots</c> の繋ぎは辿る</b>＝どちらの形でも
+    /// 「本体が実際に開く檔」をちょうど 1 度ずつ読む。
+    /// </para>
+    public IReadOnlyList<Services.Ledger.NewFileScanRoot> WarmupRoots() =>
+    [
+        new(_paths.ResolveRuntimeDir(_variant) ?? Path.Combine(_paths.RuntimeRoot, _variant)),
+        new(_paths.HfHomeDir, FollowLinks: true, SkipDirectory: "blobs"),
+    ];
+
+    /// <summary>確認し終えたことを残す 1 行（<b>純関数</b>＝件数と秒だけ・記録用）。</summary>
+    public static string WarmupDoneLine(int files, TimeSpan elapsed) =>
+        files <= 0
+            ? "確認する新しいファイルはありませんでした。"
+            : "新しいファイルを確認しました（" + Count(files) + " 件・"
+              + elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) + " 秒）。";
+
+    /// <summary>
+    /// <b>新しく書いた檔を 1 度ずつ読む段</b>（決裁 136 ⒜・137 ⒜）。
+    /// <para>
+    /// <b>何をしているか</b>＝展開とモデルの取得で<b>いま初めて書かれた</b> 2 万 5 千余の檔を、
+    /// 頭から 1 度だけ読む。これでパソコンの安全機能の初回確認が<b>このバーの下で</b>終わり、
+    /// 次の「起動の確認」で <c>import</c>／<c>mmap</c> が同じ代金を払わずに済む
+    /// （決裁 136＝115 秒の静止の本命）。<b>檔は 1 つも書き換えない。</b>
+    /// </para>
+    /// <para>
+    /// <b>失敗しない段である</b>＝読めない檔は数えて飛ばす。ここで止めると、
+    /// 「読めたはずの機体」を確認のためだけに断ることになる。止まるのは〔やめる〕だけで、
+    /// その回は<b>次に開いたときに安く走り直す</b>（同じ物をもう 1 度読むだけ＝冪等）。
+    /// </para>
+    /// <para>
+    /// <b>設定は 1 つも足さない</b>（決裁 137）＝いつでも走り、2 度目は速い。
+    /// </para>
+    /// </summary>
+    private async Task<bool> RunWarmupAsync()
+    {
+        IsBusy = true;
+        _cancel = new CancellationTokenSource();
+        try
+        {
+            PhaseText = PhaseLine(FirstRunStep.Warmup);
+            _stepFraction = 0;
+            _eta = null;
+            _warmupSeen = null;
+            ApplyProgress();
+
+            // **秒も刻む**（決裁 137 ⒜の是正・検分）＝檔の数は<b>1 檔が大きい間は動かない</b>
+            // （モデルの 3 GB の 1 檔＝初回の走査つきで数十秒）。そこだけ静止しないための錠である。
+            LoadingTicker.Start();
+
+            // **束縛の更新は間引かれて届く**（毎秒 2 回まで＝`NewFileScan.ShouldReport`）。
+            var progress = new Progress<Services.Ledger.NewFileScanProgress>(OnWarmupProgress);
+            var result = await Services.Ledger.NewFileScan
+                .RunAsync(WarmupRoots(), progress, WarmupParallelism, WarmupReader, _cancel.Token)
+                .ConfigureAwait(true);
+
+            if (result.Cancelled || _cancel.IsCancellationRequested)
+            {
+                Fail(CancelledLine, "中断しました（続きから取り直せます）。");
+                return false;
+            }
+
+            _stepFraction = 1;
+            ApplyProgress();
+            Record(WarmupDoneLine(result.Files, result.Elapsed));
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            Fail(CancelledLine, "中断しました（続きから取り直せます）。");
+            return false;
+        }
+        finally
+        {
+            // 段が終わった＝秒はもう刻まない（決裁 137 ⒞）。
+            LoadingTicker.Stop();
+            _warmupSeen = null;
+            _cancel?.Dispose();
+            _cancel = null;
+            IsBusy = false;
+        }
+    }
+
+    private void OnWarmupProgress(Services.Ledger.NewFileScanProgress progress)
+    {
+        // **遅れて届いた報せで次の段の 1 行を上書きしない**（是正＝<see cref="Progress{T}"/> は
+        // 掴んだ綱へ投げるので、最後の 1 通が段を出た後に着くことがある）。
+        // **やめた回も同じ**（是正・検分）＝<see cref="CancelRunning"/> は段を替えないので、
+        // 走っていた読み手が最後に配る 1〜2 通が「中断しました」の画面を走る数で上書きしていた。
+        if (Step is not FirstRunStep.Warmup || _cancel?.IsCancellationRequested == true)
+        {
+            return;
+        }
+
+        _warmupSeen = progress;
+        _stepFraction = progress.Counting || progress.Total <= 0
+            ? 0
+            : Math.Clamp((double)progress.Done / progress.Total, 0, 1);
+        _eta = null;
+        ApplyProgress();
+
+        // 画面の 1 行＝**動く数**（決裁 137 の測り方 ⑶）＝檔の数<b>と</b>経過秒。
+        PhaseText = WarmupPhaseLine(
+            progress.Done, progress.Total, progress.Counting, LoadingTicker.Seconds);
+
+        // 件数の内訳は詳細の中だけ（`v2-spec.md` §3 段 3 の規則はこの段でも同じ）。
+        ProgressDetailText = progress.Counting
+            ? WarmupPhaseLine(progress.Done, progress.Total, counting: true)
+            : UiText.Progress(progress.Done, progress.Total);
     }
 
     /// <summary>
@@ -2196,7 +2553,14 @@ public sealed class FirstRunViewModel : ObservableObject
         _cancel = new CancellationTokenSource();
         try
         {
-            PhaseText = PhaseLine(FirstRunStep.Start);
+            // **秒は段の頭から刻む**（決裁 137 ⒝の是正・検分）＝
+            // 口が開くのを待っている間（python.exe の起動と読み込みの始まり＝実測 12 秒以上）も、
+            // 以前は「動くか確かめています。」のまま 1 行も数も動かなかった。
+            // 口が開いたら <see cref="ReportLoadingVoices"/> が<b>文言だけ</b>を替える
+            // （刻みは止めない＝秒は 0 へ戻らずに続く）。
+            _loadingVoices = false;
+            LoadingTicker.Start();
+            PhaseText = StartingLine(0);
             ProgressDetailText = UiStrings.WizardVerifyingRun;
             var ok = await _startServer(_cancel.Token).ConfigureAwait(true);
             if (_cancel.IsCancellationRequested)
@@ -2232,6 +2596,9 @@ public sealed class FirstRunViewModel : ObservableObject
         }
         finally
         {
+            // 待ちが終わった＝秒はもう刻まない（決裁 137 ⒞）。
+            LoadingTicker.Stop();
+            _loadingVoices = false;
             _cancel?.Dispose();
             _cancel = null;
             IsBusy = false;

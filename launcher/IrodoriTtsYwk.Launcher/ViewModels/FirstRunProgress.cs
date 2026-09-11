@@ -6,25 +6,37 @@ namespace IrodoriTtsYwk.Launcher.ViewModels;
 /// <summary>
 /// <b>はじめの準備の 1 本のバー</b>（`v2-spec.md` §3 段 3・`v2-plan.md` 段 B-3・<b>純関数だけ</b>）。
 /// <para>
-/// <b>なぜ要るか</b>＝働く 4 段（取得→展開→モデル→起動）はそれぞれ 0〜1 の進みを持つので、
+/// <b>なぜ要るか</b>＝働く 5 段（取得→展開→モデル→確認→起動）はそれぞれ 0〜1 の進みを持つので、
 /// 段が変わるたびにバーが 0 へ戻る＝利用者からは「進んでいない」ように見える。ここは
-/// <b>4 段を 1 本に合成する重み</b>だけを持ち、状態は 1 つも持たない。
+/// <b>5 段を 1 本に合成する重み</b>だけを持ち、状態は 1 つも持たない。
 /// </para>
 /// <para>
 /// <b>重みは見せ方であって実測ではない</b>（`v2-plan.md` 段 B-3 の危険 ⑶）＝
-/// 取得 .55／モデル .30／展開 .10／起動 .05。憲章にこの数は書かない。
+/// 取得 .50／モデル .25／展開 .10／確認 .10／起動 .05。憲章にこの数は書かない。
+/// </para>
+/// <para>
+/// <b>組み直したのは決裁 137 である</b>（v2.0.1（2））＝新しく書いた檔を 1 度読む段
+/// （<see cref="FirstRunStep.Warmup"/>）がバーの下に入ったので、取得から .05・モデルから .05 を
+/// その段へ回した。<b>総和は 1 のまま</b>で、段の並びも変わらないから<b>バーは逆行しない</b>。
 /// </para>
 /// </summary>
 public static class FirstRunProgress
 {
     /// <summary>取得（動かすための一式）の取り分。</summary>
-    public const double DownloadWeight = 0.55;
+    public const double DownloadWeight = 0.50;
 
     /// <summary>展開（落とした物を組み立てる）の取り分。</summary>
     public const double InstallWeight = 0.10;
 
     /// <summary>モデル（声のデータ）の取り分。</summary>
-    public const double ModelsWeight = 0.30;
+    public const double ModelsWeight = 0.25;
+
+    /// <summary>
+    /// <b>新しく書いた檔を 1 度読む段</b>の取り分（決裁 137・v2.0.1（2））。
+    /// この段はバーの下でパソコンの安全機能に確認を済ませてもらう時間であり、
+    /// <b>実測ではなく見せ方</b>としてここに .10 を置く。
+    /// </summary>
+    public const double WarmupWeight = 0.10;
 
     /// <summary>起動の確認の取り分。</summary>
     public const double StartWeight = 0.05;
@@ -33,7 +45,8 @@ public static class FirstRunProgress
     /// 段とその段の進み（0〜1）から、<b>全体の進み</b>（0〜1）を作る（<b>純関数</b>）。
     /// <list type="bullet">
     /// <item>通知・確認＝まだ 1 バイトも落としていない＝<c>0</c>。</item>
-    /// <item>働く 4 段＝<b>並びの順に</b>取り分を積む（取得 0〜.55・展開 .55〜.65・モデル .65〜.95・起動 .95〜1）。</item>
+    /// <item>働く 5 段＝<b>並びの順に</b>取り分を積む（取得 0〜.50・展開 .50〜.60・モデル .60〜.85・
+    /// 確認 .85〜.95・起動 .95〜1）。</item>
     /// <item>完了＝<c>1</c>。</item>
     /// <item><b>列挙に無い値</b>（前後の外）＝手前は 0・先は 1 に丸める＝<b>逆行しない</b>。</item>
     /// </list>
@@ -49,7 +62,10 @@ public static class FirstRunProgress
             FirstRunStep.Download => Clamp(f * DownloadWeight),
             FirstRunStep.Install => Clamp(DownloadWeight + (f * InstallWeight)),
             FirstRunStep.Models => Clamp(DownloadWeight + InstallWeight + (f * ModelsWeight)),
-            FirstRunStep.Start => Clamp(DownloadWeight + InstallWeight + ModelsWeight + (f * StartWeight)),
+            FirstRunStep.Warmup => Clamp(
+                DownloadWeight + InstallWeight + ModelsWeight + (f * WarmupWeight)),
+            FirstRunStep.Start => Clamp(
+                DownloadWeight + InstallWeight + ModelsWeight + WarmupWeight + (f * StartWeight)),
             FirstRunStep.Done => 1,
 
             // 列挙に無い値＝知らない段。**手前なら 0・先なら 1**（＝直前に出した値のまま）。

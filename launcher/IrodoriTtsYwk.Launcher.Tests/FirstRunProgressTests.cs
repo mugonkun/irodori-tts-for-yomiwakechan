@@ -22,7 +22,8 @@ public sealed class FirstRunProgressTests
     private static readonly FirstRunStep[] Order =
     [
         FirstRunStep.Notices, FirstRunStep.Variant, FirstRunStep.Download,
-        FirstRunStep.Install, FirstRunStep.Models, FirstRunStep.Start, FirstRunStep.Done,
+        FirstRunStep.Install, FirstRunStep.Models, FirstRunStep.Warmup,
+        FirstRunStep.Start, FirstRunStep.Done,
     ];
 
     [Fact]
@@ -41,6 +42,12 @@ public sealed class FirstRunProgressTests
 
         Assert.Equal(
             FirstRunProgress.Overall(FirstRunStep.Models, 1),
+            FirstRunProgress.Overall(FirstRunStep.Warmup, 0),
+            10);
+
+        // 新しく足した段（決裁 137 ⒜）も境目で連続する＝バーはここでも戻らない。
+        Assert.Equal(
+            FirstRunProgress.Overall(FirstRunStep.Warmup, 1),
             FirstRunProgress.Overall(FirstRunStep.Start, 0),
             10);
 
@@ -58,11 +65,12 @@ public sealed class FirstRunProgressTests
         Assert.Equal(0, FirstRunProgress.Overall(FirstRunStep.Download, 0));
         Assert.Equal(1, FirstRunProgress.Overall(FirstRunStep.Done, 0));
 
-        // 取り分の総和は 1（55 + 10 + 30 + 5）。
+        // 取り分の総和は 1（50 + 10 + 25 + 10 + 5＝v2.0.1（2）で組み直した）。
         Assert.Equal(
             1,
             FirstRunProgress.DownloadWeight + FirstRunProgress.InstallWeight
-                + FirstRunProgress.ModelsWeight + FirstRunProgress.StartWeight,
+                + FirstRunProgress.ModelsWeight + FirstRunProgress.WarmupWeight
+                + FirstRunProgress.StartWeight,
             10);
     }
 

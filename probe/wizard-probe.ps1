@@ -1,9 +1,24 @@
 # wizard-probe.ps1 -- "Is the first-run wizard window open right now?" in one line, without a screen.
 # Read-only: touches nothing, presses nothing. Run in the interactive user session (same session as the launcher).
 #   pwsh -NoProfile -ExecutionPolicy Bypass -File wizard-probe.ps1
+#   pwsh ... -File wizard-probe.ps1 -Meter -MeterSeconds 900   (hand off to probe/freeze-meter.ps1)
 # Exit code: 0 = wizard window found, 1 = launcher running but no wizard, 2 = launcher not running.
+#            With -Meter the exit code is the freeze meter's own (0 = the 137 criterion was met).
+#
+# THE FREEZE METER (decisions 137). This probe answers "is the wizard open" in one shot. The question
+# the RTX seat has to answer during a first run is the other one -- "does it LOOK frozen?" -- and that
+# needs a sample every second for minutes, not one line. That meter lives in its own read-only file,
+# probe/freeze-meter.ps1: it samples FirstRunProgressText / FirstRunPhaseText / FirstRunStepTitle and
+# MainBandStateText once a second into a CSV, calls IsHungAppWindow on the wizard and main HWNDs, and
+# prints the longest unchanged stretch -- judged on the three WIZARD lines, and only while a stage is
+# working (the band ticks a counter of its own; pages awaiting a human are static by design, so both
+# are printed as separate numbers instead). -Meter here simply starts it on the same window.
 [CmdletBinding()]
-param([int]$Port = 18088)
+param(
+    [int]$Port = 18088,
+    [switch]$Meter,
+    [int]$MeterSeconds = 900
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -73,6 +88,13 @@ if ($null -eq $wizard) {
 }
 
 $pidText = ($pids -join ',')
+if ($Meter) {
+    # Read-only hand off: the meter finds the windows itself and stops when the wizard closes.
+    $meterScript = Join-Path $PSScriptRoot 'freeze-meter.ps1'
+    Write-Output ('meter: ' + $meterScript + ' -Seconds ' + $MeterSeconds + ' -StopWhenWizardCloses')
+    & $meterScript -Seconds $MeterSeconds -StopWhenWizardCloses
+    exit $LASTEXITCODE
+}
 if ($null -ne $wizard) {
     $step = Get-TextById $wizard 'FirstRunStepTitle'
     # v2.0 stage B: the counter reads "N / 3" (it was "N / 7"). The four working steps -- fetch,

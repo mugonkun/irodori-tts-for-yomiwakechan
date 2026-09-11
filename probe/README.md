@@ -110,7 +110,35 @@ pwsh ... -File probe/d-launch-probe.ps1 -DryRun            # 空走＝窓を開�
 pwsh ... -File probe/d-launch-probe.ps1 -RoundThreeOnly    # 便 D（3）の h／j／k／l だけ（模型も鯖も起こさない）
 pwsh ... -File probe/d-launch-probe.ps1 -BadDeviceOnly     # D-1 だけ
 pwsh ... -File probe/d-launch-probe.ps1 -GateOnly          # 変種の門だけ
+pwsh ... -File probe/d-launch-probe.ps1 -WizardFullRun -FreezeMeter   # 決裁 137 の測り（E2E 席）
 ```
+
+**固まって見えないことの測り**＝`probe/freeze-meter.ps1`（決裁 137・**読むだけ・何も押さない**）。
+1 秒ごとに `FirstRunStepTitle`／`FirstRunPhaseText`／`FirstRunProgressText`／`MainBandStateText` と
+`IsHungAppWindow`（user32・ウィザードと主窓の HWND）を CSV へ落とし、終いの 1 行で
+**どれも変わらなかった最長の間**（上限 5 秒）と**固まった標本の数**（0）を告げる。
+
+**判定に入れる物・入れない物**（是正・検分＝どちらも初版が間違えた所）。
+
+| | 扱い | なぜ |
+|---|---|---|
+| `FirstRunStepTitle`／`FirstRunPhaseText`／`FirstRunProgressText` | **判定に入れる**（決裁 137 ⑴ の 3 つ） | 所有者の測り方がこの 3 つで書かれている |
+| `MainBandStateText` | 測るが**判定に入れない**（別の数で印字） | 帯は**自前の秒**を刻む＝同じ束に混ぜると必ず毎秒変わり、判定が成り立たなくなる |
+| 人の入力を待つ頁（同意・完了・失敗で止めた段） | 数えるが**判定に入れない**（`idle=` として印字） | **設計どおり静止する**＝混ぜると何も固まっていない回が不合格になる |
+
+「働いている段」の見分け＝**1 行を名乗っていて、かつ〔やめる〕が押せる**
+（`FirstRunCancelButton.IsEnabled` ＝ ウィザードの `IsBusy` そのもの）。
+CSV は**1 行ずつ**書き出す（途中で殺されても標本が残る）・**BOM 付き UTF-8**（Excel が化けない）。
+
+```
+pwsh -NoProfile -ExecutionPolicy Bypass -File probe/freeze-meter.ps1 -StopWhenWizardCloses
+pwsh ... -File probe/freeze-meter.ps1 -DryRun              # 空走＝標本を 1 つも採らずに段取りだけ印字
+pwsh ... -File probe/wizard-probe.ps1 -Meter               # いま開いている窓へ後から当てる
+```
+
+終了コード＝0（合格）／1（5 秒を越えた・固まった標本が在った）／2（ランチャの窓が無い）。
+**目に見えて動く物**（新しいファイルの確認の「n / 25,300」・待ちの「（N 秒）」）が在れば
+1 行が 5 秒変わらなくても固まってはいない＝CSV に全標本が残るので、どの数が動いたかを後から読める。
 
 **便 D（3）で足した段**（設計書 §22）＝**h** 初回取得ウィザードの**押下数**（裁定 94 ⑴・既定は台帳を壊した
 私設の配布樹で**外へ 1 バイトも出さずに**失敗段まで＝押下 4・`-WizardFullRun` は**本当に取得する**ので E2E 席専用）／

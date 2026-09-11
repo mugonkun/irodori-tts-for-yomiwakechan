@@ -131,7 +131,7 @@ public sealed class RoundThreeWizardTests : IDisposable
         IDownloader? downloader,
         IRuntimeInstaller? installer,
         Func<CancellationToken, Task<bool>>? startServer = null,
-        Func<IProgress<string>, CancellationToken, Task<bool>>? models = null)
+        Func<IProgress<ModelFetchProgress>, CancellationToken, Task<bool>>? models = null)
     {
         var vm = new FirstRunViewModel(
             paths,

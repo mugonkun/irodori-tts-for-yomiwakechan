@@ -718,7 +718,8 @@ public sealed class ServerProcess : IServerProcess
                 // **まだ載せている最中なら、1 度だけ硬い上限まで伸ばす**（決裁 135 ⑴）。
                 // 子が生きていて、口が開いていて、理由も無い＝壊れてはいない個体を
                 // 「止まりました。」で放り出さない。帯は Listening のまま
-                // （<see cref="ViewModels.BandText.PreparingVoices"/>）＝1 行は変わらない。
+                // （<see cref="ViewModels.BandText.PreparingVoicesWhy"/>＝理由の 1 行。
+                // 名乗りは「準備しています…（N 秒）」で、秒だけが毎秒動く＝決裁 137 ⒞）。
                 // **伸びしろが無いときは入らない**（是正・検分）＝利用者が
                 // <c>readyTimeoutSeconds</c> に 600 以上を書いた機体では <c>hardCap == limit</c> で、
                 // 入ると「900 秒では終わりませんでした。…900 秒まで待ちます。」という

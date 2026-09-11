@@ -750,17 +750,87 @@ public static class UiStrings
     public const string WizardVerifyingRun = "動くか確かめています…";
 
     /// <summary>
-    /// <b>声を読み込んでいる間の 1 行</b>（決裁 135 ⑴・v2.0.1）。
+    /// <b>声を読み込んでいる間の 1 行</b>の前半（決裁 135 ⑴＝v2.0.1・言い換えは決裁 137 ⒝）。
     /// <para>
     /// 取得の直後の 1 回目だけ、声の読み込みが実測（RTX 機・段 H 射 2）で 120 秒では終わらず、
     /// 次の起動は 36.62 秒・その次は 12 秒だった。待っている間は「止まりました。」ではなく
     /// <b>まだ働いていること</b>を名乗る。
-    /// <b>この綴りは仮である</b>＝決裁 136 ⒝／137 が「初めてのときは、パソコンの安全機能が
-    /// 新しいファイルを確認するので数分かかります」の趣旨に言い換える（別の工事）。
+    /// </para>
+    /// <para>
+    /// <b>v2.0.1（2）で言い換えた</b>（決裁 136 ⒝・137 ⒝）＝⑴ <b>経過秒を挟む</b>
+    /// （1 秒ごとに動く＝決裁 137 の測り方 ⑶）⑵ <b>なぜ待つのかを言う</b>
+    /// （パソコンの安全機能が新しいファイルを確認している）。組むのは純関数
+    /// <see cref="FirstRunViewModel.LoadingVoicesLine"/> 1 箇所だけである。
     /// </para>
     /// </summary>
-    public const string WizardLoadingVoices =
-        "声を読み込んでいます。初めてのときは数分かかることがあります。";
+    public const string WizardLoadingVoicesHead = "声を読み込んでいます（";
+
+    /// <summary>同・後半（秒の数を挟んだ後ろ）。</summary>
+    public const string WizardLoadingVoicesTail =
+        " 秒）… 初めてのときは、パソコンの安全機能が新しいファイルを確認するので数分かかります。";
+
+    /// <summary>
+    /// <b>新しいファイルを確認している段の 1 行</b>の前半（決裁 136 ⒜・137 ⒜・v2.0.1（2））。
+    /// <para>
+    /// 組むのは純関数 <see cref="FirstRunViewModel.WarmupPhaseLine"/> 1 箇所だけ＝
+    /// 「新しいファイルを確認しています（1,234 / 25,300）」。
+    /// <b>この数は「目に見えて動く物」である</b>（決裁 137 の測り方 ⑶）＝
+    /// 1 行が 5 秒を越えて変わらない回でも、この数が動いていれば固まってはいない。
+    /// </para>
+    /// </summary>
+    public const string WizardWarmupHead = "新しいファイルを確認しています（";
+
+    /// <summary>同・数と数の間（<c>1,234 / 25,300</c> の区切り）。</summary>
+    public const string WizardWarmupSeparator = " / ";
+
+    /// <summary>同・後半。</summary>
+    public const string WizardWarmupTail = "）";
+
+    /// <summary>
+    /// <b>働いている段に添える経過秒</b>の区切り（決裁 137 ⒜の是正・検分）。
+    /// <para>
+    /// <b>なぜ要るか</b>＝檔の数だけでは、<b>1 つの檔が大きい間</b>は何も動かない
+    /// （モデルの <c>model.safetensors</c> は 3 GB 余りで、その 1 檔の初回走査だけで数十秒に達する）。
+    /// 檔の数が <c>25,299 / 25,300</c> で止まっている間も、この秒は 1 秒ごとに動く＝
+    /// 決裁 137 の測り方 ⑶ の「<b>目に見えて動く物</b>」を<b>常に</b>切らさないための錠である。
+    /// </para>
+    /// </summary>
+    public const string WizardSecondsJoin = "・";
+
+    /// <summary>同・秒の後ろ（括弧の中に収まる＝「（1,234 / 25,300・63 秒）」）。</summary>
+    public const string WizardSecondsTail = " 秒";
+
+    /// <summary>
+    /// <b>モデルを落としている間の 1 行</b>の前半（決裁 137 ⒜の是正・検分）。
+    /// <para>
+    /// この段は数 GB を数分かけて落とすので、秒を添えないと 1 行も数も動かない回がある
+    /// （バーは <c>overall_downloaded</c> から動くが、遅い回線では 1 % に 5 秒以上かかる）。
+    /// </para>
+    /// </summary>
+    public const string WizardModelsHead = "声のデータをダウンロードしています（";
+
+    /// <summary>同・後半。</summary>
+    public const string WizardModelsTail = " 秒）";
+
+    /// <summary>
+    /// <b>起こしている間の 1 行</b>の前半（決裁 137 ⒝の是正・検分）。
+    /// <para>
+    /// 口が開くまでの間（python.exe の起動と読み込みの始まり）は
+    /// <see cref="WizardVerifyingRun"/> のまま 1 行も動かなかった＝実測で 12 秒以上ある。
+    /// 口が開いた後は <see cref="WizardLoadingVoicesHead"/> の 1 行に替わるが、
+    /// <b>秒はそのまま数え続ける</b>（刻みを止めて始め直さない）。
+    /// </para>
+    /// </summary>
+    public const string WizardStartingHead = "起動しています（";
+
+    /// <summary>同・後半。</summary>
+    public const string WizardStartingTail = " 秒）…";
+
+    /// <summary>数え上げている間の前半（総数がまだ判らない＝見つかった数だけを出す）。</summary>
+    public const string WizardWarmupCountingHead = "新しいファイルを数えています（";
+
+    /// <summary>同・後半。</summary>
+    public const string WizardWarmupCountingTail = "）";
 
     /// <summary>落とす量が判らない回（推測の数字を出さない・詳しい字は記録へ）。</summary>
     public const string WizardSizeUnknown = "必要な大きさが分かりませんでした。";

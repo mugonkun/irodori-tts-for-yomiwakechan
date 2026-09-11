@@ -102,7 +102,21 @@ public sealed class StatusViewModel : ObservableObject
         CancelRebuildCommand = new RelayCommand(
             cancelRebuild ?? (static () => { }),
             () => cancelRebuild is not null && IsRebuilding);
+
+        // 準備を待っている間は**毎秒**帯を組み直す（決裁 137 ⒞）＝帯の文は純関数のまま、
+        // 動かすのはここが持つ数だけである。
+        PreparingTicker.Ticked += (_, _) => RefreshBand();
     }
+
+    /// <summary>
+    /// <b>準備を待っている秒を刻む</b>（決裁 137 ⒞・v2.0.1（2））。
+    /// <para>
+    /// 起こし始めた（<see cref="ServerState.Starting"/>）／口が開いた
+    /// （<see cref="ServerState.Listening"/>）間だけ走り、それ以外の状態へ移った瞬間に止めて 0 に戻す。
+    /// 試験は <see cref="ElapsedTicker.Delay"/> を差し替えて 1 秒も待たずに刻める。
+    /// </para>
+    /// </summary>
+    public ElapsedTicker PreparingTicker { get; } = new();
 
     /// <summary>
     /// 走っている個体が名乗る設定の写し（<b>不変</b>）。走行中の状態帯はここから描く。
@@ -670,7 +684,8 @@ public sealed class StatusViewModel : ObservableObject
             MissingModelCount: _missingModelCount,
             ExitCode: _exitCode,
             RebuildRuntimeLine: _rebuildRuntime,
-            FirstRunPending: _firstRunPending);
+            FirstRunPending: _firstRunPending,
+            ElapsedSeconds: PreparingTicker.IsRunning ? PreparingTicker.Seconds : null);
 
         var next = BandText.For(State, Reason, context);
         if (!Equals(_band, next))
@@ -845,6 +860,16 @@ public sealed class StatusViewModel : ObservableObject
         else
         {
             _userStopped = false;
+        }
+
+        // 待っている間だけ秒を刻む（決裁 137 ⒞）＝使えるようになった・止まった回は 0 に戻す。
+        if (state is ServerState.Starting or ServerState.Listening)
+        {
+            PreparingTicker.Start();
+        }
+        else
+        {
+            PreparingTicker.Stop();
         }
 
         RebuildRuntimeCommand.RaiseCanExecuteChanged();

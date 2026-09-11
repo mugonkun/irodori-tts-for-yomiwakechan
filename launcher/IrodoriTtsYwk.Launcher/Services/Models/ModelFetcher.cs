@@ -112,6 +112,12 @@ public sealed record ModelFetchEvent
         ModelFetchEvents.Plan => string.Create(CultureInfo.InvariantCulture,
             $"モデル {TotalFiles ?? 0} 檔（{FetchPlanner.FormatBytes(TotalBytes ?? 0)}）を取得する。"),
         ModelFetchEvents.FileStart => (Repo ?? "?") + " / " + (Path ?? "?"),
+
+        // **`progress` にも言葉を持たせる**（是正・検分）＝この欄が無かったころは
+        // 下の `_ => Event` に落ちて、0.5 秒ごとに "progress" という生の綴りだけが出ていた。
+        ModelFetchEvents.Progress => FetchPlanner.FormatBytes(OverallDownloaded ?? Downloaded ?? 0)
+            + " / " + FetchPlanner.FormatBytes(OverallBytes ?? TotalBytes ?? 0)
+            + (Path is null ? string.Empty : "（" + Path + "）"),
         ModelFetchEvents.FileDone => (Path ?? "?") + " 済み",
         ModelFetchEvents.FileBad => (Path ?? "?") + " が検証に落ちた：" + (Reason ?? "理由不明"),
         ModelFetchEvents.FileMissing => (Path ?? "?") + " がキャッシュに無い",

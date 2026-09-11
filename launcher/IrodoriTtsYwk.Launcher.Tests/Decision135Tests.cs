@@ -268,9 +268,9 @@ public sealed class Decision135ReadyWaitTests
         // 帯の語は 3 つのまま（準備しています…）で、赤にも 1 手にもならない。
         var band = BandText.For(ServerState.Listening, null, new BandContext(RuntimeLoaded: false));
         Assert.Equal(BandSeverity.Neutral, band.Severity);
-        Assert.Equal(BandText.PreparingVoices, band.Headline);
+        Assert.Equal(BandText.Preparing, band.Headline);
+        Assert.Equal(BandText.PreparingVoicesWhy, band.Reason);
         Assert.Null(band.ActionLabel);
-        Assert.StartsWith(BandText.Preparing, band.Headline, StringComparison.Ordinal);
     }
 
     // ---- 継ぎ目 ---------------------------------------------------------------
@@ -448,12 +448,20 @@ public sealed class Decision135WizardLineTests : IDisposable
         await vm.NextAsync();                                // 取得→展開→モデル→起動→完了
 
         Assert.Equal(FirstRunStep.Done, vm.Step);
+
+        // **口が開く前も秒が動く**（決裁 137 ⒝の是正・検分）＝ここが
+        // 「動くか確かめています。」のままだったころは、python.exe が起きて読み込みを
+        // 始めるまでの実測 12 秒以上、1 行も数も 1 つも動かなかった。
+        Assert.StartsWith("起動しています（", during[0], StringComparison.Ordinal);
+        Assert.EndsWith(" 秒）…", during[0], StringComparison.Ordinal);
+        Assert.Equal(FirstRunViewModel.StartingLine(0), during[0]);
+        Assert.Equal(FirstRunViewModel.LoadingVoicesLine(0), during[1]);
+        Assert.Equal(2, during.Count);
+
+        // v2.0.1（2）＝決裁 137 ⒝ で言い換えた（秒つき・待つ訳つき）。
         Assert.Equal(
-            ["動くか確かめています。", UiStrings.WizardLoadingVoices],
-            during);
-        Assert.Equal(
-            "声を読み込んでいます。初めてのときは数分かかることがあります。",
-            UiStrings.WizardLoadingVoices);
+            "声を読み込んでいます（0 秒）… 初めてのときは、パソコンの安全機能が新しいファイルを確認するので数分かかります。",
+            FirstRunViewModel.LoadingVoicesLine(0));
     }
 
     [Fact]
@@ -484,7 +492,7 @@ public sealed class Decision135WizardLineTests : IDisposable
         vm.ReportLoadingVoices();
 
         Assert.Equal(before, vm.PhaseText);
-        Assert.NotEqual(UiStrings.WizardLoadingVoices, vm.PhaseText);
+        Assert.NotEqual(FirstRunViewModel.LoadingVoicesLine(0), vm.PhaseText);
     }
 
     private FirstRunViewModel NewWizard(

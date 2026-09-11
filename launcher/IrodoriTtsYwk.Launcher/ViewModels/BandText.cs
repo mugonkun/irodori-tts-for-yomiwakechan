@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.Services.Server;
 
@@ -87,6 +88,11 @@ public enum BandActionKind
 /// ウィザードを閉じた機体はサーバを起こさないので <see cref="ServerState.Stopped"/> のまま、
 /// 帯が「準備しています…」と<b>嘘をついたまま釦を 1 つも出さない</b>。
 /// </param>
+/// <param name="ElapsedSeconds">
+/// <b>準備を待っている秒</b>（決裁 137 ⒞・v2.0.1（2）＝判らない回は null＝括弧ごと落とす）。
+/// <b>ここは数を受け取るだけで、数えない</b>（帯の文は純関数のまま）＝刻むのは
+/// <see cref="StatusViewModel"/> が持つ <see cref="ElapsedTicker"/> である。
+/// </param>
 public sealed record BandContext(
     bool RuntimeLoaded = false,
     bool UserStopped = false,
@@ -98,7 +104,8 @@ public sealed record BandContext(
     int? MissingModelCount = null,
     int? ExitCode = null,
     string? RebuildRuntimeLine = null,
-    bool FirstRunPending = false);
+    bool FirstRunPending = false,
+    int? ElapsedSeconds = null);
 
 /// <summary>帯の 1 行（丸・ひとこと・理由 1 行・1 手）。</summary>
 /// <param name="Severity">丸の色。</param>
@@ -142,18 +149,38 @@ public static class BandText
     /// <summary>準備しています…（灰）。</summary>
     public const string Preparing = "準備しています…";
 
+    /// <summary>準備しています…（秒を挟む前半＝決裁 137 ⒞）。</summary>
+    public const string PreparingSecondsHead = "準備しています…（";
+
+    /// <summary>同・後半。</summary>
+    public const string PreparingSecondsTail = " 秒）";
+
     /// <summary>
-    /// 声を読み込んでいる間の 1 行（初回は長い）。
+    /// 声を読み込んでいる間の<b>理由の 1 行</b>（決裁 136 ⒝・137 ⒝・v2.0.1（2））。
     /// <para>
-    /// <b>綴りの食い違いを 1 つ記帳しておく</b>（是正・検分）＝決裁 135 ⑴ で ready 待ちが
-    /// 最長 600 秒まで伸びるようになったので、この括弧の「1〜2 分」は伸びた回には合わない
-    /// （同じ待ちでウィザードは <c>UiStrings.WizardLoadingVoices</c>＝「数分かかることがあります」と言う）。
-    /// <b>v2.0.1 では直さない</b>＝この綴りは <c>v2-spec.md</c> の帯の表と <c>v2-copy.md</c> の正本で、
-    /// 待ちの 1 行の言い換えは決裁 136 ⒝・137 ⒝ が持っている工事である。<b>2 行はそこで一緒に
-    /// 書き直す</b>（片方だけ動かすと正本が割れる）。
+    /// <b>2 行を一緒に書き直した</b>＝v2.0.1（1）の記帳（`v2-plan.md` 段 H）は、帯の
+    /// 「初回は 1〜2 分かかります」と、同じ待ちのウィザードの「数分かかることがあります」が
+    /// 食い違ったまま据え置かれていた。決裁 136 が原因を<b>パソコンの安全機能の初回確認</b>と
+    /// 名指したので、<b>両方ともその事実を言う</b>1 行に揃えた
+    /// （ウィザード側＝<see cref="UiStrings.WizardLoadingVoicesHead"/>）。
+    /// </para>
+    /// <para>
+    /// <b>名乗り（ひとこと）は「準備しています…」のまま</b>＝3 語は増やさない。
+    /// この 1 行は理由の行に載り、<b>1 手は出さない</b>（失敗ではない）。
     /// </para>
     /// </summary>
-    public const string PreparingVoices = "準備しています… 声を読み込んでいます（初回は 1〜2 分かかります）";
+    public const string PreparingVoicesWhy =
+        "声を読み込んでいます。初めてのときは、パソコンの安全機能が新しいファイルを確認するので数分かかります。";
+
+    /// <summary>
+    /// 名乗りに<b>待っている秒</b>を挟む（<b>純関数</b>・決裁 137 ⒞）＝
+    /// 「準備しています…（12 秒）」。<paramref name="seconds"/> が null／負なら
+    /// <see cref="Preparing"/> のまま（<b>推測の数を出さない</b>）。
+    /// </summary>
+    public static string PreparingWith(int? seconds) =>
+        seconds is int value && value >= 0
+            ? PreparingSecondsHead + value.ToString(CultureInfo.InvariantCulture) + PreparingSecondsTail
+            : Preparing;
 
     /// <summary>使えます（緑）。</summary>
     public const string Ready = "使えます";
@@ -241,9 +268,13 @@ public static class BandText
         if (reason is not null
             && string.Equals(reason, ServerStateMachine.UnreachableReason, StringComparison.Ordinal))
         {
+            // **ここも秒を添える**（決裁 137 ⒞の是正・検分）＝この枝は
+            // <see cref="ServerState.Listening"/> のまま降格した回で、刻みは走っている。
+            // 秒の無い <see cref="Preparing"/> を返していたころは、帯が組み直されても
+            // 同じ 1 行になり、束縛が動かず「準備しています…」のまま何分でも止まって見えた。
             return new BandLine(
                 BandSeverity.Neutral,
-                Preparing,
+                PreparingWith(facts.ElapsedSeconds),
                 "反応がなくなりました。 返事が返らなくなりました。",
                 "いったん止めて、動かし直す",
                 BandActionKind.Restart);
@@ -266,10 +297,11 @@ public static class BandText
             ServerState.Ready => new BandLine(BandSeverity.Ok, Ready, null, null, BandActionKind.None),
             ServerState.Warming =>
                 new BandLine(BandSeverity.Ok, ReadyWarming, null, null, BandActionKind.None),
+            // 口は開いた＝ここから先が決裁 136 の 115 秒である。**秒は必ず動く**（137 ⒞）。
             ServerState.Listening => new BandLine(
                 BandSeverity.Neutral,
-                facts.RuntimeLoaded ? Preparing : PreparingVoices,
-                null,
+                PreparingWith(facts.ElapsedSeconds),
+                facts.RuntimeLoaded ? null : PreparingVoicesWhy,
                 null,
                 BandActionKind.None),
             // E-01＝**はじめの準備が終わっていない機体**（`v2-copy.md` §3-2 の E-01）。
@@ -287,6 +319,10 @@ public static class BandText
                 facts.AutoStartDisabled && !facts.UserStopped ? AutoStartOffHint : null,
                 "もう一度動かす",
                 BandActionKind.Start),
+            // 起こしている最中（Starting）もここ＝待っている秒を同じ形で添える。
+            ServerState.Starting => new BandLine(
+                BandSeverity.Neutral, PreparingWith(facts.ElapsedSeconds), null, null,
+                BandActionKind.None),
             _ => new BandLine(BandSeverity.Neutral, Preparing, null, null, BandActionKind.None),
         };
     }

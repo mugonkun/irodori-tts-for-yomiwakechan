@@ -57,6 +57,17 @@
 #   pwsh ... -File probe/d-launch-probe.ps1 -GateOnly          (the variant gate only, no model load)
 #   pwsh ... -File probe/d-launch-probe.ps1 -RoundThreeOnly    (h/j/k/l only: no model, no server)
 #   pwsh ... -File probe/d-launch-probe.ps1 -DryRun            (print the plan, touch nothing)
+#   pwsh ... -File probe/d-launch-probe.ps1 -WizardFullRun -FreezeMeter   (E2E seat: measure the freeze)
+#
+# THE FREEZE METER (decisions 137). -FreezeMeter runs probe/freeze-meter.ps1 BESIDE the wizard leg,
+# read-only, in its own process: once a second it samples FirstRunProgressText / FirstRunPhaseText /
+# FirstRunStepTitle and MainBandStateText into a CSV and calls user32 IsHungAppWindow on the wizard
+# and main HWNDs. What it reports is the owner's acceptance line made testable (decisions 137): the
+# LONGEST stretch in which none of the THREE WIZARD lines changed WHILE A STAGE WAS WORKING (<= 5 s)
+# and the number of hung samples (0). The band is measured but never judged (it ticks a counter of
+# its own, so folding it in would make the verdict unfalsifiable), and pages that wait for a human
+# are excluded (they are static by design). It presses nothing, so it can be run by hand next to a
+# first run driven by a human as well.
 #
 # Exit code 0 = every step passed. Non-zero = the number of failed steps.
 
@@ -98,6 +109,9 @@ param(
     # the failure instead of up to the end.
     [switch]$WizardFullRun,
     [int]$WizardFullRunTimeoutSeconds = 1800,
+    # decisions 137: sample the wizard once a second while it runs and judge "did it look frozen?".
+    [switch]$FreezeMeter,
+    [double]$FreezeMaxUnchangedSeconds = 5,
     [switch]$DryRun
 )
 
@@ -1143,6 +1157,69 @@ function Get-VariantComboToken {
 # ================================================================= h. the wizard, counted in presses
 
 $script:WizardPresses = 0
+$script:FreezeMeterProc = $null
+$script:FreezeMeterLog = ''
+
+function Start-FreezeMeter {
+    <#
+      .SYNOPSIS
+        decisions 137 -- start the read-only freeze meter beside the wizard (probe/freeze-meter.ps1).
+      .DESCRIPTION
+        It runs in its own process because it must keep sampling WHILE this script waits on the
+        wizard, and it must not press anything. Its stdout is captured to a log next to the CSV; the
+        summary line ("freeze-meter: PASS  samples=..  longest_unchanged=..") is read back by
+        Stop-FreezeMeter and recorded as a step.
+    #>
+    [CmdletBinding()]
+    param([int]$Seconds = 1800)
+
+    $script:FreezeMeterProc = $null
+    $meter = Join-Path $PSScriptRoot 'freeze-meter.ps1'
+    if (-not (Test-Path -LiteralPath $meter)) {
+        Write-Host ('[freeze] the meter is missing: ' + $meter)
+        return
+    }
+    $stamp = (Get-Date).ToString('yyyyMMdd-HHmmss')
+    $csv = Join-Path $outDir ('freeze-meter-' + $stamp + '.csv')
+    $script:FreezeMeterLog = Join-Path $outDir ('freeze-meter-' + $stamp + '.log')
+    $shell = (Get-Process -Id $PID).Path
+    # **Quote the paths** (review of v2.0.1(2)): Start-Process joins an -ArgumentList array with a
+    # single space and quotes nothing, so a checkout under "C:\Users\First Last\..." would split
+    # -File and -OutCsv into pieces and start the meter against the wrong file.
+    $probeArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $meter + '"'),
+        '-Seconds', [string]$Seconds, '-OutCsv', ('"' + $csv + '"'),
+        '-MaxUnchangedSeconds', [string]$FreezeMaxUnchangedSeconds, '-StopWhenWizardCloses')
+    Write-Host ('[freeze] meter -> ' + $csv)
+    $script:FreezeMeterProc = Start-Process -FilePath $shell -ArgumentList $probeArgs -RedirectStandardOutput $script:FreezeMeterLog -NoNewWindow -PassThru
+}
+
+function Stop-FreezeMeter {
+    <#
+      .SYNOPSIS
+        Wait for the meter to finish (it stops itself when the wizard closes), then judge its summary.
+    #>
+    [CmdletBinding()]
+    param([int]$TimeoutSeconds = 60)
+
+    if ($null -eq $script:FreezeMeterProc) { return }
+    $null = $script:FreezeMeterProc.WaitForExit($TimeoutSeconds * 1000)
+    if (-not $script:FreezeMeterProc.HasExited) {
+        try { $script:FreezeMeterProc.Kill() } catch { }
+    }
+    $summary = ''
+    if (Test-Path -LiteralPath $script:FreezeMeterLog) {
+        $lines = @(Get-Content -LiteralPath $script:FreezeMeterLog |
+            Where-Object { $_ -like 'freeze-meter: PASS*' -or $_ -like 'freeze-meter: FAIL*' })
+        if ($lines.Count -gt 0) { $summary = $lines[-1] }
+    }
+    if ([string]::IsNullOrEmpty($summary)) {
+        Add-Step 'the freeze meter reported a verdict' $false ('log = ' + $script:FreezeMeterLog)
+    } else {
+        Write-Host ('[freeze] ' + $summary)
+        Add-Step 'the wizard never looked frozen (decisions 137)' ($summary -like '*PASS*') $summary
+    }
+    $script:FreezeMeterProc = $null
+}
 
 function Invoke-WizardPress {
     <#
@@ -1203,6 +1280,8 @@ function Invoke-WizardPressProbe {
         $proc = Start-Launcher -Exe $Exe -AppDir $AppTreeRoot -RuntimeRoot $RuntimeRoot -DataDir $DataDir
         $null = Get-MainWindow -Proc $proc -TimeoutSeconds 60
         $wizard = Get-DialogWindow -Proc $proc -TimeoutSeconds 30
+        # decisions 137: from here on, sample once a second in a second process (read-only).
+        if ($FreezeMeter) { Start-FreezeMeter -Seconds ($WizardFullRunTimeoutSeconds + 120) }
         $wizardId = ''
         if ($null -ne $wizard) { $wizardId = [string]$wizard.Current.AutomationId }
         Add-Step 'the wizard opens by itself when the first run was never done' (
@@ -1366,6 +1445,7 @@ function Invoke-WizardPressProbe {
     } catch {
         Add-Step 'the wizard press count runs to the end' $false $_.Exception.Message
     } finally {
+        if ($FreezeMeter) { Stop-FreezeMeter -TimeoutSeconds 60 }
         if ($null -ne $proc) {
             $strays = @(Stop-Launcher -Proc $proc -StrayCommandLinePattern @('*ywk_server*'))
             Add-Step 'the wizard run leaves nothing behind' ($strays.Count -eq 0) ('strays=' + $strays.Count)
@@ -1787,6 +1867,7 @@ if ($DryRun) {
     Write-Host ('                    app tree=' + (Join-Path $env:TEMP 'ywk-d-launch-probe-app') +
         '  (junctions to server/ licenses/ voices/, a broken copy of ledger/runtime-' + $Variant + '.json)')
     Write-Host ('                    full run=' + [bool]$WizardFullRun + '  (a full run FETCHES: E2E seat only)')
+    Write-Host ('                    freeze meter=' + [bool]$FreezeMeter + '  (decisions 137: 1 sample/s -> CSV, working stages only, longest unchanged <= ' + $FreezeMaxUnchangedSeconds + ' s, 0 hung)')
     Write-Host ('j  ledger stamp     port=' + $LedgerPort + '  data=' + $DataDir + '-ledger')
     Write-Host ('                    app tree=' + (Join-Path $env:TEMP 'ywk-d-launch-probe-app-ledger'))
     Write-Host ('k  bad python.exe   port=' + $BadPythonPort + '  data=' + $DataDir + '-badpython')
