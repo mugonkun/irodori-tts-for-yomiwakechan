@@ -904,7 +904,12 @@ public static class UiStrings
     // 利用者が設定の画面で探す札そのものが「スマート アプリ コントロール」であり、
     // 検索しても Microsoft の解説が先に出る（原則 1 の検分文の 2 段を通る）。
     // **切れとは言わない**（所有者の規則＝防護の設定を決めるのは利用者）＝
-    // ここに並ぶ文は ⑴ 事実 ⑵ その結果できないこと ⑶ 設定の在り処と、戻せないこと、だけを言う。
+    // ここに並ぶ文が言うのは ⑴ 事実 ⑵ その結果できないこと ⑶ 設定の在り処、の 3 つだけである。
+    //
+    // **可逆性には触れない**（`decisions.md` 142・司令官の補足の逐語「最近の Windows アップデートで
+    // 戻せるようになっている。」）＝1 巡目のこの節は「一度無効にすると Windows を入れ直すまで
+    // 戻せません」と書いていた。**それは誤りである**（裁定 140／141 の下書きから入った）。
+    // オンにできるのか・できないのかは Windows の版で変わるので、**こちらは 1 文字も言わない**。
 
     /// <summary>設定 › 詳細に 1 行だけ出す状態（有効）。</summary>
     public const string SmartAppControlStatusOn = "Smart App Control: 有効";
@@ -923,9 +928,8 @@ public static class UiStrings
     public const string SmartAppControlWizardNotice =
         "このパソコンでは Windows の Smart App Control が有効です。"
         + "このままダウンロードしても、このアプリが使う部品を読み込めないため、しゃべらせられません。"
-        + "Smart App Control は Windows の設定"
-        + "（Windows セキュリティ › アプリとブラウザー コントロール › スマート アプリ コントロール）で"
-        + "無効にできますが、一度無効にすると Windows を入れ直すまで元に戻せません。";
+        + "Smart App Control の設定は、Windows セキュリティ › アプリとブラウザー コントロール › "
+        + "スマート アプリ コントロール にあります。";
 
     /// <summary>帯の ⑴ 何が起きたか（<b>生の ImportError は帯に出さない</b>＝記録へ落とす）。</summary>
     public const string SmartAppControlFailedWhat = "読み上げに必要な部品が読み込めませんでした。";
@@ -937,8 +941,8 @@ public static class UiStrings
     public const string SmartAppControlFailedWhy =
         "このパソコンの Smart App Control が、"
         + "初回にダウンロードした部品（例＝_spline.cp312-win_amd64.pyd）を止めました。"
-        + "Smart App Control は Windows の設定で無効にできますが、"
-        + "一度無効にすると Windows を入れ直すまで元に戻せません。";
+        + "Smart App Control の設定は、Windows セキュリティ › アプリとブラウザー コントロール › "
+        + "スマート アプリ コントロール にあります。";
 
     /// <summary>帯の ⑶ 次の 1 手（押すと Windows の設定が開く）。</summary>
     public const string SmartAppControlOpenSettingsButton = "設定を開く";

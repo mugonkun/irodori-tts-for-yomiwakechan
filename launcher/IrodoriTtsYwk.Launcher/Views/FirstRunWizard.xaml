@@ -205,8 +205,8 @@
                    Text="{Binding ResumeText, Mode=OneWay}" />
         <!--
           Smart App Control が有効な機体だけ（decisions.md 140・v2.0.2）＝
-          ダウンロードを始める前に、落としても動かない事実と、設定の在り処と、
-          戻せないことを言う（憲章 原則 3）。**切れとは言わない。**
+          ダウンロードを始める前に、落としても動かない事実と、設定の在り処を言う（憲章 原則 3）。
+          **切れとは言わない・可逆性にも触れない**（decisions.md 142）。
         -->
         <TextBlock Margin="0,12,0,0" TextWrapping="Wrap" FontWeight="Bold" Foreground="#B00020"
                    AutomationProperties.AutomationId="FirstRunSmartAppControlText"

@@ -1068,6 +1068,61 @@ Inno の標準の確認（「本当に削除しますか」）と完了の窓は
 
 ---
 
+## §2-2 v2.0.2＝Smart App Control（`decisions.md` 140・2026-09-11・実装 1 席・Opus 5）
+
+**切符**＝司令官の手動検分（RTX 機・v2.0.1）。参照ボイスを選んで〔しゃべらせる〕と、帯に
+**生の 1 行**が出た＝「読み上げの用意の中で失敗しました。（ImportError: DLL load failed while importing
+_spline: アプリケーション制御ポリシーによってこのファイルがブロックされました。）」。Windows セキュリティ側は
+「このアプリの一部がブロックされています … `_spline.cp312-win_amd64.pyd` を発行したユーザーを確認できないため」。
+`_spline` は **scipy.signal の拡張**で、**参照 wav の再標本化で初めて import される**＝「デフォルト」の声だけを
+使っている間は通っていた。**setup と Launcher は通った**（サーバは「使えます」まで到達）＝
+**状態機械からは 1 つも見えない失敗**である。
+
+**この版で足した物（4 つ）**
+
+| # | 物 | 実物 |
+|---|---|---|
+| ⑴ | **状態の読み**（純・安い・投げない） | `Services/Security/SmartAppControl.cs`＝`HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy` の `VerifiedAndReputablePolicyState`（**1 有効／2 評価中／0 と欄無しは無効**）。読み手は口（`ISmartAppControlPolicyReader`）で差し替えられる＝試験は登録簿に触らない。**読むだけ・書かない・投げない**＝読めない機体（権限・Win10・鍵が無い）は「無効」に落ちる（**判らない回に警告を出さない**）。1 起動に 1 度だけ読んで `AppServices.SmartAppControl` が覚える |
+| ⑵ | **言い直しと畳み**（純） | `ViewModels/SmartAppControlNotice.cs`＝標識（**「アプリケーション制御ポリシー」／`blocked by your organization`／`Smart App Control`**・大小を問わない部分一致）が在る 1 行を憲章 原則 6 の 3 部品へ畳む。文は `UiStrings` が唯一の出所（`SmartAppControlWizardNotice`・`SmartAppControlFailedWhat`／`…Why`・`SmartAppControlOpenSettingsButton`・`SmartAppControlStatusOn`／`…Evaluation`／`…Note`） |
+| ⑶ | **出る面 3 つ** | ⒜ **はじめの準備の「これからすること」**（`FirstRunSmartAppControlText`・**有効な機体だけ**・**ダウンロードが始まる前**＝憲章 原則 3）⒝ **帯**（`BandActionKind.OpenSmartAppControl`＝〔設定を開く〕・`BandContext.SmartAppControlBlocked` と内部の 1 行の標識の**どちらでも**立つ・**どの状態より先に効く**＝`Ready` のまま射だけ止められる形が在る）⒞ **設定 › 詳細の状態 1 行**（`SettingsSmartAppControlText`＝有効／評価中の機体だけ・**見出しを持たない註 2 行なので 8 行は動かない**）。**帯に常時は出さない**（no nagging＝有効でも「デフォルト」の声だけなら音は出る） |
+| ⑷ | **発話テストの道** | `TryViewModel.FoldFailure`＝`SpeechRequestBuilder.DescribeError` が wrapper の `message` を括弧に入れる前に標識を見る。止められた回は 3 部品を出し、**生の 1 行は `SmartAppControlBlocked` で束ねる側へ渡って記録（`LauncherLogFile`）だけに残る**。音が出た回と起こし直した回に帯の札を下ろす |
+
+**文の錠（所有者の規則）**＝**「切ってください」と書かない。**どの面の文も言うのは 3 つだけ＝
+⑴ 有効であるという事実 ⑵ そのせいでできないこと ⑶ 設定の在り処。決めるのは利用者である。
+**可逆性には 1 文字も触れない**（`decisions.md` 142・司令官の補足「最近の Windows アップデートで
+戻せるようになっている。」）＝裁定 140／141 の下書きに在った「一度無効にすると Windows を入れ直すまで
+戻せません」は**誤りなので書かない**。1 巡目はその文を 5 面（帯・ウィザードの告知・着地頁・
+`guide.md`・リリース文の 2 箇所）に置いていたので、**5 面とも外した**＝残したのは「設定はここにあります
+（Windows セキュリティ › アプリとブラウザー コントロール › スマート アプリ コントロール）」までである。
+**試験は裏返した**＝「その綴りが出ないこと」を検める側にした（`Decision140FoldTests`・`Decision140WizardTests`）。
+**「Smart App Control」は伏せない**（憲章 §6-2 の残す語＝設定の画面の札そのもので、検索の助けになる）。
+
+**次の 1 手の行き先**＝`windowsdefender://smartapp`（**この機体の `SecHealthUI` が持つ綴りを実測して決めた**＝
+Windows 11 26200）。開けない版のために `ms-settings:windowsdefender` へ落ちる＝**押した釦が黙って何もしない形を作らない**。
+
+**利用者の文書**＝公式ページ「必要なもの」に 1 行・`docs/guide.md` の「困ったときは」に症状 1 件
+（3 部品の同じ言い方）・`docs/release-notes/v2.0.2.md`（v2.0.1 の型・「この版で直したこと」2 件）。
+
+**版**＝`v2.0.1` → `v2.0.2`（ben-e §18 の段 1 の当たり所＝`launcher/Directory.Build.props` の
+`AppDisplayVersion`・`server/ywk_server.py` の `YWK_VERSION`（**同じ字数**なので A-1 は不動）・
+契約 ⑻ の見本・`launcher/README.md` の `settings` 見本と版の名札の例・`probe/e-install-probe.ps1` の既定の setup 名・
+`.iss` と `installer-build.ps1` の註・`docs/ben-f-handoff.md` の 3 箇所）。
+
+**この回の実測**＝`dotnet build` **0 警告 0 エラー**／`dotnet test` **1,007 合格＋1 スキップ**
+（v2.0.1 の 987 から **+20**＝新設 `Decision140Tests`・削除 0）／契約テスト **372 passed**／
+`WordLintTests` 緑／台本 8 本とも構文 0 エラー・`d-launch-probe -DryRun`「nothing was touched.」／
+`build/installer-build.ps1 -All` **20 門 0 失敗 WARN 0**・**A-1 は 109 檔 34,088,381 B のまま不動**・
+A-6 `ProductVersion = v2.0.2`・exe 61,798,354 B・
+setup cuda **75,528,634 B**（`f3e9efc5…`）／radeon **75,530,189 B**（`9f9ebbd4…`）。
+**アプリは 1 度も起こしていない。**
+
+**していないこと（申し送り）**＝⑴ **署名**（裁定 139＝未署名の setup そのものが SAC に弾かれる件は
+**別の決め**であり、この版は 1 文字も触っていない）⑵ **SAC が有効な実機での実射**（この機体は
+`VerifiedAndReputablePolicyState=0`＝無効なので、告知が出る側の道は試験でしか通っていない）
+⑶ `build/out/installer/` に v2.0.1 の setup 2 本が残っている（ben-e §18 の段 3＝**版を切る回に退かす**）。
+
+---
+
 ## §3 語の棚卸し（工学側に残す／利用者側で替える）
 
 **実測（この工事の前・`launcher/IrodoriTtsYwk.Launcher` の C# の文字列リテラルのみ・註と `///` は除く）**
