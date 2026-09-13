@@ -26,6 +26,16 @@ public partial class LogView : UserControl
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+
+        // タブを開いた瞬間に末尾へ送る（裁定 153 の申し送り ⑵）＝種まきは TextBox が
+        // まだ寸法を持たない構築時に走るので、そのときの ScrollToEnd は効かない。
+        LogBox.IsVisibleChanged += (_, e) =>
+        {
+            if (e.NewValue is true)
+            {
+                LogBox.ScrollToEnd();
+            }
+        };
     }
 
     /// <summary>
