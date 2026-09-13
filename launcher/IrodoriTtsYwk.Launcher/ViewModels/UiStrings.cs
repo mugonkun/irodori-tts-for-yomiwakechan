@@ -75,7 +75,7 @@ public static class UiStrings
 
     /// <summary>報告の受け皿（<c>decisions.md</c> 131）＝画面に出るときは必ずこの 1 行。</summary>
     public const string ReportHint =
-        "うまくいかないときは、このファイルを添えて X の @yomiwakechan までお知らせください。";
+        "うまくいかないときは、ログファイルを添えて X の @yomiwakechan までお知らせください。";
 
     // ===================== 詳しい状態（StatusView.xaml）=====================
 
