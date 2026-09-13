@@ -64,6 +64,12 @@ public static class ServerEnvironment
     /// </summary>
     public const string CudaDeviceOrder = "CUDA_DEVICE_ORDER";
 
+    /// <summary>MIOpen の探索の様態（Radeon（ROCm）だけ・裁定 157）。</summary>
+    public const string MiopenFindMode = "MIOPEN_FIND_MODE";
+
+    /// <summary><c>2</c>＝FAST＝find-db に無ければ即時モード（探索しない）。</summary>
+    public const string MiopenFindModeFast = "2";
+
     /// <summary><see cref="CudaDeviceOrder"/> に載せる値。</summary>
     public const string PciBusIdOrder = "PCI_BUS_ID";
 
@@ -138,6 +144,14 @@ public static class ServerEnvironment
         if (RuntimeVariants.UsesGpu(variant))
         {
             env[CudaDeviceOrder] = PciBusIdOrder;
+        }
+
+        // Radeon（ROCm）だけ＝MIOpen の「初見の形ごとのカーネル探索」を止める（裁定 157・司令官の指示 2026-09-13）。
+        // 探索は decode_latent＋透かしで 1 発 6〜8 秒（出力の長さが初めての回ごと）で、FAST（即時モード）にすると
+        // 初回 0.55〜2.89 秒・定常は同等（本機の実測）。CUDA 変種には効かない環境変数なので載せない。
+        if (RuntimeVariants.IsRocm(variant))
+        {
+            env[MiopenFindMode] = MiopenFindModeFast;
         }
 
         // 精度＝既定は device 連動（裁定 7）に任せて<b>載せない</b>。

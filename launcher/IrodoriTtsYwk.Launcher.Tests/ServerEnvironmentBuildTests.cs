@@ -81,6 +81,24 @@ public sealed class ServerEnvironmentBuildTests
         Assert.Equal("runtime-" + variant, RuntimeVariants.LedgerName(variant));
     }
 
+    [Theory]
+    [InlineData(RuntimeVariants.RocmGfx1151, true)]
+    [InlineData(RuntimeVariants.Cu130, false)]
+    [InlineData(RuntimeVariants.Cu126, false)]
+    [InlineData(RuntimeVariants.Cpu, false)]
+    public void MIOpenの探索はRadeon変種だけFASTにする(string variant, bool expected)
+    {
+        // 裁定 157＝初見の出力長ごとの MIOpen 探索（decode_latent＋透かしで 6〜8 秒）を止める。
+        // CUDA・CPU には効かない環境変数なので載せない（二重定義も残骸も作らない）。
+        var env = ServerEnvironment.Build(Settings(variant), Paths(), gpuIndex: RuntimeVariants.IsCpu(variant) ? null : 0);
+
+        Assert.Equal(expected, env.ContainsKey(ServerEnvironment.MiopenFindMode));
+        if (expected)
+        {
+            Assert.Equal("2", env[ServerEnvironment.MiopenFindMode]);
+        }
+    }
+
     [Fact]
     public void CPU変種のdeviceはcpuになる()
     {

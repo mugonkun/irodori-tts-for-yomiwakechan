@@ -27,7 +27,7 @@ Python も pip も、黒い画面も要りません。同梱の 12 人の声か�
   一度すませば、次からはすぐ使えます。
 - **必要なもの**＝Windows 11 / 10（64 ビット）・NVIDIA か AMD のグラフィックス・空き 12 GB ほど・
   はじめの準備のときだけネット接続。入れ終わったあとにこのアプリが使うのは約 8 GB です。
-- この版の案内＝[`docs/release-notes/v2.0.5.md`](docs/release-notes/v2.0.5.md)。
+- この版の案内＝[`docs/release-notes/v2.0.6.md`](docs/release-notes/v2.0.6.md)。
 
 ---
 
