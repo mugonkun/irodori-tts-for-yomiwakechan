@@ -906,3 +906,52 @@ powershell -File build\installer-build.ps1 -All      # 20 門 0 失敗 WARN 0
 `Compressing:` 行は 111 → **110**・B-2 は 75,505,876 B＝72.01 MiB で帯の中）。
 
 **アプリは 1 度も起こしていない**（実射は段 H）。
+
+## 16. GPU メモリのメーター・ログのタブ・語句の差し替え（2026-09-13・司令官の指示）
+
+司令官の指示（2026-09-13）＝⑴ RTX（CUDA）・Radeon（ROCm）の両版で **GPU メモリの使用状況をメーターで**
+（帯の「発話待機中」の下・1 行占有・左右に伸びる・全体／使用中／このアプリの占有が読める）
+⑵ 檔に加えて **ログのタブ**（発話テスト・話者と参照ファイル・設定の並び）でその場で流れを追える
+⑶ 語句＝「しゃべらせる」→**読み上げ**・「はやい／きれい」→**低品質（高速）／高品質**・
+「話し方の指示」→**キャプション（演技指示）**・タブ「声」→**話者と参照ファイル**・「使えます」→**発話待機中**。
+ワークフローは使わず、Fable が直に直した（司令官の指定）。
+
+### 16-1 メーター（`ViewModels/GpuMeter.cs`・純関数）
+
+- 元の数は **OS の計数**（裁定 110＝`OsGpuMemoryRow`＝PDH の `GPU Process Memory`／`GPU Adapter Memory` と
+  DXGI の `DedicatedVideoMemory`）＝torch の口に依らないので **両版で同じ道**。共有メモリは入らない。
+- 棒は左から **このアプリ（濃い青）／ほかのプログラム（淡い青）／空き（灰）** の 3 区画＝3 列の星幅が割合そのもの
+  （`Views/StarLengthConverter.cs`）。脇の 1 行＝`このアプリ x／使用中 y（p%）／全体 z`。
+- 止まっている・計数が読めない回は棒が空で文は「—」（推測の数を出さない）。総量だけ読めない回は数だけ出す。
+- GPU が 2 枚以上なら **このアプリがいちばん載っている 1 枚** を選び、名前を頭に立てる。
+- 見張りの標本（2 秒ごと）と同じ回の計数を使うので、新しい問い合わせは 1 本も足していない。
+
+### 16-2 ログのタブ（`Views/LogView.xaml`・束縛先は `StatusViewModel`）
+
+- 檔（`logs\launcher-<日>.log`）に落とすのと同じ **時刻つきの 1 行** を `FullLogCapacity`（2000 行）の環に持つ
+  （`FullLogLines`／`FullLogText`）。帯の末尾 20 行（`LogTail`）とは別の箱。
+- **2 秒ごとの見張りの行だけは省く**（檔には残る）＝入れると 2000 行が 1 時間ちょっとで埋まる。
+- 窓は `LineLogged` を聞いて末尾に足すだけ（2000 行の塊を毎行組み直さない）。上限を超えたら VM の環で置き直す。
+- 〔画面を空にする〕は画面の写しだけを空にする（檔は消さない）。〔ログを開く〕は主窓の 1 本に繋ぐ。
+
+### 16-3 UIA の名前（§7-3 への追加）
+
+| 画面 | 足した id |
+|---|---|
+| 帯 | `MainGpuMeter`・`MainGpuMeterBar`・`MainGpuMeterText` |
+| 主窓 | `TabLog` |
+| ログ | `LogView`・`LogTabBox`・`LogClearButton`・`LogOpenLogButton` |
+
+既存の id は 1 つも改名・削除していない。無人検分の錨（`probe/d-launch-probe.ps1` の `$T.Ready`／`$T.Warming`）は
+「使えます」→「発話待機中」に差し替えた。
+
+### 16-4 検分（この機体＝Radeon（ROCm）機・2026-09-13）
+
+```powershell
+dotnet test launcher -c Debug --nologo    # 1029 合格・1 skip・1 失敗（総数 1031・新設 12 本）
+```
+
+残る 1 失敗＝`LegacyDataMigrationTests.実際に移すと声と設定が版の樹へ移る`（Rename を期待して Copy）は
+**この機体に Radeon 版が入っている**ことによる（`OtherFlavorInstalled` が登録簿を読む＝環境依存・今回の差分と無関係）。
+`docs\guide.md` の語句も揃えた。`site\index.html` と `README.md`（着地頁）は **公開中の v2.0.3 の画面のまま**＝
+次の版を公開する回に揃える。**窓は立てていない**（走っている個体を止めない＝実射は次の回）。

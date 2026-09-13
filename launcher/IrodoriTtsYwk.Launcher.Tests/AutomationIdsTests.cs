@@ -387,7 +387,7 @@ public sealed class AutomationIdsTests
 
         Assert.Equal(
             [
-                "AboutView.xaml", "FirstRunWizard.xaml", "MainWindow.xaml", "SettingsView.xaml",
+                "AboutView.xaml", "FirstRunWizard.xaml", "LogView.xaml", "MainWindow.xaml", "SettingsView.xaml",
                 "StatusView.xaml", "TryView.xaml", "VoicesView.xaml",
             ],
             names);

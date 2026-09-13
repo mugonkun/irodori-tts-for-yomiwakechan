@@ -1,0 +1,35 @@
+<UserControl x:Class="IrodoriTtsYwk.Launcher.Views.LogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:IrodoriTtsYwk.Launcher.ViewModels"
+             AutomationProperties.AutomationId="LogView">
+  <!--
+    ログのタブ（新設・司令官の指示 2026-09-13）＝檔（logs\launcher-<日>.log）に
+    落ちるのと同じ行を、画面でもそのまま流す。束縛先は ViewModels/StatusViewModel
+    （FullLogLines／LineLogged）。
+
+    **中身は束縛で流さない**＝2000 行の塊を 1 行ごとに組み直して TextBox に載せ直すと、
+    起動時の burst（uvicorn の数十行）で重くなる。窓が LineLogged を聞いて末尾に足すだけ
+    （LogView.xaml.cs）。タブを開いたときの種まきは FullLogLines から 1 度だけ。
+    文言は ViewModels/UiStrings.cs が唯一の出所である。
+  -->
+  <DockPanel Margin="12">
+    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+        <Button Padding="10,3" Margin="8,0,0,0"
+                AutomationProperties.AutomationId="LogClearButton"
+                Content="{x:Static vm:UiStrings.LogClearButton}" Click="OnClearClick" />
+        <Button x:Name="OpenLogButton" Padding="10,3" Margin="8,0,0,0"
+                AutomationProperties.AutomationId="LogOpenLogButton"
+                Content="{x:Static vm:UiStrings.OpenLogButton}" Click="OnOpenLogClick" />
+      </StackPanel>
+      <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" Foreground="#666666" FontSize="11"
+                 Text="{x:Static vm:UiStrings.LogTabNote}" />
+    </DockPanel>
+    <TextBox x:Name="LogBox"
+             AutomationProperties.AutomationId="LogTabBox"
+             IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+             FontFamily="Consolas, MS Gothic" FontSize="12" />
+  </DockPanel>
+</UserControl>

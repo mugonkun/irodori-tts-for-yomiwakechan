@@ -210,11 +210,11 @@ public static class BandText
             ? PreparingSecondsHead + value.ToString(CultureInfo.InvariantCulture) + PreparingSecondsTail
             : Preparing;
 
-    /// <summary>使えます（緑）。</summary>
-    public const string Ready = "使えます";
+    /// <summary>発話待機中（緑・旧「使えます」＝司令官の指示 2026-09-13）。</summary>
+    public const string Ready = "発話待機中";
 
-    /// <summary>使えます（声を先に用意している間）。</summary>
-    public const string ReadyWarming = "使えます（声を準備しています）";
+    /// <summary>発話待機中（声を先に用意している間）。</summary>
+    public const string ReadyWarming = "発話待機中（声を準備しています）";
 
     /// <summary>利用者が止めた（灰）。</summary>
     public const string StoppedByUser = "止まっています";
@@ -467,7 +467,7 @@ public static class BandText
             return Fail(
                 "グラフィックスを確かめられませんでした。",
                 "確認の途中で止まりました。確かめないまま動かすと、"
-                    + "最初にしゃべらせたときにアプリごと終わってしまうことがあります。",
+                    + "最初に読み上げたときにアプリごと終わってしまうことがあります。",
                 "もう一度動かす",
                 BandActionKind.Start);
         }

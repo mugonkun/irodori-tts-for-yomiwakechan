@@ -439,7 +439,7 @@ public sealed class RoundTwoVoicesTests : IDisposable
 
         Assert.False(mp3.CanPreview);
         Assert.Contains("MP3", mp3.PreviewBlockedReason!, StringComparison.Ordinal);
-        Assert.Contains("追加としゃべらせるには使えます", mp3.PreviewBlockedReason!, StringComparison.Ordinal);
+        Assert.Contains("追加と読み上げには使えます", mp3.PreviewBlockedReason!, StringComparison.Ordinal);
 
         Assert.False(noRef.CanPreview);
         Assert.Contains("試聴できる音がありません", noRef.PreviewBlockedReason!, StringComparison.Ordinal);
@@ -452,10 +452,10 @@ public sealed class RoundTwoVoicesTests : IDisposable
         vm.Selected = new VoiceRow("い", "い", "ywk-bbbb.mp3", false, false, false, false, null);
 
         Assert.False(vm.PreviewCommand.CanExecute(null));
-        Assert.Contains("追加としゃべらせるには使えます", vm.PreviewBlockedText, StringComparison.Ordinal);
+        Assert.Contains("追加と読み上げには使えます", vm.PreviewBlockedText, StringComparison.Ordinal);
 
         vm.Preview();
-        Assert.Contains("追加としゃべらせるには使えます", vm.Message, StringComparison.Ordinal);
+        Assert.Contains("追加と読み上げには使えます", vm.Message, StringComparison.Ordinal);
     }
 
     [Fact]

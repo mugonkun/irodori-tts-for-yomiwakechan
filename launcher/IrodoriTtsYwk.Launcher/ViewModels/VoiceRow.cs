@@ -116,7 +116,7 @@ public sealed record VoiceRow(
 
             return "「" + DisplayName + "」の元の音声は "
                 + System.IO.Path.GetExtension(FileName).TrimStart('.').ToUpperInvariant()
-                + " なので試聴できません（追加としゃべらせるには使えます）。";
+                + " なので試聴できません（追加と読み上げには使えます）。";
         }
     }
 }

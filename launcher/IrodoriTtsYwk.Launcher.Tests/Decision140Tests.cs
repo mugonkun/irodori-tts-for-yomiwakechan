@@ -366,7 +366,7 @@ public sealed class Decision140WizardTests : IDisposable
 
         // ⑴ 事実 ⑵ 落としても動かないことがあること ⑶ 設定の在り処、の 3 つだけ。
         Assert.Contains("スマート アプリ コントロール", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
-        Assert.Contains("しゃべらせられません", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
+        Assert.Contains("読み上げできません", vm.SmartAppControlNoticeText, StringComparison.Ordinal);
 
         // **「読み込めません」とは言い切らない**（`decisions.md` 145／146＝評判（ISG）の揺れで
         // 同一ハッシュが block → allow に反転する＝許可の間は読み込めて鳴る）。

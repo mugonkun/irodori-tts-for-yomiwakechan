@@ -63,10 +63,10 @@
         <!-- 品質の 2 択＝既存の 10／40 の釦をそのまま読み替える（id は 1 字も替えない）。 -->
         <TextBlock Text="{x:Static vm:UiStrings.TryQualityLabel}" FontWeight="Bold" />
         <StackPanel Orientation="Horizontal" Margin="0,2,0,10">
-          <Button Content="{x:Static vm:UiStrings.TryQualityFast}" Width="72" Padding="0,3" Margin="0,0,6,0"
+          <Button Content="{x:Static vm:UiStrings.TryQualityFast}" MinWidth="72" Padding="10,3" Margin="0,0,6,0"
                   AutomationProperties.AutomationId="TryStepsPreset10"
                   Click="OnSteps10Click" />
-          <Button Content="{x:Static vm:UiStrings.TryQualityFine}" Width="72" Padding="0,3"
+          <Button Content="{x:Static vm:UiStrings.TryQualityFine}" MinWidth="72" Padding="10,3"
                   AutomationProperties.AutomationId="TryStepsPreset40"
                   Click="OnSteps40Click" />
         </StackPanel>

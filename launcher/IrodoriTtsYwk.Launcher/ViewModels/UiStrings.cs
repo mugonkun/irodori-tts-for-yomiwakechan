@@ -26,8 +26,8 @@ public static class UiStrings
     /// <summary>タブ「発話テスト」（<c>decisions.md</c> 116 が名指しで決めた札＝<b>据え置き</b>）。</summary>
     public const string TabTry = "発話テスト";
 
-    /// <summary>タブ「声」（旧「話者」）。</summary>
-    public const string TabVoices = "声";
+    /// <summary>タブ「話者と参照ファイル」（旧「声」←旧「話者」・司令官の指示 2026-09-13）。</summary>
+    public const string TabVoices = "話者と参照ファイル";
 
     /// <summary>タブ「設定」。</summary>
     public const string TabSettings = "設定";
@@ -46,6 +46,32 @@ public static class UiStrings
 
     /// <summary>記録を在り処ごと開く（帯・設定 › 詳細・詳しい状態の 3 面で同じ札）。</summary>
     public const string OpenLogButton = "ログを開く";
+
+    /// <summary>タブ「ログ」（新設・司令官の指示 2026-09-13＝檔に加えて画面でも流れを追える）。</summary>
+    public const string TabLog = "ログ";
+
+    /// <summary>
+    /// ログのタブの頭の 1 行＝檔と同じ行がそのまま流れる（2 秒ごとの見張りの行だけは省く）。
+    /// </summary>
+    public const string LogTabNote =
+        "ここには、記録のファイルと同じ行がそのまま流れます（2 秒ごとの見張りの行は省きます）。";
+
+    /// <summary>ログのタブ＝画面の写しを空にする（檔は消さない）。</summary>
+    public const string LogClearButton = "画面を空にする";
+
+    // ===================== GPU メモリのメーター（帯の下・MainWindow.xaml）=====================
+
+    /// <summary>メーターの札（詳しい状態の欄と同じ語）。</summary>
+    public const string GpuMeterLabel = "GPU メモリ";
+
+    /// <summary>棒の左の区画＝このアプリ（TTS のプロセス）の占有。</summary>
+    public const string GpuMeterApp = "このアプリ";
+
+    /// <summary>棒の左 2 区画の合計＝その GPU の使用中（ほかのプログラム込み）。</summary>
+    public const string GpuMeterUsed = "使用中";
+
+    /// <summary>棒の全長＝その GPU の専用メモリの総量。</summary>
+    public const string GpuMeterTotal = "全体";
 
     /// <summary>報告の受け皿（<c>decisions.md</c> 131）＝画面に出るときは必ずこの 1 行。</summary>
     public const string ReportHint =
@@ -136,8 +162,8 @@ public static class UiStrings
 
     // ===================== 発話テスト（TryView.xaml）=====================
 
-    /// <summary>左の欄の札（旧「本文」）。</summary>
-    public const string TryInputLabel = "しゃべらせる文";
+    /// <summary>左の欄の札（旧「しゃべらせる文」←旧「本文」）。</summary>
+    public const string TryInputLabel = "読み上げる文";
 
     /// <summary>声の選択（旧「話者」）。</summary>
     public const string TryVoiceLabel = "声";
@@ -145,14 +171,14 @@ public static class UiStrings
     /// <summary>品質の 2 択（旧「サンプリング歩数」）。</summary>
     public const string TryQualityLabel = "品質";
 
-    /// <summary>品質＝はやい（旧 釦「10」）。</summary>
-    public const string TryQualityFast = "はやい";
+    /// <summary>品質＝低品質（高速）（旧「はやい」←旧 釦「10」）。</summary>
+    public const string TryQualityFast = "低品質（高速）";
 
-    /// <summary>品質＝きれい（旧 釦「40」）。</summary>
-    public const string TryQualityFine = "きれい";
+    /// <summary>品質＝高品質（旧「きれい」←旧 釦「40」）。</summary>
+    public const string TryQualityFine = "高品質";
 
-    /// <summary>話し方の指示（旧「演技指示（caption・空＝既定）」）。</summary>
-    public const string TryCaptionLabel = "話し方の指示（任意・例：明るく／落ち着いて）";
+    /// <summary>キャプション（演技指示）（旧「話し方の指示」←旧「演技指示（caption・空＝既定）」）。</summary>
+    public const string TryCaptionLabel = "キャプション（演技指示・任意・例：明るく／落ち着いて）";
 
     /// <summary>速さ（旧「読み速さ（0.25〜4.0・空＝既定）」）。</summary>
     public const string TrySpeedLabel = "速さ（1.0 がふつう）";
@@ -172,8 +198,8 @@ public static class UiStrings
     /// <summary>詳細の中＝乱数の種（札は据え置き）。</summary>
     public const string TrySeedLabel = "乱数の種（空＝毎回変わる）";
 
-    /// <summary>撃つ釦（<c>decisions.md</c> 130 Q4）。</summary>
-    public const string TrySynthesizeButton = "しゃべらせる";
+    /// <summary>撃つ釦（<c>decisions.md</c> 130 Q4・旧「しゃべらせる」→「読み上げ」＝司令官の指示 2026-09-13）。</summary>
+    public const string TrySynthesizeButton = "読み上げ";
 
     /// <summary>直前の音をもう一度（旧「もう一度再生」）。</summary>
     public const string TryReplayButton = "もう一度";
@@ -222,7 +248,7 @@ public static class UiStrings
     public const string VoicesNameLabel = "② 名前（日本語で構いません）";
 
     /// <summary>③ の札（旧「演技指示の既定（任意）」）。</summary>
-    public const string VoicesCaptionLabel = "話し方の指示（任意・例：明るく元気に）";
+    public const string VoicesCaptionLabel = "キャプション（演技指示・任意・例：明るく元気に）";
 
     /// <summary>追加の釦（旧「この内容で追加する」）。</summary>
     public const string VoicesAddButton = "この声を追加する";
@@ -257,7 +283,7 @@ public static class UiStrings
     public const string SettingsWarmup = "開いたときに、よく使う声を先に準備しておく";
 
     /// <summary>⑵ の註（旧「暖機の最中でも合成はできます（…）」）。</summary>
-    public const string SettingsWarmupNote = "準備中でも、しゃべらせられます。";
+    public const string SettingsWarmupNote = "準備中でも、読み上げできます。";
 
     /// <summary>ふだんの設定 ⑶＝声のファイルの場所。</summary>
     public const string SettingsVoicesDirLabel = "声のファイルの場所";
@@ -376,7 +402,7 @@ public static class UiStrings
     public const string WizardUacBody =
         "Microsoft の部品を 1 つ入れます。"
         + "Windows の許可の窓が 1 度出るので「はい」を押してください。\n"
-        + "入れないと、しゃべらせられないことがあります。";
+        + "入れないと、読み上げできないことがあります。";
 
     /// <summary>その窓の題。</summary>
     public const string WizardUacCaption = "Windows の許可について";
@@ -428,7 +454,7 @@ public static class UiStrings
     public const string SeeLog = " 詳しくは〔ログを開く〕から記録をご覧ください。";
 
     /// <summary>撃てないときの既定の 1 行。</summary>
-    public const string TryCannotSpeak = "しゃべらせられません。";
+    public const string TryCannotSpeak = "読み上げできません。";
 
     /// <summary>まだ準備が終わっていない（<b>釦の名を文の中で呼ばない</b>＝待てば済む）。</summary>
     public const string TryNotReady = "まだ準備ができていません。準備が終わるまでお待ちください。";
@@ -452,7 +478,7 @@ public static class UiStrings
     public const string TryServerDown = "読み上げの用意が止まりました。";
 
     /// <summary>保存する音がまだ無い。</summary>
-    public const string TryNothingToSave = "保存する音がありません。先に〔しゃべらせる〕を押してください。";
+    public const string TryNothingToSave = "保存する音がありません。先に〔読み上げ〕を押してください。";
 
     /// <summary>保存した。</summary>
     public const string TrySaved = "保存しました。";
@@ -741,7 +767,7 @@ public static class UiStrings
 
     /// <summary>同・後半（ドライバの版の数字は残す＝憲章 §6-2）。</summary>
     public const string GateUnmeasuredDriverTail =
-        " は、まだ動作を確かめていない版です。しゃべらせられますが、うまく動かないときは"
+        " は、まだ動作を確かめていない版です。読み上げできますが、うまく動かないときは"
         + SwitchInSettings + "。";
 
     // ===================== はじめの準備（FirstRunViewModel）=====================
@@ -943,7 +969,7 @@ public static class UiStrings
     /// </summary>
     public const string SmartAppControlStatusNoteOn =
         "有効なパソコンでは、このアプリが使う部品を読み込めないことがあります。"
-        + "読み込めないと、しゃべらせられません。";
+        + "読み込めないと、読み上げできません。";
 
     /// <summary>
     /// 同・評価中（Windows がまだ有効にするか決めていない＝
@@ -959,7 +985,7 @@ public static class UiStrings
     public const string SmartAppControlWizardNotice =
         "このパソコンでは Windows のスマート アプリ コントロールが有効です。"
         + "このままダウンロードしても、このアプリが使う部品を読み込めないことがあります。"
-        + "読み込めないと、しゃべらせられません。"
+        + "読み込めないと、読み上げできません。"
         + "スマート アプリ コントロールの設定は、Windows セキュリティ → アプリとブラウザー コントロール → "
         + "スマート アプリ コントロール にあります。";
 

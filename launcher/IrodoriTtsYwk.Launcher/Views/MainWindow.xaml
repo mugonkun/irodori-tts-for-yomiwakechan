@@ -14,7 +14,8 @@
     足して差し替える＝裁定 109／v2.0 段 F-1（樹が読めないときは RTX（CUDA）と名乗る＝
     DetectFrom は投げない）。
 
-    主窓＝**タブ 3 枚（発話テスト・話者・設定）＋歯車の層**（v2.0 段 A・v2-spec.md §2-0）。
+    主窓＝**タブ 4 枚（発話テスト・話者と参照ファイル・設定・ログ）＋歯車の層**（v2.0 段 A・v2-spec.md §2-0・
+    ログのタブと帯の下の GPU メモリのメーターは司令官の指示 2026-09-13 で足した）。
     「状態」と「このアプリについて」は**要素ごと歯車の層（MainDetailOverlay）へ移した**＝
     AutomationId（TabStatus／TabAbout）は 1 字も変えない（無人検分の錨）。
     起動／停止の帯は廃し、3 釦は設定 › 詳細へ**要素ごと移した**（MainStartButton／MainStopButton／
@@ -25,6 +26,8 @@
   -->
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    <!-- GPU メモリのメーター＝割合を Grid の星幅に読み替える（区画の幅は WPF が割る）。 -->
+    <views:StarLengthConverter x:Key="Star" />
 
     <!--
       帯の丸（v2-spec.md §2-1）＝灰／緑／赤の 3 色だけ。色そのものはここに置き、
@@ -87,6 +90,7 @@
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Ellipse Grid.Row="0" Grid.Column="0" Style="{StaticResource BandDot}" />
@@ -127,11 +131,47 @@
                    Visibility="{Binding Status.HasBandReason, Converter={StaticResource BoolToVis}}" />
 
         <!--
+          GPU メモリのメーター（司令官の指示 2026-09-13）＝帯の名乗りの下に **1 行占有・左右に伸びる**。
+          リソース モニターの棒と同じ読み方＝左から このアプリ（濃）／ほかのプログラム（淡）／空き（灰）。
+          3 列の星幅が割合そのもの（StatusViewModel.GpuMeter＝OS の計数・裁定 110＝
+          RTX（CUDA）でも Radeon（ROCm）でも同じ道）。数が読めない回は棒が空で文は「—」。
+        -->
+        <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7" Margin="0,8,0,0"
+              AutomationProperties.AutomationId="MainGpuMeter">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#555555"
+                     Text="{x:Static vm:UiStrings.GpuMeterLabel}" />
+          <Border Grid.Column="1" Height="14" VerticalAlignment="Center"
+                  BorderBrush="#BDBDBD" BorderThickness="1" Background="#EEEEEE"
+                  SnapsToDevicePixels="True"
+                  AutomationProperties.AutomationId="MainGpuMeterBar"
+                  ToolTip="{Binding Status.GpuMeter.Text, Mode=OneWay}">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{Binding Status.GpuMeter.AppFraction, Mode=OneWay, Converter={StaticResource Star}}" />
+                <ColumnDefinition Width="{Binding Status.GpuMeter.OthersFraction, Mode=OneWay, Converter={StaticResource Star}}" />
+                <ColumnDefinition Width="{Binding Status.GpuMeter.FreeFraction, Mode=OneWay, Converter={StaticResource Star}}" />
+              </Grid.ColumnDefinitions>
+              <Rectangle Grid.Column="0" Fill="#1E88E5" />
+              <Rectangle Grid.Column="1" Fill="#90CAF9" />
+              <Rectangle Grid.Column="2" Fill="Transparent" />
+            </Grid>
+          </Border>
+          <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="10,0,0,0"
+                     AutomationProperties.AutomationId="MainGpuMeterText"
+                     Text="{Binding Status.GpuMeter.Text, Mode=OneWay}" />
+        </Grid>
+
+        <!--
           報告の受け皿（裁定 131・v2-copy.md §3-1 の逐語）＝〔ログを開く〕の脇に置く薄字 1 行。
           **釦と一緒に畳む**＝檔が無い回は釦ごと出さないので、この 1 行も一緒に消える
           （釦の Visibility は窓が檔の在否で決める＝MainWindow.xaml.cs の RefreshLogButton）。
         -->
-        <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7" Margin="0,4,0,0"
+        <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="7" Margin="0,4,0,0"
                    HorizontalAlignment="Right" TextWrapping="Wrap"
                    FontSize="11" Foreground="#666666"
                    Text="{x:Static vm:UiStrings.ReportHint}"
@@ -156,6 +196,10 @@
         </TabItem>
         <TabItem x:Name="SettingsTab" Header="{x:Static vm:UiStrings.TabSettings}" AutomationProperties.AutomationId="TabSettings">
           <views:SettingsView x:Name="SettingsPage" DataContext="{Binding Settings}" />
+        </TabItem>
+        <!-- ログ（新設・司令官の指示 2026-09-13）＝檔と同じ行がその場で流れる。束縛先は Status。 -->
+        <TabItem Header="{x:Static vm:UiStrings.TabLog}" AutomationProperties.AutomationId="TabLog">
+          <views:LogView x:Name="LogPage" DataContext="{Binding Status}" />
         </TabItem>
       </TabControl>
 

@@ -96,6 +96,7 @@ public partial class MainWindow : Window
         // v2.0 段 C＝設定 › ふだんの 4 つと このアプリについて の 2 釦。
         // **開ける仕事は窓が 1 箇所で持つ**（在り処ごと開く 1 本を 3 度書かない）。
         SettingsPage.OpenLogRequested += (_, _) => OpenLog();
+        LogPage.OpenLogRequested += (_, _) => OpenLog();
         SettingsPage.OpenFolderRequested += (_, path) => OpenFolder(path);
         AboutPage.GuideRequested += (_, _) => OpenGuide();
 

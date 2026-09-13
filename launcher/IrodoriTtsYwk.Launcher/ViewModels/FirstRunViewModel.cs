@@ -513,7 +513,7 @@ public sealed class FirstRunViewModel : ObservableObject
         {
             FirstRunStep.Notices => "次へ",
             FirstRunStep.Variant => "準備を始める",
-            FirstRunStep.Done => "しゃべらせてみる",
+            FirstRunStep.Done => "読み上げてみる",
             _ => "次へ",
         };
 
@@ -927,7 +927,7 @@ public sealed class FirstRunViewModel : ObservableObject
 
     /// <summary>完了の本文（`v2-copy.md` §2 完了）。</summary>
     public const string DoneLine =
-        "さっそく、ひとことしゃべらせてみましょう。\n"
+        "さっそく、ひとこと読み上げてみましょう。\n"
         + "読み分けちゃん2 で使うときは、このアプリを開いたままにしてください"
         + "（閉じると読み上げも止まります）。";
 

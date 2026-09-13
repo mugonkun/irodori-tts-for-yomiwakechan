@@ -28,6 +28,12 @@ public sealed class StatusViewModel : ObservableObject
 {
     private readonly LogTail _log = new(LogTail.DefaultCapacity);
 
+    /// <summary>
+    /// ログのタブに出す<b>長い環</b>（司令官の指示 2026-09-13）＝檔と同じ形（時刻つき）の行を
+    /// <see cref="FullLogCapacity"/> 行まで持つ。末尾 20 行の帯（<see cref="_log"/>）とは別の箱。
+    /// </summary>
+    private readonly Queue<string> _fullLog = new();
+
     private ServerState _state = ServerState.Stopped;
     private string? _reason;
     private string _gpuText = UiText.Missing;
@@ -57,6 +63,7 @@ public sealed class StatusViewModel : ObservableObject
     private LauncherSettings? _desired;
     private RunningSettings? _running;
     private MemoryStatus? _memory;
+    private GpuMeter _gpuMeter = GpuMeter.Empty;
 
     /// <summary>OS の GPU 計数の行（裁定 110＝見張りが同じ回に採った物）。</summary>
     private IReadOnlyList<OsGpuMemoryRow> _osGpuRows = [];
@@ -527,6 +534,17 @@ public sealed class StatusViewModel : ObservableObject
     }
 
     /// <summary>
+    /// 帯の下の GPU メモリのメーター（司令官の指示 2026-09-13）＝OS の計数
+    /// （<see cref="OsGpuMemoryRow"/>・裁定 110）から <see cref="GpuMeter.Describe"/> が組む。
+    /// 止まっている・読めない回は <see cref="GpuMeter.Empty"/>（棒は空・文は「—」）。
+    /// </summary>
+    public GpuMeter GpuMeter
+    {
+        get => _gpuMeter;
+        private set => SetProperty(ref _gpuMeter, value);
+    }
+
+    /// <summary>
     /// 参照ボイスの消費メモリ（裁定 67 ⑵・low 13）＝<b>1 名あたりが主役</b>で、
     /// 全員分は「全部を同時に載せたときの上限」として括弧に落とす。
     /// </summary>
@@ -836,6 +854,7 @@ public sealed class StatusViewModel : ObservableObject
     {
         MemorySupported = _memory is not null;
         MemoryText = DescribeMemory(_memory, _serverAnswered, _osGpuRows);
+        GpuMeter = GpuMeter.Describe(_osGpuRows);
 
         var on = _running?.PrecomputeOnStart
             ?? _desired?.EffectivePrecomputeOnStart()
@@ -1013,6 +1032,7 @@ public sealed class StatusViewModel : ObservableObject
     {
         _log.Append(line);
         LogText = _log.Text;
+        AppendFullLog(line);
 
         if (LogSink is not { } sink || string.IsNullOrWhiteSpace(line))
         {
@@ -1035,6 +1055,57 @@ public sealed class StatusViewModel : ObservableObject
     {
         _log.Clear();
         LogText = string.Empty;
+    }
+
+    // ===================== ログのタブ（司令官の指示 2026-09-13）=====================
+
+    /// <summary>ログのタブが持つ上限の行数（超えたら古い方から捨てる＝常駐でも伸び続けない）。</summary>
+    public const int FullLogCapacity = 2000;
+
+    /// <summary>時計（試験が差す）。既定＝端末の現地時刻＝檔の書き手と同じ。</summary>
+    public Func<DateTimeOffset> Clock { get; set; } = static () => DateTimeOffset.Now;
+
+    /// <summary>
+    /// ログのタブへ 1 行足したときに上がる（<b>時刻つきの 1 行</b>＝檔と同じ形）。
+    /// 窓はこれを聞いて末尾に足すだけ＝2000 行の塊を毎回組み直さない。
+    /// </summary>
+    public event EventHandler<string>? LineLogged;
+
+    /// <summary>ログのタブの中身（古い行が上・<see cref="FullLogCapacity"/> 行まで）。</summary>
+    public string FullLogText => string.Join(Environment.NewLine, _fullLog);
+
+    /// <summary>ログのタブの行（試験と、タブが開いたときの種まき用）。</summary>
+    public IReadOnlyList<string> FullLogLines => _fullLog.ToArray();
+
+    /// <summary>ログのタブの写しを空にする（檔は消さない）。</summary>
+    public void ClearFullLog()
+    {
+        _fullLog.Clear();
+        RaisePropertyChanged(nameof(FullLogText));
+    }
+
+    /// <summary>
+    /// 檔に落とすのと同じ 1 行を、長い環にも足す。<b>見張りの足音は入れない</b>
+    /// （<see cref="ServerLogParser.IsLauncherPollNoise"/>＝2 秒ごとの 1 行で 2000 行が
+    /// 1 時間ちょっとで埋まる）。長い本文は檔と同じく畳む（<see cref="ServerLogParser.ForLog"/>）。
+    /// </summary>
+    private void AppendFullLog(string? line)
+    {
+        if (string.IsNullOrWhiteSpace(line) || ServerLogParser.IsLauncherPollNoise(line))
+        {
+            return;
+        }
+
+        var stamped = Services.Logging.LauncherLogFile.FormatLine(
+            Clock(), ServerLogParser.ForLog(line.Trim()));
+        _fullLog.Enqueue(stamped);
+        while (_fullLog.Count > FullLogCapacity)
+        {
+            _fullLog.Dequeue();
+        }
+
+        RaisePropertyChanged(nameof(FullLogText));
+        LineLogged?.Invoke(this, stamped);
     }
 
     /// <summary>

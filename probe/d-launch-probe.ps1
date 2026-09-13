@@ -144,8 +144,8 @@ $T = [ordered]@{
     #   Starting/Loading  -> "getting ready" (the neutral word; a fresh launch auto-starts)
     #   Stopped (by user) -> "it is stopped"
     #   Failed            -> "it stopped" (red)
-    Ready      = New-JpText 0x4F7F, 0x3048, 0x307E, 0x3059     # "it works"    = Ready / Warming
-    Warming    = New-JpText 0x4F7F, 0x3048, 0x307E, 0x3059     # same word (folded on purpose)
+    Ready      = New-JpText 0x767A, 0x8A71, 0x5F85, 0x6A5F, 0x4E2D   # "awaiting speech" = Ready / Warming (2026-09-13: was "it works")
+    Warming    = New-JpText 0x767A, 0x8A71, 0x5F85, 0x6A5F, 0x4E2D   # same word (folded on purpose)
     Starting   = New-JpText 0x6E96, 0x5099, 0x3057, 0x3066, 0x3044, 0x307E, 0x3059  # "getting ready"
     Loading    = New-JpText 0x6E96, 0x5099, 0x3057, 0x3066, 0x3044, 0x307E, 0x3059  # same word
     # "it is stopped" -- the user pressed stop (or autoStartServer:false). NOT a failure.
