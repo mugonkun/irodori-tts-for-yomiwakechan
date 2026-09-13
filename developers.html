@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>アプリ開発者の方へ ｜ irodori-TTS for 読み分けちゃん</title>
+<meta name="description" content="irodori-TTS for 読み分けちゃん を自分のアプリから使う方法。アプリを開くと 127.0.0.1:18088 に OpenAI 互換の読み上げ API が立ちます。目的・呼び方・作法・利用条件。">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="アプリ開発者の方へ ｜ irodori-TTS for 読み分けちゃん">
+<meta property="og:description" content="アプリを開くと 127.0.0.1:18088 に OpenAI 互換の読み上げ API が立ちます。Python の知識は要りません。">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --bg:#faf8f5;
+    --panel:#ffffff;
+    --ink:#1b1815;
+    --ink-soft:#565049;
+    --line:#e4ded5;
+    --note:#8a8279;
+    --link:#1a5fb4;
+    --code-bg:#f1ede6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#17161a;
+      --panel:#201f24;
+      --ink:#f2efea;
+      --ink-soft:#bdb6ad;
+      --line:#332f36;
+      --note:#8f887f;
+      --link:#8ab4f8;
+      --code-bg:#26242b;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;
+    font-size:17px;
+    line-height:1.9;
+    letter-spacing:.01em;
+  }
+  .wrap{max-width:48rem;margin:0 auto;padding:2.5rem 1.25rem 4rem}
+  header{margin-bottom:2rem}
+  .brand{color:var(--note);font-size:.9rem;letter-spacing:.02em;margin:0 0 .6rem}
+  .brand a{color:inherit;text-decoration:none}
+  .brand a:hover{text-decoration:underline}
+  h1{font-size:1.8rem;line-height:1.45;margin:0 0 .3rem;letter-spacing:-.01em}
+  .tagline{color:var(--ink-soft);font-size:1rem;margin:0}
+  h2{font-size:1.15rem;margin:2.8rem 0 .8rem;padding-bottom:.4rem;border-bottom:1px solid var(--line)}
+  h3{font-size:1.02rem;margin:2rem 0 .2rem}
+  p{margin:.6rem 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:.8rem;padding:1.1rem 1.25rem;margin-top:.8rem}
+  .card p{margin:0}
+  .card p + p{margin-top:.7rem}
+  ul.plain,ol.plain{margin:.6rem 0 0;padding-left:1.4rem}
+  ul.plain li,ol.plain li{margin:.5rem 0}
+  .aside{color:var(--ink-soft);font-size:.93rem}
+  code,kbd,pre{font-family:ui-monospace,SFMono-Regular,Consolas,"Yu Gothic",monospace}
+  code{font-size:.88em;background:var(--code-bg);border-radius:.3rem;padding:.08em .4em}
+  pre{
+    margin:.6rem 0 0;
+    padding:.9rem 1rem;
+    background:var(--code-bg);
+    border:1px solid var(--line);
+    border-radius:.6rem;
+    font-size:.86rem;
+    line-height:1.6;
+    overflow-x:auto;
+  }
+  pre code{background:none;padding:0;font-size:inherit}
+  .tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+  .tabs a{font-size:.9rem;color:var(--ink-soft);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:.15rem .8rem}
+  .tabs a:hover{color:var(--link);border-color:var(--link)}
+  table{border-collapse:collapse;width:100%;margin-top:.6rem;font-size:.93rem;line-height:1.6}
+  th,td{border:1px solid var(--line);padding:.5rem .65rem;text-align:left;vertical-align:top}
+  th{background:var(--panel);font-weight:700;white-space:nowrap}
+  .tbl{overflow-x:auto}
+  a{color:var(--link)}
+  a:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+  footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--line);color:var(--note);font-size:.86rem;line-height:1.8}
+  footer p{margin:.5rem 0}
+  @media (max-width:30rem){
+    body{font-size:16px}
+    .wrap{padding:2rem 1rem 3rem}
+    h1{font-size:1.5rem}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="brand"><a href="./">irodori-TTS for 読み分けちゃん</a> ／ アプリ開発者の方へ</p>
+    <h1>自分のアプリから、この読み上げを使う</h1>
+    <p class="tagline">アプリを開くと、パソコンの中に OpenAI 互換の読み上げ API が立ちます。Python の知識は要りません。</p>
+    <nav class="tabs" aria-label="このページの目次">
+      <a href="#purpose">目的</a>
+      <a href="#how">しくみ</a>
+      <a href="#quick">最短の例</a>
+      <a href="#endpoints">口の一覧</a>
+      <a href="#rules">作法</a>
+      <a href="#params">パラメータ</a>
+      <a href="#voices">声</a>
+      <a href="#terms">利用条件</a>
+    </nav>
+  </header>
+
+  <h2 id="purpose">このアプリの目的</h2>
+  <p>Aratako 氏の音声合成 <a href="https://github.com/Aratako/Irodori-TTS">Irodori-TTS</a> は、日本語の声を参照音声とキャプション（演技指示）から作れる、とてもよくできたモデルです。
+    ただ、そのまま使うには Python や CUDA の準備が要り、配信ソフトの利用者には敷居が高いものでした。</p>
+  <p>このアプリは、その敷居を無くすためのものです。<strong>インストールして開くだけ</strong>で、Irodori-TTS がパソコンの中で動き、
+    配信ソフト <strong>読み分けちゃん2</strong> から読み上げに使えます。そして同じ口を、<strong>ほかのアプリからも使えるように開けてあります</strong>。</p>
+  <div class="card">
+    <p><strong>Irodori-TTS の開発趣旨（MIT ライセンスと Ethical Restrictions）に沿って使う方には、機能を開放します。</strong>
+      読み分けちゃん2 だけのための口ではありません。自分のツール・ゲーム・配信の仕掛けから、どうぞ呼んでください。</p>
+    <p class="aside">このアプリは非公式です。Aratako 氏とは関係がありません。API についての質問や不具合は、Aratako 氏ではなく X の <a href="https://x.com/yomiwakechan">@yomiwakechan</a> へお願いします。</p>
+  </div>
+
+  <h2 id="how">しくみ</h2>
+  <ul class="plain">
+    <li>アプリを開くと、<code>http://127.0.0.1:18088</code> に HTTP の口が立ちます。<strong>アプリを閉じると止まります。</strong>
+      あなたのアプリは、利用者にこのアプリを開いておいてもらうだけで済みます（自分で <code>IrodoriTtsYwk.Launcher.exe</code> を起動してもかまいません。窓が出たまま残ります）。</li>
+    <li><strong>宛先は必ず <code>127.0.0.1</code></strong> にしてください。<code>localhost</code> だと IPv6 を先に試す分、毎回 1〜2 秒遅くなります。</li>
+    <li><strong>API キーは要りません。</strong>パソコンの外からは届かない作り（ループバック限定）なので、鍵を持ちません。<code>Authorization</code> ヘッダを付けても無視されます。</li>
+    <li>もとになった <a href="https://github.com/Aratako/Irodori-TTS-Server">Irodori-TTS-Server</a> の OpenAI 互換 API を、そのまま通しています。
+      加えて、<strong>間違った指定を黙って通さない</strong>ための検査と、「いま何で動いているか」を返す口を足してあります。</li>
+    <li>ブラウザで開いた別のページから直接 <code>fetch</code> することは、いまはできません（CORS のヘッダを返しません）。ネイティブのアプリやスクリプトから呼んでください。</li>
+    <li>RTX（CUDA）版でも Radeon（ROCm）版でも、API はまったく同じです。</li>
+  </ul>
+
+  <h2 id="quick">最短の例</h2>
+  <p>本文を送ると、wav（48 kHz・モノラル）が返ります。</p>
+
+  <h3>curl</h3>
+<pre><code>curl -X POST http://127.0.0.1:18088/v1/audio/speech ^
+  -H "Content-Type: application/json" ^
+  -d "{\"model\":\"irodori-tts\",\"input\":\"こんにちは。\",\"voice\":\"デフォルト\",\"response_format\":\"wav\"}" ^
+  -o out.wav</code></pre>
+
+  <h3>PowerShell</h3>
+<pre><code>$body = @{
+  model = "irodori-tts"; input = "こんにちは。"; voice = "デフォルト"; response_format = "wav"
+  irodori = @{ caption = "明るく"; num_steps = 40 }
+} | ConvertTo-Json
+Invoke-WebRequest -Uri "http://127.0.0.1:18088/v1/audio/speech" -Method Post `
+  -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($body)) `
+  -OutFile out.wav</code></pre>
+
+  <h3>Python（標準ライブラリだけ）</h3>
+<pre><code>import json, urllib.request
+
+body = {"model": "irodori-tts", "input": "こんにちは。", "voice": "デフォルト",
+        "response_format": "wav", "irodori": {"caption": "明るく", "num_steps": 40}}
+req = urllib.request.Request(
+    "http://127.0.0.1:18088/v1/audio/speech",
+    data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
+    headers={"Content-Type": "application/json"})
+with urllib.request.urlopen(req, timeout=120) as res, open("out.wav", "wb") as f:
+    f.write(res.read())</code></pre>
+
+  <h3>C#</h3>
+<pre><code>using var http = new HttpClient { BaseAddress = new Uri("http://127.0.0.1:18088/") };
+var json = """{"model":"irodori-tts","input":"こんにちは。","voice":"デフォルト","response_format":"wav"}""";
+using var res = await http.PostAsync("v1/audio/speech",
+    new StringContent(json, Encoding.UTF8, "application/json"));
+res.EnsureSuccessStatusCode();
+await File.WriteAllBytesAsync("out.wav", await res.Content.ReadAsByteArrayAsync());</code></pre>
+
+  <p class="aside">OpenAI の公式クライアントも使えます。<code>base_url</code> を <code>http://127.0.0.1:18088/v1</code> に向け、<code>api_key</code> は何でもよく、
+    <code>model="irodori-tts"</code>・<code>response_format="wav"</code> を必ず指定してください（既定の mp3 は 400 になります）。</p>
+
+  <h2 id="endpoints">口の一覧</h2>
+  <div class="tbl">
+  <table>
+    <tr><th>口</th><th>何をするか</th></tr>
+    <tr><td><code>GET /health</code></td><td>生きているか。<strong>モデルを読み込む前でも 200</strong> を返します（下の「作法」を参照）。</td></tr>
+    <tr><td><code>GET /ywk/status</code></td><td>このアプリの版・読み込みの状態（<code>runtime.loaded</code>）・実際に動いている GPU（<code>device</code>）・声の数・いま走っている合成の数（<code>requests.in_flight</code>）・GPU メモリ。
+      <strong>このアプリかどうかは、この口が 200 を返すかで見分けます</strong>（もとの Irodori-TTS-Server には無い口です）。</td></tr>
+    <tr><td><code>GET /params</code></td><td>指定できる全パラメータの一覧＝既定値・範囲・型・説明。<strong>固定表を持たず、これを読んで組んでください。</strong>モデルを読み込む前でも 200 です。</td></tr>
+    <tr><td><code>GET /v1/audio/voices</code></td><td>声の一覧（OpenAI 互換の形）。「デフォルト」が必ず先頭にあります。</td></tr>
+    <tr><td><code>GET /ywk/voices</code></td><td>同じ一覧に、表示名・件数・一覧が壊れているときの理由（<code>error</code>）を添えたもの。</td></tr>
+    <tr><td><code>POST /v1/audio/speech</code></td><td><strong>読み上げ。</strong>本文と声を送ると wav が 1 本返ります。</td></tr>
+  </table>
+  </div>
+  <p class="aside"><code>/ywk/warmup</code> と <code>/ywk/voices/precompute</code> はアプリの内部が使う口です。呼ばないでください。
+    声の登録・削除の口（<code>POST/PUT/DELETE /v1/audio/voices</code>）は、この配布では閉じてあります（下の「声」を参照）。
+    <code>/docs</code>（Swagger UI）はもとの Irodori-TTS-Server のまま開けます。</p>
+
+  <h2 id="rules">作法</h2>
+
+  <h3>1. 起動を待つ</h3>
+  <ul class="plain">
+    <li><code>GET /health</code> が 200 でも、モデルはまだ裏で読み込み中のことがあります。<strong><code>GET /ywk/status</code> の <code>runtime.loaded</code> が <code>true</code> になってから</strong>読み上げを送ってください。
+      アプリを開いてから 20〜70 秒ほどかかります（GPU によります）。2 秒おきに見るのがちょうどよいです。</li>
+    <li><code>runtime</code> は <code>{loaded, loading, error}</code> の 3 つで、<code>error</code> に文が入ったら「読み込めなかった」です。理由の 1 行をそのまま利用者に見せてかまいません（パスは入りません）。</li>
+    <li>読み込み前に読み上げを送っても、エラーにはならず、読み込みが終わるまで待たされてから 200 が返ります。タイムアウトは長めに（120 秒以上）取ってください。</li>
+  </ul>
+
+  <h3>2. 読み上げの本文</h3>
+<pre><code>{"model": "irodori-tts",
+ "input": "本文（1〜4096 字）",
+ "voice": "声の名前（一覧の id）",
+ "response_format": "wav",
+ "speed": 1.0,
+ "irodori": {"caption": "明るく", "num_steps": 40, "seed": 1234}}</code></pre>
+  <ul class="plain">
+    <li><code>model</code> は <code>"irodori-tts"</code> 固定です。</li>
+    <li><code>voice</code> は一覧から<strong>名前で</strong>選びます。省くと「デフォルト」（参照音声なしの、Irodori-TTS 自身の声）になります。</li>
+    <li><code>response_format</code> は <strong><code>wav</code> だけ</strong>です（mp3 などにする ffmpeg を同梱していないため）。</li>
+    <li>Irodori-TTS の細かい指定（44 項目）は、<strong>すべて <code>irodori</code> の中に入れます</strong>。優先順は「<code>irodori</code> の中 ＞ トップレベル ＞ アプリの既定」です。
+      <strong>既定に戻したいときは、その項目を送らない</strong>でください（<code>null</code> や空文字も「未指定」と読みます）。</li>
+    <li><code>speed</code>（0.25〜4.0）と <code>irodori.duration_scale</code> は<strong>どちらか一方</strong>だけ送ってください（両方送ると掛け合わさります）。</li>
+    <li><code>irodori.seconds</code> を指定すると、長い本文の自動分割が切れて、出力がその秒数ちょうどに引き伸ばされます。ふつうは送らないでください。</li>
+    <li>返る wav のヘッダには <code>X-Irodori-Seed</code>（使われた乱数の種）が付きます。同じ音を再現したいときは <code>irodori.seed</code> に入れて送り直してください。</li>
+  </ul>
+
+  <h3>3. 間違いは 400 で止まる</h3>
+  <p>もとの Irodori-TTS-Server は、知らない項目名や範囲外の値を<strong>黙って無視</strong>します（綴りを間違えると「なぜか効かない」になります）。
+    このアプリはそれを <strong>400</strong> で止めます。エラーの本文は必ずこの形で、<code>code</code> で機械的に見分けられます。</p>
+<pre><code>{"error": {"message": "unknown field: num_step",
+           "type": "invalid_request_error",
+           "param": "num_step",
+           "code": "ywk_unknown_field"}}</code></pre>
+  <div class="tbl">
+  <table>
+    <tr><th><code>code</code></th><th>意味</th></tr>
+    <tr><td><code>ywk_unknown_field</code></td><td>知らない項目名（トップレベルでも <code>irodori</code> の中でも）</td></tr>
+    <tr><td><code>ywk_out_of_range</code></td><td>範囲外（範囲は <code>/params</code> の <code>min</code>／<code>max</code> と同じ）</td></tr>
+    <tr><td><code>ywk_type_error</code>・<code>ywk_invalid_enum</code></td><td>型違い・選択肢に無い値</td></tr>
+    <tr><td><code>ywk_literal_top_level</code></td><td><code>t_schedule_mode</code>・<code>decode_mode</code>・<code>cfg_guidance_mode</code> は <code>irodori</code> の中にだけ置けます</td></tr>
+    <tr><td><code>ywk_voice_and_no_ref</code>・<code>ywk_voice_and_reference</code></td><td><code>voice</code> と、参照音声を直接指す項目（<code>no_ref</code>・<code>ref_wav</code> など）を同時に送った</td></tr>
+    <tr><td><code>ywk_unsupported_response_format</code></td><td><code>wav</code> 以外を求めた</td></tr>
+    <tr><td><code>ywk_unknown_voice</code></td><td>一覧に無い声の名前</td></tr>
+    <tr><td><code>ywk_unknown_model</code>・<code>ywk_empty_input</code></td><td><code>model</code> が違う・本文が空白だけ</td></tr>
+    <tr><td><code>ywk_runtime_unavailable</code>（503）</td><td>読み込み中に待ちきれなかった・読み込みに失敗している</td></tr>
+    <tr><td><code>ywk_upstream_error</code>・<code>ywk_server_error</code></td><td>そのほかの失敗（GPU のメモリ不足など）</td></tr>
+  </table>
+  </div>
+  <p class="aside">エラーの本文に、利用者のパソコンのパスは入りません。<code>message</code> はそのまま記録に残して構いませんが、利用者に見せる文は <code>code</code> から組んでください。</p>
+
+  <h3>4. 同時に 1 つずつ</h3>
+  <ul class="plain">
+    <li>読み上げは<strong>1 つずつ順番に</strong>処理されます。同時に送っても、待たされるだけです。</li>
+    <li><strong>途中で止められません。</strong>接続を切っても、走っている分は最後まで走ります。長い本文は自分で区切って送る方が、止めやすくなります。</li>
+    <li>読み分けちゃん2 と同時に使うと、お互いの読み上げを待ち合います。<code>GET /ywk/status</code> の <code>requests.in_flight</code> で、いま走っている数が分かります。</li>
+    <li>長い本文（<code>stream_format: "sse"</code>）を分割して受け取る仕掛けも通してありますが、1 本の wav を受け取る形をおすすめします。</li>
+  </ul>
+
+  <h2 id="params">パラメータの探し方</h2>
+  <p><code>GET /params</code> が、指定できる項目を<strong>既定値・範囲・説明つき</strong>で返します。既定値はアプリの設定を反映した「いま効いている値」なので、
+    固定表を持たず、この応答から画面を組んでください。よく使うのはこのあたりです。</p>
+  <div class="tbl">
+  <table>
+    <tr><th>項目（<code>irodori</code> の中）</th><th>意味</th><th>既定</th></tr>
+    <tr><td><code>caption</code></td><td>キャプション（演技指示）。「明るく」「落ち着いて」など自由文。空なら未指定。</td><td><code>""</code></td></tr>
+    <tr><td><code>num_steps</code></td><td>品質。少ないほど速く、多いほど丁寧（アプリの「低品質（高速）」は 10・「高品質」は 40）。</td><td>40</td></tr>
+    <tr><td><code>cfg_scale_text</code></td><td>本文への追従の強さ（発音・滑舌が弱いときに少し上げる）。</td><td>3.0</td></tr>
+    <tr><td><code>cfg_scale_caption</code></td><td>キャプションの効きの強さ。</td><td>3.0</td></tr>
+    <tr><td><code>cfg_scale_speaker</code></td><td>参照音声（声の似せ方）の強さ。</td><td><code>/params</code> を参照</td></tr>
+    <tr><td><code>seed</code></td><td>乱数の種。同じ種＝同じ音。省くと毎回変わる。</td><td>なし</td></tr>
+    <tr><td><code>speed</code>（トップレベル）</td><td>速さ 0.25〜4.0。</td><td>1.0</td></tr>
+  </table>
+  </div>
+  <p class="aside">応答の <code>schema</code>（いまは 1）は、項目を消したり意味を変えたりするときにだけ上げます。項目が増えるだけなら上げません。知らない項目は無視してください。
+    このアプリの版は <code>GET /ywk/status</code> の <code>version</code> で分かります。</p>
+
+  <h2 id="voices">声の扱い</h2>
+  <ul class="plain">
+    <li>声の一覧は <code>GET /v1/audio/voices</code> か <code>GET /ywk/voices</code> で取ります。<strong>id がそのまま表示名</strong>で、日本語です（例：<code>琴葉茜（関西弁）</code>）。</li>
+    <li><strong>「デフォルト」</strong>は参照音声なしの声で、必ず先頭にあります。<code>voice</code> を省いたときもこれになります。</li>
+    <li><strong>声の追加・削除は、このアプリの画面（「話者と参照ファイル」のタブ）で行います。</strong>API からの登録・削除の口は閉じてあります。
+      利用者の音声ファイルを扱う口を、鍵なしで開けておかないためです。</li>
+    <li>同梱の声の名前は、版が上がると変わることがあります。<strong>名前を保存して固定せず、起動のたびに一覧を読み直して</strong>ください。無い名前を送ると <code>ywk_unknown_voice</code> で返ります。</li>
+    <li>一覧の各行には <code>preset</code>（同梱の声か）・<code>no_ref</code>（参照なしか）が付きます。参照音声のパスは返しません。</li>
+  </ul>
+
+  <h2 id="terms">利用条件</h2>
+  <p>この読み上げで作った音声は、Aratako 氏の <a href="https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small">Irodori-TTS-v4.1-Small</a> の利用条件に従います。
+    コードとモデルは <strong>MIT ライセンス</strong>で、加えて次の <strong>Ethical Restrictions</strong> があります（原文はモデルカードにあります）。</p>
+  <ol class="plain">
+    <li><strong>なりすまし禁止</strong>＝実在する人（声優・有名人・公人など）の声を、本人の明示の同意なく複製・模倣しないこと。</li>
+    <li><strong>偽情報禁止</strong>＝人をだます目的のディープフェイクや合成音声を作らないこと。</li>
+    <li><strong>偶然の類似</strong>＝参照音声なしで作った声が、たまたま実在の人に似ることがあります。特定の人を再現する意図で学習されたものではありません。</li>
+    <li><strong>免責</strong>＝生成した内容が法令に沿うかは、使う人の責任です。開発者は誤用の責任を負いません。</li>
+  </ol>
+  <ul class="plain">
+    <li>出した音声には、人には聞こえない印（透かし）が入ります。</li>
+    <li>配信・商用・生成音声の公開を禁じる条項はありません。上の 4 つを守ってお使いください。</li>
+    <li>このアプリ自身は、ほかの方が作ったプログラムや音声モデルを同梱しません。はじめて開いたときに、利用者のパソコンへ元の配布元からダウンロードします。</li>
+  </ul>
+
+  <h2>もっと詳しく</h2>
+  <ul class="plain">
+    <li><a href="https://github.com/mugonkun/irodori-tts-for-yomiwakechan/blob/main/docs/contract.md">API の仕様書（GitHub・docs/contract.md）</a>＝この配布が約束する HTTP の形を、項目ごとに書いたものです。作る側の帳面なので言い回しは硬いですが、正本はこちらです。</li>
+    <li><a href="https://github.com/Aratako/Irodori-TTS">Irodori-TTS</a>／<a href="https://github.com/Aratako/Irodori-TTS-Server">Irodori-TTS-Server</a>＝もとになった音声合成と API サーバ。</li>
+    <li><a href="./">利用者向けのページ</a>＝インストールと使い方。</li>
+  </ul>
+
+  <footer>
+    <p>このアプリは<strong>非公式</strong>です。もとになった音声合成 Irodori-TTS の作者 Aratako 氏とは関係がありません。
+      <strong>うまく動かないときも、Aratako 氏へは問い合わせないでください。</strong></p>
+    <p>API についての質問・不具合は、X の <a href="https://x.com/yomiwakechan"><strong>@yomiwakechan</strong></a> までお知らせください。</p>
+  </footer>
+
+</div>
+</body>
+</html>
