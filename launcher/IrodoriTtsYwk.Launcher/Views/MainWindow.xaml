@@ -136,16 +136,17 @@
           3 列の星幅が割合そのもの（StatusViewModel.GpuMeter＝OS の計数・裁定 110＝
           RTX（CUDA）でも Radeon（ROCm）でも同じ道）。数が読めない回は棒が空で文は「—」。
         -->
-        <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7" Margin="0,8,0,0"
+        <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="7" Margin="0,10,0,0" Height="28"
               AutomationProperties.AutomationId="MainGpuMeter">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
-          <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#555555"
+          <!-- 棒は 28 px（司令官の指示 2026-09-13＝14 px の倍）。両端の字は棒の中心に揃え、余白は左右とも 12 px。 -->
+          <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="#555555"
                      Text="{x:Static vm:UiStrings.GpuMeterLabel}" />
-          <Border Grid.Column="1" Height="14" VerticalAlignment="Center"
+          <Border Grid.Column="1" Height="28" VerticalAlignment="Center"
                   BorderBrush="#BDBDBD" BorderThickness="1" Background="#EEEEEE"
                   SnapsToDevicePixels="True"
                   AutomationProperties.AutomationId="MainGpuMeterBar"
@@ -161,7 +162,7 @@
               <Rectangle Grid.Column="2" Fill="Transparent" />
             </Grid>
           </Border>
-          <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="10,0,0,0"
+          <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="12,0,0,0" TextAlignment="Right"
                      AutomationProperties.AutomationId="MainGpuMeterText"
                      Text="{Binding Status.GpuMeter.Text, Mode=OneWay}" />
         </Grid>
