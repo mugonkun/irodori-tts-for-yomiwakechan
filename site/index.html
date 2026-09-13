@@ -158,6 +158,14 @@
   figure img{max-width:100%;height:auto;border-radius:.6rem}
   /* 画像が入るまで、この 3 か所には何も置かない（枠だけの箱を公開しない）。
      差し替え口は使い方（3 ステップ）の中の HTML コメントにそのまま残してある。 */
+  code{
+    font-family:ui-monospace,SFMono-Regular,Consolas,"Yu Gothic",monospace;
+    font-size:.88em;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:.3rem;
+    padding:.05em .4em;
+  }
   kbd{
     font-family:ui-monospace,SFMono-Regular,Consolas,"Yu Gothic",monospace;
     font-size:.85em;
@@ -333,6 +341,11 @@
     <p><strong>声を追加するときに選んだ、あなたの音声ファイルには触れません。</strong>そのまま残ります。</p>
     <p>両方の版を入れている場合、消えるのは消した方だけです。もう片方はそのまま使えます。</p>
   </details>
+
+  <h2>アプリ開発者の方へ</h2>
+  <p>このアプリを開くと、パソコンの中（<code>127.0.0.1:18088</code>）に OpenAI 互換の読み上げ API が立ちます。読み分けちゃん2 だけでなく、
+    <strong>自分のアプリやスクリプトからも使えます</strong>。Irodori-TTS の開発趣旨（MIT ライセンスと Ethical Restrictions）に沿って使う方には、機能を開放しています。</p>
+  <p><a href="developers.html"><strong>アプリ開発者の方へ（API の呼び方・作法・利用条件）</strong></a></p>
 
   <footer>
     <p>このアプリは<strong>非公式</strong>です。もとになった音声合成 Irodori-TTS の作者 Aratako 氏とは関係がありません。

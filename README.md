@@ -15,7 +15,8 @@ Python も pip も、黒い画面も要りません。同梱の 12 人の声か�
 | | |
 |---|---|
 | **落とす** | 公式ページ https://mugonkun.github.io/irodori-tts-for-yomiwakechan/ |
-| **使い方** | [`docs/guide.md`](docs/guide.md)（入れ方・はじめの準備・しゃべらせ方・困ったときは・消し方） |
+| **使い方** | [`docs/guide.md`](docs/guide.md)（入れ方・はじめの準備・読み上げ方・困ったときは・消し方） |
+| **自分のアプリから使う** | [アプリ開発者の方へ](https://mugonkun.github.io/irodori-tts-for-yomiwakechan/developers.html)（`127.0.0.1:18088` の OpenAI 互換 API・呼び方・作法・利用条件）／仕様の正本は [`docs/contract.md`](docs/contract.md) |
 | **知らせる** | X の [@yomiwakechan](https://x.com/yomiwakechan) |
 
 - お使いのパソコンに合う方を選びます＝**RTX（CUDA）**（NVIDIA の GeForce・RTX などのパソコンの方）／
@@ -26,7 +27,7 @@ Python も pip も、黒い画面も要りません。同梱の 12 人の声か�
   一度すませば、次からはすぐ使えます。
 - **必要なもの**＝Windows 11 / 10（64 ビット）・NVIDIA か AMD のグラフィックス・空き 12 GB ほど・
   はじめの準備のときだけネット接続。入れ終わったあとにこのアプリが使うのは約 8 GB です。
-- この版の案内＝[`docs/release-notes/v2.0.1.md`](docs/release-notes/v2.0.1.md)。
+- この版の案内＝[`docs/release-notes/v2.0.4.md`](docs/release-notes/v2.0.4.md)。
 
 ---
 
