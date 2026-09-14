@@ -156,3 +156,56 @@
 - **cu130 だけの v3**＝権利上は原文で立つ（条件つき）。決めるのは権利以外の 2 点＝署名サービスの資格（個人・日本）と、Attachment A に無い DLL の扱い。
 - **cu126 と Radeon の v3**＝止められうる物の中に権利が原文でクリアできない物がある＝**司令官の基準では断念の方向**。cu126 は 2 GiB 超も重なる。
 - **v3 を cu130 限定で進めるか、v3 全体を断念するか**＝卓。
+
+---
+
+## 9. cu130 専用版（v3）を作る場合に不明瞭な点の一覧（司令官の求め 2026-09-14 13:xx）
+
+> 「不明瞭」＝原文・実測のどちらでもまだ決まっていない点。**A** は権利（卓の裁定か外部への確認）、**B** は署名（資格と効き目）、**C** は置き場と形（設計）、**D** は調査の未了。番号は §5 の論点番号と対応させていない。
+
+### A. 権利（原文で決まらない）
+
+| # | 不明瞭な点 | 原文・実測の現状 | 決め方 |
+|---|---|---|---|
+| A1 | Attachment A に名の無い DLL＝`nvperf_host.dll`・`nvrtc64_130_0.alt.dll`・`cusolverMg64_12.dll`、および `nvJitLink_130_0.dll`（原文は `libnvJitLink.dll`） | 柱書「certain variations of these files that have version number or architecture specific information embedded in the file name」だけが根拠候補。外して torch が動くかは未検分 | 卓の読み、または外す技術検分（RTX 席） |
+| A2 | CUDA EULA §1.1.2 第 2 条「shall only be accessed by your application」を、GitHub Release から落として専用フォルダに展開する形が満たすか。第 4 条「developer tool … internal use only」が `cupti`・`nvperf_host` に掛かるか | 条文のみ | 卓 |
+| A3 | §1.2 第 5 条（SDK を open source software license の subject にしない）と、同一配布物の自作 MIT・LGPL-2.1（libsndfile・soxr）・LGPL-3.0（setuptools 同梱 autocommand）・MPL-2.0（certifi・tqdm・grpcio roots.pem・validate-pyproject）・GPL-3.0 WITH GCC-exception（numpy／scipy の OpenBLAS）・torch LICENSE 内の GPL／LGPL 本文の同居 | 条文のみ（NVIDIA・cuDNN とも同型の条） | 卓（必要なら NVIDIA へ照会） |
+| A4 | §1.1.2 第 5 条「配布条件の整合」を配布ページ・同梱 LICENSE・初回同意 UI でどう組むか（自作分 MIT・NVIDIA 分 EULA の切り分け表示） | 条文のみ | 設計＋卓 |
+| A5 | cuDNN Supplement §2「the runtime files .so and .dll」に `cudnn_engines_precompiled64_9.dll`（189 MB・カーネル像）等も含むか | 文面は種別を分けていない | 卓 |
+| A6 | `vc_redist.x64.exe`＝本機の Build Tools 2026 の licence に Distributable Code 節が無い。VS Community を入れて根拠にするか、v2 と同じ Microsoft の URL 誘導を残すか（裁定 148 ⑵「全部自前」との関係）。exe 単体の Cpp_v14 EULA（結合配布の禁止）との二枚掛かり。indemnify 条項 | 条文の食い違いまで確認済み | 卓 |
+| A7 | wheel 同梱の `msvcp140`（numpy・llvmlite は改名済み）・`vcomp140`（sklearn）＝Microsoft 署名済みだが、自前で配る権利は VS の licence 側（「You may not modify these files」「licensed Visual Studio users」） | 実測＝3 本とも版が違う。どれが読み込まれるか未測 | 卓＋実測 |
+| A8 | 埋め込み Python＝PSF §3「brief summary of the changes」が `python312._pth` の差し替えに当たるか。`LICENSE.txt` :291-314（Microsoft Distributable Code の転嫁義務）を同意 UI でどう満たすか。zip 同梱の OpenSSL・SQLite・expat・liblzma・mpdecimal の許諾文が無い | 実測＝LICENSE.txt に語 0 件 | 卓＋許諾文の取得（PSF の配布物から） |
+| A9 | torch の `LICENSE`（547,174 B・GPL／LGPL 本文と :2233-2236 の明文禁止を含む）をそのまま同梱するか。`libiomp5md.dll`＝**Intel の署名＝Intel OpenMP**＝Intel の再頒布条件が未取得（torch の LICENSE に該当節無し）。`zlibwapi.dll` の出所未同定。`uv.dll` と libuv 項目の対応 | 実測まで | Intel の条件取得＋卓 |
+| A10 | torchaudio 同梱の `libctc_prefix_decoder.pyd`・`pybind11_prefixctc.pyd` の第三者許諾が wheel に無い | 実測 | 上流確認 |
+| A11 | PyPI＝許諾文が無い 5 件を pin 版のタグから取り直す／導入で落ちる 4 件の同梱／requests の NOTICE／fire・msgpack の本文無し／pillow の FreeType（FTL か GPLv2 か）／regex の CNRI 代替文／packaging の OR／pyaml の WTFPL の見せ方／OpenBLAS の宣言と LICENSE の食い違い／LGPL §6 a〜e の選択／MPL §3.2 の源の示し方／setuptools（LGPL-3＋MPL）と grpcio `roots.pem` を落とせるか | 実測と条文まで | 卓＋合成の技術検分 |
+| A12 | SilentCipher の著作権者（Sony Research Inc.）と取得先（SesameAILabs の fork）の組織名不一致 | 観測のみ | 卓（気にするか） |
+
+### B. 署名（資格と効き目）
+
+| # | 不明瞭な点 | 現状 | 決め方 |
+|---|---|---|---|
+| B1 | 署名の手段＝Azure Artifact Signing の Public Trust は**日本の個人は対象外**（組織なら可）。代替＝OV／EV 証明書（裁定 150 ⑴ ⒝・年 100〜400 USD 級・ハードトークン）か Private Trust（スマート アプリ コントロールの信頼に届くか未検分） | 頁の条文まで | 卓（法人化するか・証明書を買うか） |
+| B2 | **第三者の未署名バイナリに自分の証明書で署名してよいか**＝Artifact Signing の Terms of Use（Azure ポータル内・未取得）・証明書 CA の Subscriber Agreement | 未取得。CSBR には禁止文無し | 取得して読む（要サインイン） |
+| B3 | 署名する範囲＝cu130 の未署名 PE（torch 自身 7・NVTX 1・zlibwapi 1・PyPI 251・torchaudio 3・setuptools の exe 8 ≒ 270 檔）の全部か、実行時に読み込まれる物だけか | 読み込まれる物の実測が無い | 実測（Process Monitor 等） |
+| B4 | **署名がスマート アプリ コントロールの遮断に実際に効くか**＝裁定 150 の観測は「未署名で遮断」だけで、署名済みとの対照が無い。Public Trust でも評判が要る可能性 | 未検分 | RTX 機で対照実験（署名した .pyd を読み込ませる） |
+| B5 | 未標本の NVIDIA DLL の署名＝`cublasLt64_13`（478 MB）・`cufft64_12`・`cusparse64_12`・`cusolver64_12`・`cusolverMg64_12`・`curand64_10`・`nvrtc64_130_0`・`nvrtc64_130_0.alt`・`cudnn_engines_precompiled64_9`・`cudnn_adv64_9`・`cudnn_heuristic64_9`・`cudnn_engines_runtime_compiled64_9`。未署名が 1 つでもあれば cu126 と同じ問題（EULA の modify） | 標本 11/11 は署名済み | RTX 席で全数 `Get-AuthenticodeSignature` |
+| B6 | 署名した後の検証＝sha256 が変わるので台帳（`ledger/*.json`）の pin と検証の仕組みを「署名後の値」に組み直す必要がある | 設計未着手 | 設計 |
+
+### C. 置き場と形
+
+| # | 不明瞭な点 | 現状 | 決め方 |
+|---|---|---|---|
+| C1 | 檔の分割単位＝torch wheel 1,867,405,006 B は 2 GiB 未満だが、実行系一式（2,038,518,046 B）を 1 檔にすると超える。wheel 単位か zip 分割か。GitHub AUP §9 の帯域は裁量 | 上限のみ確認 | 設計 |
+| C2 | 「自前で組む」の形＝公式 wheel をそのまま束ねるか、展開済み `site-packages` を zip にするか。後者は Microsoft の「unmodified form」・BSD の表示保持・torch の LICENSE／NOTICE 同梱を保つ必要がある | 未決 | 設計＋卓 |
+| C3 | Radeon 版と cu126 の扱い＝v3 で落とすのか、v2（初回取得）のまま並走させるのか。着地頁の「RTX（CUDA）」「Radeon（ROCm）」の 2 ダウンロード構成が変わる | 未決 | 卓 |
+| C4 | モデルは初回取得のまま（148-2）＝初回に約 3.4 GB の取得は残る。憲章 §1 との関係は v2 と同じ | 方針どおり | — |
+| C5 | 配布物の `licenses/` の増分＝NVIDIA 2 枚・zlib・Intel OpenMP・OpenSSL 系 5・PyPI 9・torch 連結 LICENSE・LGPL の源入手の申し出文＝`build/check-licenses.ps1` の突合表を作り直す | 一覧まで | 設計 |
+
+### D. 調査の未了
+
+| # | 未了 |
+|---|---|
+| D1 | R2（AMD）・R3（Microsoft と署名と置き場）・R5（PyPI）の敵対検証と批評席（枠切れ）。cu130 専用なら R2 は不要 |
+| D2 | R1・R4 の JSON の行番号ずれ（19 件・5 件）の修正 |
+| D3 | Artifact Signing の料金実額・Terms of Use（B2） |
+| D4 | NVIDIA の PDF 版 EULA（検証席が取得可能を確認・228,421 B）の originals 保存 |
