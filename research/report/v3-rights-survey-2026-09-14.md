@@ -15,7 +15,7 @@
 3. **NVIDIA の DLL のうち Attachment A に名が無い物が cu130／cu126 それぞれに 3 個ある**＝`nvperf_host.dll`（27.7 MB）・`nvrtc64_1x0_0.alt.dll`（91 MB／46 MB）・`cusolverMg64_1x.dll`（95 MB／85 MB）。加えて `nvJitLink_1x0_0.dll` は Attachment A の表記が `libnvJitLink.dll`（lib 接頭辞つき）で同梱物と一致しない。柱書「certain variations of these files …」で救えるかは卓（R1-03・検証席 R1 の指摘）。
 4. **torch の wheel は NVIDIA の EULA も SLA も同梱していない**（2.10.0 で再確認・NOTICE に NVIDIA/CUDA/cuDNN の語 0 件）＝配布側が 2 枚添えるほかない、という 2026-09-04 のノート 22 の要点 2 は pin 版でも同じ。ただし **2.10.0 の wheel には `dist-info/licenses/` の木が無く**、許諾文は `LICENSE`（547,174 B・116 件連結）と `NOTICE` の 2 檔だけ。`libiomp5md.dll`・`zlibwapi.dll` を覆う節はその中に無い（R4-06）。
 5. **vc_redist を自前で配る根拠は Visual Studio Community／Professional／Enterprise の licence にしかない**＝本機に入っている **Build Tools 2026 の licence には Distributable Code 節が無い**（'Distributable' 0 件）。一方 VS2026 の Distributable List の柱書は Build Tools を名指しし、Build Tools 同梱の `Redist.txt` も同じ一覧を指す＝**頁と licence 本文が食い違う**。しかも `vc_redist.x64.exe` はどの一覧にも檔名で載っておらず（「`[VisualStudioFolder]\VC\redist` フォルダとその下」という場所の指定）、exe 単体の EULA（Cpp_v14）は「combined with any of your applications for others to use」を禁じる（R3-01〜R3-05）。
-6. **署名の実測**（Radeon 版の実行系・PE 445 件）＝署名済み **36 件**（PSF 29・Microsoft 7）・**未署名 409 件・3,831,107,758 B（全体の 99.46 %）**。AMD の署名は 0 件、torch 自身の DLL は 0 件、scipy／numpy／sklearn の .pyd は全数未署名。cu 版と共通の 99 wheel から出る PE 282 件は展開物と sha256 が 282/282 一致＝cu 版でも同じ。**NVIDIA の DLL は本機に無く未測**（RTX 席で要実測）。
+6. **署名の実測**（Radeon 版の実行系・PE 445 件）＝署名済み **36 件**（PSF 29・Microsoft 7）・**未署名 409 件・3,831,107,758 B（全体の 99.46 %）**。AMD の署名は 0 件、torch 自身の DLL は 0 件、scipy／numpy／sklearn の .pyd は全数未署名。cu 版と共通の 99 wheel から出る PE 282 件は展開物と sha256 が 282/282 一致＝cu 版でも同じ。**NVIDIA の DLL は本機に無く未測**（→ 2026-09-14 15:xx に RTX 席で cu130 の全数を実測＝§8-1-2）（RTX 席で要実測）。
 7. **署名の権利**＝Azure Trusted Signing は「Azure Artifact Signing」に改称。**Public Trust の個人申込は米国・カナダ所在に限られ、日本の個人は対象外**（組織なら可）。「署名してよい物の範囲」を定める Terms of Use は Azure ポータル内でしか提示されず**未取得**。CA/Browser Forum の CSBR にも「自分の物しか署名してはならない」条文は無い（R3-09・R3-10）。
 8. **置き場**＝GitHub Releases は 1 檔 2 GiB 未満・1 リリース 1,000 檔・総量と帯域は無制限（GitHub Docs）。**cu126 の torch wheel（2,589,881,452 B）は 2 GiB（2,147,483,648 B）を超える**＝そのままでは載らない。AUP §9 の「significantly excessive」は GitHub の裁量と明記（R3-11・R3-12）。
 9. **copyleft は first-run-notices の 3 件（soxr・certifi・tqdm）に加えて新規 3 件**＝setuptools 同梱 `autocommand`（LGPL-3.0）・grpcio 同梱 `roots.pem`（MPL-2.0）・setuptools 同梱 validate-pyproject（MPL-2.0）。**numpy・scipy 同梱の OpenBLAS は wheel 自身の LICENSE が GPL-3.0-or-later WITH GCC-exception-3.1 を名乗る**（宣言の License-Expression には無い語）。**torch の LICENSE 連結本文にも GPL／LGPL 全文が混ざる**（cpr/test・ffnvcodec・vulkan）。CUDA EULA §1.2 第 5 条（open source 化の禁止）との同居の読みは卓。
@@ -61,7 +61,7 @@
 | **合計** | **445** | **36（全件タイムスタンプ付き）** | **409** | **3,831,107,758 B（全 3,851,785,822 B の 99.46 %）** |
 
 - cu 版と共通の 99 wheel（build-cache）から取り出した PE 282 件は展開物と sha256 が 282/282 一致＝cu 版でも共通分は同じ署名状況。差 163 件（`_rocm_sdk_*` 144・torch 16・torchaudio 3）は Radeon 版だけの物。
-- **NVIDIA の DLL は本機に無く未測**。NVIDIA が再頒布 DLL に署名して配っているかの一次資料も見つからず（CUDA Windows インストールガイドにコード署名の記述無し）。**RTX 席で cu130／cu126 の実行系に `Get-AuthenticodeSignature` を全数で掛けるのが唯一の確実な道**＝v3 の署名工数の見積はそれまで確定しない。
+- **NVIDIA の DLL は本機に無く未測**（→ 2026-09-14 15:xx に RTX 席で cu130 の全数を実測＝§8-1-2）。NVIDIA が再頒布 DLL に署名して配っているかの一次資料も見つからず（CUDA Windows インストールガイドにコード署名の記述無し）。**RTX 席で cu130／cu126 の実行系に `Get-AuthenticodeSignature` を全数で掛けるのが唯一の確実な道**＝v3 の署名工数の見積はそれまで確定しない。
 - 檔名を改名した `msvcp140-<hash>.dll` が Microsoft の署名を保ったまま Valid で検証できる（改名は Authenticode を壊さない・実測）。
 - 検証席 R6（逐語）の指摘＝R6 の JSON の「引用」61 件のうち原文そのままの逐語は 2 件で、残りは CSV からの派生集計や地の文。**数値はすべて CSV から再計算して一致**（GRAND files=445 valid=36 unsigned=409）。実測に使った PowerShell 台本は保存されていない（再現は CSV から）。
 
@@ -113,7 +113,7 @@
 
 ## 7. やり残し（本調査で取れなかった物）
 
-1. NVIDIA の DLL の Authenticode 実測（RTX 席）。
+1. ~~NVIDIA の DLL の Authenticode 実測（RTX 席）。~~ **済**（2026-09-14 15:xx・cu130 の全 PE 325 檔＝§8-1-2・`findings/F2-cu130-signatures-full-2026-09-14.csv`）。cu126 は未測のまま（断念の方向なので掛けていない）。
 2. Azure Artifact Signing の service Terms of Use（Azure ポータル内・要サインイン）と料金の実額。
 3. AMD への確認（wheel の再配布可否・許諾文の所在・`hipdnn_backend.dll` 等の出所）。`repo.radeon.com` 側の proprietary 区分が Windows wheel に及ぶか。`https://www.amd.com/en/corporate/copyright` は HTTP 200 のみ確認・未精読。
 4. `nvperf_host.dll`・`nvrtc64_1x0_0.alt.dll`・`cusolverMg64_1x.dll` を外して torch が読み込めるかの技術検分。
@@ -139,7 +139,23 @@
 | cu126 | `cudnn64_9`・`cudnn_cnn64_9`・`cudnn_graph64_9`・`cupti64_2024.3.2`・`nvperf_host`＝5 | **`cudart64_12.dll`・`cufftw64_11.dll`・`nvrtc-builtins64_126.dll`・`nvJitLink_120_0.dll`（39 MB）＝CUDA 12.6 本体の 4/4 が未署名**・`nvToolsExt64_1.dll` |
 | 両方 | `libiomp5md.dll`＝**Intel Corporation の署名**（＝Intel OpenMP ランタイム。torch の LICENSE に該当節が無い物＝表 #2） | torch 自身（`c10.dll`・`c10_cuda.dll`・`caffe2_nvrtc.dll`）・`uv.dll`（cu130 で実測。Radeon 版の実測と同じく torch 自身は未署名） |
 
-未標本＝cu130 の `cublasLt64_13`（478 MB）・`cufft64_12`・`cusparse64_12`・`cusolver64_12`・`cusolverMg64_12`・`curand64_10`・`nvrtc64_130_0`・`nvrtc64_130_0.alt`・`cudnn_engines_precompiled64_9`・`cudnn_adv64_9`・`cudnn_heuristic64_9`・`cudnn_engines_runtime_compiled64_9`・`zlibwapi`（Radeon 版で NotSigned を実測済み）。cu126 も同じ族が未標本。**全数は RTX 席で掛ける**（やり残し 1）。標本の範囲では「CUDA 13 系は NVIDIA が署名して配り、CUDA 12.6 系の本体は未署名」という差が出た。
+未標本＝cu130 の `cublasLt64_13`（478 MB）・`cufft64_12`・`cusparse64_12`・`cusolver64_12`・`cusolverMg64_12`・`curand64_10`・`nvrtc64_130_0`・`nvrtc64_130_0.alt`・`cudnn_engines_precompiled64_9`・`cudnn_adv64_9`・`cudnn_heuristic64_9`・`cudnn_engines_runtime_compiled64_9`・`zlibwapi`（Radeon 版で NotSigned を実測済み）。cu126 も同じ族が未標本。**全数は RTX 席で掛けた**（→ 8-1-2）。標本の範囲では「CUDA 13 系は NVIDIA が署名して配り、CUDA 12.6 系の本体は未署名」という差が出た。
+
+### 8-1-2 全数実測＝cu130 の展開済み実行系の全 PE 325 檔（RTX 席「12900kのメインリポ」・2026-09-14 15:xx・読むだけ）
+
+樹＝RTX 3090 機の `%LOCALAPPDATA%\irodori-tts-ywk-cuda\runtime\cu130\`（v2.0.x が取得した実行系・ドライバ 616.92・Windows 11 Pro 26200.9445）。`Get-AuthenticodeSignature`＋sha256 を exe／dll／pyd 全数に掛けた。原本＝N: `irodori-ywk\rtx\sig-audit-2026-09-14\`、写し＝`findings/F2-cu130-signatures-full-2026-09-14.csv`（325 行）と `findings/F2-cu130-signatures-summary-2026-09-14.md`。status は全 325 が Valid か NotSigned のみ（HashMismatch 等の異常 0）。
+
+| 区分 | 檔数 | バイト | 内訳 |
+|---|---|---|---|
+| Valid（タイムスタンプ付き） | 60 | — | PSF 29・**NVIDIA 23**・Microsoft 6（llvmlite.libs・numpy.libs・sklearn 2・python-embed 2）・Intel 2（`libiomp5md`・`libiompstubs5md`） |
+| NotSigned | 265 | 997,250,222 | torch 自身 10（`torch_cuda` 408,946,688・`torch_cpu` 265,100,288・`torch_python`・`c10`・`c10_cuda`・`caffe2_nvrtc`・`shm`・`torch`・`torch_global_deps`・`uv`）・NVTX 1（`nvToolsExt64_1.dll` 48,128）・`zlibwapi.dll` 89,088・PyPI の C 拡張 ≈ 250（scipy 106・sklearn 69・numpy 19・numba 14・PIL 8・setuptools 8・torchaudio 4・llvmlite・grpc・hf_xet・tokenizers ほか） |
+| 全体 | 325 | 2,951,518,622 | |
+
+**torch\lib の 37 DLL**＝NVIDIA 署名 23（未標本だった 13 のうち `zlibwapi` 以外の 12＝`cublasLt64_13`（477,896,816 B）・`cufft64_12`・`cusparse64_12`・`cusolver64_12`・`cusolverMg64_12`・`curand64_10`・`nvrtc64_130_0`・`nvrtc64_130_0.alt`・`cudnn_engines_precompiled64_9`・`cudnn_adv64_9`・`cudnn_heuristic64_9`・`cudnn_engines_runtime_compiled64_9` は**全て Valid／NVIDIA Corporation**）・Intel 署名 2・未署名 12（torch 自身 10＋NVTX＋zlibwapi）。
+
+**8-2 の表への効き**＝⑴ 「未署名の NVIDIA DLL が 1 つも無い」は**字義どおりには不成立**＝`nvToolsExt64_1.dll`（NVTX・48 KB）が未署名。ただし NVTX はノート 22 の観測どおり Apache-2.0 WITH LLVM-exception（改変を許す文あり）で、8-2 の cu130 行では最初から ⑵ として「こちらが署名する側」に置いてある＝**CUDA EULA の下にある DLL（cudart・cublas・cuDNN・nvrtc・nvJitLink・cupti・nvperf ほか 23 檔）は全数が NVIDIA 署名済み**で、「こちらの署名」の対象外＝**cu130 の方向（8-3）は変わらない**。⑵ `zlibwapi.dll`＝cuDNN 同梱の zlib（作者 zlib・NVIDIA 署名なし）＝zlib License で改変可（出所の確認は §5／A9 のまま）。⑶ 8-2 の cu130 行の「torch 自身 7 種」は実測では **10**（`shm`・`torch`・`torch_global_deps` の小 DLL 3 本が加わる）＝B3 の「≒ 270 檔」は **265 檔・997,250,222 B** に置き換える。⑷ NVTX を NVIDIA 由来と数えるかは字義の問題であり、権利は Apache 側＝卓の裁定を要する新規の点は増えない。
+
+ドライバ更新の許可（司令官 2026-09-14「ドライバ更新を許可。」）は RTX 席に伝えたが、この実測には不要（616.92／CUDA 13.4 で cu130 の NVIDIA DLL は全て署名検証を通っている）＝**更新は実行していない**。実行するなら前後の版を N: の summary.md に記録してから（席の申し合わせ）。
 
 ### 8-2 止められうる物 × 権利（変種ごと）
 
@@ -153,7 +169,7 @@
 
 ### 8-3 方向（席の判断ではなく、上の表の写し）
 
-- **cu130 だけの v3**＝権利上は原文で立つ（条件つき）。決めるのは権利以外の 2 点＝署名サービスの資格（個人・日本）と、Attachment A に無い DLL の扱い。
+- **cu130 だけの v3**＝権利上は原文で立つ（条件つき）。決めるのは権利以外の 2 点＝署名サービスの資格（個人・日本）と、Attachment A に無い DLL の扱い。**全数実測（8-1-2）後も同じ**＝CUDA EULA 下の NVIDIA DLL 23 檔は全て署名済み、未署名は NVTX（Apache）と zlibwapi（zlib）と torch 自身（BSD）と PyPI の C 拡張＝いずれも改変を許す文がある側。
 - **cu126 と Radeon の v3**＝止められうる物の中に権利が原文でクリアできない物がある＝**司令官の基準では断念の方向**。cu126 は 2 GiB 超も重なる。
 - **v3 を cu130 限定で進めるか、v3 全体を断念するか**＝卓。
 
@@ -188,7 +204,7 @@
 | B2 | **第三者の未署名バイナリに自分の証明書で署名してよいか**＝Artifact Signing の Terms of Use（Azure ポータル内・未取得）・証明書 CA の Subscriber Agreement | 未取得。CSBR には禁止文無し | 取得して読む（要サインイン） |
 | B3 | 署名する範囲＝cu130 の未署名 PE（torch 自身 7・NVTX 1・zlibwapi 1・PyPI 251・torchaudio 3・setuptools の exe 8 ≒ 270 檔）の全部か、実行時に読み込まれる物だけか | 読み込まれる物の実測が無い | 実測（Process Monitor 等） |
 | B4 | **署名がスマート アプリ コントロールの遮断に実際に効くか**＝裁定 150 の観測は「未署名で遮断」だけで、署名済みとの対照が無い。Public Trust でも評判が要る可能性 | 未検分 | RTX 機で対照実験（署名した .pyd を読み込ませる） |
-| B5 | 未標本の NVIDIA DLL の署名＝`cublasLt64_13`（478 MB）・`cufft64_12`・`cusparse64_12`・`cusolver64_12`・`cusolverMg64_12`・`curand64_10`・`nvrtc64_130_0`・`nvrtc64_130_0.alt`・`cudnn_engines_precompiled64_9`・`cudnn_adv64_9`・`cudnn_heuristic64_9`・`cudnn_engines_runtime_compiled64_9`。未署名が 1 つでもあれば cu126 と同じ問題（EULA の modify） | 標本 11/11 は署名済み | RTX 席で全数 `Get-AuthenticodeSignature` |
+| B5 | ~~未標本の NVIDIA DLL の署名~~ → **実測済み（8-1-2・RTX 席・2026-09-14 15:xx）**＝未標本 13 のうち `zlibwapi` 以外の 12 は全て NVIDIA 署名済み。CUDA EULA 下の NVIDIA DLL 23 檔に未署名は無い。未署名の NVIDIA 由来は NVTX（`nvToolsExt64_1.dll` 48 KB・Apache-2.0 WITH LLVM-exception）の 1 本だけで、こちらが署名する側（B3 の集合）に入る | **解消**（cu126 と同じ問題は起きない） | — |
 | B6 | 署名した後の検証＝sha256 が変わるので台帳（`ledger/*.json`）の pin と検証の仕組みを「署名後の値」に組み直す必要がある | 設計未着手 | 設計 |
 
 ### C. 置き場と形
