@@ -123,3 +123,36 @@
 8. 埋め込み Python が同梱する OpenSSL・SQLite・expat・liblzma・mpdecimal の一次ライセンス。`libiomp5md.dll` の一次資料（Intel OpenMP か LLVM openmp か）。
 9. R2・R3・R5 の敵対検証と批評席（枠切れ）。
 10. R6 の実測台本の保存（再現は CSV から可能）。
+
+---
+
+## 8. 対象の絞り込み（司令官の指示 2026-09-14 12:2x・逐語「調査の対象は、未署名でWindowsセキュリティで停止されうるもので、こちらの署名で停止対象にならないもの。セキュリティ停止対象で、権利関係がクリアできないものであればv3は断念の方向で。」）
+
+> 問いは 2 段＝⑴ **止められうる物**＝未署名の PE（.exe／.dll／.pyd）で実行時に読み込まれる物（裁定 150 ⑵の実例＝scipy の `_spline.cp312-win_amd64.pyd`）。署名済みの物（PSF・Microsoft・NVIDIA・Intel）は対象外。⑵ その物に**こちらが署名を付ける権利**（改変を許す文が原文にあるか）と**自前の置き場から配る権利**が原文で立つか。
+> **追加の実測**（Fable 単体・2026-09-14 12:2x）＝torch 2.10.0+cu130／+cu126 の wheel から HTTP Range で 28 檔を抜き `Get-AuthenticodeSignature` を掛けた（`findings/F-nvidia-dll-signatures-sample-2026-09-14.csv`・sha256 つき。DLL 本体はリポジトリに入れていない）。
+
+### 8-1 追加の実測＝NVIDIA の DLL の署名（標本 28 檔）
+
+| 変種 | NVIDIA 署名あり（Valid・タイムスタンプ付き） | 未署名 |
+|---|---|---|
+| cu130 | `cudart64_13`・`cublas64_13`（50 MB）・`cufftw64_12`・`cupti64_2025.3.0`・`nvJitLink_130_0`（88 MB）・`nvperf_host`（27.7 MB）・`nvrtc-builtins64_130`・`cudnn64_9`・`cudnn_cnn64_9`・`cudnn_graph64_9`・`cudnn_ops64_9`（30 MB）＝**11/11** | `nvToolsExt64_1.dll`（48 KB・NVTX＝ノート 22 の観測では Apache-2.0 WITH LLVM-exception） |
+| cu126 | `cudnn64_9`・`cudnn_cnn64_9`・`cudnn_graph64_9`・`cupti64_2024.3.2`・`nvperf_host`＝5 | **`cudart64_12.dll`・`cufftw64_11.dll`・`nvrtc-builtins64_126.dll`・`nvJitLink_120_0.dll`（39 MB）＝CUDA 12.6 本体の 4/4 が未署名**・`nvToolsExt64_1.dll` |
+| 両方 | `libiomp5md.dll`＝**Intel Corporation の署名**（＝Intel OpenMP ランタイム。torch の LICENSE に該当節が無い物＝表 #2） | torch 自身（`c10.dll`・`c10_cuda.dll`・`caffe2_nvrtc.dll`）・`uv.dll`（cu130 で実測。Radeon 版の実測と同じく torch 自身は未署名） |
+
+未標本＝cu130 の `cublasLt64_13`（478 MB）・`cufft64_12`・`cusparse64_12`・`cusolver64_12`・`cusolverMg64_12`・`curand64_10`・`nvrtc64_130_0`・`nvrtc64_130_0.alt`・`cudnn_engines_precompiled64_9`・`cudnn_adv64_9`・`cudnn_heuristic64_9`・`cudnn_engines_runtime_compiled64_9`・`zlibwapi`（Radeon 版で NotSigned を実測済み）。cu126 も同じ族が未標本。**全数は RTX 席で掛ける**（やり残し 1）。標本の範囲では「CUDA 13 系は NVIDIA が署名して配り、CUDA 12.6 系の本体は未署名」という差が出た。
+
+### 8-2 止められうる物 × 権利（変種ごと）
+
+| 変種 | 止められうる物（未署名・実行時に読み込まれる） | 署名を付ける権利（改変を許す文） | 配る権利 | 材料から出る方向 |
+|---|---|---|---|---|
+| **cu130（RTX 既定）** | ⑴ torch 自身の DLL 7 種（`torch_cpu`・`torch_cuda`・`torch_python`・`c10`・`c10_cuda`・`caffe2_nvrtc`・`uv`）⑵ `nvToolsExt64_1.dll` ⑶ `zlibwapi.dll` ⑷ PyPI の .pyd／.dll 251 檔（scipy 106・sklearn 69・numpy 19・numba 14・PIL 8・llvmlite・libsndfile・soxr ほか）⑸ torchaudio 3 | ⑴ BSD-3・MIT（libuv）＝改変を許す文あり・禁止文なし ⑵ Apache-2.0 WITH LLVM-exception＝改変可 ⑶ zlib License＝改変可（出所未同定） ⑷ BSD／MIT／Apache／MIT-CMU＝改変可。LGPL-2.1（libsndfile・soxr）＝改変可＋§6 の条件。GPL-3.0 WITH GCC-exception（OpenBLAS）＝改変可＋条件 ⑸ BSD-2＝改変可 | 同上＝明文あり（条件＝表示保持・許諾文同梱・LGPL §6 の源入手手段・requests の NOTICE）。**NVIDIA の DLL は署名済みなので「こちらの署名」の対象外**＝EULA §1.2「modify」の問いは cu130 では立たない（ただし自前の置き場から配る権利は別に §1.1.1＋Attachment A の条件つき許諾・表 #3／#3b） | **権利上の障害は原文に見当たらない**（条件つき）。残る障害は権利以外＝⒜ 署名サービス（日本の個人は Public Trust 対象外・表 #11）⒝ Attachment A に名の無い 3 DLL＋nvJitLink の接頭辞（配る権利の側・表 #3b）⒞ 未標本の NVIDIA DLL の全数実測 |
+| **cu126（選択肢）** | cu130 の集合＋**CUDA 12.6 本体の NVIDIA DLL（`cudart64_12`・`cufftw64_11`・`nvrtc-builtins64_126`・`nvJitLink_120_0`。未標本の `cublas64_12`・`cublasLt64_12`・`cufft64_11`・`cusparse64_12`・`cusolver64_11`・`curand64_10`・`nvrtc64_120_0` も同じ族の公算）** | NVIDIA の DLL＝CUDA EULA §1.2 第 2 条「Except as expressly provided in this Agreement, you may not … modify …」・第 1 条「remove copyright or other proprietary notices」＝**改変を許す文が無い**（署名の付け直しが modify に当たるかは卓＝§5-3。当たる読みなら原文ではクリアできない） | §1.1.1＋Attachment A（条件つき） | **断念の方向の材料が 2 本**＝⑴ 未署名の NVIDIA DLL にこちらが署名する権利が原文に無い ⑵ torch wheel 2,589,881,452 B が GitHub Release の 2 GiB 上限を超える（表 #10） |
+| **Radeon（ROCm）** | cu130 の PyPI 集合＋**AMD の DLL 144 檔（`_rocm_sdk_core` 94・`_rocm_sdk_libraries` 50＝3,187,974,144 B・AMD の署名 0 件）**＋torch 自身 15 | AMD の DLL＝**許諾文が無い**（表 #7＝wheel に License 欄無し・許諾檔は amd_comgr・hipcc の 2 件のみ・取得元に terms 無し）。AMD Software EULA は改変（「modify」）と配布を禁じるが wheel に及ぶ資料は無い | **原文に根拠が無い** | **断念の方向**（司令官の基準どおり）＝止められうる物の中核（MIOpen.dll 494 MB ほか）の権利が原文でクリアできない。覆すには AMD の文書確認か「上流 GitHub の MIT／NCSA がバイナリに及ぶ」という卓の読みが要る |
+
+**共通の注意**＝⑴ v2 で実際に止められた `_spline.pyd` は ⑷ の集合＝BSD で署名可。⑵ 署名済みの物（python-embed 31・Microsoft の msvcp140／vcomp140・NVIDIA・Intel）は「こちらの署名」の対象外だが、**自前の置き場から配る権利**は別の問い（vc_redist＝表 #9・Intel OpenMP＝許諾文未取得・NVIDIA＝表 #3）。⑶ 「止められうる」は評判の揺れ（裁定 150 ⑸）に依るので、未署名の全量（Radeon 版で 409 檔）が潜在的な対象。
+
+### 8-3 方向（席の判断ではなく、上の表の写し）
+
+- **cu130 だけの v3**＝権利上は原文で立つ（条件つき）。決めるのは権利以外の 2 点＝署名サービスの資格（個人・日本）と、Attachment A に無い DLL の扱い。
+- **cu126 と Radeon の v3**＝止められうる物の中に権利が原文でクリアできない物がある＝**司令官の基準では断念の方向**。cu126 は 2 GiB 超も重なる。
+- **v3 を cu130 限定で進めるか、v3 全体を断念するか**＝卓。
