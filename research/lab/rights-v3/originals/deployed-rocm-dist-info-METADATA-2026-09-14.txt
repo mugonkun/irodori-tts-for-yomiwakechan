@@ -1,0 +1,6 @@
+Metadata-Version: 2.1
+Name: rocm
+Version: 10.0.0
+License: 未特定 (rocm-10.0.0.tar.gz: METADATA/PKG-INFO declares no License, no License-Expression and no License classifier)
+
+Installed by the irodori-tts-ywk launcher from a source archive listed in the ledger.

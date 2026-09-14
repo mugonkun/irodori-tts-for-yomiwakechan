@@ -1,0 +1,486 @@
+{
+  "seat": "R3-microsoft-hosting",
+  "fetched_at": "2026-09-14T10:39:41.6796790+09:00",
+  "items": [
+    {
+      "id": "R3-01",
+      "component": "【A】vc_redist.x64.exe 14.44.35211.0 を自前の置き場から配る根拠＝Visual Studio の DISTRIBUTABLE CODE 節（Community 2022／Community 2026／Professional・Enterprise 2022／2026）",
+      "covers_files": ["vc_redist.x64.exe", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"],
+      "license_name": "MICROSOFT SOFTWARE LICENSE TERMS — MICROSOFT VISUAL STUDIO COMMUNITY 2022 ／ Visual Studio 2026 Community ／ Enterprise・Professional（2022・2026）",
+      "source_url": "https://visualstudio.microsoft.com/license-terms/vs2022-ga-community/ ／ https://visualstudio.microsoft.com/license-terms/vs2026-ga-community/ ／ https://visualstudio.microsoft.com/license-terms/vs2022-ga-proenterprise/ ／ https://visualstudio.microsoft.com/license-terms/vs2026-ga-pro-enterprise/",
+      "original_file": "originals/vs2022-ga-community-2026-09-14.txt ／ originals/vs2026-ga-community-2026-09-14.txt ／ originals/vs2022-ga-proenterprise-2026-09-14.txt ／ originals/vs2026-ga-pro-enterprise-2026-09-14.txt（各 .docx も同名で保存）",
+      "sha256": "12d30ff97d503621c802d2ec83547d7ad9d7702fa968fd6092b2863082061f72",
+      "bytes": 19032,
+      "same_as_2026_09_04": "not-compared",
+      "quotes": [
+        {"where": "vs2022-ga-community-2026-09-14.txt:40（§4 DISTRIBUTABLE CODE 柱書）", "text": "DISTRIBUTABLE CODE. The software contains code that you may distribute in applications you develop as described in this Section. For purposes of this Section 4, the term “distribution” also means deployment of your applications for third parties to access over the Internet."},
+        {"where": "vs2022-ga-community-2026-09-14.txt:41-43（Right to Use and Distribute）", "text": "Right to Use and Distribute. The code and text files listed below are “Distributable Code”. / Distributable List. You may copy and distribute the object code form of code listed on the Distributable List located at https://aka.ms/vs/17/redistribution. / Sample Code, Templates and Styles. You may copy, modify and distribute the source and object code form of code marked as “sample”, “template”, “simple styles” and “sketch styles”."},
+        {"where": "vs2022-ga-community-2026-09-14.txt:44（Third Party Distribution）", "text": "Third Party Distribution. You may permit distributors of your applications to copy and distribute the Distributable Code as part of those applications."},
+        {"where": "vs2022-ga-community-2026-09-14.txt:45-47（Distribution Requirements）", "text": "Distribution Requirements. For any Distributable Code you distribute, you must: / add significant primary functionality to it in your applications; and / require distributors and external end users to agree to terms that protect the Distributable Code at least as much as this agreement."},
+        {"where": "vs2022-ga-community-2026-09-14.txt:48-51（Distribution Restrictions）", "text": "Distribution Restrictions. You may not: / distribute components or runtimes that are marked “Preview”, “Pre-release” or “Beta”; / use Microsoft’s trademarks in your applications’ names or in a way that suggests your applications come from or are endorsed by Microsoft; or / modify or distribute the source code of any Distributable Code so that any part of it becomes subject to an Excluded License. An “Excluded License” is one that requires, as a condition of use, modification or distribution of code, that (i) it be disclosed or distributed in source code form; or (ii) others have the right to modify it."},
+        {"where": "vs2026-ga-community-2026-09-14.txt:53-55（2026 版 DISTRIBUTABLE CODE）", "text": "DISTRIBUTABLE CODE. The software contains code that you may distribute in applications you develop as described in this Section. For purposes of this Section, the term “distribution” also means deployment of your applications for third parties to access over the Internet. / Right to Use and Distribute. The code and text files listed in (i) and (ii) below are “Distributable Code”. / Distributable List. You may copy and distribute the object code form of code listed on the Distributable List located at https://aka.ms/vs/18/redistribution."},
+        {"where": "vs2026-ga-community-2026-09-14.txt:58-61（2026 版 Distribution Requirements・3 項目に増えている）", "text": "Distribution Requirements. For any Distributable Code you distribute, you must: / add significant primary functionality to it in your applications; / require distributors and external end users to agree to terms that protect the Distributable Code at least as much as these license terms; and / indemnify, defend, and hold harmless Microsoft from any claims, including attorneys’ fees, related to the distribution or use of your applications, except to the extent that any claim is based solely on the Distributable Code."},
+        {"where": "vs2026-ga-community-2026-09-14.txt:62-64（2026 版 Distribution Restrictions）", "text": "Distribution Restrictions. You may not: / distribute Unreleased Components; / distribute software developed with Insiders Channel Software or that depends on Unreleased Components;"},
+        {"where": "vs2022-ga-community-2026-09-14.txt:9-10（Community の利用資格・individual）", "text": "INSTALLATION AND USE RIGHTS. / Individual License. If you are an individual working on your own applications, either to sell or for any other purpose, you may use the software to develop and test those applications."},
+        {"where": "vs2022-ga-community-2026-09-14.txt:11-17（Community の利用資格・organization／open source／academic／small business）", "text": "Organizational License. If you are an organization, your users may use the software as follows: / Any number of your users may use the software to develop and test applications released under Open Source Initiative (OSI) approved open source software licenses. / Any number of your users may use the software to develop and test extensions to Visual Studio. / Any number of your users may use the software to develop and test device drivers for the Windows operating system. / Any number of your users may use the software only for Microsoft SQL Server development when using the SQL Server Data Tools or the extensions “Microsoft Analysis Services Projects”, “Microsoft Reporting Services Projects”, or “SQL Server Integration Services Projects” to develop Microsoft SQL Server database projects or Analysis Services, Reporting Services, Power BI Report Server, or Integration Services projects. / Any number of your users may use the software to develop and test your applications as part of online or in person classroom training and education, or for performing academic research. / If none of the above apply, and you are also not an enterprise (defined below), then up to 5 of your individual users can use the software concurrently to develop and test your applications."},
+        {"where": "vs2022-ga-community-2026-09-14.txt:18-19（enterprise の定義と制限）", "text": "If you are an enterprise, your employees and contractors may not use the software to develop or test your applications, except for: (i) open source; (ii) Visual Studio extensions; (iii) device drivers for the Windows operating system; (iv) SQL Server development; and, (v) education purposes as permitted above. / An “enterprise” is any organization and its affiliates who collectively have either (a) more than 250 PCs or users or (b) one million U.S. dollars (or the equivalent in other currencies) in annual revenues, and “affiliates” means those entities that control (via majority ownership), are controlled by, or are under common control with an organization."},
+        {"where": "vs2026-ga-community-2026-09-14.txt:14-22（2026 版 Community の利用資格）", "text": "Individual License. If you are an individual working on your own applications, either to sell or for any other purpose, you may use the software to develop and test those applications. / Organizational License. If you are an organization, your users may use the software as follows: / Any number of your users may use the software to develop and test: / applications released under Open Source Initiative (OSI) approved open source software licenses; / extensions to Visual Studio; / device drivers for the Windows operating system; / your applications as part of online or in person classroom training and education, or for performing academic research; and / Microsoft SQL Server database projects or Analysis Services, Reporting Services, Power BI Report Server, or Integration Services projects when using the SQL Server Data Tools or the extensions “Microsoft Analysis Services Projects”, “Microsoft Reporting Services Projects”, or “SQL Server Integration Services Projects”. / If none of (i) through (v) above apply, and you are also not an enterprise (defined below), then up to 5 of your individual users can use the software concurrently to develop and test your applications."},
+        {"where": "vs2022-ga-proenterprise-2026-09-14.txt:47-55（Professional・Enterprise 2022）", "text": "DISTRIBUTABLE CODE. The software contains code that you are permitted to distribute in applications you develop as described in this Section. … Distributable List. You may copy and distribute the object code form of code listed on the Distributable List located at https://aka.ms/vs/17/redistribution. … Distribution Requirements. For any Distributable Code you distribute, you must: / add significant primary functionality to it in your applications; / require distributors and external end users to agree to terms that protect the Distributable Code at least as much as this agreement; and / indemnify, defend, and hold harmless Microsoft from any claims, including attorneys’ fees, related to the distribution or use of your applications, except to the extent that any claim is based solely on the Distributable Code."}
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "配る側が当該 Visual Studio（Community／Professional／Enterprise）の「validly licensed copy」を持っていること（R3-04 の Distributable List 柱書）",
+        "Distributable List（https://aka.ms/vs/17/redistribution ＝ VS2022、https://aka.ms/vs/18/redistribution ＝ VS2026）に載っている物だけ",
+        "unmodified（改変しない）",
+        "自分のアプリに significant primary functionality を足すこと",
+        "再頒布者と外部の利用者に「この契約と同等以上に Distributable Code を守る条件」への同意を求めること",
+        "（2026 版・および 2022 の Professional／Enterprise のみ）Microsoft を免責・防御・補償すること",
+        "Microsoft の商標をアプリ名に使わない／Microsoft 製・Microsoft 公認と思わせない",
+        "Excluded License（ソース開示や改変権を要求するライセンス＝GPL 系）に服させる形で配らない",
+        "Preview／Pre-release／Beta（2026 版では Unreleased Components）は配らない"
+      ],
+      "modification_or_resigning": {
+        "status": "forbidden",
+        "quote": "You may not modify these files.（originals/vs2022-redist-2026-09-14.txt:130 ／ vs2026-redist-2026-09-14.txt:115）／「you may copy and distribute with your program the unmodified form of the files listed below」（vs2022-redist-2026-09-14.txt:63 ／ vs2026-redist-2026-09-14.txt:59）"
+      },
+      "authenticode_observed": "signed-by-vendor",
+      "open_points_for_commander": [
+        "「validly licensed copy」「licensed Visual Studio users」に、Community 版の利用資格条（individual／OSS／academic／5 users まで）で使っている者が当たるか＝法解釈。席は断定しない（22-note 未確認 4・first-run-notices §C 1 と同じ論点で、今回は本文を取得したので条文は揃った）",
+        "本機に入っているのは Build Tools 2026 だけで Community／Professional は入っていない（vswhere 実測・R3-13）。Community を入れる／入れない、どの版の Distributable List を根拠にするかは卓の選択",
+        "Distribution Requirements の「require distributors and external end users to agree to terms that protect the Distributable Code at least as much as this agreement」を、v3 の配布ページ・初回同意 UI でどう実装するか（EULA を同梱して同意を取る形になる）",
+        "2026 版・および 2022 の Professional／Enterprise にある indemnify 条項（Microsoft の免責・防御・補償）を負うか"
+      ],
+      "notes": "取得＝curl.exe -sS -L（2026-09-14 10:41:55〜10:42:00 JST）。指定された https://visualstudio.microsoft.com/license-terms/vs2022-ga-buildtools/ と .../vs2022-ga-professional/ は **HTTP 404**（保存された .html はその 404 本文 223,579 B・sha256 a6fead84b3885ca879bff4eac2eb91e70ba97eeb7dc01e9ee216d40e9374394c）。正しい URL は索引 https://visualstudio.microsoft.com/license-terms/（originals/vs-license-terms-index-2026-09-14.html・254,767 B・sha256 5b261122f9995c2e5b3214160b83f3d9d0a976b7101271cd99f2c100bd88d37e）から判明＝Professional は Enterprise と同一檔 vs2022-ga-proenterprise、Build Tools は vs2022-ga-diagnosticbuildtools／vs2026-ga-diagnostic-buildtools。**各ページの本文は HTML に無く、Office viewer の iframe が指す .docx が実体**（例＝https://visualstudio.microsoft.com/wp-content/uploads/2021/11/Visual-Studio-2022-Community-License-EN.docx）。.docx を落として word/document.xml から段落単位でテキスト化し、.docx と .txt の双方を originals に保存した。各檔の sha256／バイト数＝vs2022-ga-community .docx 62,859 B / 41a207b10c8ab91d0d2f10a854715f73dca54509581692d2fe179aa3ffcb8540、.txt 19,032 B / 12d30ff97d503621c802d2ec83547d7ad9d7702fa968fd6092b2863082061f72。vs2026-ga-community .docx 69,066 B / 02ac07637f4a513a807cd3721c7620433fc483bc049d25784b0c10c54b05e1fb、.txt 27,291 B / 285c840cebfee633ab3c4694979c9bf0ce78877a79a088874bf4cfd5a0c8c6fa。vs2022-ga-proenterprise .docx 63,513 B / 9c0cd52b20db9d081854c75bd1b50c75514b8f8cb09c8cad15e89d90b97b5bf3、.txt 27,088 B / ba95da318673c9dfdd85d5034fc69de10e51ae437d3872943bb01a2eb1916515。vs2026-ga-pro-enterprise .docx 67,523 B / dd2ab92a7c2bb90dd509e16572707a34b13bc0bc09b9199d115f25594ac39053、.txt 31,949 B / 572be133d388483a93479a3f8764c073aeb2174fc434f39fcf35b7b627fb5d27。行番号は保存した .txt の行番号。2026-09-04 の材料にこれらの本文は無い（22-note 未確認 4 が「本文を取得していない」と書いたとおり）ので sha256 比較の相手が無い。"
+    },
+    {
+      "id": "R3-02",
+      "component": "【A】Visual Studio Build Tools の licence に Distributable Code 節があるか＝**無い**（2022・2026 とも）。本機に入っているのは Build Tools 2026 だけなので最重要",
+      "covers_files": ["vc_redist.x64.exe"],
+      "license_name": "MICROSOFT SOFTWARE LICENSE TERMS — MICROSOFT VISUAL STUDIO 2022 ／ 2026 REMOTE DEBUGGER, INTELLITRACE COLLECTOR, other DEBUGGERS, AGENTS and BUILD TOOLS",
+      "source_url": "https://visualstudio.microsoft.com/license-terms/vs2026-ga-diagnostic-buildtools/ ／ https://visualstudio.microsoft.com/license-terms/vs2022-ga-diagnosticbuildtools/",
+      "original_file": "originals/vs2026-ga-diagnostic-buildtools-2026-09-14.txt ／ originals/vs2022-ga-diagnosticbuildtools-2026-09-14.txt",
+      "sha256": "b3933f0eff789f7fb97e2e33d659662f22ea5379b7f57c6b301c3c5d1be6952e",
+      "bytes": 18373,
+      "same_as_2026_09_04": "not-compared",
+      "quotes": [
+        {"where": "vs2026-ga-diagnostic-buildtools-2026-09-14.txt:3-5（表題と版）", "text": "MICROSOFT SOFTWARE LICENSE TERMS / MICROSOFT VISUAL STUDIO 2026 REMOTE DEBUGGER, INTELLITRACE COLLECTOR, other DEBUGGERS, AGENTS and BUILD TOOLS / Last Updated: October 1, 2025"},
+        {"where": "vs2026-ga-diagnostic-buildtools-2026-09-14.txt:11（Visual Studio Products の補遺であること）", "text": "The software is licensed as a supplement to Visual Studio Community, Visual Studio Professional, and Visual Studio Enterprise (collectively, “Visual Studio Products”). Use of the software requires a valid license to one of the Visual Studio Products."},
+        {"where": "vs2026-ga-diagnostic-buildtools-2026-09-14.txt:14-15（VS の licence が無い場合に許される範囲）", "text": "Separately, if you don’t have a valid license to any of the Visual Studio Products you may still install and use copies of the software to compile and build C++ components that (i) have been released by a third party under an open-source software license approved by the Open Source Initiative; and (ii) are also reasonably required to build your applications (“Open Source Dependencies”). / You may not use the software pursuant to subsection (d) to develop and test Open Source Dependencies, except, and only to the extent, minor modifications are necessary so that the Open Source Dependencies can be compiled and built with the software."},
+        {"where": "vs2026-ga-diagnostic-buildtools-2026-09-14.txt:18（Build Devices の範囲＝配布ではない）", "text": "Build Devices and Visual Studio Build Tools. You may copy and install files from the software onto your build devices, including physical devices and virtual machines or containers on those machines, whether on-premises or remote machines that are (i) owned by you, (ii) hosted on Microsoft Azure for you, or (iii) under the day-to-day management and control of an Authorized Outsourcer (as defined below) and dedicated solely to your use (collectively, “Build Devices”). You and others in your organization may use these files on your Build Devices solely to compile, build, and verify (i) applications developed by using Visual Studio Products, (ii) applications developed by using Visual Studio Code if you also have a valid license to a Visual Studio Product, and (iii) Open Source Dependencies, and run quality or performance tests of those applications and Open Source Dependencies as part of the build process."},
+        {"where": "vs2026-ga-diagnostic-buildtools-2026-09-14.txt:28,33-34（SCOPE OF LICENSE の禁止列挙）", "text": "SCOPE OF LICENSE. The software is licensed, not sold. … In addition, you may not: … share, publish, rent, lease, or otherwise distribute the software or any of its code; or / provide the software as a stand-alone offering or combined with any of your applications for others to use, or transfer the software or this agreement to any third party."},
+        {"where": "vs2026-ga-diagnostic-buildtools-2026-09-14.txt:67（EULA ID）", "text": "EULAID: VS2026_Tools_ENU.1033"},
+        {"where": "vs2022-ga-diagnosticbuildtools-2026-09-14.txt:8,26-27,45（2022 版も同じ形）", "text": "This software is licensed as a supplement to Visual Studio Community, Visual Studio Professional, and Visual Studio Enterprise (collectively, “Visual Studio Products”). Use of the software requires a valid license to one of the Visual Studio Products. … share, publish, rent, or lease the software; or / provide the software as a stand-alone offering or combine it with any of your applications for others to use, or transfer the software or this agreement to any third party. … EULAID: VS_2022_Tools_2024Mar_ENU.1033"}
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "Build Tools の licence 本文には「Distributable」の語が 1 度も出てこない＝Distributable Code 節そのものが存在しない（実測＝下の notes）",
+        "逆に SCOPE OF LICENSE は「share, publish, rent, lease, or otherwise distribute the software or any of its code」「provide the software as a stand-alone offering or combined with any of your applications for others to use」を明文で禁じている",
+        "Build Tools の使用自体が「Visual Studio Community／Professional／Enterprise の有効な licence」を要求する（OSS 依存物のビルドのみ例外）"
+      ],
+      "modification_or_resigning": {
+        "status": "forbidden",
+        "quote": "remove, minimize, block or modify any notices of Microsoft or its suppliers in the software;（vs2026-ga-diagnostic-buildtools-2026-09-14.txt:31）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "**矛盾が 1 つある**＝VS2026 の Distributable List の柱書（R3-05）は「the ‘Distributable Code’ section of the Microsoft Software License Terms for Visual Studio Enterprise, Visual Studio Professional, Visual Studio Community, and Visual Studio Build Tools」と Build Tools を**名指ししている**のに、Build Tools 2026 の licence 本文には Distributable Code 節が**存在しない**。どちらを正とするかは席が断定しない",
+        "本機の Build Tools 2026 が同梱する Licenses\\1041\\Redist.txt（190 B）も https://aka.ms/vs/18/redistribution を指している（R3-13 の実測）＝Microsoft 自身が Build Tools 導入物の中から vs18 の Distributable List を案内している事実はある",
+        "Build Tools だけを根拠に vc_redist を自前配布できるか（できないなら Community 等の licence を別途持つ必要があるか）"
+      ],
+      "notes": "実測＝保存した 9 檔の licence テキストに対し 'Distributable' を単純一致で数えた結果（PowerShell Select-String -SimpleMatch）：vs2022-cruntime 0／vs2022-ga-community 7／vs2022-ga-diagnosticbuildtools **0**／vs2022-ga-proenterprise 8／vs2022-redist 20／vs2026-ga-community 8／vs2026-ga-diagnostic-buildtools **0**／vs2026-ga-pro-enterprise 8／vs2026-ga-visualcpp-v14-redist-runtime 1（表題の一語のみ）。檔＝vs2026-ga-diagnostic-buildtools .docx 44,201 B / sha256 ff03a242ec131e8353643612cdf58ae3d6cc9b51d7dce929351d140ba24a8b83、.txt 18,373 B / b3933f0eff789f7fb97e2e33d659662f22ea5379b7f57c6b301c3c5d1be6952e。vs2022-ga-diagnosticbuildtools .docx 34,395 B / 2f66b86a00e8d9833789897ce23d05a4a2dbea370cf39c8c1098dbc17d0e7bdc、.txt 11,280 B / 63a68296a0908e443761462eef06a0d15c6ef2e579e3090f59329ce9a9ecbeed。取得 2026-09-14 10:41:56〜10:41:59 JST。"
+    },
+    {
+      "id": "R3-03",
+      "component": "【A】vc_redist.x64.exe 単体に付く EULA（＝利用者が承諾する側の条件）＝MICROSOFT VISUAL C++ V14 REDISTRIBUTABLE and RUNTIME（2026）／MICROSOFT VISUAL C++ 2015 - 2022 RUNTIME（2022）。**再配布の許諾は無く、明文で禁止されている**",
+      "covers_files": ["vc_redist.x64.exe"],
+      "license_name": "MICROSOFT SOFTWARE LICENSE TERMS — MICROSOFT VISUAL C++ V14 REDISTRIBUTABLE and RUNTIME（Last Updated: October 1, 2025・EULA ID: Cpp_v14_ENU.1033）／MICROSOFT VISUAL C++ 2015 - 2022 RUNTIME",
+      "source_url": "https://visualstudio.microsoft.com/license-terms/vs2026-ga-visualcpp-v14-redist-runtime/ ／ https://visualstudio.microsoft.com/license-terms/vs2022-cruntime/",
+      "original_file": "originals/vs2026-ga-visualcpp-v14-redist-runtime-2026-09-14.txt ／ originals/vs2022-cruntime-2026-09-14.txt",
+      "sha256": "c3bf355878dcde7b586ffbdf5a5eb6db16fb8ae107a716363b0d0585e306364c",
+      "bytes": 11932,
+      "same_as_2026_09_04": "not-compared",
+      "quotes": [
+        {"where": "vs2026-ga-visualcpp-v14-redist-runtime-2026-09-14.txt:3-5", "text": "MICROSOFT SOFTWARE LICENSE TERMS / MICROSOFT VISUAL C++ V14 REDISTRIBUTABLE and RUNTIME / Last Updated: October 1, 2025"},
+        {"where": "vs2026-ga-visualcpp-v14-redist-runtime-2026-09-14.txt:10-11（INSTALLATION AND USE RIGHTS の全文）", "text": "INSTALLATION AND USE RIGHTS. / You may install and use any number of copies of the software."},
+        {"where": "vs2026-ga-visualcpp-v14-redist-runtime-2026-09-14.txt:15,20-21（SCOPE OF LICENSE の禁止）", "text": "SCOPE OF LICENSE. The software is licensed, not sold. These license terms only give you some rights to use the software. Microsoft reserves all other rights. … You may not / … / share, publish, rent, lease, or otherwise distribute the software or any of its code; or / provide the software as a stand-alone offering or combined with any of your applications for others to use, or transfer the software or these license terms to any third party."},
+        {"where": "vs2026-ga-visualcpp-v14-redist-runtime-2026-09-14.txt:18（通知の改変禁止）", "text": "remove, minimize, block or modify any notices of Microsoft or its suppliers in the software;"},
+        {"where": "vs2026-ga-visualcpp-v14-redist-runtime-2026-09-14.txt:53", "text": "EULA ID: Cpp_v14_ENU.1033"},
+        {"where": "vs2022-cruntime-2026-09-14.txt:4,8,17-18（2022 版も同文）", "text": "MICROSOFT VISUAL C++ 2015 - 2022 RUNTIME … You may install and use any number of copies of the software. … share, publish, rent or lease the software; or / provide the software as a stand-alone offering or combined with any of your applications for others to use, or transfer the software or this agreement to any third party."}
+      ],
+      "redistribution_grant": "explicit-no",
+      "conditions": [
+        "この 2 枚（vc_redist 単体に付く EULA）を根拠に自前配布はできない＝配布の根拠は R3-01 の Visual Studio 側 DISTRIBUTABLE CODE 節にしか無い",
+        "「provide the software … combined with any of your applications for others to use」を禁じる文言が入っているので、この EULA だけを見て「アプリに同梱してよい」とは読めない"
+      ],
+      "modification_or_resigning": {
+        "status": "forbidden",
+        "quote": "remove, minimize, block or modify any notices of Microsoft or its suppliers in the software;（vs2026-ga-visualcpp-v14-redist-runtime-2026-09-14.txt:18）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "同一の物（vc_redist.x64.exe）に、⑴ Visual Studio 側の DISTRIBUTABLE CODE（配ってよい・条件付き）と ⑵ この Cpp_v14 EULA（配ってはいけない）の 2 枚が掛かっている。どちらがどの立場に掛かるか（配布者か・利用者か）の読み分けは**法解釈**＝席は断定しない",
+        "配布物に添える licenses/msvc/ にどちらの本文を入れるか（またはどちらも入れるか）"
+      ],
+      "notes": "檔＝vs2026-ga-visualcpp-v14-redist-runtime .docx 39,553 B / sha256 08651651a7602fc7c0e2763de0fde1ff9f868df2780597cd1775ee9d6441c783、.txt 11,932 B / c3bf355878dcde7b586ffbdf5a5eb6db16fb8ae107a716363b0d0585e306364c。vs2022-cruntime .docx 39,644 B / f1e3d56ceb2ad68aae0711b910375009e651ac5530fa0760f0dea6e81e54fae1、.txt 6,621 B / aeae374b269a6426ff4b498bd4896309721ee5db379f3f5b8ae493910ac97c57。取得 2026-09-14 10:41:57・10:42:00 JST。**実測（不発）**＝台帳の VC_redist.x64.exe（build/out/handoff-stage/build-cache/VC_redist.x64.exe・25,635,768 B）の全バイトを ASCII と UTF-16 で読んで 'Cpp_v14' 'MICROSOFT VISUAL C++' '2015 - 2022 RUNTIME' 'EULAID' 'LICENSE TERMS' を検索したが**すべて 0 件**＝どちらの EULA 本文が exe に埋まっているかは平文検索では確認できない（burn バンドルの UX コンテナが圧縮されているため）。"
+    },
+    {
+      "id": "R3-04",
+      "component": "【A】(2) Visual Studio 2022 の Distributable List（REDIST）＝Visual C++ Runtime Files 節。2026-09-04 取得分との比較",
+      "covers_files": ["vc_redist.x64.exe", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"],
+      "license_name": "Distributable Code for Visual Studio 2022（“Distributable List” / “REDIST.txt”）",
+      "source_url": "https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution（https://aka.ms/vs/17/redistribution の解決先）",
+      "original_file": "originals/vs2022-redist-2026-09-14.txt（テキスト化）／ originals/vs2022-redist-2026-09-14.html（生 HTML）",
+      "sha256": "38c19d1d53e9e07ad9900c42041d007c5e1ae01fa8d84d58e731948d0cd63abf",
+      "bytes": 22674,
+      "same_as_2026_09_04": "true（本文一致。ただし sha256 は不一致＝理由は notes）",
+      "quotes": [
+        {"where": "vs2022-redist-2026-09-14.txt:63（Distributable List 柱書）", "text": "The following section is the \"Distributable List\" or \"REDIST.txt\" that is referenced in the \"Distributable Code\" section of the Microsoft Software License Terms for Visual Studio Enterprise 2022, Visual Studio Professional 2022, Visual Studio Community 2022 (\"the software\"). If you have a validly licensed copy of such software, you may copy and distribute with your program the unmodified form of the files listed below, subject to the License Terms for the software."},
+        {"where": "vs2022-redist-2026-09-14.txt:123-129（Visual C++ Runtime Files・マージモジュール）", "text": "Visual C++ Runtime Files / Subject to the License Terms for the software, you may copy and distribute the following files, unmodified, as a part of the installation package of your program: / [VisualStudioFolder]VC\\Redist\\MSVC\\[version]\\MergeModules\\Microsoft_VC143_CRT_[arch].msm / [VisualStudioFolder]VC\\Redist\\MSVC\\[version]\\MergeModules\\Microsoft_VC143_CXXAMP_[arch].msm / [VisualStudioFolder]VC\\Redist\\MSVC\\[version]\\MergeModules\\Microsoft_VC143_MFCLOC_[arch].msm / [VisualStudioFolder]VC\\Redist\\MSVC\\[version]\\MergeModules\\Microsoft_VC143_MFC_[arch].msm / [VisualStudioFolder]VC\\Redist\\MSVC\\[version]\\MergeModules\\Microsoft_VC143_OpenMP_[arch].msm"},
+        {"where": "vs2022-redist-2026-09-14.txt:130-131（VC\\redist フォルダ丸ごと＝ここに vc_redist.x64.exe が入る）", "text": "Subject to the License Terms for the software, you may copy and distribute with your program any of the files within the following folder and its subfolders except as noted below. You may not modify these files. / [VisualStudioFolder]\\VC\\redist"},
+        {"where": "vs2022-redist-2026-09-14.txt:132（ダウンロード頁から取った物への注記）", "text": "The same Visual C++ Runtime Redistributable package is available from Latest supported Visual C++ Redistributable downloads and Download Visual Studio Tools . Distribution of the Visual C++ Runtime Redistributable package, merge modules, and individual binaries obtained from those pages is limited to licensed Visual Studio users and is subject to its license terms."},
+        {"where": "vs2022-redist-2026-09-14.txt:133-136（配ってはいけないフォルダ）", "text": "Note / You may not distribute the contents of the following folders (please see List of Utilities and Build Tools for Visual Studio 2022 for allowed usage for development/testing purposes): / [VisualStudioFolder]VC\\Redist\\MSVC\\[version]\\debug_nonredist / [VisualStudioFolder]\\VC\\Redist\\MSVC\\[version]\\onecore\\debug_nonredist"}
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "「validly licensed copy」を持っていること",
+        "unmodified（改変しない）",
+        "配ってよいのは [VisualStudioFolder]\\VC\\redist とその下（debug_nonredist と onecore\\debug_nonredist を除く）",
+        "Microsoft のダウンロードページから取った同じパッケージについても「limited to licensed Visual Studio users」"
+      ],
+      "modification_or_resigning": {
+        "status": "forbidden",
+        "quote": "You may not modify these files.（vs2022-redist-2026-09-14.txt:130）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "**vc_redist.x64.exe は檔名では 1 度も列挙されていない**（実測＝下の notes）。根拠は「[VisualStudioFolder]\\VC\\redist フォルダとその下」という**場所による指定**であって、Microsoft のダウンロードリンクから落とした exe が同じ扱いかは line:132 の注記の読みに依る＝法解釈"
+      ],
+      "notes": "取得 2026-09-14 10:40:46 JST（curl.exe -sS -L）。生 HTML 62,969 B / sha256 b8be22f3c7b5b968581235a03dd6c945949e6fb383db1472445e603aa4f9a764。テキスト化 22,674 B / sha256 38c19d1d53e9e07ad9900c42041d007c5e1ae01fa8d84d58e731948d0cd63abf。**2026-09-04 の research/lab/tmp/rt-license/vs2022-redist.txt は 22,778 B / sha256 8439da811140360efd17c6e4aef0d22690802f304b17e48f33344b329eac9b75 で sha256 は一致しない。ただしこれは版の差ではなく HTML→テキスト変換の手順の差である**＝両檔を「各行の空白を 1 個に潰し前後を trim し空行を落とす」形に正規化して Compare-Object で突き合わせた結果、**差は 1 行だけ**で、その 1 行は `Visual Studio 2022 Redistribution | Microsoft Learn`（＝<title> の行。今日の変換は <head> を落とすため出ない）。正規化後 old 491 行／new 490 行。**したがって本文は 2026-09-04 と同一**。**実測（列挙の有無）**＝今日の .txt を 'vc_redist' 'VC_redist' で検索して **0 件**、'.exe' で検索して出るのは vs_remotetools.exe / vs_profiler / pgosweep.exe / dotNetFx-*.exe / NDP*.exe / setup.exe / VS170_piaredist.exe / VSSDKTestHost.exe だけ＝**vc_redist.x64.exe という檔名はこの頁に無い**。"
+    },
+    {
+      "id": "R3-05",
+      "component": "【A】(2) Visual Studio 2026（vs18）の Distributable List＝2026 版が存在する。柱書に **Visual Studio Build Tools が加わった**",
+      "covers_files": ["vc_redist.x64.exe"],
+      "license_name": "Distributable Code Files for Visual Studio 2026 and later（“Distributable List” / “REDIST.TXT”）",
+      "source_url": "https://learn.microsoft.com/en-us/visualstudio/releases/vs18/redistribution（https://aka.ms/vs/18/redistribution の解決先）",
+      "original_file": "originals/vs2026-redist-2026-09-14.txt ／ originals/vs2026-redist-2026-09-14.html",
+      "sha256": "3af68626748a0ec4b73a6ab753803d4b6a8f531f97f036346a2fd7a4e3494be7",
+      "bytes": 11549,
+      "same_as_2026_09_04": "unknown",
+      "quotes": [
+        {"where": "vs2026-redist-2026-09-14.txt:58-59（柱書。2022 版と比べて Build Tools が増えている）", "text": "Distributable Code Files for Visual Studio 2026 and later / The following section is the \"Distributable List\" or the \"REDIST.TXT\" that is referenced in the \"Distributable Code\" section of the Microsoft Software License Terms for Visual Studio Enterprise, Visual Studio Professional, Visual Studio Community, and Visual Studio Build Tools (\"the software\"). If you have a validly licensed copy of such software, you may copy and distribute with your program the unmodified form of the files listed below, subject to the License Terms for the software."},
+        {"where": "vs2026-redist-2026-09-14.txt:61", "text": "Files and components marked as \"pre-release\" or \"preview\" in the software are not licensed for redistribution."},
+        {"where": "vs2026-redist-2026-09-14.txt:108-116（Visual C++ Runtime Files・VC145 世代）", "text": "Visual C++ Runtime Files / Subject to the License Terms for the software, you may copy and distribute the following files, unmodified, as a part of the installation package of your program: / [VisualStudioFolder]\\VC\\Redist\\MSVC\\[version]\\MergeModules\\Microsoft_VC145_CRT_[arch].msm / … / Subject to the License Terms for the software, you may copy and distribute with your program any of the files within the following folder and its subfolders except as noted below. You may not modify these files. / [VisualStudioFolder]\\VC\\redist"},
+        {"where": "vs2026-redist-2026-09-14.txt:117", "text": "The same Visual C++ Runtime Redistributable package is available from Latest supported Visual C++ Redistributable downloads and Download Visual Studio Tools . Distribution of the Visual C++ Runtime Redistributable package, merge modules, and individual binaries obtained from those pages is limited to licensed Visual Studio users and is subject to its license terms."},
+        {"where": "vs2026-redist-2026-09-14.txt:119-121", "text": "You may not distribute the contents of the following folders (please see List of Utilities and Build Tools for Visual Studio for allowed usage for development/testing purposes): / [VisualStudioFolder]VC\\Redist\\MSVC\\[version]\\debug_nonredist / [VisualStudioFolder]\\VC\\Redist\\MSVC\\[version]\\onecore\\debug_nonredist"}
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "「validly licensed copy」を持っていること（対象に Visual Studio Build Tools が名指しで含まれる）",
+        "unmodified",
+        "[VisualStudioFolder]\\VC\\redist とその下（debug_nonredist 系を除く）",
+        "pre-release / preview の印が付いた物は再配布不可"
+      ],
+      "modification_or_resigning": {
+        "status": "forbidden",
+        "quote": "You may not modify these files.（vs2026-redist-2026-09-14.txt:115）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "**この頁は Build Tools を「Distributable Code 節を持つ licence」の一覧に入れているが、Build Tools 2026 の licence 本文（R3-02）に Distributable Code 節は無い**。この食い違いをどう扱うか＝席は断定しない。Microsoft に照会するか、Community の licence を別途根拠に置くかの選択",
+        "vc_redist.x64.exe はこの頁でも檔名で列挙されていない（実測＝'vc_redist' 検索 0 件）"
+      ],
+      "notes": "aka.ms の解決を実測＝`curl.exe -sSI -L -o NUL -w %{url_effective}` で https://aka.ms/vs/17/redistribution → https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution（200）、https://aka.ms/vs/18/redistribution → https://learn.microsoft.com/en-us/visualstudio/releases/vs18/redistribution（200）。2026-09-14 10:43:24 JST。頁の取得は 10:43:38 JST。生 HTML 48,818 B / sha256 f439692d0f643b1e2e50fca815a8e8a6f720e1664691346814faf582712fbf18。2026-09-04 にはこの頁を取っていないので比較の相手は無い。"
+    },
+    {
+      "id": "R3-06",
+      "component": "【A】(3) learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files＝「limited to licensed Visual Studio users」とアプリローカル配置",
+      "covers_files": ["vc_redist.x64.exe", "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"],
+      "license_name": "（頁。ライセンス本文ではなく Microsoft の案内）Redistribute Visual C++ Files",
+      "source_url": "https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files",
+      "original_file": "originals/msvc-redist-2026-09-14.txt ／ originals/msvc-redist-2026-09-14.html",
+      "sha256": "a7a65f718c5d806e71e9492263be92d0c0e06c73752f532fc53ba86208668d95",
+      "bytes": 11260,
+      "same_as_2026_09_04": "true（本文一致。sha256 は変換手順の差で不一致）",
+      "quotes": [
+        {"where": "msvc-redist-2026-09-14.txt:28-29（Redistributable files and licensing）", "text": "Redistributable files and licensing / Distribution of the Visual C++ Runtime Redistributable package, merge modules, and individual binaries is limited to licensed Visual Studio users and is subject to Microsoft Software License Terms."},
+        {"where": "msvc-redist-2026-09-14.txt:30", "text": "When you deploy an application, you must also deploy the files that are required to support it. If Microsoft provides any of these files, check whether you're permitted to redistribute them. You can find a link to the Visual Studio license terms in the IDE. In the About Microsoft Visual Studio dialog, select the License Terms link. You can also download the relevant Microsoft Software License Terms and licenses from the Visual Studio License Directory ."},
+        {"where": "msvc-redist-2026-09-14.txt:31", "text": "To view the \"REDIST list\" that's referenced in the \"Distributable Code\" section of the Visual Studio 2022 Microsoft Software License Terms, see Distributable code files for Microsoft Visual Studio 2022 ."},
+        {"where": "msvc-redist-2026-09-14.txt:37（vc_redist.x64.exe の檔名が出る唯一の頁）", "text": "To deploy redistributable files, you can use the redistributable packages installed by Visual Studio. In versions of Visual Studio since 2017, these files are named vc_redist.arm64.exe , vc_redist.x64.exe , and vc_redist.x86.exe ."},
+        {"where": "msvc-redist-2026-09-14.txt:62-63（アプリローカル配置）", "text": "Install individual redistributable files / It's also possible to directly install the Redistributable DLLs in the application local folder . The application local folder is the folder that contains your executable application file. For servicing reasons, we don't recommend that you use this installation location."},
+        {"where": "msvc-redist-2026-09-14.txt:59（マージモジュールは非推奨・中央配置推奨）", "text": "Merge modules ( .msm files) for Visual C++ Redistributable files are deprecated. We don't recommend that you use them for application deployment. Instead, we recommend central deployment of the Visual C++ Redistributable package."}
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "「limited to licensed Visual Studio users」＝配る側が licensed Visual Studio user であること",
+        "「and is subject to Microsoft Software License Terms」＝条件の実体は R3-01 の Distributable Code 節にある",
+        "アプリローカル配置（exe と同じフォルダに DLL 直置き）は**可能だが Microsoft の推奨ではない**（servicing の理由）"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（この頁には改変禁止の文は無い。改変禁止は R3-04／R3-05 の Distributable List 側にある＝「You may not modify these files.」）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "「licensed Visual Studio users」の範囲（R3-01 と同じ論点）",
+        "アプリローカル配置（v3 で DLL 直置きにする案）を採ると「For servicing reasons, we don't recommend」に反する＝ライセンス上の禁止ではなく Microsoft の推奨に反するだけ、という区別"
+      ],
+      "notes": "取得 2026-09-14 10:40:46 JST。生 HTML 60,489 B / sha256 8e359d7a3933547e8a622dd32a587ef82c23a2cf9f55a8adeb941e0b350c7b75。テキスト 11,260 B / sha256 a7a65f718c5d806e71e9492263be92d0c0e06c73752f532fc53ba86208668d95。**2026-09-04 の research/lab/tmp/rt-license/msvc-redist.txt は 11,353 B / sha256 7f779db5732025ff77ffc532fc4c659f876563098a57a0b9af3ba3007f829e7e**。R3-04 と同じ正規化で Compare-Object した結果、**差は 1 行だけ**で、その 1 行は `Redistribute Visual C++ Files | Microsoft Learn`（<title> の行）＝**本文は 2026-09-04 と同一**。正規化後 old 110 行／new 109 行。"
+    },
+    {
+      "id": "R3-07",
+      "component": "【A】(3) learn.microsoft.com/cpp/windows/latest-supported-vc-redist＝配布権の一文と配布リンク",
+      "covers_files": ["vc_redist.x64.exe"],
+      "license_name": "（頁）Microsoft Visual C++ Redistributable latest supported downloads",
+      "source_url": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
+      "original_file": "originals/latest-supported-vc-redist-2026-09-14.txt ／ originals/latest-supported-vc-redist-2026-09-14.html",
+      "sha256": "1d2ff41bcc79f3ac0ece25113156cafbe5c9f486f979b512ab2d3aa91442759e",
+      "bytes": 11261,
+      "same_as_2026_09_04": "not-compared（2026-09-04 にこの頁は取得されていない）",
+      "quotes": [
+        {"where": "latest-supported-vc-redist-2026-09-14.txt:48（配布権の一文）", "text": "Redistribution is permitted only for licensed Visual Studio users, as described in the Visual Studio license terms . For details on redistributing Visual C++ files, see Redistribute Visual C++ files ."},
+        {"where": "latest-supported-vc-redist-2026-09-14.txt:49-50", "text": "A Visual C++ Redistributable installs Microsoft C and C++ Runtime libraries. Many applications built by using Microsoft Visual C++ (MSVC) Build Tools require these libraries. If your app is built by using those libraries, a Microsoft Visual C++ Redistributable package at least as recent as the build tools used to build your app must be installed on the target system along with the app. / The redistributable package architecture must match your app's target architecture."},
+        {"where": "latest-supported-vc-redist-2026-09-14.txt:64-66（Microsoft 側の恒久リンク＝誘導案の取得先）", "text": "X64 / https://aka.ms/vc14/vc_redist.x64.exe / Permalink for latest supported x64 version. The X64 Redistributable package contains both ARM64 and X64 binaries."},
+        {"where": "latest-supported-vc-redist-2026-09-14.txt:53（版番号が頁に載らない旨）", "text": "Unlike older versions of Visual Studio that have infrequent redistributable updates, the version number isn't listed in the following table for the Visual C++ v14 Redistributable because it's updated frequently. To find the version number of the latest redistributable, download the one you're interested in by using one of the following links."},
+        {"where": "latest-supported-vc-redist-2026-09-14.txt:71-72（版の互換）", "text": "Visual Studio 2017 and later share the same redistributable files. Any apps built by MSVC Build Tools v14.* available in Visual Studio 2017, 2019, 2022, or 2026 can use the latest Visual C++ v14 Redistributable. / The version of the Redistributable installed on the machine must be the same or later than the version of the MSVC Build Tools used to create your application."},
+        {"where": "latest-supported-vc-redist-2026-09-14.txt:70（言語別 licence）", "text": "The Visual C++ v14 Redistributable doesn't have separate packages for different languages. License terms for different languages are available at Microsoft Software License Terms ."}
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "「Redistribution is permitted only for licensed Visual Studio users」＝配る側が licensed Visual Studio user であること",
+        "アプリのビルドに使った MSVC Build Tools 以上の版の Redistributable が対象機に要る（＝台帳の pin 14.44.35211.0 と本機の Build Tools 2026 の VC\\Redist 同梱版 14.51.36247.0 の関係は R3-13 参照）"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（この頁に 'unmodified' の語は 0 件＝実測。改変禁止は R3-04／R3-05 側にしか無い）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "台帳の pin は 14.44.35211.0（VS2022 世代）。本機の Build Tools 2026 が同梱するのは 14.51.36247.0。「ビルドに使った Build Tools 以上」の条件に照らして v3 でどちらを配るか（台帳の pin を上げるか）は設計の話＝卓"
+      ],
+      "notes": "取得 2026-09-14 10:40:47 JST。生 HTML 65,826 B / sha256 efa19c02afcd9da2789c464f75c2f2a8f298daf25abf72c5fed5d294a1bb3888。テキスト 11,261 B / sha256 1d2ff41bcc79f3ac0ece25113156cafbe5c9f486f979b512ab2d3aa91442759e。**実測**＝この .txt に 'unmodified' は 0 件。"
+    },
+    {
+      "id": "R3-08",
+      "component": "【A】(4) 「自前の置き場から配る」と「Microsoft の URL に誘導する（v2 の現行）」で必要になる権利が条文上どう違うか（**判断はしない・条文の対応だけ**）",
+      "covers_files": ["vc_redist.x64.exe"],
+      "license_name": "（R3-01〜R3-07 の各条文の対応表）",
+      "source_url": "https://visualstudio.microsoft.com/license-terms/vs2026-ga-community/ ／ https://learn.microsoft.com/en-us/visualstudio/releases/vs18/redistribution ／ https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist",
+      "original_file": "originals/vs2026-ga-community-2026-09-14.txt ほか（R3-01〜R3-07 に同じ）",
+      "sha256": "285c840cebfee633ab3c4694979c9bf0ce78877a79a088874bf4cfd5a0c8c6fa",
+      "bytes": 27291,
+      "same_as_2026_09_04": "not-applicable",
+      "quotes": [
+        {"where": "【自前配布の側】vs2026-ga-community-2026-09-14.txt:55 ＋ vs2026-redist-2026-09-14.txt:59", "text": "Distributable List. You may copy and distribute the object code form of code listed on the Distributable List located at https://aka.ms/vs/18/redistribution. ／ If you have a validly licensed copy of such software, you may copy and distribute with your program the unmodified form of the files listed below, subject to the License Terms for the software."},
+        {"where": "【自前配布の側の義務】vs2026-ga-community-2026-09-14.txt:58-61", "text": "Distribution Requirements. For any Distributable Code you distribute, you must: / add significant primary functionality to it in your applications; / require distributors and external end users to agree to terms that protect the Distributable Code at least as much as these license terms; and / indemnify, defend, and hold harmless Microsoft from any claims, including attorneys’ fees, related to the distribution or use of your applications, except to the extent that any claim is based solely on the Distributable Code."},
+        {"where": "【誘導の側】latest-supported-vc-redist-2026-09-14.txt:64-66", "text": "X64 / https://aka.ms/vc14/vc_redist.x64.exe / Permalink for latest supported x64 version."},
+        {"where": "【誘導の側で利用者に掛かる条件】vs2026-ga-visualcpp-v14-redist-runtime-2026-09-14.txt:8,10-11", "text": "BY USING THE SOFTWARE, YOU ACCEPT THESE TERMS. IF YOU DO NOT ACCEPT THEM, DO NOT USE THE SOFTWARE. … INSTALLATION AND USE RIGHTS. / You may install and use any number of copies of the software."},
+        {"where": "【両者に共通で掛かる文】msvc-redist-2026-09-14.txt:29 ／ latest-supported-vc-redist-2026-09-14.txt:48", "text": "Distribution of the Visual C++ Runtime Redistributable package, merge modules, and individual binaries is limited to licensed Visual Studio users and is subject to Microsoft Software License Terms. ／ Redistribution is permitted only for licensed Visual Studio users, as described in the Visual Studio license terms ."}
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "【自前の置き場から配る場合に条文が要求する物】⑴ Visual Studio Community／Professional／Enterprise の validly licensed copy（Build Tools 単体の licence には Distributable Code 節が無い＝R3-02）／⑵ 配る檔は Distributable List に載っている物のみ／⑶ unmodified／⑷ 自分のアプリに significant primary functionality を足す／⑸ 再頒布者と外部の利用者に「同等以上に守る条件」への同意を求める／⑹（2026 版）Microsoft への indemnify／⑺ Microsoft 商標の不使用／⑻ Excluded License に服させない",
+        "【Microsoft の URL に誘導する場合に条文が要求する物】⑴ 「copy and distribute」に当たる行為を我々が行わない形であれば Distributable Code 節の 8 条件は発動しない（＝上の⑴〜⑻の要否が変わる）／⑵ 利用者は vc_redist.x64.exe を実行した時点で Cpp_v14 EULA（R3-03）を自分で承諾する／⑶ 「limited to licensed Visual Studio users」の文が『distribution』に掛かるのか『取得』にも掛かるのかは条文上明示が無い",
+        "**両者に共通して残る物**＝R3-03 の Cpp_v14 EULA が禁じる「provide the software as a stand-alone offering or combined with any of your applications for others to use」の読みは、どちらの案を採っても背景にある"
+      ],
+      "modification_or_resigning": {
+        "status": "forbidden",
+        "quote": "You may not modify these files.（vs2026-redist-2026-09-14.txt:115）— 自前配布の場合に明文で掛かる。誘導の場合は我々が檔に触れないので発動しない。"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "「copy and distribute」に自前の置き場（GitHub Release 等）へのアップロードが当たるか＝当たるという前提で条件を積むのが安全だが、断定は卓",
+        "「誘導」案では Microsoft 側の URL が浮動する（aka.ms/vc14/vc_redist.x64.exe は latest に追従）ため、台帳の sha256 pin と両立しない。これは権利ではなく設計の話（席は判断しない）",
+        "v2 の現行（誘導）を v3 でも残すか、自前配布に移すかは裁定 148 の⑵「全部を自前の置き場から配る」との関係で卓が決める"
+      ],
+      "notes": "本項は**条文の対応関係を並べただけ**で、どちらが可か・どちらを採るべきかは書いていない（鉄則 1）。新規に取得した原文は無く、R3-01〜R3-07 の檔を参照している。"
+    },
+    {
+      "id": "R3-09",
+      "component": "【B】Azure Trusted Signing ＝ **2026-09-14 現在は「Azure Artifact Signing」に改称**。利用条件・対象・識別検証・個人での申込可否と国・料金",
+      "covers_files": ["（v3 で署名を付ける構想の対象＝第三者の未署名 .pyd／.dll）"],
+      "license_name": "（サービス条件。本体の Terms of Use は Azure ポータル内でのみ配布されており取得できていない）",
+      "source_url": "https://learn.microsoft.com/en-us/azure/trusted-signing/（→ 301 相当で https://learn.microsoft.com/en-us/azure/artifact-signing/ に解決）",
+      "original_file": "originals/artifact-signing-quickstart-2026-09-14.txt ／ artifact-signing-faq-2026-09-14.txt ／ artifact-signing-concept-certificate-management-2026-09-14.txt ／ artifact-signing-overview-2026-09-14.txt ／ artifact-signing-pricing-2026-09-14.txt ／ trusted-signing-overview-2026-09-14.txt",
+      "sha256": "800d4425150d4f1f9631576a6ecc07392954149f08d4b48415cb01c0fce41277",
+      "bytes": 32005,
+      "same_as_2026_09_04": "not-applicable（2026-09-04 の調査対象外）",
+      "quotes": [
+        {"where": "artifact-signing-quickstart-2026-09-14.txt:33（Prerequisites の Note＝国の制限）", "text": "Public Trust certificates are available to organizations in the United States, Canada, the European Union, the United Kingdom, Australia, New Zealand, Japan, South Korea, Singapore, Switzerland, Norway, and Israel. Individual developers must be located in the United States or Canada. These geographic restrictions do not apply to Private Trust certificates."},
+        {"where": "artifact-signing-quickstart-2026-09-14.txt:35-37（個人での申込の要件）", "text": "For Public Trust individual identity validation, Artifact Signing automatically sources identity details from the Azure billing account associated with the subscription used to create the Artifact Signing resource. The billing account must have an Account Type of Individual. / Before starting validation, confirm that the legal name and billing address are accurate. This information appears on the Public Trust certificate profile. / This billing account type requirement applies only to individual identity validation. Organization identity validation doesn't require an Azure billing account with an Account Type of Organization."},
+        {"where": "artifact-signing-quickstart-2026-09-14.txt:304-316（識別検証で受け付ける書類）", "text": "Types of ID Accepted: / Government-issued IDs such as passports, driving licenses, or ID cards. / Photo IDs (or a US Social Security Card). / Official government-issued IDs such as a passport, driver’s license, or state ID. / Don't submit privately issued IDs such as library cards, school IDs, club membership cards, etc. … Utility Bills: Electricity, water, gas, or telephone bills (should be recent, typically within the last three months). / Bank Statements: Official statements from banks or credit card companies that show the individual’s address."},
+        {"where": "artifact-signing-quickstart-2026-09-14.txt:321（書類の改変禁止）", "text": "Don't use Photoshop or other editing software; don't alter the document in any way."},
+        {"where": "artifact-signing-faq-2026-09-14.txt:66（メール検証の期限）", "text": "Ensure that you didn't miss an email verification link that was sent to the primary email address you entered when you created your identity validation request. The link expires after seven days."},
+        {"where": "artifact-signing-faq-2026-09-14.txt:79（第三者による本人確認）", "text": "For issues related to the AU10TIX identity-verification experience, contact [AU10TIX Support](( au10tix.support@au10tix.com ) directly. This includes problems uploading identity documents, completing facial verification, or using the AU10TIX verification flow."},
+        {"where": "artifact-signing-faq-2026-09-14.txt:52（CN／O は選べない）", "text": "No, you can't use a custom Common Name (CN) or a custom Organization (O) with Artifact Signing. Currently, the Artifact Signing service doesn't support customization. Also, keep in mind that per the Certification Authority Browser Forum (CA/Browser Forum) in the Code Signing Baseline Requirements (CSBRs) for publicly trusted code signing certificates, CN values must always be the legal entity's validated name (for example, Contoso Corporation )."},
+        {"where": "artifact-signing-faq-2026-09-14.txt:150（Terms of Use への言及＝本体は別檔）", "text": "If a certificate is misused or abused per the service Terms of Use, Artifact Signing suspends the account or revokes a signing certificate or both. In this scenario, we engage with you directly and follow the guidelines in the CA/Browser Forum CSBRs."},
+        {"where": "artifact-signing-faq-2026-09-14.txt:211", "text": "Artifact Signing may revoke certificate(s) and suspend access to Artifact Signing service if misuse or abuse is confirmed."},
+        {"where": "artifact-signing-concept-certificate-management-2026-09-14.txt:34-35（証明書の寿命と失効の粒度）", "text": "To help reduce the impact of signing misuse and abuse, Artifact Signing certificates are renewed daily and are valid for only 72 hours. In these short-lived certificates, revocation actions can be as acute as a single day or as broad as needed to cover any incidents of misuse and abuse. / For example, if it's determined that a subscriber signed code that was malware or a potentially unwanted application (PUA) as defined in How Microsoft identifies malware and potentially unwanted applications , revocation actions can be isolated to revoking only the certificate that signed the malware or PUA."},
+        {"where": "artifact-signing-concept-certificate-management-2026-09-14.txt:60-61（監視）", "text": "Artifact Signing passionately supports a healthy ecosystem by using active threat intelligence monitoring to constantly look for cases of misuse and abuse of Artifact Signing subscribers' Public Trust certificates. / For a confirmed case of misuse or abuse, Artifact Signing immediately takes the necessary steps to mitigate and remediate any threats, including targeted or broad certificate revocation and account suspension."},
+        {"where": "artifact-signing-pricing-2026-09-14.txt:899-909（料金表の構造。金額は頁の静的 HTML に無い）", "text": "Basic / Premium / $- / $- / Quota (signatures/month) / … / Price after quota is reached / $- /signature / $- /signature"}
+      ],
+      "redistribution_grant": "not-applicable",
+      "conditions": [
+        "**Public Trust 証明書：個人（Individual developers）は米国かカナダに所在していなければならない**。組織（organizations）は日本を含む 12 の国・地域が対象。Private Trust にはこの地理制限は掛からない",
+        "個人の識別検証は Azure の課金アカウントの Account Type が Individual であることを要求し、証明書に載る legal name と請求先住所はそこから自動で取られる",
+        "識別検証は Azure ポータルでのみ実施（Azure CLI 不可）。政府発行の身分証＋住所証明（公共料金の請求書か銀行明細）＋顔照合（AU10TIX）。メールの検証リンクは 7 日で失効",
+        "証明書の CN／O は自分で決められない（法人の検証済み名称になる）",
+        "証明書は毎日更新・有効期間 72 時間。misuse／abuse が確認されるとアカウント停止と失効",
+        "Azure サブスクリプションと Microsoft Entra テナントが要る。リソースを作れる Azure リージョンは限定（Japan East は一覧にある）"
+      ],
+      "modification_or_resigning": {
+        "status": "unknown",
+        "quote": "（「署名してよい物の範囲」「you must own or be authorized」に当たる文は、取得できた 9 頁のいずれにも**無い**。取得した .txt 全体を 'you must own' 'authorized to' 'rights to' 'third-party code' 'on behalf of' 'Product Terms' で検索した結果、該当する条文は 0 件＝**無い物は無い**。禁じられているのは「Suspect Code／malware／PUA への署名」だけが明文で、それも FAQ・concept 頁の説明文であって条文ではない）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "**最大の壁**＝司令官が個人として申し込む場合、Public Trust は米国・カナダ所在の個人に限られる（日本の個人は対象外）。日本は「organizations」の欄にしかない。法人化するか、Public Trust を諦めて Private Trust にするか（Private Trust はスマート アプリ コントロールの信頼には届かない公算があるが、それは別便の検分事項）",
+        "**「署名してよい物の範囲」を定める条文が取得できていない**＝実体は「service Terms of Use」という別檔で、Azure ポータルの申込画面で「I accept Microsoft terms of use for trusted signing services」として提示・ダウンロードされる形。サインインが要るため本席では取得できなかった。**第三者の未署名 .pyd／.dll に配布側が署名を付けてよいかは、この檔を読まないと答えが出ない**＝卓が Azure ポータルで取得するか、Microsoft に照会する必要がある",
+        "料金は頁の静的 HTML に入っておらず（Basic／Premium とも `$-`）、金額は取れていない。Basic／Premium の 2 SKU、月あたりの署名数の quota、quota 超過後は 1 署名あたり課金、という**構造だけ**が読める。FAQ:198 に「The pricing isn't calculated on a pro rata basis. The invoice is generated with the full amount for the SKU that you selected when you created the account, regardless of when you begin to use the service after you create your account.」とあり、月割りにならない点は条文で確認できる"
+      ],
+      "notes": "**改称の実測**＝https://learn.microsoft.com/en-us/azure/trusted-signing/ を curl で追跡すると `%{url_effective}` は https://learn.microsoft.com/en-us/azure/artifact-signing/（200）。取得した本文の表題も「What is Artifact Signing?」で、頁の Last updated は 2026-05-12。旧名の頁を originals/trusted-signing-overview-2026-09-14.html（30,383 B / sha256 5b929f1f5d7381bc8e45cf9a542b11afa8876b0fc3237a53b5cea534fd07a85e）としても保存した。新名の頁一覧は https://learn.microsoft.com/en-us/azure/artifact-signing/toc.json から取得（overview / quickstart / faq / concept-certificate-management / concept-resources-roles / concept-trust-models / how-to-* / tutorial-assign-roles の 15 件）。取得時刻 2026-09-14 10:46:06〜10:46:58 JST。主な檔の sha256／バイト数＝quickstart .html 104,707 B / 5d80955106466d19d0bead8028ca72f16f5256809fff7ab297d4126ad59346e1、.txt 32,005 B / 800d4425150d4f1f9631576a6ecc07392954149f08d4b48415cb01c0fce41277。faq .html 122,140 B / 204f28ba95c7d99e9448b833a38baddc4927db5c5e8cc92ba1c9fe8f29dc1368、.txt 24,693 B / b753f3aa7677754cecb91b7aa25cfbfb69cc9d9dcb939b692d3b7dd86cd02221。concept-certificate-management .html 56,502 B / a148aede9176eb52d132dc1d3c157a412ec4ba045279c528e03ce3c8f3678fa1、.txt 9,327 B / 9138c3162644f07c96113f554a10d4377d203d590e5dd159002a0b8cfa8a3216。pricing .html 471,254 B / ac6315e7541629a28cc963eda587622fb6fab66d75d6a59d51bbaf764efbb690、.txt 41,272 B / 5326c67435769a80046fb5256c0e7638de4ae27e55457a737cf5fb2555f8420e。**取得に失敗した URL**＝旧名の concept-trusted-signing-trust-models／-resources-roles／-cert-management は **HTTP 404**（保存された .html はいずれも 404 本文 17,973 B / sha256 2b83924af2346cf82d08e61cbb47bb31caa8f069ec3a0e8bfc08849e4c371a57）。料金の実額は WebFetch でも取れず（「prices not present in fetched content」＝表の値が `$-` のまま）。"
+    },
+    {
+      "id": "R3-10",
+      "component": "【B】OV／EV 証明書の一般条項＝CA/Browser Forum Code Signing Baseline Requirements の署名者（Subscriber）の義務（§9.6.3）",
+      "covers_files": ["（署名する側の義務。対象檔は限定されない）"],
+      "license_name": "Baseline Requirements for the Issuance and Management of Publicly-Trusted Code Signing Certificates, Version 3.11.0, Date: June 16, 2026",
+      "source_url": "https://cabforum.org/working-groups/code-signing/requirements/",
+      "original_file": "originals/cabf-csbr-index-2026-09-14.txt ／ originals/cabf-csbr-index-2026-09-14.html",
+      "sha256": "11f54a0fdfcb26b558ed1638f6ffef4345e40dcda4aa58852420ec01184156ea",
+      "bytes": 270509,
+      "same_as_2026_09_04": "not-applicable",
+      "quotes": [
+        {"where": "cabf-csbr-index-2026-09-14.txt:16（版）", "text": "Version: 3.11.0 Date: June 16, 2026"},
+        {"where": "cabf-csbr-index-2026-09-14.txt:4553-4558（§9.6.3 柱書）", "text": "9.6.3 Subscriber representations and warranties / The CA MUST require, as part of the Subscriber Agreement, that the Applicant make the commitments and warranties set forth in this section, as applicable, for the benefit of the CA and the Certificate Beneficiaries."},
+        {"where": "cabf-csbr-index-2026-09-14.txt:4577-4580（Accuracy of Information）", "text": "Accuracy of Information: To provide accurate and complete information at all times in connection with the issuance of a Certificate, including in the Certificate Request and as otherwise requested by the CA."},
+        {"where": "cabf-csbr-index-2026-09-14.txt:4581-4595（Protection of Private Key）", "text": "Protection of Private Key: Where the key is available outside a Signing Service, to maintain sole control of, keep confidential, and properly protect, at all times in accordance with Section 6.2.7.4 , the Private Key that corresponds to the Public Key to be included in the requested Certificate(s) (and any associated activation data or device, e.g. password or token). … The CA MUST obligate the Subscriber to use passwords that are randomly generated with at least 16 characters containing uppercase letters, lowercase letters, numbers, and symbols to transport Private Keys."},
+        {"where": "cabf-csbr-index-2026-09-14.txt:4596-4598（Private Key Reuse）", "text": "Private Key Reuse: To not apply for a Code Signing Certificate if the Public Key in the Certificate is or will be used with a non-Code Signing Certificate."},
+        {"where": "cabf-csbr-index-2026-09-14.txt:4599-4603（Use＝最重要）", "text": "Use: To use the Certificate and associated Private Key only for authorized and legal purposes, including not using the Certificate to sign Suspect Code and to use the Certificate and Private Key solely in compliance with all applicable laws and solely in accordance with the Subscriber Agreement or Terms of Use."},
+        {"where": "cabf-csbr-index-2026-09-14.txt:4608-4614（Prevention of Misuse・Acceptance of Certificate）", "text": "Prevention of Misuse: To provide adequate network and other security controls to protect against misuse of the Private Key and that the CA will revoke the Certificate without requiring prior notification if there is unauthorized access to the Private Keys. / Acceptance of Certificate: Not to use the Certificate until after the Applicant, or an agent of Applicant, has reviewed and verified the Certificate contents for accuracy."},
+        {"where": "cabf-csbr-index-2026-09-14.txt:4615-4621（Reporting and Revocation）", "text": "Reporting and Revocation: To promptly cease using a Certificate and its associated Private Key and promptly request that the CA revoke the Certificate if the Subscriber believes that (a) any information in the Certificate is, or becomes, incorrect or inaccurate, (b) the Private Key associated with the Public Key contained in the Certificate was misused or compromised, or (c) there is evidence that the Certificate was used to sign Suspect Code."},
+        {"where": "cabf-csbr-index-2026-09-14.txt:786-791（Suspect Code の定義）", "text": "Suspect Code : Code that contains malicious functionality or serious vulnerabilities, including spyware, malware and other code that installs without the user's consent and/or resists its own removal, code that compromises user security and/or code that can be exploited in ways not intended by its designers to compromise the trustworthiness of the Platforms on which it executes."},
+        {"where": "cabf-csbr-index-2026-09-14.txt:42-43（証明書が識別するもの）", "text": "Code Signing Certificates do not identify a particular software object, identifying only the publisher of software."}
+      ],
+      "redistribution_grant": "not-applicable",
+      "conditions": [
+        "§9.6.3 が Subscriber に課すのは 9 項目＝Accuracy of Information／Protection of Private Key／Private Key Reuse／Use／Compliance with Industry Standards／Prevention of Misuse／Acceptance of Certificate／Reporting and Revocation／Sharing of Information",
+        "署名対象に関する明文の制限は **Suspect Code に署名しないこと** ただ 1 つ"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（**実測＝CSBR 3.11.0 の全文 5,169 行に「署名する物を自分が所有していなければならない」「第三者のコードに署名してはならない」に当たる条文は無い**。'own the code' 'ownership of the' 'owns the software' 'authorized to sign' 'right to sign' 'entitled to sign' の 6 パターンで検索して **0 件**。CSBR が識別するのは publisher であって software object ではない旨が §1.1 に明記されている＝上の逐語 :42-43）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "CSBR には「第三者の未署名バイナリに自分の証明書で署名してはならない」という条文は**無い**。しかし CSBR は CA に対する最低要件であって、CA（この場合 Microsoft）が Subscriber Agreement／Terms of Use で**それより厳しい条件を課すことは妨げられない**。したがって R3-09 の「service Terms of Use」を読まないと結論は出ない＝**席は断定しない**",
+        "署名を付けると「publisher ＝我々」になる（:42-43）。第三者のバイナリの中身に対する責任がどこまで及ぶかは法解釈"
+      ],
+      "notes": "取得 2026-09-14 10:48:03 JST。生 HTML 543,518 B / sha256 1de89aa9ceab0d2375ea521b18f2b56bb45e71b74956b2c3786e753ad2ca25d5。テキスト 270,509 B / sha256 11f54a0fdfcb26b558ed1638f6ffef4345e40dcda4aa58852420ec01184156ea・5,169 行。行番号は保存した .txt の行番号（節番号は本文中に「9.6.3 Subscriber representations and warranties」として現れる）。"
+    },
+    {
+      "id": "R3-11",
+      "component": "【C】GitHub Releases の資産の上限と、台帳の実サイズとの突合＝**cu126 の torch wheel だけが 1 檔 2 GiB を超える**",
+      "covers_files": ["torch-2.10.0+cu126-cp312-cp312-win_amd64.whl", "torch-2.10.0+cu130-cp312-cp312-win_amd64.whl", "rocm_sdk_core-10.0.0-py3-none-win_amd64.whl", "VC_redist.x64.exe"],
+      "license_name": "GitHub Docs — About releases（Storage and bandwidth quotas）／About large files on GitHub",
+      "source_url": "https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases ／ https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github",
+      "original_file": "originals/gh-about-releases-2026-09-14.txt ／ originals/gh-large-files-2026-09-14.txt",
+      "sha256": "16706e752ad71a41a053deaa582289a9911474a07b674f00dcebe8d00c1598ce",
+      "bytes": 6564,
+      "same_as_2026_09_04": "not-applicable",
+      "quotes": [
+        {"where": "gh-about-releases-2026-09-14.txt:161-162（Storage and bandwidth quotas 節の全文）", "text": "Storage and bandwidth quotas / Up to 1000 release assets may be associated with a single release. Each file included in a release must be under 2 GiB. There is no limit on the total size of a release, nor bandwidth usage."},
+        {"where": "gh-large-files-2026-09-14.txt:194-196（Distributing large binaries 節）", "text": "Distributing large binaries / If you need to distribute large files within your repository, you can create releases on GitHub.com. Releases allow you to package software, release notes, and links to binary files, for other people to use. / We don't limit the total size of the binary files in the release or the bandwidth used to deliver them. However, each individual file must be smaller than the maximum file size limit for Git LFS on your plan."},
+        {"where": "gh-large-files-2026-09-14.txt:158-162（リポジトリ側の上限＝Release ではない）", "text": "GitHub limits the size of files allowed in repositories. If you attempt to add or update a file that is larger than 50 MiB, you will receive a warning from Git. … If you add a file to a repository via a browser, the file can be no larger than 25 MiB. … GitHub blocks files larger than 100 MiB."},
+        {"where": "gh-large-files-2026-09-14.txt:166（リポジトリの推奨サイズ）", "text": "We recommend repositories remain small, ideally less than 1 GB, and less than 5 GB is strongly recommended. … If your repository excessively impacts our infrastructure, you might receive an email from GitHub Support asking you to take corrective action."}
+      ],
+      "redistribution_grant": "not-applicable",
+      "conditions": [
+        "1 リリースにつき資産は最大 1000 件",
+        "**1 檔は 2 GiB 未満（under 2 GiB）でなければならない**＝2,147,483,648 B ちょうども不可",
+        "リリース全体の合計サイズと帯域には上限が無い"
+      ],
+      "modification_or_resigning": {"status": "not-applicable"},
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "**cu126 変種は現状の形では GitHub Release に載らない**。torch wheel を分割（split）して置き、取得側で結合する形にするか、cu126 を切るか、自前配信（GitHub 以外）にするかの選択＝設計の話で卓",
+        "about-releases 頁（「under 2 GiB」）と about-large-files 頁（「smaller than the maximum file size limit for Git LFS on your plan」）で**書き方が違う**。どちらが正かは頁からは決まらない。安全側は 2 GiB 未満"
+      ],
+      "notes": "**台帳の実測（ledger/*.json を ConvertFrom-Json して size を合計）**＝runtime-cu130.json は 101 件・合計 **2,038,518,046 B**（最大＝torch **1,867,405,006 B**、次点 llvmlite 41,865,543 B、scipy 36,658,278 B）。runtime-cu126.json は 101 件・合計 **2,760,786,268 B**（最大＝torch **2,589,881,452 B**）。runtime-rocm-gfx1151.json は 107 件・合計 **1,536,696,364 B**（最大＝rocm-sdk-core **758,050,981 B**、次点 amd-torch-device-gfx115x 187,800,925 B、rocm-sdk-device-gfx1151 139,346,623 B）。python-embed.json 11,133,606 B、vc_redist.json 25,635,768 B。**依頼文の数字と完全に一致**。**2 GiB との突合（1 GiB = 1,073,741,824 B・2 GiB = 2,147,483,648 B）**＝⑴ cu126 の torch 2,589,881,452 B ＝ **2.4120 GiB** → **2 GiB を 442,397,804 B（0.4120 GiB）超過＝載らない**。⑵ cu130 の torch 1,867,405,006 B ＝ **1.7392 GiB** → 2 GiB まで残り 280,078,642 B＝**載る**（余裕は 13.0 %）。⑶ Radeon 版の最大檔 rocm-sdk-core 758,050,981 B ＝ 0.7060 GiB＝**載る**。⑷ VC_redist.x64.exe 25,635,768 B ＝ 0.0239 GiB＝**載る**。⑸ 合計は 3 変種とも上限が無いので問題にならない（cu130 1.8985 GiB／cu126 2.5711 GiB／rocm 1.4312 GiB）。⑹ 資産の件数は cu130／cu126 が 101＋2（python-embed・vc_redist）＝103、rocm が 107＋2＝109 で、いずれも 1000 件の上限に対して余裕がある。取得 2026-09-14 10:49:58〜10:49:59 JST。gh-about-releases .html 192,056 B / sha256 f73570e7a2b85374e4904fa0758029b86e54aa6cf208a570abf5149977c2149b。gh-large-files .html 222,136 B / sha256 ab320765a3e688fff40ff36ae39cb633d571cd1b934da57df14afbd3660227cb、.txt 9,283 B / d82d171729d532e5d60cfd80d46bafe41fce1e71590b48babcfb7eed337d03bd。"
+    },
+    {
+      "id": "R3-12",
+      "component": "【C】GitHub Acceptable Use Policies／Terms of Service／Additional Product Terms の「大きなバイナリの配信」「CDN として使う」への制限文",
+      "covers_files": ["（置き場としての GitHub の利用そのもの）"],
+      "license_name": "GitHub Acceptable Use Policies ／ GitHub Terms of Service ／ GitHub Terms for Additional Products and Features",
+      "source_url": "https://docs.github.com/en/site-policy/acceptable-use-policies/github-acceptable-use-policies ／ https://docs.github.com/en/site-policy/github-terms/github-terms-of-service ／ https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features",
+      "original_file": "originals/gh-aup-2026-09-14.txt ／ originals/gh-tos-2026-09-14.txt ／ originals/gh-additional-product-terms-2026-09-14.txt",
+      "sha256": "4111a6f28112f3e91afbba3fd59b376cb92bcf8ef3dc746ad5ec4d49bf34902d",
+      "bytes": 13134,
+      "same_as_2026_09_04": "not-applicable",
+      "quotes": [
+        {"where": "gh-aup-2026-09-14.txt:142-143（AUP §9 Excessive Bandwidth Use の全文）", "text": "9. Excessive Bandwidth Use / The Service's bandwidth limitations vary based on the features you use. If we determine your bandwidth usage to be significantly excessive in relation to other users of similar features, we reserve the right to suspend your Account, throttle your file hosting, or otherwise limit your activity until you can reduce your bandwidth consumption. We also reserve the right—after providing advance notice—to delete repositories that we determine to be placing undue strain on our infrastructure. For guidance on acceptable use of object storage in repositories, refer to About large files on GitHub . For more details on specific features' bandwidth limitations, see the GitHub Additional Product Terms ."},
+        {"where": "gh-aup-2026-09-14.txt:124（AUP §4 の一部）", "text": "using our servers for any form of excessive automated bulk activity, to place undue burden on our servers through automated means, or to relay any form of unsolicited advertising or solicitation through our servers, such as get-rich-quick schemes;"},
+        {"where": "gh-aup-2026-09-14.txt:130-131（AUP §6 Services Usage Limits の全文）", "text": "6. Services Usage Limits / You will not reproduce, duplicate, copy, sell, resell or exploit any portion of the Service, use of the Service, or access to the Service without our express written permission."},
+        {"where": "gh-additional-product-terms-2026-09-14.txt:107（Actions に掛かる CDN 禁止）", "text": "Any activity that places a burden on our servers, where that burden is disproportionate to the benefits provided to users (for example, don't use Actions as a content delivery network or as part of a serverless application, but a low benefit Action could be ok if it’s also low burden); or"},
+        {"where": "gh-additional-product-terms-2026-09-14.txt:134（Codespaces に掛かる CDN 禁止）", "text": "Any activity that places a burden on our servers, where that burden is disproportionate to the benefits provided to users (for example, don't use Codespaces as a content delivery network, as part of a serverless application, or to host any kind of production-facing application); or"},
+        {"where": "gh-additional-product-terms-2026-09-14.txt:150-151（Packages＝Releases とは別物）", "text": "Packages / GitHub Packages is a software package hosting service that allows you to host your software packages privately or publicly and use packages as dependencies in your projects. GitHub Packages is billed on a usage basis. The Packages documentation includes details, including bandwidth and storage quantities (depending on your Account plan), and how to monitor your Packages usage and set usage limits. Packages bandwidth usage is limited by the GitHub Acceptable Use Policies ."},
+        {"where": "gh-additional-product-terms-2026-09-14.txt:153-156（Pages＝landing page の置き場に掛かる）", "text": "Each Account comes with access to the GitHub Pages static hosting service . GitHub Pages is intended to host static web pages, but primarily as a showcase for personal and organizational projects. / GitHub Pages is not intended for or allowed to be used as a free web hosting service to run your online business, e-commerce site, or any other website that is primarily directed at either facilitating commercial transactions or providing commercial software as a service (SaaS). Some monetization efforts are permitted on Pages, such as donation buttons and crowdfunding links. / Bandwidth and Usage Limits / GitHub Pages are subject to some specific bandwidth and usage limits, and may not be appropriate for some high-bandwidth uses."},
+        {"where": "gh-tos-2026-09-14.txt:246（ToS の API の項＝帯域に関する唯一の文）", "text": "Abuse or excessively frequent requests to GitHub via the API may result in the temporary or permanent suspension of your Account's access to the API. GitHub, in our sole discretion, will determine abuse or excessive usage of the API. We will make a reasonable attempt to warn you via email prior to suspension."}
+      ],
+      "redistribution_grant": "not-applicable",
+      "conditions": [
+        "AUP §9＝帯域の使い方が「他の同種利用者と比べて著しく過大」と GitHub が判断した場合、アカウント停止・file hosting の絞り・活動の制限が可能。インフラに過度の負荷をかけるリポジトリは**事前通知のうえ削除**されうる",
+        "「content delivery network として使うな」の明文は **Actions と Codespaces にだけ**掛かっており、**Releases には掛かっていない**（実測＝下の notes）",
+        "Releases の帯域については about-releases 頁が「There is no limit on … bandwidth usage」と書いている（R3-11）一方、AUP §9 の「significantly excessive」判断は全機能に掛かる柱書になっている",
+        "GitHub Pages（landing page）は「free web hosting service to run your online business, e-commerce site, or … providing commercial software as a service (SaaS)」としての利用を許さない"
+      ],
+      "modification_or_resigning": {"status": "not-applicable"},
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "「1 変種あたり 1.4〜2.6 GB を不特定多数に配る」ことが AUP §9 の「significantly excessive in relation to other users of similar features」に当たるかは、条文からは決まらない（GitHub の裁量と明記されている）＝**席は断定しない**",
+        "Releases を明示的に扱う条項が Additional Product Terms に**無い**（実測＝'Release' の一致は Pre-release License Terms・Advisory Database・Previews の 3 件だけで、GitHub Releases の項が存在しない）。したがって Releases に掛かるのは ToS 本体と AUP §9 だけ、という読みになるが、その読み自体は卓",
+        "現行の landing page（mugonkun.github.io）は GitHub Pages 上にある。Pages の「commercial SaaS／online business の運営に使うな」条項との関係は、アプリが無償配布である限り触れない公算だが**断定しない**"
+      ],
+      "notes": "取得 2026-09-14 10:49:58〜10:51:04 JST。gh-aup .html 176,850 B / sha256 b8cfacc83688f82ff433bbac652d9031e0745cf19b398715ed6d6aff3ec76c6c、.txt 13,134 B / 4111a6f28112f3e91afbba3fd59b376cb92bcf8ef3dc746ad5ec4d49bf34902d。gh-tos .html 372,574 B / 6f132e0b531b240c1cd7ad89e9dbcc3d465cdc6020d9b9badbf41d660fc4d0c9、.txt 49,722 B / 836a7af44ddb4f12b7702d63ec17c2cebd64a4dba3a4f6fde20ca4a1e85a85ea。gh-additional-product-terms .html 196,423 B / 44793a05b1a3e6f4ac0ef870223e247ce1355f4b9cda06ee22c2e08d0acf1d77、.txt 18,904 B / 78cb40789c1f021eb969c2139341036742879e1b7fa1dad53778ca777d6da475。**実測（検索）**＝⑴ Additional Product Terms の .txt を 'Release' で単純一致検索すると 3 行（:20 GitHub Pre-release License Terms／:125 Advisory Database の release your contributions／:163 Previews の pre-release versions）で、**GitHub Releases を扱う節は無い**。⑵ 'content delivery network' の一致は :107（Actions）と :134（Codespaces）の 2 件のみ。⑶ ToS の .txt を 'bandwidth' 'content delivery' 'excessive' で検索して出るのは :246（API）だけ。"
+    },
+    {
+      "id": "R3-13",
+      "component": "【A・実測】本機（Radeon PC）の Visual Studio 導入状況と、台帳の VC_redist.x64.exe の実物",
+      "covers_files": ["VC_redist.x64.exe"],
+      "license_name": "（実測。ライセンス文ではない）",
+      "source_url": "（ローカル観測。URL 無し）",
+      "original_file": "（無し＝ローカル観測。コマンドと結果は notes）",
+      "sha256": "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b",
+      "bytes": 25635768,
+      "same_as_2026_09_04": "true（台帳 ledger/vc_redist.json の sha256・size と一致）",
+      "quotes": [
+        {"where": "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\Licenses\\1041\\Redist.txt（190 B・全文）", "text": "Distributable Code for Microsoft Visual Studio (Includes Utilities & BuildServer Files)\n\nFor the latest version of this Redist.txt file, please visit https://aka.ms/vs/18/redistribution."}
+      ],
+      "redistribution_grant": "not-applicable",
+      "conditions": [],
+      "modification_or_resigning": {
+        "status": "not-applicable",
+        "quote": "（本項は観測のみ）"
+      },
+      "authenticode_observed": "signed-by-vendor",
+      "open_points_for_commander": [
+        "台帳の pin は 14.44.35211.0 だが、本機の Build Tools 2026 が同梱するのは 14.51.36247.0。R3-07 の「ビルドに使った MSVC Build Tools 以上の版」条件との関係で pin を上げるかは卓",
+        "Build Tools 2026 の導入物の中に `VC\\Redist\\MSVC\\14.51.36231\\vc_redist.x64.exe` が実在する＝R3-04／R3-05 の「[VisualStudioFolder]\\VC\\redist とその下」に当たる物が手元にある。ただし Build Tools の licence に Distributable Code 節が無い（R3-02）ので、これを配る根拠になるかは卓"
+      ],
+      "notes": "**実測 1（vswhere）**＝`\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -all -products * -format value -property …` の結果＝installationPath `C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools`／productId `Microsoft.VisualStudio.Product.BuildTools`／displayName `Visual Studio Build Tools 2026`／installationVersion `18.9.12120.119`。**1 件だけ**＝Community／Professional／Enterprise は入っていない（BRIEF §2 の記述どおり）。**実測 2（同梱 vc_redist）**＝`...\\18\\BuildTools\\VC\\Redist\\MSVC\\14.51.36231\\vc_redist.x64.exe` 18,731,856 B（FileVersion **14.51.36247.0**）と `vc_redist.x86.exe` 6,941,536 B。`...\\VC\\Redist\\MSVC\\v145\\` にも同名・同サイズの 2 檔。**実測 3（同梱 Redist.txt）**＝`...\\18\\BuildTools\\Licenses\\1041\\Redist.txt` 190 B。本文は上の逐語のとおりで、**Build Tools の導入物が vs18 の Distributable List を指している**。同じ Licenses フォルダには `.NET_Framework_EULA.rtf`（155,616 B）と `ThirdPartyNotices.txt`（6,167,634 B）があるが、**Visual Studio 本体の Microsoft Software License Terms（Distributable Code 節を含む檔）は置かれていない**。**実測 4（台帳の実物）**＝`build/out/handoff-stage/build-cache/VC_redist.x64.exe` 25,635,768 B・`Get-FileHash -Algorithm SHA256` = `cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b`（**ledger/vc_redist.json の sha256 と一致**）・FileVersion `14.44.35211.0`。`Get-AuthenticodeSignature` = Status **Valid**／Signer `CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US`／Issuer `CN=Microsoft Code Signing PCA 2011, O=Microsoft Corporation, L=Redmond, S=Washington, C=US`／SignerCertificate NotAfter `09/12/2025 05:11:14`（＝タイムスタンプで救われている）／TimeStamper `CN=Microsoft Time-Stamp Service, …`。**つまり vc_redist.x64.exe は Microsoft 自身の署名が付いており、v3 の署名構想（【B】）の対象外**。全実測 2026-09-14 10:52〜10:54 JST。"
+    }
+  ],
+  "summary": "1. 【A】最重要＝**Visual Studio Build Tools の licence（2022・2026 とも）に Distributable Code 節は無い**（'Distributable' の一致 0 件）。本機に入っているのは Build Tools 2026 だけなので、vc_redist を自前配布する根拠は本機の導入物からは出ない。配布の根拠は Community／Professional／Enterprise の licence にしかない。2. ただし **VS2026（vs18）の Distributable List の柱書は「Visual Studio Build Tools」を名指ししており**、本機の Build Tools が同梱する Licenses\\1041\\Redist.txt（190 B）も vs18 の一覧を指す＝**頁と licence 本文が食い違っている**（卓に上げる）。3. vc_redist.x64.exe は**どの Distributable List にも檔名で載っていない**。根拠は「[VisualStudioFolder]\\VC\\redist フォルダとその下」という場所の指定で、条件は unmodified・validly licensed copy・significant primary functionality・再頒布者と利用者への同意取得・（2026 版）Microsoft への indemnify。4. 逆に **vc_redist 単体に付く EULA（MICROSOFT VISUAL C++ V14 REDISTRIBUTABLE and RUNTIME・Cpp_v14_ENU.1033）には再配布の許諾が無く、「combined with any of your applications for others to use」を明文で禁じている**＝同じ物に許諾と禁止の 2 枚が掛かる。どちらがどの立場に掛かるかは法解釈。5. (2)(3) の 3 頁を取り直した結果、**vs2022 redistribution と redistributing-visual-cpp-files は 2026-09-04 と本文が完全に同一**（正規化して突合し差は <title> の 1 行のみ。sha256 はテキスト化手順の差で不一致）。latest-supported-vc-redist は 2026-09-04 に未取得。6. 【B】**Azure Trusted Signing は「Azure Artifact Signing」に改称済み**（/azure/trusted-signing/ → /azure/artifact-signing/）。**Public Trust 証明書は個人（Individual developers）は米国・カナダ所在に限られ、日本の個人は対象外**（組織なら日本も可）。証明書は 72 時間で更新・CN／O は選べない・識別検証は政府発行 ID ＋住所証明＋顔照合（AU10TIX）。**「署名してよい物の範囲」「you must own or be authorized」に当たる条文は取得できた 9 頁のどこにも無く**、実体は Azure ポータル内でのみ提示される「service Terms of Use」＝**サインインが要るため取得できていない**。料金も頁の静的 HTML では `$-` のままで取れない。7. **CA/Browser Forum CSBR 3.11.0（2026-06-16）§9.6.3 にも「署名する物を所有していなければならない」条文は無い**（6 パターンで検索して 0 件）。署名対象への明文の制限は「Suspect Code に署名しないこと」だけ。8. 【C】GitHub Releases は「Up to 1000 release assets … Each file included in a release must be under 2 GiB. There is no limit on the total size of a release, nor bandwidth usage.」。**台帳と突合すると 2 GiB を超えるのは cu126 の torch wheel 2,589,881,452 B（2.4120 GiB・超過 442,397,804 B）だけ**。cu130 の torch 1,867,405,006 B（1.7392 GiB）と Radeon 版の最大 rocm-sdk-core 758,050,981 B は載る。9. 「CDN として使うな」の明文は **Actions と Codespaces にだけ**掛かり、Releases を扱う節は Additional Product Terms に存在しない。掛かるのは AUP §9 Excessive Bandwidth Use（GitHub の裁量で停止・絞り・リポジトリ削除がありうる）。10. 実測＝台帳の VC_redist.x64.exe は sha256 一致・版 14.44.35211.0・Authenticode Valid（Microsoft Corporation 署名）＝【B】の署名対象ではない。",
+  "not_done": [
+    "**Azure Artifact Signing の service Terms of Use 本文**＝Azure ポータルの申込画面でのみ提示・ダウンロードされる檔で、サインインが要るため取得できていない。「署名してよい物の範囲」「識別検証の法的要件」「個人契約の可否の条文根拠」はこの檔にしか無い公算が高い。**【B】の核心が未取得のまま残る**",
+    "**Azure Artifact Signing の料金の実額**＝https://azure.microsoft.com/en-us/pricing/details/artifact-signing/ の料金表は client-side で描画されており、静的 HTML でも WebFetch でも値は `$-` のまま。Basic／Premium の 2 SKU・月あたりの署名数 quota・quota 超過後は 1 署名単位の課金、という構造だけが読めた",
+    "指定された https://visualstudio.microsoft.com/license-terms/vs2022-ga-buildtools/ と .../vs2022-ga-professional/ は **HTTP 404**。正しい URL（vs2022-ga-diagnosticbuildtools・vs2022-ga-proenterprise）に読み替えて取得した。404 の本文も originals に残っている（vs2022-ga-buildtools-2026-09-14.html・vs2022-ga-professional-2026-09-14.html＝いずれも 223,579 B・同一 sha256）",
+    "旧名の https://learn.microsoft.com/en-us/azure/trusted-signing/concept-trusted-signing-{trust-models,resources-roles,cert-management} は **HTTP 404**（改称のため）。新名の頁で代替した",
+    "**vc_redist.x64.exe 14.44.35211.0 に埋まっている EULA の実体**＝ASCII／UTF-16 の平文検索で 'Cpp_v14' 'MICROSOFT VISUAL C++' 'EULAID' がいずれも 0 件。burn バンドルの UX コンテナが圧縮されているため、埋め込み EULA が Cpp_v14 版か 2015-2022 RUNTIME 版かを確認できていない（dark.exe 等での展開は未実施）",
+    "**VS 2026（vs18）の Distributable List の 2026-09-04 版**が無いので、この頁に差分があったかは確認できない（2026-09-04 の調査は vs17 の頁しか取っていない）",
+    "GitHub の「Git LFS on your plan」の最大檔サイズの実数（about-large-files が参照する About Git Large File Storage の頁）は今回取得していない。about-releases の「under 2 GiB」を採って計算した",
+    "CA/Browser Forum の EV 固有の追加要件（§9.6.3 以外の EV 節）は要点だけの指示だったため通読していない。取得した全文 270,509 B は originals/cabf-csbr-index-2026-09-14.txt に保存済みで再検分できる",
+    "AMD／NVIDIA／PyPI 側の物は本席の担当外（R1・R2・R5 等の席）"
+  ]
+}

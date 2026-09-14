@@ -1,0 +1,32 @@
+ython
+for the 64-bit version and www.nuget.org/packages/pythonx86 for the 32-bit version.
+
+4.4. The embeddable package¶
+
+Added in version 3.5.
+
+The embedded distribution is a ZIP file containing a minimal Python environment.
+It is intended for acting as part of another application, rather than being
+directly accessed by end-users.
+When extracted, the embedded distribution is (almost) fully isolated from the
+user’s system, including environment variables, system registry settings, and
+installed packages. The standard library is included as pre-compiled and
+optimized .pyc files in a ZIP, and python3.dll, python37.dll,
+python.exe and pythonw.exe are all provided. Tcl/tk (including all
+dependents, such as Idle), pip and the Python documentation are not included.
+
+Note
+The embedded distribution does not include the Microsoft C Runtime and it is
+the responsibility of the application installer to provide this. The
+runtime may have already been installed on a user’s system previously or
+automatically via Windows Update, and can be detected by finding
+ucrtbase.dll in the system directory.
+
+Third-party packages should be installed by the application installer alongside
+the embedded distribution. Using pip to manage dependencies as for a regular
+Python installation is not supported with this distribution, though with some
+care it may be possible to include and use pip for automatic updates. In
+general, third-party packages should be treated as part of the application
+(“vendoring”) so that the developer can ensure compatibility with newer
+versions before providing updates to users.
+The two recommended use cases for this distribution are described below.

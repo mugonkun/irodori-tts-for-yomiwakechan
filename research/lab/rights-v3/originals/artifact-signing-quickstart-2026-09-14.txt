@@ -1,0 +1,480 @@
+ Skip to main content
+ Skip to Ask Learn chat experience
+ This browser is no longer supported.
+ Upgrade to Microsoft Edge to take advantage of the latest features, security updates, and technical support.
+ Download Microsoft Edge
+ More info about Internet Explorer and Microsoft Edge
+ Table of contents
+ Exit editor mode
+ Ask Learn
+ Ask Learn
+ Reading mode
+ Table of contents
+ Read in English
+ Add
+ Add to Plans
+ Edit
+ Copy Markdown
+ Print
+ Note
+ Access to this page requires authorization. You can try signing in or changing directories .
+ Access to this page requires authorization. You can try changing directories .
+ Quickstart: Set up Artifact Signing
+ Feedback
+ Summarize this article for me
+ In this article
+ Artifact Signing is a Microsoft fully managed, end-to-end certificate signing service. In this quickstart, you create the following three Artifact Signing resources to begin using Artifact Signing:
+ An Artifact Signing account
+ An identity validation
+ A certificate profile
+ You can use either the Azure portal or an Azure CLI extension to create and manage most of your Artifact Signing resources. (You can complete identity validation only in the Azure portal. You can't complete identity validation by using the Azure CLI.) This quickstart shows you how.
+ Prerequisites
+ Note
+ Public Trust certificates are available to organizations in the United States, Canada, the European Union, the United Kingdom, Australia, New Zealand, Japan, South Korea, Singapore, Switzerland, Norway, and Israel. Individual developers must be located in the United States or Canada. These geographic restrictions do not apply to Private Trust certificates.
+ Note
+ For Public Trust individual identity validation, Artifact Signing automatically sources identity details from the Azure billing account associated with the subscription used to create the Artifact Signing resource. The billing account must have an Account Type of Individual.
+ Before starting validation, confirm that the legal name and billing address are accurate. This information appears on the Public Trust certificate profile. To review or update it, see Manage billing accounts .
+ This billing account type requirement applies only to individual identity validation. Organization identity validation doesn't require an Azure billing account with an Account Type of Organization.
+ To complete this quickstart, you need:
+ A Microsoft Entra tenant ID.
+ For more information, see Create a Microsoft Entra tenant .
+ An Azure subscription.
+ If you don't already have one, see Create an Azure subscription before you begin.
+ Register the Artifact Signing resource provider
+ Before you use Artifact Signing, you must register the Artifact Signing resource provider.
+ A resource provider is a service that supplies Azure resources. Use the Azure portal or the Azure CLI to register the Microsoft.CodeSigning Artifact Signing resource provider.
+ Azure portal
+ Azure CLI
+ Azure PowerShell
+ To register an Artifact Signing resource provider by using the Azure portal:
+ Sign in to the Azure portal .
+ In either the search box or under All services , select Subscriptions .
+ Select the subscription where you want to create Artifact Signing resources.
+ On the resource menu under Settings , select Resource providers .
+ In the list of resource providers, select Microsoft.CodeSigning .
+ By default, the resource provider status is NotRegistered .
+ Select the ellipsis, and then select Register .
+ The status of the resource provider changes to Registered .
+ To register an Artifact Signing resource provider by using the Azure CLI:
+ If you're using a local installation of the Azure CLI, sign in to the Azure CLI by using the az login command.
+ To finish the authentication process, complete the steps that appear in your terminal. For other sign-in options, see Sign in by using the Azure CLI .
+ When you're prompted on first use, install the Azure CLI extension.
+ For more information, see Use extensions with the Azure CLI .
+ For more information about the Artifact Signing Azure CLI extension, see Artifact Signing service .
+ To see the versions of the Azure CLI and the dependent libraries that are installed, use the az version command.
+ To upgrade to the latest versions of the Azure CLI and dependent libraries, run the following command:
+ az upgrade [--all {false, true}] [--allow-preview {false, true}] [--yes]
+ To set your default subscription ID, use the az account set -s <subscription ID> command.
+ To register an Artifact Signing resource provider, use this command:
+ az provider register --namespace "Microsoft.CodeSigning"
+ Verify the registration:
+ az provider show --namespace "Microsoft.CodeSigning"
+ To add the extension for Artifact Signing, use this command:
+ az extension add --name artifact-signing
+ Install Azure PowerShell and sign in .
+ To set your default subscription ID, use the Set-AzContext -Subscription <subscription ID> command.
+ Verify the registration:
+ Get-AzResourceProvider -ProviderNamespace Microsoft.CodeSigning
+ Create an Artifact Signing account
+ An Artifact Signing account is a logical container that holds identity validation and certificate profile resources. An identity validation is available at the subscription ID level and can be shared across all the Artifact Signing accounts within that subscription.
+ Azure regions that support Artifact Signing
+ You can create Artifact Signing resources only in Azure regions where the service is currently available. The following table lists the Azure regions that currently support Artifact Signing resources:
+ Region
+ Region class fields
+ Endpoint URI value
+ Brazil South
+ BrazilSouth
+ https://brs.codesigning.azure.net
+ Central US
+ CentralUS
+ https://cus.codesigning.azure.net
+ East US
+ EastUS
+ https://eus.codesigning.azure.net
+ Japan East
+ JapanEast
+ https://jpe.codesigning.azure.net
+ Korea Central
+ KoreaCentral
+ https://krc.codesigning.azure.net
+ North Central US
+ NorthCentralUS
+ https://ncus.codesigning.azure.net
+ North Europe
+ NorthEurope
+ https://neu.codesigning.azure.net
+ Poland Central
+ PolandCentral
+ https://plc.codesigning.azure.net
+ South Central US
+ SouthCentralUS
+ https://scus.codesigning.azure.net
+ Switzerland North
+ SwitzerlandNorth
+ https://swn.codesigning.azure.net
+ West Central US
+ WestCentralUS
+ https://wcus.codesigning.azure.net
+ West Europe
+ WestEurope
+ https://weu.codesigning.azure.net
+ West US
+ WestUS
+ https://wus.codesigning.azure.net
+ West US 2
+ WestUS2
+ https://wus2.codesigning.azure.net
+ West US 3
+ WestUS3
+ https://wus3.codesigning.azure.net
+ Naming constraints for Artifact Signing accounts
+ Artifact Signing account names have some constraints.
+ An Artifact Signing account name must:
+ Contain from 3 to 24 alphanumeric characters.
+ Be globally unique.
+ Begin with a letter.
+ End with a letter or number.
+ Not contain consecutive hyphens.
+ An Artifact Signing account name is:
+ Not case-sensitive ( ABC is the same as abc ).
+ Rejected by Azure Resource Manager if it begins with "one".
+ Azure portal
+ Azure CLI
+ Azure PowerShell
+ To create an Artifact Signing account by using the Azure portal:
+ Sign in to the Azure portal .
+ Search for and then select Artifact Signing Accounts .
+ On the Artifact Signing Accounts pane, select Create .
+ For Subscription , select your Azure subscription.
+ For Resource group , select Create new , and then enter a resource group name.
+ For Account name , enter a unique account name.
+ For more information, see Naming constraints for Artifact Signing accounts .
+ For Region , select an Azure region that supports Artifact Signing.
+ For Pricing , select a pricing tier.
+ Select the Review + Create button.
+ After you successfully create your Artifact Signing account, select Go to resource .
+ To create an Artifact Signing account by using the Azure CLI:
+ Create a resource group by using the following command. If you choose to use an existing resource group, skip this step.
+ az group create --name MyResourceGroup --location EastUS
+ Create a unique Artifact Signing account by using the following command.
+ For more information, see Naming constraints for Artifact Signing accounts .
+ To create an Artifact Signing account that has a Basic SKU:
+ az artifact-signing create -n MyAccount -l eastus -g MyResourceGroup --sku Basic
+ To create an Artifact Signing account that has a Premium SKU:
+ az artifact-signing create -n MyAccount -l eastus -g MyResourceGroup --sku Premium
+ Verify your Artifact Signing account by using:
+ az artifact-signing show -g MyResourceGroup -n MyAccount`
+ Note
+ If you use an earlier version of the Azure CLI from the Artifact Signing preview, your account defaults to the Basic SKU. To use the Premium SKU, either upgrade the Azure CLI to the latest version or use the Azure portal to create the account.
+ The following table lists helpful commands to use when you create an Artifact Signing account:
+ Command
+ Description
+ az artifact-signing -h
+ Shows help commands and detailed options.
+ az artifact-signing show -n MyAccount -g MyResourceGroup
+ Shows the details of an account.
+ az artifact-signing update -n MyAccount -g MyResourceGroup --tags "key1=value1 key2=value2"
+ Updates tags.
+ az artifact-signing list -g MyResourceGroup
+ Lists all accounts that are in a resource group.
+ To create an Artifact Signing account by using the Azure CLI:
+ Create a resource group by using the following command. If you choose to use an existing resource group, skip this step.
+ New-AzResourceGroup -Name "MyResourceGroup" -Location "EastUS"
+ Create a unique Artifact Signing account by using the following command.
+ For more information, see Naming constraints for Artifact Signing accounts .
+ To create an Artifact Signing account that has a Basic SKU:
+ New-AzArtifactSigningAccount -AccountName test -ResourceGroupName rg-test -Location eastus -SkuName Basic
+ To create an Artifact Signing account that has a Premium SKU:
+ New-AzArtifactSigningAccount -AccountName test -ResourceGroupName rg-test -Location eastus -SkuName Premium
+ Verify your Artifact Signing account by using:
+ Get-AzArtifactSigningAccount -AccountName test -ResourceGroupName rg-test
+ Create an identity validation request
+ You can complete your own identity validation by filling in the request form with the information that must be included in the certificate. Identity validation can be completed only in the Azure portal. You can't complete identity validation by using the Azure CLI.
+ Note
+ You can't create an identity validation request if you aren't assigned the appropriate role. If the New identity button on the menu bar appears dimmed in the Azure portal, ensure that you're assigned the Artifact Signing Identity Verifier role to proceed with identity validation.
+ Identity Validation - Organization
+ Identity Validation - Individual Developer
+ To create an identity validation request for an Organization or a DBA:
+ In the Azure portal, go to your new Artifact Signing account.
+ Confirm that you're assigned the Artifact Signing Identity Verifier role.
+ To learn how to manage, access by using role-based access control (RBAC), see Tutorial: Assign roles in Artifact Signing .
+ On the Artifact Signing account Overview pane or on the resource menu under Objects , select Identity validations .
+ Select Organization , select New Identity , and then select either Public or Private .
+ Public identity validation applies only to these certificate profile types: Public Trust, Public Trust Test, VBS Enclave.
+ Private identity validation applies only to these certificate profile types: Private Trust, Private Trust CI Policy.
+ On New organization validation , enter the below details that meet the requirements.
+ Fields
+ Details
+ Organization Name
+ For public identity validation, provide the legal business entity to which the certificate is issued. For private identity validation, the value defaults to your Microsoft Entra tenant name.
+ (Private Identity Type only) Organizational Unit
+ Enter the relevant information.
+ Website url
+ Enter the website that belongs to the legal business entity.
+ Primary Email
+ Enter a monitored email address on a domain owned by the legal business entity. Verified Credentials and email verification links are sent to this address and expire in seven days. The mailbox must accept links from external senders.
+ Secondary Email
+ This email address must be different from the primary email address (distribution lists are accepted). For organizations, the domain must match the email address that is provided in the primary email address. Ensure that the email address can receive emails from external email addresses that have links.
+ Business Identifier
+ Enter a business identifier for the legal business entity.
+ Seller ID
+ Applies only to Microsoft Store customers. Find your Seller ID in the Partner Center portal.
+ Street, City, Country/Region, State/Province, Postal code
+ Enter the business address of the legal business entity.
+ First Name
+ Enter the first name of the individual representing the organization that will perform individual identity validation. Use the exact name as it appears on your government-issued identification document for the Identity Validation process.
+ Last Name
+ Enter the last name of the individual representing the organization. This individual performs individual identity validation. Use the exact name as it appears on your government-issued identification document for the Identity Validation process.
+ Select Certificate subject preview to see the preview of the information that appears in the certificate.
+ Select the Create button.
+ When the request is successfully created, the identity validation request status changes to In Progress .
+ When the status changes to Action Required , follow the instructions step 9 onwards in the Identity Validation - Individual Developer tab above.
+ The link for individual identity validation is also sent through email to the primary email address.
+ Once Individual Identity Validation is successfully completed, the status changes back to In Progress and the validation process continues.
+ If more documents are required, an email is sent and the request status changes to Action Required .
+ When the identity validation process is finished, the request status changes, and an email is sent with the updated status of the request:
+ Completed if the process is completed successfully.
+ Failed if the process isn't completed successfully.
+ Important information for public identity validation
+ Requirements
+ Details
+ Onboarding
+ For a quicker onboarding process, ensure that public records for the legal business entity that you're validated are up to date.
+ Accuracy
+ Ensure that you provide the correct information for public identity validation. If you need to make any changes after it's created, you must complete a new identity validation request. This change affects the associated certificates that are being used for signing.
+ Failed email verification
+ If email verification fails, you must initiate a new identity validation request.
+ Identity validation status
+ You're notified through email when there's an update to the identity validation status. You can also check the status in the Azure portal at any time.
+ Processing time
+ Processing your identity validation request takes from 1 to 20 business days (possibly longer if we need to request more documentation from you).
+ More documentation
+ If we need more documentation to process the identity validation request, you're notified through email. You can upload the documents in the Azure portal. For documentation upload, there are three attempts. The documentation request email contains information about file size requirements. Ensure that any documents you provide are the most current.
+ - All documents submitted must be issued within the previous 12 months and where the expiration date is a future date that is at least two months away.
+ - If it isn't possible to provide additional documentation, update your account information to match any legal documents already provided or your official Company registration details.
+ - When providing official business document, such as business registration form, business charter, or articles of incorporation that list the company name and address as it is provided at the time of Identity Validation request creation.
+ - Ensure the domain registration or domain invoice from registration or renewal that lists the entity and contact name and all the domains that are included/mentioned in the request.
+ To create an Individual identity validation request for an Individual Developer:
+ In the Azure portal, go to your new Artifact Signing account.
+ Confirm that you're assigned the Artifact Signing Identity Verifier role.
+ To learn how to manage access by using role-based access control (RBAC), see Tutorial: Assign roles in Artifact Signing .
+ On the Artifact Signing account Overview pane or on the resource menu under Objects , select Identity validations .
+ Select Organization , in the dropdown select Individual and then select New Identity , underneath select Public .
+ Public identity validation applies to these certificate profile types: Public Trust, Public Trust Test, VBS Enclave.
+ Private identity validation is only for Organizations.
+ On New identity validation , select the billing account associated to the subscription.
+ Once a billing account is selected, the form is automatically populated with the billing account information. These fields are read-only and cannot be edited within the form.
+ Before proceeding, ensure the populated details meet the required criteria. If updates are needed, modify the information directly in the billing account.
+ Fields
+ Details
+ First Name
+ Use the exact name as it appears on your government-issued identification document for the Identity Validation process.
+ Last Name
+ Use the exact name as it appears on your government-issued identification document for the Identity Validation process.
+ Primary Email
+ Enter the email address that is going to receive the Identity Validation link. Make sure to use the same email address when logging into the Microsoft Account to access the Identity Validation link.
+ Street, City, Country/Region, State/Province, Postal code
+ Enter the address as it appears on your government issued identification document or utility bill or bank statement. The city, state/province, and country/region from the address entered here's displayed on the certificate.
+ Certificate subject preview shows the preview of the information that appears on the certificate.
+ Your email address and street address aren't included in the certificate.
+ Select the Create button.
+ When the request is successfully created, the identity validation request status changes to In Progress .
+ When the status changes to Action Required . Select your name, a blade opens on the right-hand side. Select the link under "Please complete your verification here".
+ Follow the link to complete the Identity Validation process. Use the email address provided at the time of the request creation. Enter the credentials when prompted, and you'll be navigated to the next screen.
+ Select Get verified here through our trusted ID-verifiers .
+ Create verified credentials by using the trusted partners' pages. The following steps show an example walkthrough. It uses the trusted partner: AU10TIX. You're navigated to a third party website.
+ Select Let’s Begin .
+ Enter your primary email address from the request here.
+ AU10TIX sends an email verification in email that includes a PIN code.
+ Check your email for the verification email and enter the PIN code to verify your email account.
+ Enter phone number when prompted on the next screen.
+ Select Start .
+ Use camera of your mobile device to scan the QR code. Don't close this screen on your browser.
+ On your mobile device, select Start . Follow the steps to complete the process and present the relevant documentation when prompted.
+ After the Au10TIX process is complete on your mobile device, select Open Authenticator .
+ Now back on the browser, scan the QR code from your mobile device. Don't close the browser.
+ Select Add to add a verified ID to the Microsoft Authenticator app.
+ The browser screen shows Present your Verified ID. Scan the QR code.
+ Select Verifiable Credential to share with Artifact Signing.
+ Select Share to share the credentials with Artifact Signing.
+ For successful completion the browser screen on your nonmobile device updates to: Verification Successful .
+ It takes a couple of minutes for the Identity Validation status on Azure portal to update. For a successful Verified ID the status, on Azure portal changes to Completed .
+ Important information for public identity validation for Individual Developers
+ Minimum Requirements for Mobile OSes and supported Browsers:
+ Types of ID Accepted:
+ Government-issued IDs such as passports, driving licenses, or ID cards.
+ Photo IDs (or a US Social Security Card).
+ Official government-issued IDs such as a passport, driver’s license, or state ID.
+ Don't submit privately issued IDs such as library cards, school IDs, club membership cards, etc.
+ Visibility/Low Light/Bright Light:
+ Don't use flash.
+ Don't place the ID in direct sunlight.
+ Hold the camera or mobile device steady while taking the picture.
+ Best Practices for Supplemental Docs:
+ Utility Bills: Electricity, water, gas, or telephone bills (should be recent, typically within the last three months).
+ Bank Statements: Official statements from banks or credit card companies that show the individual’s address.
+ The POA document must have the address, name, and date appear on the main page (first page), so multiple pages aren't required.
+ General best practices:
+ Single picture per file, if two-sided, create one file per side.
+ Handwritten documents aren't accepted.
+ Don't crop the image (cut corners, miss parts) try to have margins on all sides of the captured image before capturing.
+ Don't use Photoshop or other editing software; don't alter the document in any way.
+ Don't use flash.
+ Take the photo from directly above the document while it is on a flat surface.
+ Avoid colored and noisy background.
+ Don't obstruct the ID (no fingers covering part of the document).
+ Use color images not lower than 200 DPI. The ideal image size is 500Kb. AU10TIX best practice is to accept images with 400 DPI and above.
+ The minimum threshold for the image size for an OK result is 600 W X 370 H pixels.
+ Accepted file types: .bmp .jpg .gif .tif .pdf.
+ Users can't upload images smaller than 30kb or larger than 5MB.
+ Create a certificate profile
+ A certificate profile resource is the logical container of the certificates that are issued to you for signing.
+ Naming constraints for certificate profiles
+ Certificate profile names have some constraints.
+ A certificate profile name must:
+ Contain from 5 to 100 alphanumeric characters.
+ Begin with a letter, end with a letter or number, and not contain consecutive hyphens.
+ Be unique within the account.
+ A certificate profile name is:
+ In the same Azure region as the account, by default inheritance.
+ Not case-sensitive ( ABC is the same as abc ).
+ Azure portal
+ Azure CLI
+ Azure PowerShell
+ To create a certificate profile in the Azure portal:
+ In the Azure portal, go to your new Artifact Signing account.
+ On the Artifact Signing account Overview pane or on the resource menu under Objects , select Certificate profiles .
+ On the command bar, select Create and select a certificate profile type.
+ On Create certificate profile , provide the following information:
+ a. For Certificate Profile Name , enter a unique name.
+ For more information, see Naming constraints for certificate profiles .
+ The value for Certificate Type is autopopulated based on the certificate profile type you selected.
+ For Program Type , keep the default None. Change it only if you're enrolled in the Windows endpoint security platform program.
+ b. For Verified CN and O , select an identity validation that must be displayed on the certificate.
+ If the street address must be displayed on the certificate, select the Include street address checkbox.
+ If the postal code must be displayed on the certificate, select the Include postal code checkbox.
+ The values for the remaining fields are autopopulated based on your selection for Verified CN and O .
+ A generated Certificate Subject Preview shows the preview of the certificate that will be issued.
+ Select Create .
+ Prerequisites
+ You need the identity validation ID for the entity that the certificate profile is being created for. Complete these steps find your identity validation ID in the Azure portal.
+ In the Azure portal, go to your Artifact Signing account.
+ On the Artifact Signing account Overview pane or on the resource menu under Objects , select Identity validations .
+ Select the hyperlink for the relevant entity. On the Identity validation pane, you can copy the value for Identity validation Id .
+ To create a certificate profile by using the Azure CLI:
+ Create a certificate profile by using the following command:
+ az artifact-signing certificate-profile create -g MyResourceGroup --a
+ account-name MyAccount -n MyProfile --profile-type PublicTrust --identity-validation-id xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+ For more information, see Naming constraints for certificate profiles .
+ Create a certificate profile that includes optional fields (street address or postal code) in the subject name of the certificate by using the following command:
+ az artifact-signing certificate-profile create -g MyResourceGroup --account-name MyAccount -n MyProfile --profile-type PublicTrust --identity-validation-id xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx --include-street true
+ Verify that you successfully created a certificate profile by using the following command:
+ az artifact-signing certificate-profile show -g myRG --account-name MyAccount -n MyProfile
+ The following table lists helpful commands to use when you create a certificate profile by using the Azure CLI:
+ Command
+ Description
+ az artifact-signing certificate-profile create -–help
+ Shows help for sample commands, and shows detailed parameter descriptions.
+ az artifact-signing certificate-profile list -g MyResourceGroup --account-name MyAccount
+ Lists all certificate profiles that are associated with an Artifact Signing account.
+ az artifact-signing certificate-profile show -g MyResourceGroup --account-name MyAccount -n MyProfile
+ Gets the details for a certificate profile.
+ Prerequisites
+ You need the identity validation ID for the entity that the certificate profile is being created for. Complete these steps find your identity validation ID in the Azure portal.
+ In the Azure portal, go to your Artifact Signing account.
+ On the Artifact Signing account Overview pane or on the resource menu under Objects , select Identity validations .
+ Select the hyperlink for the relevant entity. On the Identity validation pane, you can copy the value for Identity validation Id .
+ To create a certificate profile by using the Azure PowerShell:
+ Create a certificate profile by using the following command:
+ New-AzArtifactSigningCertificateProfile -AccountName test -ResourceGroupName rg-test -ProfileName test -IdentityValidationId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx -ProfileType PublicTrustTest
+ For more information, see Naming constraints for certificate profiles .
+ Create a certificate profile that includes optional fields (street address or postal code) in the subject name of the certificate by using the following command:
+ New-AzArtifactSigningCertificateProfile -AccountName test -ResourceGroupName rg-test -ProfileName test -IdentityValidationId xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx -ProfileType PublicTrustTest -IncludeStreetAddress
+ Verify that you successfully created a certificate profile by using the following command:
+ Get-AzArtifactSigningCertificateProfile -AccountName test -ResourceGroupName rg-test -ProfileName test
+ Clean up resources
+ Azure portal
+ Azure CLI
+ Azure PowerShell
+ To delete Artifact Signing resources by using the Azure portal:
+ Delete a certificate profile
+ In the Azure portal, go to your Artifact Signing account.
+ On the Artifact Signing account Overview pane or on the resource menu under Objects , select Certificate profiles .
+ On Certificate profiles , select the certificate profile that you want to delete.
+ On the command bar, select Delete .
+ Note
+ This action stops any signing that's associated with the certificate profile.
+ Delete an Artifact Signing account
+ Sign in to the Azure portal .
+ In the search box, enter and then select Artifact Signing Accounts .
+ On Artifact Signing Accounts , select the Artifact Signing account that you want to delete.
+ On the command bar, select Delete .
+ Note
+ This action removes all certificate profiles that are linked to this account. Any signing processes that are associated with the certificate profiles stops.
+ To delete Artifact Signing resources by using the Azure CLI:
+ Delete a certificate profile
+ To delete an Artifact Signing certificate profile:
+ az artifact-signing certificate-profile delete -g MyResourceGroup --account-name MyAccount -n MyProfile
+ Note
+ This action stops any signing that's associated with the certificate profile.
+ Delete an Artifact Signing account
+ You can use the Azure CLI to delete Artifact Signing resources.
+ To delete an Artifact Signing account:
+ az artifact-signing delete -n MyAccount -g MyResourceGroup
+ Note
+ This action removes all certificate profiles that are linked to this account. Any signing processes that are associated with the certificate profiles stops.
+ To delete Artifact Signing resources by using Azure PowerShell:
+ Delete a certificate profile
+ To delete an Artifact Signing certificate profile:
+ Remove-AzArtifactSigningCertificateProfile -AccountName test -ResourceGroupName test -ProfileName test
+ Note
+ This action stops any signing that's associated with the certificate profile.
+ Delete an Artifact Signing account
+ To delete an Artifact Signing account:
+ Remove-AzArtifactSigningAccount -AccountName test -ResourceGroupName rg-test
+ Note
+ This action removes all certificate profiles that are linked to this account. Any signing processes that are associated with the certificate profiles stops.
+ Related content
+ In this quickstart, you created an Artifact Signing account, an identity validation request, and a certificate profile. To learn more about Artifact Signing and to start your signing journey, see these articles:
+ Learn more about signing integrations .
+ Learn more about the trust models that Artifact Signing supports .
+ Learn more about certificate management .
+ Need assistance with your setup:
+ Reach out via Azure Support through Azure portal.
+ Post your query on Stack Overflow or Microsoft Q&A, use the tag: artifact-signing.
+ Identity Validation issues can only be addressed with Stack Overflow or Microsoft Q&A.
+ Feedback
+ Was this page helpful?
+ Yes
+ No
+ No
+ Need help with this topic?
+ Want to try using Ask Learn to clarify or guide you through this topic?
+ Ask Learn
+ Ask Learn
+ Suggest a fix?
+ Additional resources
+ Last updated on
+ 2026-05-21
+ In this article
+ Was this page helpful?
+ Need help with this topic?
+ Want to try using Ask Learn to clarify or guide you through this topic?
+ Ask Learn
+ Ask Learn
+ Suggest a fix?
+ en-us
+ Your Privacy Choices
+ Theme
+ Light
+ Dark
+ High contrast
+ AI Disclaimer
+ Previous Versions
+ Blog
+ Contribute
+ Privacy
+ Consumer Health Privacy
+ Terms of Use
+ Trademarks
+ © Microsoft 2026

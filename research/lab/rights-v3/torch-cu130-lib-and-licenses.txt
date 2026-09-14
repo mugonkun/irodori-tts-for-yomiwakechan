@@ -1,0 +1,63 @@
+# url=https://download-r2.pytorch.org/whl/cu130/torch-2.10.0%2Bcu130-cp312-cp312-win_amd64.whl
+# bytes=1867405006 eocd=11756 parsed=11756
+# torch/lib entries: 58  (uncompressed bytes)
+   477896816  torch/lib/cublasLt64_13.dll
+   408946688  torch/lib/torch_cuda.dll
+   284331040  torch/lib/cufft64_12.dll
+   265100288  torch/lib/torch_cpu.dll
+   188558368  torch/lib/cudnn_engines_precompiled64_9.dll
+   150326304  torch/lib/cusparse64_12.dll
+   126421024  torch/lib/cusolver64_12.dll
+    95365152  torch/lib/cusolverMg64_12.dll
+    91028512  torch/lib/nvrtc64_130_0.alt.dll
+    90961440  torch/lib/nvrtc64_130_0.dll
+    88218656  torch/lib/nvJitLink_130_0.dll
+    88123936  torch/lib/cudnn_adv64_9.dll
+    58863672  torch/lib/curand64_10.dll
+    53315104  torch/lib/cudnn_heuristic64_9.dll
+    50288240  torch/lib/cublas64_13.dll
+    29970976  torch/lib/cudnn_ops64_9.dll
+    29597848  torch/lib/torch_cpu.lib
+    27764256  torch/lib/nvperf_host.dll
+    19942944  torch/lib/cudnn_engines_runtime_compiled64_9.dll
+    19076096  torch/lib/torch_python.dll
+     8812252  torch/lib/sleef.lib
+     4471328  torch/lib/nvrtc-builtins64_130.dll
+     2891768  torch/lib/microkernels-prod.lib
+     2703490  torch/lib/XNNPACK.lib
+     2285600  torch/lib/cudnn_graph64_9.dll
+     2067488  torch/lib/cupti64_2025.3.0.dll
+     1805762  torch/lib/torch_cuda.lib
+     1614192  torch/lib/libiomp5md.dll
+     1428080  torch/lib/cudnn_cnn64_9.dll
+     1309238  torch/lib/fmt.lib
+     1081344  torch/lib/c10.dll
+      822024  torch/lib/c10.lib
+      470640  torch/lib/cudart64_13.dll
+      412160  torch/lib/c10_cuda.dll
+      289248  torch/lib/torch_python.lib
+      284300  torch/lib/libittnotify.lib
+      266352  torch/lib/cudnn64_9.dll
+      201264  torch/lib/cufftw64_12.dll
+      195072  torch/lib/uv.dll
+      185328  torch/lib/pthreadpool.lib
+      118108  torch/lib/cpuinfo.lib
+       89088  torch/lib/zlibwapi.dll
+       58360  torch/lib/c10_cuda.lib
+       54272  torch/lib/caffe2_nvrtc.dll
+       48128  torch/lib/nvToolsExt64_1.dll
+       43888  torch/lib/libiompstubs5md.dll
+       15360  torch/lib/shm.dll
+        9728  torch/lib/torch.dll
+        9728  torch/lib/torch_global_deps.dll
+        4486  torch/lib/libshm/socket.h
+        3790  torch/lib/shm.lib
+        1924  torch/lib/_C.lib
+        1850  torch/lib/caffe2_nvrtc.lib
+        1832  torch/lib/torch.lib
+        1283  torch/lib/libshm/err.h
+        1251  torch/lib/libshm/libshm.h
+         815  torch/lib/libshm_windows/libshm.h
+         113  torch/lib/libshm/alloc_info.h
+# dist-info/licenses entries: 0
+# METADATA: [{"n": "torch-2.10.0+cu130.dist-info/METADATA", "m": 8, "c": 10792, "u": 29899, "o": 1865758066}]

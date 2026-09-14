@@ -1,0 +1,43 @@
+ Skip to main content
+ This browser is no longer supported.
+ Upgrade to Microsoft Edge to take advantage of the latest features, security updates, and technical support.
+ Download Microsoft Edge
+ More info about Internet Explorer and Microsoft Edge
+ Table of contents
+ Read in English
+ Edit
+ Artifact Signing
+ Artifact Signing is a Microsoft fully managed, end-to-end signing solution for partner developers.
+ About Artifact Signing
+ Overview
+ What is the Artifact Signing service?
+ Concept
+ Artifact Signing trust models
+ Artifact Signing resources and roles
+ Artifact Signing certificate management
+ Get started
+ Quickstart
+ Set up Artifact Signing
+ How-To Guide
+ Sign a CI policy by using Artifact Signing
+ Set up signing integrations to use Artifact Signing
+ Access signed transactions in Artifact Signing
+ Revoke a certificate profile in Artifact Signing
+ Assign roles
+ Tutorial
+ Assign roles in the Artifact Signing service
+ en-us
+ Your Privacy Choices
+ Theme
+ Light
+ Dark
+ High contrast
+ AI Disclaimer
+ Previous Versions
+ Blog
+ Contribute
+ Privacy
+ Consumer Health Privacy
+ Terms of Use
+ Trademarks
+ © Microsoft 2026

@@ -1,0 +1,598 @@
+{
+  "seat": "R2-amd",
+  "fetched_at": "2026-09-14T10:39:34.3417355+09:00 〜 2026-09-14T10:52:35.6032228+09:00 (PowerShell Get-Date -Format o)",
+  "items": [
+    {
+      "id": "R2-01",
+      "component": "rocm-sdk-core 10.0.0（rocm_sdk_core-10.0.0-py3-none-win_amd64.whl・758,050,981 B・台帳 runtime-rocm-gfx1151.json）＝展開先 site-packages/_rocm_sdk_core/",
+      "covers_files": [
+        "_rocm_sdk_core/bin/amd_comgr.dll (121,750,016 B)",
+        "_rocm_sdk_core/bin/amdhip64_7.dll (16,555,520 B)",
+        "_rocm_sdk_core/bin/amdocl64.dll (11,758,592 B)",
+        "_rocm_sdk_core/bin/cltrace.dll (480,256 B)",
+        "_rocm_sdk_core/bin/hiprtc0715.dll (1,296,384 B)",
+        "_rocm_sdk_core/bin/hiprtc-builtins0715.dll (944,128 B)",
+        "_rocm_sdk_core/bin/rocm_kpack.dll (181,248 B)",
+        "_rocm_sdk_core/bin/rocm-openblas.dll (11,719,680 B)",
+        "_rocm_sdk_core/bin/rocm-openblas64.dll (11,926,528 B)",
+        "_rocm_sdk_core/lib/llvm/bin/libclang.dll (91,644,416 B)",
+        "_rocm_sdk_core/lib/llvm/lib/clang/23/lib/windows/clang_rt.asan_dynamic-x86_64.dll (549,376 B)",
+        "（exe も同梱）clinfo.exe 321,536 / hipcc.exe 232,960 / hipconfig.exe 243,200 / hipify-clang.exe 37,864,448 / hipInfo.exe 24,576 / hrr-playback.exe 586,240"
+      ],
+      "license_name": "wheel の宣言としては無し（METADATA 59 B・3 行）。wheel 内に実在する許諾檔は 2 件のみ＝amd_comgr（Apache License v2.0 with LLVM Exceptions）と hipcc（MIT 型の許諾文・AMD 著作権）",
+      "source_url": "https://stable.repo.amd.com/rocm/whl-next/rocm-sdk-core/rocm_sdk_core-10.0.0-py3-none-win_amd64.whl",
+      "original_file": "originals/wheel-rocm_sdk_core-amd_comgr-LICENSE-2026-09-14.txt, originals/wheel-rocm_sdk_core-hipcc-LICENSE-2026-09-14.txt",
+      "sha256": "amd_comgr LICENSE.txt = efa88a0f81075b46f0b5eed592d8c575a7014ba402b912da68926766464f9513 / hipcc LICENSE.txt = c5ddc725875172db36c0c0fa733834993ce8cde98d7d2e32210be86e852af04c",
+      "bytes": 15289,
+      "same_as_2026_09_04": "true（2026-09-04 の 22-runtime-license.md 表 7 と first-run-notices.md B1 が記した『METADATA 3〜4 行・License 欄なし／許諾檔は amd_comgr と hipcc の 2 件だけ』を、本日 2026-09-14 に本機の展開済み実行系で再確認した。檔の数・バイト数（15,289 B・1,098 B）は一致）",
+      "quotes": [
+        {
+          "where": "本機 site-packages/rocm_sdk_core-10.0.0.dist-info/METADATA 全文（実測 59 B・3 行＋空行）",
+          "text": "Metadata-Version: 2.4\nName: rocm-sdk-core\nVersion: 10.0.0"
+        },
+        {
+          "where": "本機 site-packages/_rocm_sdk_core/share/doc/amd_comgr/LICENSE.txt:1-2（15,289 B）",
+          "text": "==============================================================================\nThe Comgr Project is under the Apache License v2.0 with LLVM Exceptions:"
+        },
+        {
+          "where": "本機 site-packages/_rocm_sdk_core/share/doc/hipcc/LICENSE.txt:1-6（1,098 B）",
+          "text": "Copyright (c) 2008 - 2025 Advanced Micro Devices, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell"
+        }
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "wheel 自身は再配布の可否について 1 語も述べていない（METADATA に License / License-Expression / License-File / Classifier: License :: が 0 件）",
+        "同梱の 2 檔（amd_comgr・hipcc）が覆う範囲でのみ、その檔の条件（Apache-2.0 WITH LLVM-exception の §4、MIT の著作権表示保持）が読める",
+        "上記 DLL のうち amdhip64_7.dll・amdocl64.dll・cltrace.dll・rocm_kpack.dll・rocm-openblas.dll／64.dll・libclang.dll・clang_rt.asan_dynamic-x86_64.dll を覆う許諾檔は wheel の中に 1 件も無い（実測）"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（wheel 内に改変・再署名について述べた文言が無い。amd_comgr の Apache-2.0 WITH LLVM-exception と hipcc の MIT 文の中の一般条項以外に記述なし）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "許諾文が wheel に入っていない DLL（amdhip64_7.dll・amdocl64.dll・rocm-openblas*.dll・libclang.dll・rocm_kpack.dll・cltrace.dll・clang_rt.asan_dynamic-x86_64.dll）を自前の置き場から再配布してよいか",
+        "ROCm 公式の licensing ページ（R2-07）が指す『/opt/rocm/share/doc/<component-name>/』に相当する檔が Windows wheel には 2 件しか入っていない。この欠落を『上流の梱包漏れ』と読むか『許諾が及ばない』と読むかは卓の判断",
+        "AMD に文書での確認を求めるか（wheel の再配布可否・許諾文の所在）"
+      ],
+      "notes": "実測＝2026-09-14、本機 %LOCALAPPDATA%\\irodori-tts-ywk-radeon\\runtime\\rocm-gfx1151\\site-packages を PowerShell の Get-ChildItem -Recurse で走査（読むだけ・書き換えなし）。許諾檔の探索条件＝名が LICENSE/COPYING/NOTICE/LICENCE で始まる檔、および名に licen|copying|notice|copyright|eula|terms を含む檔。_rocm_sdk_core 配下でのヒットは上記 2 件のみ。DLL は -Filter *.dll の再帰列挙。_rocm_sdk_core/.info/version の中身は『10.0.0』（8 B）。"
+    },
+    {
+      "id": "R2-02",
+      "component": "rocm-sdk-libraries 10.0.0（rocm_sdk_libraries-10.0.0-py3-none-win_amd64.whl・116,831,755 B）＝展開先 site-packages/_rocm_sdk_libraries/",
+      "covers_files": [
+        "_rocm_sdk_libraries/bin/MIOpen.dll (493,655,040 B)",
+        "_rocm_sdk_libraries/bin/MIOpenCKGroupedConv_gfx1151.dll (307,915,264 B)",
+        "_rocm_sdk_libraries/bin/rocsparse.dll (69,463,040 B)",
+        "_rocm_sdk_libraries/bin/rocrand.dll (36,688,896 B)",
+        "_rocm_sdk_libraries/bin/rocfft.dll (27,509,760 B)",
+        "_rocm_sdk_libraries/bin/rocsolver.dll (24,983,040 B)",
+        "_rocm_sdk_libraries/bin/rocblas.dll (21,020,160 B)",
+        "_rocm_sdk_libraries/bin/libhipblaslt.dll (6,301,696 B)",
+        "_rocm_sdk_libraries/bin/hipdnn_backend.dll (2,269,184 B)",
+        "_rocm_sdk_libraries/bin/hipsolver.dll (1,540,096 B)",
+        "_rocm_sdk_libraries/bin/hipblas.dll (801,280 B)",
+        "_rocm_sdk_libraries/bin/origami.dll (368,128 B)",
+        "_rocm_sdk_libraries/bin/hipfftw.dll (274,432 B)",
+        "_rocm_sdk_libraries/bin/hipsparse.dll (219,648 B)",
+        "_rocm_sdk_libraries/bin/hipfft.dll (154,112 B)",
+        "_rocm_sdk_libraries/bin/hiprand.dll (17,408 B)",
+        "_rocm_sdk_libraries/bin/hipdnn_plugins/engines/hip_kernel_provider.dll (2,305,536 B)",
+        "_rocm_sdk_libraries/bin/hipdnn_plugins/engines/miopen_plugin.dll (529,920 B)",
+        "_rocm_sdk_libraries/bin/hipdnn_plugins/engines/hipblaslt_plugin.dll (211,968 B)",
+        "_rocm_sdk_libraries/bin/test_plugins/ 以下 24 件の .dll（hipdnn_test_*.dll・custom/test_*.dll・default/test_good_default_plugin.dll）",
+        "_rocm_sdk_libraries/.kpack/blas_lib_gfx1151.kpack (43,326,609 B)",
+        "_rocm_sdk_libraries/.kpack/rand_lib_gfx1151.kpack (3,213,586 B)",
+        "_rocm_sdk_libraries/.kpack/fft_lib_gfx1151.kpack (2,333 B)"
+      ],
+      "license_name": "unknown（wheel の宣言も無く、wheel 内に許諾檔が 1 件も無い）",
+      "source_url": "https://stable.repo.amd.com/rocm/whl-next/rocm-sdk-libraries/rocm_sdk_libraries-10.0.0-py3-none-win_amd64.whl",
+      "original_file": "（許諾檔が存在しないため保存対象なし。METADATA は本機の展開先で実読）",
+      "sha256": "（台帳 runtime-rocm-gfx1151.json の rocm-sdk-libraries 項を正本とする。本席は wheel を再取得していない）",
+      "bytes": 116831755,
+      "same_as_2026_09_04": "true（first-run-notices.md B2 の『METADATA は 64 B・4 行。wheel の中に LICENSE／COPYING／NOTICE に当たる檔が 1 件も無い』を、本日 2026-09-14 に展開先で再確認。METADATA 64 B・許諾檔 0 件で一致）",
+      "quotes": [
+        {
+          "where": "本機 site-packages/rocm_sdk_libraries-10.0.0.dist-info/METADATA 全文（実測 64 B）",
+          "text": "Metadata-Version: 2.4\nName: rocm-sdk-libraries\nVersion: 10.0.0"
+        }
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "_rocm_sdk_libraries 配下の全再帰走査で LICENSE/COPYING/NOTICE/LICENCE 系の檔は 0 件（実測）。したがって 40 件超の DLL すべてについて、wheel の中に許諾文が無い"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（記述無し）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "許諾文が 1 件も無い wheel（MIOpen.dll 493 MB・rocblas.dll 21 MB ほか）を自前の置き場から再配布してよいか",
+        "R2-11 のとおり上流 GitHub 側には各々の LICENSE があるが、『ソースの LICENSE がこのバイナリにも及ぶ』と読んでよいかは法解釈"
+      ],
+      "notes": "実測＝2026-09-14。走査条件は R2-01 と同じ。hipdnn_backend.dll・origami.dll・MIOpenCKGroupedConv_gfx1151.dll は ROCm 公式 licensing ページ（R2-07）の成分表にも名が無い（表を hipdnn／origami で検索して 0 件）。"
+    },
+    {
+      "id": "R2-03",
+      "component": "rocm-sdk-device-gfx1151 10.0.0（rocm_sdk_device_gfx1151-10.0.0-py3-none-win_amd64.whl・139,346,623 B）",
+      "covers_files": [
+        "_rocm_sdk_libraries/.kpack/blas_lib_gfx1151.kpack (43,326,609 B)",
+        "_rocm_sdk_libraries/.kpack/rand_lib_gfx1151.kpack (3,213,586 B)",
+        "_rocm_sdk_libraries/.kpack/fft_lib_gfx1151.kpack (2,333 B)",
+        "（DLL は持たない。中身は gfx1151 向けのカーネル像 .kpack）"
+      ],
+      "license_name": "unknown（宣言なし・許諾檔なし）",
+      "source_url": "https://stable.repo.amd.com/rocm/whl-next/rocm-sdk-device-gfx1151/rocm_sdk_device_gfx1151-10.0.0-py3-none-win_amd64.whl",
+      "original_file": "（許諾檔なし）",
+      "sha256": "（台帳を正本とする。本席は wheel を再取得していない）",
+      "bytes": 139346623,
+      "same_as_2026_09_04": "true（first-run-notices.md B3 の『METADATA は 134 B・6 行。license 檔 0 件』と一致）",
+      "quotes": [
+        {
+          "where": "本機 site-packages/rocm_sdk_device_gfx1151-10.0.0.dist-info/METADATA 全文（実測 134 B）",
+          "text": "Metadata-Version: 2.4\nName: rocm-sdk-device-gfx1151\nVersion: 10.0.0\nRequires-Dist: rocm-sdk-libraries==10.0.0\nDynamic: requires-dist"
+        }
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "dist-info にも展開先にも許諾檔が無い（実測）"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（記述無し）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "コンパイル済み GPU カーネル像（.kpack）の再配布可否。許諾文はどこにも無い"
+      ],
+      "notes": "実測＝2026-09-14。この wheel は自分の名前のディレクトリを作らず、中身を _rocm_sdk_libraries/.kpack/ に置く（本機の実測。dist-info だけが rocm_sdk_device_gfx1151-10.0.0.dist-info として残る）。"
+    },
+    {
+      "id": "R2-04",
+      "component": "rocm 10.0.0（sdist rocm-10.0.0.tar.gz・24,780 B）＝純 Python の親パッケージ src/rocm_sdk",
+      "covers_files": [
+        "site-packages/rocm_sdk/__init__.py (7,172 B)",
+        "site-packages/rocm_sdk/__main__.py (5,275 B)",
+        "site-packages/rocm_sdk/_devel.py (21,526 B)",
+        "site-packages/rocm_sdk/_dist_info.py (18,547 B)",
+        "site-packages/rocm_sdk/tests/*.py (6 檔)"
+      ],
+      "license_name": "PKG-INFO には License 欄が無い。ソースの各 .py の 2 行目に SPDX-License-Identifier: MIT（11 檔すべて）",
+      "source_url": "https://stable.repo.amd.com/rocm/whl-next/rocm/rocm-10.0.0.tar.gz",
+      "original_file": "originals/rocm-10.0.0.tar.gz",
+      "sha256": "65b5982249612a310135f5e061b9f28909e8ad718a1ddb3f1abba92298b7216b",
+      "bytes": 24780,
+      "same_as_2026_09_04": "true（台帳 runtime-rocm-gfx1151.json の rocm 項 sha256=65b5982249612a310135f5e061b9f28909e8ad718a1ddb3f1abba92298b7216b・size=24780 と、本日落とした檔の sha256／バイト数が完全一致。中身も first-run-notices.md B6 の観測と一致）",
+      "quotes": [
+        {
+          "where": "rocm-10.0.0/PKG-INFO:1-4（全 5,027 B・90 行。License / License-Expression / Classifier: License :: は 0 件）",
+          "text": "Metadata-Version: 2.4\nName: rocm\nVersion: 10.0.0\nRequires-Dist: rocm-sdk-core==10.0.0"
+        },
+        {
+          "where": "rocm-10.0.0/src/rocm_sdk/__init__.py:1-2",
+          "text": "# Copyright Advanced Micro Devices, Inc.\n# SPDX-License-Identifier: MIT"
+        },
+        {
+          "where": "rocm-10.0.0/setup.py:1-2",
+          "text": "# Copyright Advanced Micro Devices, Inc.\n# SPDX-License-Identifier: MIT"
+        },
+        {
+          "where": "rocm-10.0.0/PKG-INFO:43-44（gfx1151 の extra）",
+          "text": "Provides-Extra: device-gfx1151\nRequires-Dist: rocm-sdk-device-gfx1151==10.0.0; extra == \"device-gfx1151\""
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "SPDX-License-Identifier: MIT は sdist 内 11 檔の .py ヘッダに付いている（grep -rn 'SPDX' で 11 件・実測）。MIT の条件は『The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.』（MIT 本文は sdist に同梱されていない＝LICENSE 檔が 0 件）",
+        "sdist に LICENSE／COPYING 檔は入っていない（tar 展開後の全檔＝MANIFEST.in・PKG-INFO・README.md・pyproject.toml・setup.cfg・setup.py・src/ のみ）",
+        "この MIT はこの純 Python パッケージのヘッダの観測であり、R2-01〜R2-03・R2-05 のバイナリに及ぶという記述はどこにも無い"
+      ],
+      "modification_or_resigning": {
+        "status": "allowed",
+        "quote": "MIT の一般条項として『to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software』（ただし本 sdist に MIT 全文は同梱されていない。全文は R2-08 の TheRock LICENSE と同型）"
+      },
+      "authenticode_observed": "unsigned",
+      "open_points_for_commander": [
+        "SPDX ヘッダのみで LICENSE 全文が同梱されていないパッケージを再配布するとき、MIT 全文をこちらで添えるのでよいか（どの版の著作権表示を書くか）"
+      ],
+      "notes": "実測＝2026-09-14 10:47 JST ごろ。curl -sS -L で https://stable.repo.amd.com/rocm/whl-next/rocm/rocm-10.0.0.tar.gz を取得（HTTP 200・24,780 B）、sha256sum で 65b5982249612a310135f5e061b9f28909e8ad718a1ddb3f1abba92298b7216b。tar -xzf で scratchpad の tmp-r2/rocm-sdist に展開し PKG-INFO・setup.py・src/rocm_sdk/__init__.py を直読。"
+    },
+    {
+      "id": "R2-05",
+      "component": "amd-torch-device-gfx1151 2.13.0+rocm10.0.0（50,010,016 B）と amd-torch-device-gfx115x 2.13.0+rocm10.0.0（187,800,925 B）",
+      "covers_files": [
+        "torch/.kpack/torch_gfx1151.kpack (50,247,134 B)（gfx1151 の分）",
+        "torch/lib/aotriton.images/amd-gfx115x/ 以下 8 檔・計 187,956,247 B（gfx115x の分・flash attention のカーネル像）"
+      ],
+      "license_name": "unknown（両方とも宣言なし・許諾檔なし）",
+      "source_url": "https://stable.repo.amd.com/rocm/whl-next/amd-torch-device-gfx1151/amd_torch_device_gfx1151-2.13.0%2Brocm10.0.0-cp312-cp312-win_amd64.whl / https://stable.repo.amd.com/rocm/whl-next/amd-torch-device-gfx115x/amd_torch_device_gfx115x-2.13.0%2Brocm10.0.0-cp312-cp312-win_amd64.whl",
+      "original_file": "（許諾檔なし）",
+      "sha256": "（台帳を正本とする。d274a50c… / 67e23e9e…）",
+      "bytes": 237810941,
+      "same_as_2026_09_04": "true（first-run-notices.md B4・B5 の『METADATA は 220 B・7 行／171 B・6 行。license 檔 0 件』と本日の実測が一致）",
+      "quotes": [
+        {
+          "where": "本機 site-packages/amd_torch_device_gfx1151-2.13.0+rocm10.0.0.dist-info/METADATA 全文（実測 220 B）",
+          "text": "Metadata-Version: 2.4\nName: amd-torch-device-gfx1151\nVersion: 2.13.0+rocm10.0.0\nSummary: AMD device kernels (gfx1151) for torch\nRequires-Dist: torch == 2.13.0+rocm10.0.0\nRequires-Dist: rocm-sdk-device-gfx1151 == 10.0.0"
+        },
+        {
+          "where": "本機 site-packages/amd_torch_device_gfx115x-2.13.0+rocm10.0.0.dist-info/METADATA 全文（実測 171 B）",
+          "text": "Metadata-Version: 2.4\nName: amd-torch-device-gfx115x\nVersion: 2.13.0+rocm10.0.0\nSummary: AMD device kernels (RDNA3.5) for torch\nRequires-Dist: torch == 2.13.0+rocm10.0.0"
+        }
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "両 dist-info に License / License-Expression / License-File / Classifier: License :: が 0 件（実測）",
+        "gfx115x が置く aotriton.images は AOTriton 由来と名が示すが、torch wheel の License-File 107 件に aotriton の項は 0 件（R2-06）。上流 ROCm/aotriton の LICENSE（MIT 型・1,077 B）は R2-11 に記載"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（記述無し）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "カーネル像（.kpack・aotriton.images）の再配布可否。許諾文はどこにも無い",
+        "aotriton.images の中身が ROCm/aotriton（MIT）由来だとして、その LICENSE を我々が添える形でよいか"
+      ],
+      "notes": "実測＝2026-09-14。torch/lib/aotriton.images 配下は再帰で 8 檔・187,956,247 B。torch/.kpack は 1 檔・50,247,134 B。"
+    },
+    {
+      "id": "R2-06",
+      "component": "torch 2.13.0+rocm10.0.0（113,440,240 B）と torchaudio 2.11.0.2+rocm10.0.0（2,086,475 B）＝AMD の索引から取る PyTorch 本体",
+      "covers_files": [
+        "torch/lib/torch_cpu.dll (224,712,192 B)",
+        "torch/lib/torch_hip.dll (70,977,024 B)",
+        "torch/lib/torch_python.dll (26,755,584 B)",
+        "torch/lib/aotriton_v2.dll (14,948,352 B)",
+        "torch/lib/c10_hip.dll (1,862,144 B)",
+        "torch/lib/c10.dll (1,248,768 B)",
+        "torch/lib/libomp140.x86_64.dll (634,936 B)",
+        "torch/lib/uv.dll (210,944 B)",
+        "torch/lib/liblzma.dll (196,096 B)",
+        "torch/lib/dl.dll (16,896 B)",
+        "torch/lib/shm.dll (14,336 B)",
+        "torch/lib/caffe2_nvrtc.dll (12,800 B)",
+        "torch/lib/torch_global_deps.dll (8,704 B)",
+        "torch/lib/torch.dll (9,216 B)",
+        "torchaudio/lib/*.pyd（独立 DLL 無し）"
+      ],
+      "license_name": "torch＝License-Expression: Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT（dist-info/licenses/ に 107 檔）／torchaudio＝Classifier: License :: OSI Approved :: BSD License（licenses/LICENSE 1,363 B）",
+      "source_url": "https://stable.repo.amd.com/rocm/whl-next/torch/torch-2.13.0%2Brocm10.0.0-cp312-cp312-win_amd64.whl",
+      "original_file": "（wheel 内の檔。本機の展開先で実読）",
+      "sha256": "（台帳を正本とする）",
+      "bytes": 113440240,
+      "same_as_2026_09_04": "true（first-run-notices.md B7・B8 の観測と一致。License-File は 107 件、torch/lib の DLL は 14 件で一致）",
+      "quotes": [
+        {
+          "where": "本機 site-packages/torch-2.13.0+rocm10.0.0.dist-info/METADATA（44,299 B・841 行）の License-Expression 行",
+          "text": "License-Expression: Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT"
+        },
+        {
+          "where": "本機 site-packages/torch-2.13.0+rocm10.0.0.dist-info/licenses/LICENSE:（3,548 B・BSD-3-Clause 本文）の再頒布条項",
+          "text": "Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution."
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "torch 本体＝BSD-3-Clause の binary form 条項（上の逐語）＋ dist-info/licenses/ の 107 檔を配布物に添える",
+        "【穴・実測】METADATA の License-File 107 件を rocm|hip|miopen|aotriton|lzma|xz|openblas|comgr|rccl|rocblas|blaslt で検索すると、当たるのは third_party/fbgemm/external/hipify_torch/LICENSE.txt と third_party/mslk/external/hipify_torch/LICENSE.txt の 2 件だけ＝いずれも hipify（ソース変換ツール）であって ROCm ランタイムでも aotriton でも liblzma でもない",
+        "したがって torch/lib/aotriton_v2.dll（14.9 MB）・torch/lib/liblzma.dll（196 KB）を覆う許諾檔は wheel の中に 0 件",
+        "third_party の一覧に ROCm 系として在るのは aiter・composable_kernel・flash-attention・mslk（いずれも MIT 型）で、MIOpen／rocBLAS／hipBLASLt／CLR の項は 0 件"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（BSD-3-Clause 本文は改変版の再頒布を許すが、Authenticode 再署名についての記述は無い）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "aotriton_v2.dll と liblzma.dll の許諾＝torch wheel が名乗っていない。自前で添えるか、外すか",
+        "cu 版で 2026-09-04 に出た『PyTorch はライセンス面を肩代わりしていない』（22-runtime-license.md 表 1b）と同じ形の穴が、ROCm 版では ROCm ランタイム側（R2-01・R2-02）に開いている"
+      ],
+      "notes": "実測＝2026-09-14。PowerShell で METADATA を Select-String し、^License-File: 行を数えて 107 件、third_party/ 直下の名を一意化して 34 個（aiter・benchmark・composable_kernel・cpp-httplib・cpuinfo・cudnn_frontend・cutlass・fbgemm・flash-attention・flatbuffers・fmt・FP16・FXdiv・gemmlowp・gloo・googletest・ideep・kineto・llvm-openmp・mimalloc・miniz-3.0.2・mslk・NNPACK・NVTX・onnx・protobuf・psimd・pthreadpool・pybind11・python-peachpy・sleef・tensorpipe・VulkanMemoryAllocator・XNNPACK）。"
+    },
+    {
+      "id": "R2-07",
+      "component": "ROCm 公式 licensing ページ（一次資料・成分ごとの許諾名の表と『許諾文の所在』の指示）",
+      "covers_files": [
+        "（文書。R2-01〜R2-05 の全 DLL に関係する）"
+      ],
+      "license_name": "ページ自身は MIT（ROCm ドキュメントのリポジトリの分）。本文は『ROCm は成分ごとに別ライセンス』と述べ、59 行の成分表を持つ",
+      "source_url": "https://rocm.docs.amd.com/en/latest/about/license.html",
+      "original_file": "originals/rocm-license-page-2026-09-14.html（73,437 B・sha256 a2074881098059c48fdd681b897d8bf4c9ea780a77009bb76aff4d2e3756d176）／originals/rocm-license-page-2026-09-14.txt（テキスト化・10,796 B）",
+      "sha256": "29eaad14a404f488760188223b17ecc8dcbec4bf30c6bc909109556c4aa424f2",
+      "bytes": 10796,
+      "same_as_2026_09_04": "unknown（2026-09-04 の便はこのページを取得していない＝22-runtime-license.md 未確認 6 が『stable.repo.amd.com にも LICENSE ページを見つけられていない』と記すのみ。比較対象が無い）",
+      "quotes": [
+        {
+          "where": "originals/rocm-license-page-2026-09-14.txt:303-306（節『ROCm component licenses』の冒頭）",
+          "text": "ROCm is released by Advanced Micro Devices, Inc. (AMD) and is licensed per component separately.\nThe following table is a list of ROCm components with links to their respective license\nterms. These components may include third party components subject to\nadditional licenses. Please review individual repositories for more information."
+        },
+        {
+          "where": "originals/rocm-license-page-2026-09-14.txt:572-576",
+          "text": "Open sourced ROCm components are released via public GitHub\nrepositories, packages on https://repo.radeon.com and other distribution channels.\nProprietary products are only available on https://repo.radeon.com.\nProprietary components are organized in a proprietary subdirectory in the package\nrepositories to distinguish from open sourced packages."
+        },
+        {
+          "where": "originals/rocm-license-page-2026-09-14.txt:611-626（節『Package licensing』）",
+          "text": "Attention\n\nROCprof Trace Decoder and AOCC CPU optimizations are provided in binary form, subject to the license agreement enclosed on GitHub for ROCprof Trace Decoder, and Developer Central for AOCC. By using, installing,\ncopying or distributing ROCprof Trace Decoder or AOCC CPU Optimizations, you agree to\nthe terms and conditions of this license agreement. If you do not agree to the\nterms of this agreement, do not install, copy or use ROCprof Trace Decoder or the\nAOCC CPU Optimizations.\n\nFor the rest of the ROCm packages, you can find the licensing information at the\nfollowing location: /opt/rocm/share/doc/<component-name>/ or in the locations\nspecified in the preceding table.\n\nFor example, you can fetch the licensing information of the amd_comgr\ncomponent (Code Object Manager) from the /opt/rocm/share/doc/amd_comgr/LICENSE.txt file."
+        },
+        {
+          "where": "originals/rocm-license-page-2026-09-14.txt:312-338・416-418・432-434・356-358・536-538・544-546（成分表からの抜粋・成分名と許諾名の対）",
+          "text": "AMD Compute Language Runtime (CLR)\n\nMIT\n... Code Object Manager (Comgr)\n\nThe University of Illinois/NCSA\n... Composable Kernel\n\nMIT\n... MIOpen\n\nMIT\n... rocBLAS\n\nMIT\n... hipBLASLt\n\nMIT\n... ROCR-Runtime\n\nThe University of Illinois/NCSA\n... rocSOLVER\n\nBSD-2-Clause"
+        }
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "このページは各成分の許諾『名』を並べるだけで、wheel／バイナリの再配布についての明文の許諾も禁止も書いていない（ページ全文を redistribut で検索して 0 件）",
+        "『/opt/rocm/share/doc/<component-name>/』という所在の指示は Linux の導入先の話で、Windows wheel の中には share/doc が amd_comgr と hipcc の 2 件しか無い（R2-01 の実測）",
+        "【観測した食い違い】表は Comgr を『The University of Illinois/NCSA』とするが、wheel に同梱の amd_comgr/LICENSE.txt は『The Comgr Project is under the Apache License v2.0 with LLVM Exceptions』と書いている。どちらが正かは本席では断定しない",
+        "表に名の無い実物＝hipdnn（hipdnn_backend.dll）・origami.dll・rocm-openblas*.dll・aotriton。表を hipdnn／origami／openblas／aotriton で検索していずれも 0 件"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（改変・再署名についての記述は無い）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "表の許諾名（MIT／NCSA／BSD-2 等）を、Windows wheel に入っているバイナリの許諾として採ってよいか",
+        "Comgr について表（NCSA）と同梱檔（Apache-2.0 WITH LLVM-exception）が食い違う件をどう扱うか"
+      ],
+      "notes": "取得＝2026-09-14 10:41 JST ごろ・curl -sS -L（HTTP 200・73,437 B）。HTML は python の正規表現で script/style を落としタグを除いてテキスト化（originals/rocm-license-page-2026-09-14.txt）。両方の sha256 を記録済み。"
+    },
+    {
+      "id": "R2-08",
+      "component": "TheRock（ROCm/TheRock＝この wheel 群を組んでいる上流ビルド系）の LICENSE と配布方針の記述、および python packaging の説明",
+      "covers_files": [
+        "（rocm-sdk-core / rocm-sdk-libraries / rocm-sdk-device / rocm の梱包スクリプトそのもの）"
+      ],
+      "license_name": "MIT License（Copyright (c) 2023 - 2025 Advanced Micro Devices, Inc. All rights reserved.）",
+      "source_url": "https://github.com/ROCm/TheRock ＝ raw https://raw.githubusercontent.com/ROCm/TheRock/main/LICENSE",
+      "original_file": "originals/therock-LICENSE-2026-09-14.txt / therock-README-2026-09-14.md / therock-RELEASES-2026-09-14.md / therock-python_packaging-2026-09-14.md / therock-tmpl-rocm-sdk-core-setup-2026-09-14.py / therock-tmpl-rocm-sdk-core-pyproject-2026-09-14.toml",
+      "sha256": "LICENSE=7728762ecd3256782c89e28b1887727a484deda6356887ef2f2898598e950cb8 (1,113 B) / README=ec8f2a400d10309ed2aa608bc44f1db803b4cbce0bfc3b8fcea4d949b70df1be (21,830 B) / RELEASES=99112f39fab9748b5365a88ae5cdf72ab41f16f3faf8b416203120d73817cbfc (39,444 B) / python_packaging=a5449a3c009393b9912065d654af9446e6c67d559a38f96e05aa4eefe4b62ed9 (17,284 B) / setup.py テンプレ=f966bee9b0f2108c234d6ff14c6de45671677a7ba7d9841025763f98c3ae0908 (3,870 B) / pyproject テンプレ=454694f4a24f1911a90b52e28f9ac289908652cd84c13b5c8be8d0391eb5e8bf (94 B)",
+      "bytes": 1113,
+      "same_as_2026_09_04": "unknown（2026-09-04 の便は TheRock を取得していない）",
+      "quotes": [
+        {
+          "where": "originals/therock-LICENSE-2026-09-14.txt:1-3",
+          "text": "MIT License\n\nCopyright (c) 2023 - 2025 Advanced Micro Devices, Inc. All rights reserved."
+        },
+        {
+          "where": "originals/therock-LICENSE-2026-09-14.txt:5-8（許諾の本文）",
+          "text": "Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell"
+        },
+        {
+          "where": "originals/therock-tmpl-rocm-sdk-core-setup-2026-09-14.py:51-54（wheel を作る setup() の呼び出し）",
+          "text": "setup(\n    name=f\"rocm-sdk-core\",\n    version=dist_info.__version__,\n    packages=packages,"
+        },
+        {
+          "where": "originals/therock-tmpl-rocm-sdk-core-pyproject-2026-09-14.toml 全文（94 B）",
+          "text": "[build-system]\nrequires = [\n  \"setuptools>=70.2.0\",\n]\nbuild-backend = \"setuptools.build_meta\""
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "TheRock リポジトリ自体は MIT＝『distribute』を明文で許す。条件は『The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.』",
+        "【重要・実測】TheRock の README.md（21,830 B）・RELEASES.md（39,444 B）・docs/packaging/python_packaging.md（17,284 B）を licen で大小文字無視検索して、いずれも 0 件。配布方針・再配布条件・EULA についての記述は 1 行も無い",
+        "【wheel に License 欄が無い理由の観測】梱包テンプレの pyproject.toml は build-system だけ、setup.py の setup() 呼び出しに license／license_files／classifiers の引数が無い。各テンプレ .py の 2 行目にある # SPDX-License-Identifier: MIT は梱包スクリプト自身のヘッダであって、生成される wheel の METADATA には流れていない（rocm-sdk-core・rocm-sdk-libraries・rocm-sdk-device・rocm の 4 テンプレとも licen のヒットはこのヘッダ 1 件のみ）"
+      ],
+      "modification_or_resigning": {
+        "status": "allowed",
+        "quote": "MIT 本文『to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software』（TheRock LICENSE:7-8）。ただしこれは TheRock のビルド系ソースについての許諾であり、生成物のバイナリに及ぶという記述は無い"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "TheRock の MIT が、TheRock が組み上げた wheel のバイナリにも及ぶと読んでよいか（本席は断定しない）",
+        "上流が wheel の METADATA に license を入れていないことを、AMD に報告／確認するか"
+      ],
+      "notes": "取得＝2026-09-14 10:44〜10:51 JST。raw.githubusercontent.com から curl（全て HTTP 200）。GitHub のコード検索 API で repo:ROCm/TheRock の EULA は total_count 0、redistribute は total_count 1（dockerfiles/rocm_runtime.Dockerfile のみ）。梱包テンプレは gh api repos/ROCm/TheRock/contents/build_tools/packaging/python/templates/... を base64 -d で取得。"
+    },
+    {
+      "id": "R2-09",
+      "component": "取得元 https://stable.repo.amd.com/rocm/whl-next/ とその親ディレクトリに terms／LICENSE があるか",
+      "covers_files": [
+        "（R2-01〜R2-06 の全 wheel の取得元）"
+      ],
+      "license_name": "無し（索引ページは href の羅列のみ）",
+      "source_url": "https://stable.repo.amd.com/rocm/whl-next/",
+      "original_file": "originals/amd-index-whl-next-2026-09-14.html（7,134 B・sha256 bf8f61e06160c2f63f287849f0efc0b579e3c1e49713322bfa1ee0430a45697e）",
+      "sha256": "bf8f61e06160c2f63f287849f0efc0b579e3c1e49713322bfa1ee0430a45697e",
+      "bytes": 7134,
+      "same_as_2026_09_04": "true（first-run-notices.md §B 冒頭の『AMD の索引 https://stable.repo.amd.com/rocm/whl-next/ は hash を公開していない』と同じく、本日も href に #sha256= 断片は無い）",
+      "quotes": [
+        {
+          "where": "https://stable.repo.amd.com/ の応答本文（実測 83 B・curl・2026-09-14 10:47 JST）",
+          "text": "<!DOCTYPE html>\n<html>\n  <body>\n    <a href=\"rocm/\">rocm</a><br/>\n  </body>\n</html>"
+        },
+        {
+          "where": "https://stable.repo.amd.com/rocm/ の応答本文（実測 420 B・同時刻）",
+          "text": "<!DOCTYPE html>\n<html>\n  <body>\n    <a href=\"core/\">core</a><br/>\n    <a href=\"extras/\">extras</a><br/>\n    <a href=\"gpg/\">gpg</a><br/>\n    <a href=\"jax/\">jax</a><br/>\n    <a href=\"migraphx/\">migraphx</a><br/>\n    <a href=\"onnxruntime/\">onnxruntime</a><br/>\n    <a href=\"pytorch/\">pytorch</a><br/>\n    <a href=\"transformer_engine/\">transformer_engine</a><br/>\n    <a href=\"whl-next/\">whl-next</a><br/>\n  </body>\n</html>"
+        }
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "索引にも親ディレクトリにも terms／LICENSE／EULA の檔は無い（実測の HTTP 状態）＝https://stable.repo.amd.com/rocm/whl-next/LICENSE → HTTP 404 ／ https://stable.repo.amd.com/rocm/whl-next/terms.html → HTTP 404 ／ https://stable.repo.amd.com/LICENSE → HTTP 404 ／ https://stable.repo.amd.com/rocm/LICENSE → HTTP 404",
+        "索引ページ本体は 3 段とも単なるリンクの羅列で、法的な文言を 1 行も含まない",
+        "取得時に利用条件への同意を求める仕掛け（クリックラップ等）は無い＝curl で素通りに 200 が返る"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（記述無し）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "『取得元に条件が書かれていない』ことをどう扱うか（黙示の許諾とは読まないのが本席の立場＝not-found として上げる）"
+      ],
+      "notes": "実測＝2026-09-14 10:41〜10:47 JST。curl -sS -L -m 45 -o … -w \"%{http_code}\" で各 URL を叩き、HTTP 状態と本文長を記録。"
+    },
+    {
+      "id": "R2-10",
+      "component": "AMD Software EULA が wheel に及ぶという記述の有無（および EULA 本文の再配布条項）",
+      "covers_files": [
+        "（記述が見つかった場合、R2-01〜R2-05 の全バイナリに掛かりうる）"
+      ],
+      "license_name": "AMD SOFTWARE END USER LICENSE AGREEMENT (EULA)",
+      "source_url": "https://www.amd.com/en/legal/eula/amd-software-eula.html",
+      "original_file": "originals/amd-software-eula-2026-09-14.html（170,017 B・sha256 7e87245664d04cc728bfad14b2a775081c1fc66375f6b9169f41b76a813ea220）／originals/amd-software-eula-2026-09-14.txt（26,527 B）",
+      "sha256": "0d34675f593add8f98c92987ff883c50e76fe6f0398c097e27c2414839e29d5e",
+      "bytes": 26527,
+      "same_as_2026_09_04": "unknown（2026-09-04 の便はこの頁を取得していない）",
+      "quotes": [
+        {
+          "where": "originals/amd-software-eula-2026-09-14.txt:711（§1 Definitions の『Software』の定義）",
+          "text": "“Software” means the AMD software you download, install, or use, including updates and associated documentation."
+        },
+        {
+          "where": "originals/amd-software-eula-2026-09-14.txt:719-723（§2 License Grant）",
+          "text": "Subject to the terms and condition of this Agreement (including any Supplemental Terms applicable to the Software subject hereto), AMD hereby grants to You a non-exclusive, royalty-free, revocable, non-transferable, limited, copyright license to:\n\ninstall, copy, and reproduce the Software solely in Object Code form in conjunction with systems or components that include or incorporate AMD processors;"
+        },
+        {
+          "where": "originals/amd-software-eula-2026-09-14.txt:727-731（§3 Restrictions の柱書と 2 番目の弾）",
+          "text": "Except for the limited license expressly granted herein, You have no other rights in the Software, whether express, implied, arising by estoppel, or otherwise.  For the avoidance of doubt, You may not:\n\nmodify or create derivative works of the Software or Documentation;\n\ndistribute, publish, display, sublicense, assign, or otherwise transfer the Software or Documentation;"
+        },
+        {
+          "where": "originals/amd-software-eula-2026-09-14.txt:737（§3 Restrictions・通知の改変禁止）",
+          "text": "alter or remove any copyright, trademark, patent, or other proprietary notice(s) in the Software or Documentation;"
+        },
+        {
+          "where": "originals/amd-software-eula-2026-09-14.txt:739（§3 Restrictions・オープンソース汚染の禁止）",
+          "text": "use, modify, and/or distribute any of the Software or Documentation so that any part becomes subject to a Free Software License;"
+        }
+      ],
+      "redistribution_grant": "explicit-no",
+      "conditions": [
+        "【重要】この EULA が ROCm の Python wheel に及ぶと書いた一次資料は、本日の探索では見つからなかった。EULA 本文（26,527 B）を rocm で検索して当たる 4 件（:233 ROCm Open Software／:293・:505 ROCm AI Developer Hub／:507 ROCm Documentation）はいずれもページのナビゲーション・メニューの項目であって、契約条項の中ではない",
+        "ROCm licensing ページ（R2-07）は成分ごとのオープンソース許諾を並べており、AMD Software EULA への参照は無い（同ページを EULA で検索して 0 件）",
+        "TheRock のどの檔にも EULA の語は無い（GitHub コード検索 total_count 0・R2-08）",
+        "取得元の索引にも EULA は無い（R2-09）",
+        "したがって『EULA が wheel に及ぶ／及ばない』は本席では断定できない。上の explicit-no は EULA 本文そのものの再配布条項の分類であって、wheel への適用可否の判断ではない"
+      ],
+      "modification_or_resigning": {
+        "status": "forbidden",
+        "quote": "modify or create derivative works of the Software or Documentation;（§3 Restrictions 1 番目の弾）／alter or remove any copyright, trademark, patent, or other proprietary notice(s) in the Software or Documentation;（同 4 番目）※ ただし前段のとおり、この EULA が本件の wheel に掛かるという記述は見つかっていない"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "AMD Software EULA が ROCm の Windows wheel に掛かるかどうか＝AMD に文書で確認するか。掛かるなら §3 の『distribute, publish, display, sublicense, assign, or otherwise transfer』禁止により自前配布は塞がる",
+        "EULA §3 の『so that any part becomes subject to a Free Software License』は、CUDA EULA §1.2 の GPL 汚染禁止条項（22-runtime-license.md 表 2a）と同型。配布物の構成を決めるときの制約になりうる"
+      ],
+      "notes": "取得＝2026-09-14 10:51 JST。curl -sS -L -m 60 -A \"Mozilla/5.0\"（HTTP 200・170,017 B）。素の curl（User-Agent 無し）は 60 秒で timeout した＝1 回目の取得は失敗（curl: (28)）。WebFetch も https://rocm.docs.amd.com/en/latest/about/license.html で 60 秒 timeout し、curl に切り替えて成功している。HTML は python でテキスト化。"
+    },
+    {
+      "id": "R2-11",
+      "component": "各構成物の元 GitHub リポジトリの LICENSE 名と、『同じ許諾文が wheel のバイナリに添えられているか』の突き合わせ",
+      "covers_files": [
+        "MIOpen.dll", "rocblas.dll", "libhipblaslt.dll", "rocfft.dll", "rocsolver.dll", "rocsparse.dll", "rocrand.dll",
+        "hipblas.dll", "hipfft.dll", "hipfftw.dll", "hiprand.dll", "hipsolver.dll", "hipsparse.dll", "hipdnn_backend.dll",
+        "amdhip64_7.dll", "amdocl64.dll", "amd_comgr.dll", "libclang.dll", "hiprtc0715.dll", "hiprtc-builtins0715.dll",
+        "rocm-openblas.dll", "rocm-openblas64.dll", "origami.dll", "rocm_kpack.dll", "torch/lib/aotriton_v2.dll"
+      ],
+      "license_name": "（下の逐語・条件欄に成分ごとに記す）",
+      "source_url": "https://api.github.com/repos/ROCm/* ＋ raw.githubusercontent.com",
+      "original_file": "originals/github-license-api-2026-09-14.txt（1,181 B・sha256 f76511d72f3d2b04b0fc5b265e773dd95763168f0484147cbf47c384850d9a85）／originals/repo-licenses/（14 檔）",
+      "sha256": "MIOpen-LICENSE.txt=0eb5801ba8dae3f66cbff54fecdc50dbfaa731f8036066e543a4bc8fef401372 (5,105 B) / rocBLAS-LICENSE.md=03c4916e63cf99cb9015a6511fc687b1acc2551730f3d4a5ecf54fceab077f8e (9,201 B) / hipBLASLt-LICENSE.md=4f91f2bab2f1609ed56f834957ed0cfb269dbc0b174c50b0e139cea9a2c3059b (1,077 B) / ROCR-Runtime-LICENSE.txt=acbcc52e0ef553fb6d21e7d17b3cce9118480a0395c0418cad4d962cc6517f68 (1,743 B) / llvm-project-LICENSE.TXT=8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee (15,141 B) / clr-LICENSE.md=b185aaa652b0bf066c37a0d6314ce4bf4521e4a3c9bf46edd2f6a777ac522223 (1,080 B) / aotriton-LICENSE=47fb6a076a04a40545bee723a9b7f25e9e2084e22065044b10352e2c46d0c349 (1,077 B) / rccl-LICENSE.txt=df3a5e9aee2c34d6d41408bffa743f750cf8025c3374b91a19c8bfdcbc9fbdeb (2,089 B) / rccl-NOTICES.txt=b3785a3a91bfd6d40627a6f709e5fb4f779b06b98c54df31dd2bb84473f6479c (6,071 B) / rocSOLVER-LICENSE.md=a037bdde286c83bb33b905fbabe2aa4187553b7abe41ae281aa1b2dab89ef95a (5,128 B) / rocFFT-LICENSE.md=a4355aa2b543e1c4468283351080f185a67014bbd4f3dfebe2019f2688c8a1a4 (2,826 B) / hipBLAS-LICENSE.md=7c15933ecb4339a8dd287cf0a4be938baa9e492d770000434891700bd66aee67 (3,505 B) / hipFFT-LICENSE.md=7a3deb09858a099baa7543e9dca1aaaef45a4aad0de21f28b77b5031d68ef06e (2,827 B) / ck-LICENSE=20f3b83dfda01bd18d285e0edbb9d044be6dde04cdf76a1ec18d9fc7127936bf (1,726 B) / rocm-ROCm-LICENSE=a1f3488f19e24558526aaa54c30b32975d26167e5455a711a9f59959cda943c4 (1,113 B)",
+      "bytes": 1181,
+      "same_as_2026_09_04": "partial（2026-09-04 は ROCm/ROCm の MIT（LICENSE 1,113 B）だけを見ていた＝22-runtime-license.md 表 7。本日の実測でもバイト数 1,113 B は一致するが、著作権年が『2023 - 2026』であり sha256 a1f3488f… を記録した。他の 25 リポジトリは本日が初取得）",
+      "quotes": [
+        {
+          "where": "GitHub API repos/* の license.spdx_id（originals/github-license-api-2026-09-14.txt・実測 2026-09-14）",
+          "text": "ROCm/ROCm\tROCm/legacy-rocm-build\tMIT\tMIT License\nROCm/TheRock\tROCm/TheRock\tMIT\tMIT License\nROCm/clr\tROCm/clr\tMIT\tMIT License\nROCm/rocBLAS\tROCm/rocBLAS\tNOASSERTION\tOther\nROCm/hipBLASLt\tROCm/hipBLASLt\tMIT\tMIT License\nROCm/MIOpen\tROCm/MIOpen\tNOASSERTION\tOther\nROCm/llvm-project\tROCm/llvm-project\tNOASSERTION\tOther\nROCm/ROCR-Runtime\tROCm/ROCR-Runtime\tNOASSERTION\tOther\nROCm/rocm-libraries\tROCm/rocm-libraries\tnull\tnull\nROCm/aotriton\tROCm/aotriton\tMIT\tMIT License"
+        },
+        {
+          "where": "originals/repo-licenses/MIOpen-LICENSE.txt:1-3（gh api repos/ROCm/MIOpen/contents/LICENSE.txt を base64 -d・5,105 B）",
+          "text": "MIT License\n\nCopyright (c) 2017 - 2025 Advanced Micro Devices, Inc. All rights Reserved."
+        },
+        {
+          "where": "originals/repo-licenses/rocBLAS-LICENSE.md:1-3 と :10（9,201 B）",
+          "text": "Copyright (C) 2016-2025 Advanced Micro Devices, Inc. All rights reserved.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, ...\n\nThis product includes software from copyright holders as shown below, and distributed under their license terms as specified."
+        },
+        {
+          "where": "originals/repo-licenses/ROCR-Runtime-LICENSE.txt:1-4（1,743 B）",
+          "text": "The University of Illinois/NCSA\nOpen Source License (NCSA)\n\nCopyright (c) 2024, Advanced Micro Devices, Inc. All rights reserved."
+        },
+        {
+          "where": "originals/repo-licenses/llvm-project-LICENSE.TXT:1-3（15,141 B）",
+          "text": "==============================================================================\nThe LLVM Project is under the Apache License v2.0 with LLVM Exceptions:\n=============================================================================="
+        },
+        {
+          "where": "originals/repo-licenses/rocSOLVER-LICENSE.md:1-7（5,128 B・BSD-2 型）",
+          "text": "Copyright (c) 2018-2025 Advanced Micro Devices, Inc.\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution."
+        },
+        {
+          "where": "originals/repo-licenses/rccl-LICENSE.txt:2-8（2,089 B・成分表では『Custom』）",
+          "text": "Attributions\n\nContains contributions from NVIDIA.\n\nCopyright (c) 2015-2020, NVIDIA CORPORATION. All rights reserved.\nModifications Copyright (c) 2019-2025 Advanced Micro Devices, Inc. All rights reserved.\nModifications Copyright (c) Microsoft Corporation. Licensed under the MIT License."
+        },
+        {
+          "where": "originals/repo-licenses/aotriton-LICENSE:1-4（1,077 B・MIT 型）",
+          "text": "Copyright (C) 2024-2025 Advanced Micro Devices, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files"
+        },
+        {
+          "where": "originals/repo-licenses/clr-LICENSE.md:1-3（1,080 B）",
+          "text": "MIT License\n\nCopyright (C) Advanced Micro Devices, Inc."
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "【ソース側】MIT 型（MIOpen・rocBLAS・hipBLASLt・hipBLAS・hipFFT・rocFFT・hipSPARSE・rocSPARSE・hipRAND・rocRAND・hipSOLVER・hipDNN・CLR・aotriton・TheRock・ROCm）は『distribute』を明文で許し、条件は著作権表示と許諾文の保持",
+        "【ソース側】ROCR-Runtime は University of Illinois/NCSA、llvm-project（＝amd_comgr・libclang・hiprtc の元）は Apache-2.0 WITH LLVM Exceptions、rocSOLVER は BSD-2 型、rccl は NVIDIA 由来の BSD-3 型（Windows wheel に rccl.dll は入っていない＝実測）",
+        "【バイナリ側・突き合わせの結論＝実測】本機に展開された 82 件の DLL のうち、rocm 由来の約 60 件を覆う許諾檔は wheel の中に amd_comgr/LICENSE.txt と hipcc/LICENSE.txt の 2 件しかない。MIOpen・rocBLAS・hipBLASLt・rocFFT・rocSOLVER・rocSPARSE・rocRAND・hipBLAS・hipFFT・hipRAND・hipSOLVER・hipSPARSE・hipdnn・CLR（amdhip64_7.dll）・ROCR-Runtime・OpenBLAS・origami・aotriton のいずれについても、『ソースと同じ許諾文が wheel に添えられている』は成り立たない",
+        "【付記】amd_comgr/LICENSE.txt（15,289 B）は llvm-project の LICENSE.TXT（15,141 B）と同型の Apache-2.0 WITH LLVM Exceptions 文で、冒頭行だけ『The Comgr Project is under …』に差し替わっている（バイト数が違うのは冒頭の見出し分）",
+        "【付記】rocBLAS・rocFFT・rocSOLVER の LICENSE は AMD の許諾文の後に第三者（STFC・LAPACK・KAUST・LLVM・CLI11 等）の条項を連ねた合成檔＝GitHub API が NOASSERTION を返すのはこのため",
+        "【付記】ROCm/ROCm は本日時点で ROCm/legacy-rocm-build にリダイレクトされる（API の full_name が legacy-rocm-build）。数学ライブラリ群の正本は ROCm/rocm-libraries のモノレポに移っており、projects/{miopen,rocblas,hipblaslt,hipdnn,rocfft,rocsolver,hipsparse,rocsparse,rocrand,hipblas,hipfft,hiprand,hipsolver,composablekernel} の各々に LICENSE.md がある（リポジトリ直下には LICENSE が無く、API の license は null）"
+      ],
+      "modification_or_resigning": {
+        "status": "allowed",
+        "quote": "MIT／NCSA／BSD-2／Apache-2.0 WITH LLVM-exception のいずれもソースの改変と binary form での再頒布を許す一般条項を持つ。ただしこれはソースの許諾であって、AMD が配っている wheel のバイナリにその許諾が付いているという記述はどこにも無い（Authenticode の再署名について述べた条項は 26 リポジトリのどれにも無い）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "『ソースはこの許諾だから、AMD が配っているバイナリも同じ許諾』と読んでよいか＝法解釈。本席は断定しない",
+        "読んでよいとする場合、我々が添える許諾文は上流 GitHub から取った版でよいか（版・著作権年が wheel のビルド時点と一致する保証は無い）",
+        "hipdnn_backend.dll・origami.dll・rocm-openblas*.dll・rocm_kpack.dll は ROCm の成分表にも公開リポジトリにも対応が見つからなかった。これらの出所を AMD に確認するか"
+      ],
+      "notes": "実測＝2026-09-14 10:44〜10:47 JST。gh api repos/<owner>/<repo> の license.spdx_id を 26 リポジトリで取得（originals/github-license-api-2026-09-14.txt）。LICENSE 実体は raw.githubusercontent.com（HTTP 200 のもの）と gh api contents（raw が 404 のもの＝MIOpen・clr）で取得し originals/repo-licenses/ に保存。ROCm/rocm-libraries は直下に LICENSE が無く、projects/<name>/LICENSE.md の有無とバイト数だけを gh api で確認した（檔本体は未取得＝やり残し）。"
+    },
+    {
+      "id": "R2-12",
+      "component": "AMD の導入ページ（ROCm on Windows／PyTorch on Windows）に書かれた利用条件の有無",
+      "covers_files": [
+        "（R2-01〜R2-06 の取得手順を案内する頁）"
+      ],
+      "license_name": "無し（頁本文に利用条件の記述なし）",
+      "source_url": "https://rocm.docs.amd.com/projects/install-on-windows/en/latest/index.html ／ https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installrad/windows/install-pytorch.html ／ https://rocm.docs.amd.com/projects/ai-ecosystem/en/latest/frameworks/pytorch/install.html",
+      "original_file": "originals/amd-rocm-on-windows-index-2026-09-14.html(.txt) / amd-radeon-ryzen-win-install-pytorch-2026-09-14.html(.txt) / amd-ai-ecosystem-pytorch-install-2026-09-14.html(.txt)",
+      "sha256": "amd-rocm-on-windows-index .html=2fa905ddf09a343865e43c5b3e1ea48f102122a35cdadfdf6b6ff96da5fb777d (22,236 B) / .txt=7fc06fcb5afd66cb267a834f2f3e1349cc2d91b0033b494ed1807049480ac718 (2,581 B) ; amd-radeon-ryzen-win-install-pytorch .html=d7e82437c47131e173b38d18f5f0e8647ffc06118203dbb783ae2a1507e085db (53,451 B) / .txt=ae8f8d1056b98e969b2dbeb8b46d289899d6c4da718839fe09292b9c4336dc2d (7,389 B) ; amd-ai-ecosystem-pytorch-install .html=09f0f73a2896f8f128baf59714e423db8cf6e5d28de13b60b44ebd6eaa3ac5d1 (337,262 B) / .txt=efd23805adfa55411d635c319c7daa6cbfaaff4eca77a23978bc4602a00517db (57,463 B)",
+      "bytes": 57463,
+      "same_as_2026_09_04": "unknown（2026-09-04 の便はこれらの頁を取得していない）",
+      "quotes": [
+        {
+          "where": "originals/amd-radeon-ryzen-win-install-pytorch-2026-09-14.txt:286-288（頁の licen／eula／terms の全ヒット）",
+          "text": "Terms and Conditions\n\nROCm Licenses and Disclaimers"
+        }
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "3 頁とも licen|eula|terms and conditions|redistrib で検索したヒットは、頁下部のフッタのリンク（Terms and Conditions → https://www.amd.com/en/corporate/copyright ／ ROCm Licenses and Disclaimers → https://rocm.docs.amd.com/en/latest/about/license.html）だけで、本文に利用条件の記述は無い",
+        "ROCm on Windows の索引（2,581 B のテキスト）には licen のヒットが 0 件、terms のヒットが 1 件（フッタ）",
+        "https://rocm.docs.amd.com/en/latest/install/install-pytorch.html は HTTP 404（存在しない）"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（記述無し）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "導入ページが指すフッタの 2 リンク（AMD の corporate/copyright と ROCm licenses）のうち、前者を本席は未取得（やり残し）。必要なら取り直す"
+      ],
+      "notes": "取得＝2026-09-14 10:49〜10:50 JST・curl（いずれも HTTP 200）。python でテキスト化して grep。WebSearch で『AMD ROCm Windows PyTorch install stable.repo.amd.com whl-next index-url』を引き、候補 URL を絞った。"
+    }
+  ],
+  "summary": "1) 担当 8 件のうち rocm sdist だけが自分の許諾を名乗る＝ソース .py の 2 行目に SPDX-License-Identifier: MIT（11 檔で実測。落とした tar の sha256 65b5982… は台帳と完全一致）。2) rocm-sdk-core／libraries／device-gfx1151／amd-torch-device-gfx1151／gfx115x の 5 件は wheel の METADATA に License 欄が無く、wheel 内の許諾檔は core の amd_comgr（Apache-2.0 WITH LLVM Exceptions・15,289 B）と hipcc（MIT 型・1,098 B）の 2 件だけ＝2026-09-04 の観測（B1〜B5）を本日再確認し一致。3) 本機に展開済みの rocm 由来 DLL は約 60 件で、MIOpen.dll 493.7 MB・MIOpenCKGroupedConv_gfx1151.dll 307.9 MB・amd_comgr.dll 121.8 MB・libclang.dll 91.6 MB・rocsparse.dll 69.5 MB ほか。うち許諾文が添えられているのは amd_comgr と hipcc の 2 系統だけ。4) ROCm 公式 licensing ページは『licensed per component separately』と成分表を出し、許諾文の所在を /opt/rocm/share/doc/<component-name>/ と指示するが、Windows wheel の share/doc には 2 件しか入っていない。同ページの Comgr 欄（NCSA）と同梱檔（Apache-2.0 WITH LLVM-exception）は食い違う。5) TheRock は MIT（1,113 B）だが、README・RELEASES・python_packaging の 3 檔を licen で検索して 0 件＝配布方針も EULA も書かれていない。wheel に License 欄が無い理由は梱包テンプレの setup() に license 引数が無いためと観測できる。6) 取得元 stable.repo.amd.com は 3 段とも href の羅列のみで、LICENSE／terms は HTTP 404（4 URL で確認）。7) AMD Software EULA 本文は『distribute, publish, display, sublicense, assign, or otherwise transfer』を明文で禁じるが、この EULA が ROCm の wheel に及ぶと書いた一次資料は見つからなかった（EULA・ROCm licensing 頁・TheRock・索引のいずれにも記述なし）。8) 上流 GitHub は MIT／NCSA／Apache-2.0 WITH LLVM-exception／BSD-2 型で再配布を明文で許すが、『同じ許諾文が wheel のバイナリに添えられているか』は 2 件を除いて否＝ここが v3 の穴。9) torch 2.13.0+rocm10.0.0 は License-File 107 件を持つが aotriton・liblzma・MIOpen・rocm 系は 0 件（cu 版で見た穴と同型）。10) 判断は一切書いていない＝上の 7・8 は卓の裁定事項として open_points に挙げた。",
+  "not_done": [
+    "wheel 本体（rocm_sdk_core 758 MB ほか 4 件）を今日は再取得していない＝本機に展開済みの実行系を読んだ。wheel の中の檔と展開先の檔が 1 対 1 である保証は台帳の観測（2026-09-05）に依る",
+    "ROCm/rocm-libraries の projects/<name>/LICENSE.md（14 件）は名とバイト数だけ確認し、本文を落としていない",
+    "https://www.amd.com/en/corporate/copyright（AMD の Terms and Conditions・226,401 B）は HTTP 200 を確認しただけで本文を保存・精読していない",
+    "repo.radeon.com 側（ROCm licensing ページが『Proprietary products are only available on https://repo.radeon.com』と言う先）を見ていない。本件の取得元は stable.repo.amd.com なので範囲外と判断したが、proprietary の区分けが Windows wheel に及ぶかは未確認",
+    "hipdnn_backend.dll・origami.dll・rocm-openblas.dll／rocm-openblas64.dll・rocm_kpack.dll・cltrace.dll・amdocl64.dll の出所リポジトリを特定できていない（ROCm 成分表にも該当名が無い）",
+    "PE の Authenticode 署名は別席（R6）の担当につき未確認＝全項目 authenticode_observed は not-checked（rocm sdist だけは純テキストなので unsigned と書いた）",
+    "WebFetch が rocm.docs.amd.com で 60 秒 timeout・素の curl が www.amd.com で 60 秒 timeout した（User-Agent を付けて再試行し成功）。取得に失敗した URL は本文中に HTTP 状態とともに記載"
+  ]
+}

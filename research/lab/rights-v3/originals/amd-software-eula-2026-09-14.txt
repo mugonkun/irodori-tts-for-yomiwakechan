@@ -1,0 +1,926 @@
+
+
+    AMD Software End User License Agreement
+
+		            	Skip to main content
+
+    AMD Website Accessibility Statement
+
+									Products
+
+		 Processors
+
+		 Accelerators
+
+		 Graphics
+
+		 Adaptive SoCs, FPGAs, & SOMs
+
+		 Software, Tools, & Apps
+
+                	Processors
+
+    Server CPUs
+
+EPYC CPU Portfolio
+
+Data Center, Cloud & AI
+
+Network & Edge
+
+Small Business & Hosting
+
+Server CPU Specifications
+
+    Business Systems
+
+Ryzen PRO Laptops
+
+Ryzen PRO Desktops
+
+Workstations
+
+PRO Technologies
+
+Ryzen AI for Business
+
+    Personal & Gaming
+
+Ryzen Laptops
+
+Ryzen Desktops
+
+Advantage Gaming Laptops
+
+Advantage Gaming Desktops
+
+Ryzen Z Series Handhelds
+
+Ryzen AI for Consumer
+
+    Embedded
+
+EPYC and Ryzen
+
+Partner Directory
+
+    Resources
+
+Product Specifications
+
+Enterprise Blogs & Insights
+
+                	Accelerators
+
+    GPU Accelerators
+
+Instinct GPUs
+
+Documentation
+
+Cloud Graphics
+
+    Adaptive Accelerators
+
+Alveo Data Center Accelerator Cards
+
+Telco Accelerator Cards
+
+    DPU Accelerators
+
+Pensando Salina
+
+    Ethernet Adapters
+
+Pensando AI NICs
+
+Alveo X3 Series
+
+Solarflare Adapters
+
+                	Graphics
+
+    Workstations
+
+Radeon PRO
+
+    Desktops
+
+AMD Advantage Premium
+
+Radeon RX
+
+    Laptops
+
+AMD Advantage Premium
+
+Radeon Mobile Graphics
+
+    Resources
+
+Product Specifications
+
+Documentation
+
+                	Adaptive SoCs, FPGAs, & SOMs
+
+    Adaptive SoCs & FPGAs
+
+Versal Portfolio
+
+SoC Portfolio
+
+FPGA Portfolio
+
+Cost-Optimized Portfolio
+
+    System-on-Modules (SOMs)
+
+Kria SOMs
+
+Kria AI Solutions
+
+Kria K24 SOM
+
+Kria K26 SOM
+
+    Technologies
+
+AI Engine
+
+Design Security
+
+Digital Signal Processing
+
+Functional Safety
+
+High Speed Serial
+
+Memory Solutions
+
+Power Efficiency
+
+    Resources
+
+Intellectual Property
+
+Design Hubs
+
+Developer Hub
+
+Customer Training
+
+    Evaluation Boards & Kits
+
+Evaluation Boards
+
+Boards & Kits Accessories
+
+                	Software, Tools, & Apps
+
+    Processor Tools
+
+MEXT Predictive Memory Software
+
+PRO Technologies
+
+Ryzen AI Software
+
+Ryzen Master Overclocking Utility
+
+StoreMI
+
+Zen Software Studio
+
+    Graphics Tools & Apps
+
+AMD Software: Adrenalin Edition
+
+AMD Software: PRO Edition
+
+FidelityFX
+
+Radeon ProRender
+
+    Adaptive SoC & FPGA Tools
+
+Design Tools
+
+Vivado Software
+
+Vitis Software
+
+Vitis Model Composer
+
+Vitis HLS
+
+Vitis AI
+
+Embedded Software
+
+Power Design Manager
+
+    Intellectual Property & Apps
+
+Pre-Built IP Cores
+
+Alveo Accelerator App Store
+
+Kria SOM App Store
+
+    GPU Accelerator Tools & Apps
+
+ROCm Open Software
+
+Infinity Hub Software Containers
+
+Enterprise AI Reference Stack
+
+    Ethernet Adapter Tools
+
+Solarflare Onload Software
+
+									Solutions
+
+		 AI
+
+		 Industries
+
+		 Workloads
+
+		 Gaming
+
+                	AI
+
+    Overview
+
+AI Solutions
+
+Advancing Science
+
+AMD Silo AI
+
+Physical AI
+
+Sovereign AI
+
+    For Data Center & Cloud
+
+GPU Accelerators
+
+Helios Rackscale Solutions
+
+Server Processors
+
+    For Edge & Endpoints
+
+Ryzen AI for Business
+
+Ryzen AI for Consumer
+
+Ryzen AI for Embedded
+
+Radeon Graphics Cards
+
+Adaptive SoCs for Edge
+
+Adaptive SoCs for Embedded
+
+System-on-Modules (SOMs)
+
+    For Developers
+
+ROCm AI Developer Hub
+
+Vitis AI Developer Hub
+
+ZenDNN Inference Libraries
+
+Ryzen AI Software
+
+AI Developer Program
+
+AI Academy
+
+Ryzen AI Halo
+
+                	Industries
+
+    Industries
+
+    Industries
+
+Aerospace & Defense
+
+Architecture, Engineering, & Construction
+
+Automotive
+
+Broadcast & Pro AV
+
+Data Center
+
+Energy
+
+    Industries
+
+Emulation & Prototyping
+
+Financial Services
+
+Healthcare
+
+High-Performance Computing
+
+Home & Lifestyle
+
+    Industries
+
+Industrial
+
+Manufacturing
+
+Media & Entertainment
+
+Product Design
+
+Public Sector
+
+    Industries
+
+Retail & E-Commerce
+
+Robotics
+
+Semiconductor
+
+Telco & Networking
+
+Test & Measurement
+
+                	Workloads
+
+    Workloads
+
+AI
+
+Cloud Computing
+
+Database & Analytics
+
+Embedded Computing
+
+HCI & Virtualization
+
+Infrastructure Acceleration
+
+Networking Solutions
+
+Quantum Computing
+
+                	Gaming
+
+    Gaming
+
+Gaming with AMD
+
+Featured Games
+
+    Systems
+
+Advantage Gaming Systems
+
+Gaming Desktops
+
+Gaming Laptops
+
+Gaming Handhelds
+
+    Technologies
+
+Smart Technologies
+
+AMD FSR
+
+FreeSync
+
+HYPR-RX
+
+    Resources
+
+AMD Gaming Community
+
+AMD Software: Adrenalin Edition
+
+									Resources & Support
+
+		 Downloads
+
+		 Developer Resources
+
+		 Partner Resources
+
+		 Support
+
+                	Downloads
+
+    EPYC Processors
+
+Client & Data Center Tech Docs
+
+EPYC White Papers & Briefs
+
+EPYC Tuning Guides
+
+    Radeon Graphics & AMD Chipsets
+
+Drivers
+
+Radeon ProRender Plug-ins
+
+PRO Certified ISV Applications
+
+    Adaptive SoCs & FPGAs
+
+Vivado Design Suite
+
+Vitis Software Platform
+
+Vitis Accelerated Libraries
+
+Vitis Embedded Platforms
+
+Embedded Software
+
+Device Models
+
+Package Pinout Files
+
+Power Design Manager
+
+    Alveo Accelerators & Kria SOMs
+
+Alveo Package Files
+
+Alveo App Store
+
+Kria App Store
+
+    Ryzen Processors
+
+Ryzen Master Overclocking Utility
+
+StoreMI
+
+PRO Manageability Tools for IT Administrators
+
+    Ethernet Adapters
+
+Solarflare Software & Downloads
+
+                	Developer Resources
+
+    Overview
+
+Developer Central
+
+AI Developer Program
+
+AI Academy
+
+AI Playbooks
+
+    Processors
+
+Zen Software Studio
+
+EPYC Tuning Guides
+
+EPYC Whitepapers & Briefs
+
+Ryzen AI Software
+
+    Accelerators
+
+ROCm AI Developer Hub
+
+ROCm Documentation
+
+Enterprise AI Reference Stack
+
+Infinity Hub Software Containers
+
+Pensando DPUs
+
+    Embedded Products
+
+Vivado Design Suite
+
+Vitis Software Developer Tools
+
+Vitis AI Developer Hub
+
+Documentation
+
+Product Training
+
+Embedded Partner Solutions
+
+    Graphics
+
+GPUOpen Open Source Tools
+
+Documentation
+
+                	Partner Resources
+
+    Overview
+
+Partner Hub Home
+
+AMD Partner Network
+
+ 
+
+ 
+
+    Resources by Product
+
+AMD Instinct
+
+EPYC
+
+Ryzen PRO
+
+Ryzen
+
+Ryzen Threadripper
+
+Radeon PRO
+
+Radeon
+
+    Resources by Type
+
+Partner Insights Articles
+
+AMD Arena Training
+
+Meet the Experts Webinars
+
+Marketing Materials
+
+Partner FAQs
+
+    About Our Partners
+
+Partner Ecosystems & Solutions
+
+Authorized Distributors
+
+                	Support
+
+    AMD Global Support
+
+Support Home
+
+Technical Information Portal
+
+Warranty Services
+
+Product Specifications
+
+Product Security (PSIRT)
+
+    Processors & Graphics
+
+Product Support
+
+Knowledge Base
+
+Technical & Warranty Help
+
+PC & Processors Community
+
+Drivers & Software Downloads
+
+    Accelerators
+
+Alveo Product Support
+
+Pensando Product Support
+
+Solarflare Product Support
+
+ 
+
+    Adaptive SoCs & FPGAs
+
+Product Support
+
+Knowledge Base
+
+Community Forums
+
+Design Hubs
+
+Product Return
+
+									Shop
+
+		 Shop AMD
+
+                	Shop AMD
+
+    Gaming & Personal Computing
+
+Ryzen Processors
+
+Promotions & Bundles
+
+Shop All
+
+    Adaptive & Embedded Computing
+
+System-on-Modules (SOMs)
+
+Data Center Accelerator Cards
+
+Adaptive SoC & FPGA Evaluation Kits
+
+    Get AMD Fan Gear
+
+Visit the Store
+
+    Shop Our Retail Partners
+
+Ryzen Processors
+
+Radeon Graphics Cards
+
+Advantage Laptops
+
+Advantage Desktops
+
+Gaming Handhelds
+
+						My Account
+
+						Create Account
+
+						English
+
+						简体中文
+
+						繁體中文
+
+						Français
+
+						Deutsch
+
+						日本語
+
+						한국어
+
+						Português
+
+						Español
+
+					AMD Software EULAs
+
+					AMD Software EULA
+
+        	AMD Software End User License Agreement
+
+    AMD SOFTWARE END USER LICENSE AGREEMENT (EULA)
+
+IMPORTANT: DO NOT INSTALL, COPY, OR USE THE AMD SOFTWARE OR DOCUMENTATION UNTIL YOU HAVE READ AND AGREED TO THESE TERMS. BY INSTALLING, COPYING, OR USING THE SOFTWARE, YOU EXPRESSLY ACKNOWLEDGE YOUR ACCEPTANCE OF THIS AGREEMENT.
+
+1. Definitions
+
+“Agreement” means this AMD Software End User License Agreement (EULA) and any Supplemental Terms applicable to the Software.
+
+“Documentation” means install scripts and online or electronic documentation associated with, included with, or provided in connection with the Software, or any portion thereof.
+
+“Free Software License” means an open source or other license that requires, as a condition of use, modification, or distribution, that nay resulting software must be (i) disclosed or distributed in source code form, (ii) licensed for the purpose of making derivative works, or (iii) redistributable at no charge.
+
+“Intellectual Property Rights” means all copyrights, trademarks, trade secrets, patents, mask works, and all related, similar, or other intellectual property rights recognized in any jurisdiction worldwide, including all applications and registrations with respect thereto.
+
+“Object Code” means machine readable computer programming code files, which is not in a human readable form.
+
+“Software” means the AMD software you download, install, or use, including updates and associated documentation.
+
+“Source Code” means computer programming code in human readable form and related system level documentation, including all comments, symbols and any procedural code such as job control language.
+
+“Supplemental Terms” means additional terms that, in addition to the terms of this EULA, apply to the Software. 
+
+2. License Grant
+
+Subject to the terms and condition of this Agreement (including any Supplemental Terms applicable to the Software subject hereto), AMD hereby grants to You a non-exclusive, royalty-free, revocable, non-transferable, limited, copyright license to:
+
+install, copy, and reproduce the Software solely in Object Code form in conjunction with systems or components that include or incorporate AMD processors;
+
+use and reference Documentation, if any, provided in connection with the Software solely in connection with your use of the Software. 
+
+3. Restrictions
+
+Except for the limited license expressly granted herein, You have no other rights in the Software, whether express, implied, arising by estoppel, or otherwise.  For the avoidance of doubt, You may not:
+
+modify or create derivative works of the Software or Documentation;
+
+distribute, publish, display, sublicense, assign, or otherwise transfer the Software or Documentation;
+
+decompile, reverse engineer, disassemble, or otherwise reduce the Software to Source Code form (except as allowed by applicable law);
+
+alter or remove any copyright, trademark, patent, or other proprietary notice(s) in the Software or Documentation;
+
+use the Software or Documentation to (i) develop inventions directly derived from Confidential Information or seek patent protection on any such inventions, (ii) assist in the analysis of Your patents and patent applications, or (iii) modify existing patents or patent applications;
+
+use, modify, and/or distribute any of the Software or Documentation so that any part becomes subject to a Free Software License;
+
+use the Software or Documentation to infringe upon the Intellectual Property Rights of AMD or any third party;
+
+use the Software or Documentation for any unlawful purpose; or
+
+use the Software or Documentation in any manner inconsistent with or in breach of the terms and conditions of this Agreement (including all applicable Supplemental Terms). 
+
+4. Feedback
+
+You have no obligation to give AMD any suggestions, comments or other feedback (“Feedback”) relating to the Software or Documentation.  However, AMD may use and include any Feedback that it receives from You to improve the Software, Documentation, or other AMD products, software, and technologies.  Accordingly, for any Feedback You provide to AMD, You grant AMD and its affiliates and subsidiaries a worldwide, non-exclusive, irrevocable, royalty-free, perpetual license to, directly or indirectly, use, reproduce, license, sublicense, distribute, make, have made, sell and otherwise commercialize the Feedback in the Software, Documentation, or other AMD products, software and technologies.  You further agree not to provide any Feedback that (a) You know is subject to any Intellectual Property Rights of any third party or (b) is subject to license terms which require any products incorporating or derived from such Feedback, or other AMD intellectual property, to be licensed to or otherwise shared with any third party.
+
+5. Ownership and Copyright of Software
+
+The Software and the Documentation, including all Intellectual Property Rights in each, are and remain the sole and exclusive property of AMD or its licensors, and You shall have no right, title or interest therein except as expressly set forth in this Agreement.
+
+6. Warranty Disclaimers
+
+THE SOFTWARE AND DOCUMENTATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND.  AMD DISCLAIMS ALL WARRANTIES, EXPRESS, IMPLIED, OR STATUTORY, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, THAT THE SOFTWARE OR DOCUMENTATION WILL RUN UNINTERRUPTED OR ERROR-FREE OR WARRANTIES ARISING FROM CUSTOM OF TRADE OR COURSE OF USAGE.  THE ENTIRE RISK ASSOCIATED WITH THE USE OF THE SOFTWARE AND DOCUMENTATION IS ASSUMED BY YOU. To the extent certain jurisdictions do not allow the exclusion of implied warranties, You agree Section 7 applies to the fullest extent of the law allowed in your jurisdiction.
+
+7. Limitation of Liability and Indemnification 
+
+AMD AND ITS LICENSORS WILL NOT, UNDER ANY CIRCUMSTANCES, BE LIABLE TO YOU FOR ANY PUNITIVE, DIRECT, INCIDENTAL, INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES ARISING FROM USE OF THE SOFTWARE OR DOCUMENTATION OR FROM THE PERFORMANCE OR NON-PERFORMANCE OF THIS AGREEMENT EVEN IF AMD AND ITS LICENSORS HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.  In no event shall AMD's total liability to You for all damages, losses, and causes of action (whether in contract, tort (including negligence) or otherwise) exceed the amount of $100 USD.  You agree to defend, indemnify and hold harmless AMD and its licensors, and any of their directors, officers, employees, affiliates or agents from and against any and all loss, damage, liability and other expenses (including reasonable attorneys' fees), resulting from Your use of the Software and Documentation or Your violation of the terms and conditions of this Agreement.
+
+8. Export Restrictions 
+
+You shall adhere to all applicable U.S. import/export laws and regulations, as well as the import/export control laws and regulations of other countries as applicable. You further agree to not export, re-export, or transfer, directly or indirectly, any product, technical data, software or source code received from AMD under this license, or the direct product of such technical data or software to any country for which the United States or any other applicable government requires an export license or other governmental approval without first obtaining such licenses or approvals; or in violation of any applicable laws or regulations of the United States or the country where the technical data or software was obtained.  You acknowledge the technical data and software received will not, in the absence of authorization from U.S. or local law and regulations as applicable, be used by or exported, re-exported or transferred to: (i) any sanctioned or embargoed country, or to nationals or residents of such countries; (ii) any restricted end-user as identified on any applicable government end-user list; or (iii) any party where the end-use involves nuclear, chemical/biological weapons, rocket systems, or unmanned air vehicles.   For the most current Country Group listings, or for additional information about the EAR or Your obligations under those regulations, please refer to the U.S. Bureau of Industry and Security’s website at http://www.bis.doc.gov/.
+
+9. Notice to U.S. Government End Users
+
+The Software and Documentation are "commercial items", as that term is defined at 48 C.F.R. §2.101, consisting of "commercial computer software" and "commercial computer software documentation", as such terms are used in 48 C.F.R. §12.212 and 48 C.F.R. §227.7202, respectively. Consistent with 48 C.F.R. §12.212 or 48 C.F.R. §227.7202-1 through 227.7202-4, as applicable, the commercial computer software and commercial computer software documentation are being licensed to U.S. Government end users (a) only as commercial items and (b) with only those rights as are granted to all other end users pursuant to the terms and conditions set forth in this Agreement. Unpublished rights are reserved under the copyright laws of the United States.
+
+10. Termination of License
+
+This Agreement will terminate immediately without notice from AMD or judicial resolution if (1) You fail to comply with any provisions of this Agreement, or (2) You provide AMD with notice that You would like to terminate this Agreement.  Upon termination of this Agreement, You must delete or destroy all copies of the Software. Upon termination or expiration of this Agreement, all provisions survive except for Section 2 (License Grant).
+
+11. Support; Updates; Changes to Software. 
+
+AMD is under no obligation to provide any kind of support under this Agreement.  AMD may, in its sole discretion, provide You with updates to the Software and Documentation. As part of Your use of the Software, you may have the option to automatically install updates of the Software.  All updates are subject to the terms and conditions of this Agreement, and You acknowledge and agree that by installing updates (including by choosing to automatically install updates), you have read and understand the terms and conditions of this Agreement and agree to be bound by them with respect to any and all such updates. AMD has the right, in AMD’s sole discretion, to change, retire or discontinue any aspect or feature of the Software without notice to you.
+
+12. Governing Law
+
+This Agreement is made under and shall be construed according to the laws of the State of Texas, excluding conflicts of law rules. Each party submits to the jurisdiction of the state and federal courts of Travis County and the Western District of Texas for the purposes of this Agreement. You acknowledge that Your breach of this Agreement may cause irreparable damage and agree that AMD shall be entitled to seek injunctive relief under this Agreement, as well as such further relief as may be granted by a court of competent jurisdiction.
+
+13. General Provisions 
+
+You may not assign this Agreement without the prior written consent of AMD and any assignment without such consent will be null and void.  The parties do not intend that any agency or partnership relationship be created between them by this Agreement.  Each provision of this Agreement shall be interpreted in such a manner as to be effective and valid under applicable law.  However, in the event that any provision of this Agreement becomes or is declared unenforceable by any court of competent jurisdiction, such provision shall be deemed deleted and the remainder of this Agreement shall remain in full force and effect.
+
+14. Entire Agreement
+
+This Agreement (including any applicable Supplemental Terms) sets forth the entire agreement and understanding between the parties with respect to the Software and supersedes and merges all prior oral and written agreements, discussions and understandings between them regarding the subject matter of this Agreement.  No waiver or modification of any provision of this Agreement shall be binding unless made in writing and signed by an authorized representative of each party.
+
+ 
+
+AMD SOFTWARE END USER LICENSE AGREEMENT& SUPPLEMENTAL TERMS FOR AMD SOFTWARE: ADRENALIN EDITION / AMD SOFTWARE: PRO EDITION / AMD SOFTWARE: CLOUD EDITION/ AMD CATALYST
+
+These Supplemental Terms apply specifically to AMD Software: Adrenalin Edition, AMD Software: Pro Edition, AMD Software: Cloud Edition, and AMD Catalyst (in addition to any Documentation provided in connection thereto) and govern your use of this Software under the terms of the AMD Software End User License Agreement (EULA) as modified by these Supplemental Terms.  These Supplemental Terms are incorporated into the AMD Software End User License Agreement (EULA) for this Software. In case of conflict, these Supplemental Terms prevail with respect to this Software.
+
+IF YOU DO NOT AGREE TO THE AMD SOFTWARE EULA AND THESE SUPPLEMENTAL TERMS, DO NOT DOWNLOAD OR USE THE SOFTWARE. 
+
+1. AI Functionality. 
+
+The Software may include one or more features powered by artificial intelligence or machine learning (“AI Features”). You hereby acknowledge and agree that Your use of any AI Features, and any response or generated content You receive from any AI Features (“Outputs”), are subject to and shall comply with AMD’s Responsible AI Use Policy, which is incorporated herein by reference, which AMD may update or revise at its discretion.
+
+AMD’s Responsible AI Use Policy is available here: https://www.amd.com/en/legal/responsible-ai-use-policy.html
+
+Some AI Features may be built using Meta’s Llama 3.1.  Llama 3.1 is licensed under the Llama 3.1 Community License, Copyright (c) Meta Platforms, Inc., All Rights Reserved.  A copy of the Llama 3.1 Community License is available here: https://www.llama.com/llama3_1/license/. In addition to Your compliance with AMD’s Responsible AI Use Policy, You must also comply with the Acceptable Use Policy referenced in and incorporated into the Llama 3.1 Community License.
+
+2. AI Disclaimers.
+
+Artificial intelligence and machine learning are rapidly evolving fields of study, and the accuracy of AI Features cannot be guaranteed.  You should not rely on any Outputs and You should evaluate the accuracy and appropriateness of Outputs You receive. For the avoidance of doubt, the AI Features and Outputs from AI Features are subject to Section 6 (Warranty Disclaimer) and Section 7 (Limitation of Liability and Indemnification) of the AMD Software End User License Agreement (EULA), and AMD makes no representations or warranties related to the AI Features or to any Outputs.  YOU ACKNOWLEDGE AND AGREE THAT THE AI FEATURES AND OUTPUTS ARE PROVIDED TO YOU “AS IS” AND THE USE OF THE AI FEATURES AND ANY AND ALL OUTPUTS IS AT YOUR OWN RISK. AMD DISCLAIMS ALL WARRANTIES IN AND TO THE AI FEATURES AND OUTPUTS, AS PROVIDED IN THE AMD SOFTWARE END USER LICENSE (EULA). You agree that AMD will not be liable to You in any way for any claims arising out of Your use of the AI Features or Your creation, reproduction, or use of any Outputs.
+
+3. Third-Party Applications
+
+The Software may enable You to access, download, and install applications owned, controlled, and distributed by third parties directly from third-party sources (“Third-Party Applications”). You acknowledge and agree that AMD has no control over Third-Party Applications and is not distributing Third-Party Applications to You. Further, You acknowledge and agree that Your use of Third-Party Applications is governed solely by the terms and conditions of the third-party provider.  You are responsible for reviewing, accepting, and complying with all applicable third-party license agreements, terms of service, privacy policies, and usage restrictions.  AMD makes no representations or warranties regarding the availability, accuracy, security, or functionality of Third-Party Applications. As between You and AMD, all Third-Party Applications are made available “AS IS” and “AS AVAILABLE” without any warranty of any kind from AMD and AMD does not provide any support, maintenance, or updates for any Third-Party Applications. 
+
+4.Privacy
+
+We may be required under applicable data protection law to provide You with certain information about who we are, how we process Your personal data and for what purposes and Your rights in relation to Your personal information and how to exercise them. This information is provided in www.amd.com/en/corporate/privacy. It is important that You read that information. AMD’s Cookie Policy sets out information about the cookies AMD uses. In addition to help AMD improve Your graphics experience, AMD may collect non-personal information, including the model of AMD graphics product, its device id, and other system information.
+
+By installing or using this Software, you acknowledge and accept these Supplemental Terms in addition to the AMD Software End User License Agreement (EULA). 
+
+	Subscribe to the latest news from AMD
+
+				Linkedin
+
+	                                    AMD
+
+	                                    AI
+
+	                                    Server
+
+	                                    Ryzen
+
+	                                    Radeon
+
+	                                    Embedded
+
+	                                    Gaming
+
+				Instagram
+
+	                                    AMD
+
+	                                    Developers
+
+	                                    Gaming
+
+				Facebook
+
+	                                    Developers
+
+	                                    Gaming
+
+				Subscriptions
+
+    Company
+
+About AMD
+
+Management Team
+
+Corporate Responsibility
+
+Careers
+
+Contact Us
+
+    News & Events
+
+Newsroom
+
+Events
+
+Media Library
+
+    Resources
+
+Developer Central
+
+Blogs
+
+Case Studies
+
+Webinars
+
+Explore Resources
+
+    Partners
+
+AMD Partner Hub
+
+Authorized Distributors
+
+AMD University Program
+
+    Investors
+
+Investor Relations
+
+Financial Information
+
+Board of Directors
+
+Governance Documents
+
+SEC Filings
+
+				Terms and Conditions
+
+				Privacy
+
+				Trademarks
+
+				Supply Chain Transparency
+
+				Fair & Open Competition
+
+				UK Tax Strategy
+
+				Cookies Policy
+
+			Cookie Settings
+
+			© 2026 Advanced Micro Devices, Inc.
+
+Privacy Policy</a>. Conversations may be recorded to operate and improve the service. Do not share sensitive information.">
+

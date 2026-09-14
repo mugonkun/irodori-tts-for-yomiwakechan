@@ -1,0 +1,128 @@
+
+
+HIP SDK for Windows — HIP SDK for Windows 7.2.0 documentation
+
+Skip to main content
+
+Back to top
+
+Ctrl+K
+
+This is legacy documentation. For the latest ROCm documentation, visit rocm.docs.amd.com.
+
+ROCm™ Software 7.2.0
+
+                                        GitHub
+
+                                        Community
+
+                                        Blogs
+
+                                        ROCm Developer Hub
+
+                                        System and Infra Docs
+
+                                        Infinity Hub
+
+                                        Support
+
+HIP SDK for Windows
+
+HIP SDK for Windows 7.2.0 documentation
+
+Install
+
+System requirements
+
+Install HIP SDK
+
+Conceptual
+
+Component support
+
+Deployment guidelines
+
+How to
+
+Use ROCm Debugger for Windows
+
+About
+
+Release notes
+
+Release versioning
+
+HIP SDK for Windows
+
+HIP SDK for Windows#
+
+                            2026-02-19
+
+                            2 min read time
+
+                        Applies to Windows
+
+HIP SDK for Windows provides a subset of the ROCm platform to Microsoft Windows as described in
+ROCm component support in HIP SDK. It provides the runtime,
+APIs, and tooling to leverage the computational power of AMD GPUs to create high-performance,
+portable applications using the HIP programming language.
+
+The HIP SDK consists of the AMD GPU Driver, HIP runtime, and HIP Libraries. These three parts are
+distributed in the HIP SDK installer. The HIP SDK is intended for developer distribution. This is in
+contrast to the AMD GPU driver, which is intended for all end users.
+
+HIP SDK can run on your Windows system with Microsoft Visual Studio Code, and even includes solutions for use with the tool. However, it also has standalone tools like
+compilers, profilers, and debuggers for use in your own development environment.
+
+HIP SDK code is open and hosted at ROCm/rocm-install-on-windows.
+
+The documentation is structured as follows:
+
+Installation
+
+System requirements for HIP SDK
+
+Install HIP SDK for Windows
+
+Conceptual
+
+ROCm component support in HIP SDK
+
+Deployment guidelines
+
+How to
+
+Use ROCm Debugger for Windows
+
+About
+
+HIP SDK release notes
+
+HIP SDK release versions
+
+next
+
+System requirements for Windows
+
+ so the DOM is not blocked -->
+
+Terms and Conditions
+
+Privacy
+
+Trademarks
+
+Supply Chain Transparency
+
+Fair and Open Competition
+
+UK Tax Strategy
+
+Cookie Policy
+
+Cookie Settings
+
+© 2026 Advanced Micro Devices, Inc
+
+ -->
+

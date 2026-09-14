@@ -1,0 +1,307 @@
+
+
+    PyTorch via PIP installation — Use ROCm on Radeon and Ryzen
+
+  Skip to main content
+
+    Back to top
+
+  Ctrl+K
+
+  This ROCm on Radeon™ and Ryzen™ documentation covers releases through 7.2.1. Starting with ROCm Core SDK 7.13.0, documentation is unified across all supported hardware. For more information, see the current ROCm documentation.
+
+                ROCm Software for Radeon and Ryzen
+                Version List
+
+                                Community
+
+                                AMD Lab Notes
+
+                                Infinity Hub
+
+                                Support
+
+    Use ROCm on Radeon and Ryzen
+
+        Prerequisites
+
+Radeon Prerequisites
+
+Ryzen Prerequisites
+
+ROCm on Radeon How to guide
+
+Radeon on Linux
+Install Radeon software for Linux with ROCm
+
+Install PyTorch for Radeon GPUs
+
+Install ONNX Runtime for Radeon GPUs
+
+Install TensorFlow for Radeon GPUs
+
+Install Triton for Radeon GPUs
+
+Install JAX for Radeon GPUs
+
+Install MIGraphX for Radeon GPUs
+
+mGPU setup and configuration
+
+Radeon on Windows
+Install PyTorch for Radeon GPUs
+
+Install HIP SDK for Radeon GPUs
+
+Radeon on WSL
+
+ROCm on Ryzen How to guide
+
+Ryzen on Linux
+Install Ryzen software for Linux with ROCm
+
+Install Package Manager for Ryzen APUs
+
+Install PyTorch for Ryzen APUs
+
+Ryzen on Windows
+Install PyTorch for Ryzen
+
+Install HIP SDK for Ryzen
+
+Ryzen on WSL
+
+Usecases
+
+Radeon Usecases
+Linux
+LLM
+vLLM Docker image for Llama2 and Llama3
+
+GEMM tuning for model inferencing with vLLM
+
+Install Huggingface transformers
+
+Llama.cpp pre-built binaries
+
+ComfyUI
+Install ComfyUI and MIGraphX extension
+
+Windows
+LLM
+Install Huggingface transformers
+
+Llama.cpp pre-built binaries
+
+ComfyUI
+Install ComfyUI
+
+Ryzen Usecases
+Linux
+LLM
+vLLM Docker image
+
+Install Huggingface Transformers
+
+Llama.cpp pre-built binaries
+
+ComfyUI
+Install ComfyUI
+
+Windows
+LLM
+Install Huggingface Transformers
+
+Llama.cpp pre-built binaries
+
+ComfyUI
+Install ComfyUI
+
+Compatibility matrices
+
+Radeon Compatibility matrix
+Linux Compatibility
+
+Windows Compatibility
+
+Ryzen Compatibility matrix
+Linux Compatibility
+
+Windows Compatibility
+
+Limitations
+
+Radeon Limitations and recommended settings
+
+Ryzen Limitations and recommended settings
+
+Contribute
+
+AI community
+
+Report a bug
+
+    How to guide - Use ROCm on Radeon and Ryzen
+
+    PyTorch via...
+
+    PyTorch via PIP installation
+
+                 Contents
+
+Prerequisites
+
+Install PyTorch via PIP
+
+Verify PyTorch installation
+
+PyTorch via PIP installation#
+
+AMD recommends the PIP install method to create a PyTorch environment when working with ROCm™ for machine learning development.
+
+Note
+To install the following wheels, Python 3.12 must be installed.
+
+Prerequisites#
+
+For the 7.2.1 PyTorch on Windows release, the 26.2.2 graphics driver must be installed.
+
+Install PyTorch via PIP#
+
+Enter the commands to set up ROCm environment.
+
+CMD Prompt
+pip install --no-cache-dir ^
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl ^
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl ^
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl ^
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm-7.2.1.tar.gz
+
+PowerShell
+pip install --no-cache-dir `
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl `
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm_sdk_devel-7.2.1-py3-none-win_amd64.whl `
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl `
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm-7.2.1.tar.gz
+
+Enter the commands to install torch, torchvision and torchaudio for ROCm AMD GPU support.
+
+Note
+This may take several minutes.
+See Compatibility matrices for support information.
+
+CMD Prompt
+pip install --no-cache-dir ^
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/torch-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl ^
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/torchaudio-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl ^
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/torchvision-0.24.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl
+
+PowerShell
+pip install --no-cache-dir `
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/torch-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl `
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/torchaudio-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl `
+    https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/torchvision-0.24.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl
+
+Verify PyTorch installation#
+
+Confirm if PyTorch is correctly installed.
+
+Verify if Pytorch is installed and detecting the GPU compute device.
+
+python -c "import torch" 2>nul && echo Success || echo Failure
+
+Expected result:
+
+Success
+
+Enter command to test if the GPU is available.
+
+python -c "import torch; print(torch.cuda.is_available())"
+
+Expected result:
+
+True
+
+Enter command to display installed GPU device name.
+
+python -c "import torch; print(f'device name [0]:', torch.cuda.get_device_name(0))"
+
+Example result:
+device name [0]: Radeon RX 7900 XTX
+
+device name [0]: <Supported AMD GPU>
+
+Enter command to display component information within the current PyTorch environment.
+
+python -m torch.utils.collect_env
+
+Example result:
+
+PyTorch version: 2.9.1+rocm7.2.1
+Is debug build: False
+CUDA used to build PyTorch: N/A
+ROCM used to build PyTorch: 7.2.53211-158bd99533
+
+OS: Microsoft Windows 11 Pro (10.0.26200 64-bit)
+GCC version: Could not collect
+Clang version: Could not collect
+CMake version: Could not collect
+Libc version: N/A
+
+Python version: 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)] (64-bit runtime)
+Python platform: Windows-11-10.0.26200-SP0
+Is CUDA available: True
+CUDA runtime version: Could not collect
+CUDA_MODULE_LOADING set to:
+GPU models and configuration: AMD Radeon AI PRO R9700 (gfx1201)
+Nvidia driver version: Could not collect
+cuDNN version: Could not collect
+Is XPU available: False
+HIP runtime version: 7.2.53211
+MIOpen runtime version: 3.5.1
+Is XNNPACK available: True
+
+Environment set-up is complete, and the system is ready for use with PyTorch to work with machine learning models, and algorithms.
+
+See also: Limitations and recommended settings.
+
+        previous
+
+        How to guide - Use ROCm on Radeon and Ryzen
+
+        next
+
+        Install HIP SDK for Radeon GPUs
+
+     Contents
+
+Prerequisites
+
+Install PyTorch via PIP
+
+Verify PyTorch installation
+
+   so the DOM is not blocked -->
+
+                        Terms and Conditions
+
+                        ROCm Licenses and Disclaimers
+
+                        Privacy
+
+                        Trademarks
+
+                        Supply Chain Transparency
+
+                        Fair and Open Competition
+
+                        UK Tax Strategy
+
+                        Cookie Policy
+
+                        Cookie Settings
+
+                        © 2025 Advanced Micro Devices, Inc
+
+ -->
+

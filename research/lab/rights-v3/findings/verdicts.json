@@ -1,0 +1,588 @@
+{
+ "R6-signing-audit:verbatim": {
+  "seat": "検証席（R6-signing-audit の逐語照合）",
+  "lens": "逐語照合＝items[].quotes[].text が記録された original_file の中に空白正規化のみで一字一句存在するかを Python で機械照合し、sha256／bytes を再計算。照合スクリプト＝C:\\Users\\mugonkun\\AppData\\Local\\Temp\\claude\\C--Users-mugonkun-source-repos-irodori-tts-for-yomiwakechan\\6c9a56cc-73cc-43cc-92d2-eb2bc01b310a\\scratchpad\\rights-v3\\verify_r6.py ／ recompute_r6.py ／ corrections_r6.py。リポジトリの檔は 1 件も書き換えていない。",
+  "problems": [
+   {
+    "item_id": "R6-00, R6-01〜R6-32（各 q#0 の「集計行」33 件）",
+    "severity": "high",
+    "problem": "「集計行」として引かれた `pkg|files=..|total_bytes=..|valid=..|unsigned=..|unsigned_bytes=..|signers=..` 形式の行と R6-00 q#1 の `GRAND: files=445 ...` は、記録された original_file（findings/R6-signatures.csv）に 1 件も存在しない。同 CSV は `\"path\",\"bytes\",\"status\",\"signer_subject\",\"has_timestamp\",\"package\"` の 6 列・引用符付き CSV でデータ行 445 件のみ。集計行という区画自体が無い。つまりこれらは本席が計算した派生値を「原文からの引用」として提示したもの。",
+    "correction": "数値そのものは全件正しい（CSV から再計算し完全一致）。逐語としては引けないので `where` を「集計行」ではなく「R6-signatures.csv から本席が再集計した派生値（原文に該当行なし）」に改め、引用ではなく derived 値として別欄に置くべき。検証済みの再計算＝GRAND files=445 valid=36 unsigned=409 total_bytes=3851785822 unsigned_bytes=3831107758、および全 33 package の files/total_bytes/valid/unsigned/unsigned_bytes/signers がすべて記載どおり。"
+   },
+   {
+    "item_id": "R6-01 q#1, R6-01 q#2",
+    "severity": "high",
+    "problem": "「個票（例）」がタブ区切りで `python312.dll\\t6945272\\tValid\\tyes\\tCN=...` と書かれているが、CSV の実際の列順は path,bytes,status,signer_subject,has_timestamp であり、引用は status の直後に has_timestamp を置いて signer を最後に回した並べ替え版。この文字列は CSV に存在しない。",
+    "correction": "逐語は次の 2 行。\"python312.dll\",\"6945272\",\"Valid\",\"CN=Python Software Foundation, O=Python Software Foundation, L=Beaverton, S=Oregon, C=US\",\"yes\",\"python-embed\" ／ \"vcruntime140.dll\",\"120400\",\"Valid\",\"CN=Microsoft Windows Software Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US\",\"yes\",\"python-embed\""
+   },
+   {
+    "item_id": "R6-02 q#1",
+    "severity": "high",
+    "problem": "「個票（唯一の署名済み）」の引用 `site-packages\\torch\\lib\\libomp140.x86_64.dll\\t634936\\tyes\\tCN=Microsoft Corporation, ...` は列順の入れ替えに加えて status 列（\"Valid\"）を丸ごと落としている。署名監査の成果物で、まさに署名状態を示す列が引用から欠落している点が最も重い。",
+    "correction": "逐語は次の 1 行。\"site-packages\\torch\\lib\\libomp140.x86_64.dll\",\"634936\",\"Valid\",\"CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US\",\"yes\",\"torch\""
+   },
+   {
+    "item_id": "R6-02 q#2, R6-14 q#1",
+    "severity": "medium",
+    "problem": "複数行を「 / 」で連結しタブ区切りにした合成文字列で、CSV にそのままの形では存在しない。加えて R6-14 は 2 行目以降の path 接頭辞（site-packages\\torchaudio\\lib\\）を落として `libtorchaudio.pyd` とだけ書いている。",
+    "correction": "R6-02 q#2 の逐語 4 行＝\"site-packages\\torch\\lib\\torch_cpu.dll\",\"224712192\",\"NotSigned\",\"\",\"no\",\"torch\" ／ ...torch_hip.dll\",\"70977024\" ／ ...torch_python.dll\",\"26755584\" ／ ...aotriton_v2.dll\",\"14948352\"（いずれも NotSigned・ts=no）。R6-14 q#1 の逐語 3 行＝\"site-packages\\torchaudio\\lib\\_torchaudio.pyd\",\"29696\",\"NotSigned\",\"\",\"no\",\"torchaudio\" ／ ...\\libtorchaudio.pyd\",\"2726400\" ／ ...\\torchaudio_prefixctc.pyd\",\"4765696\"。"
+   },
+   {
+    "item_id": "R6-03 q#1, R6-04 q#1",
+    "severity": "medium",
+    "problem": "path が途中から切られている。R6-03 は `lib\\llvm\\bin\\clang.exe` `lib\\llvm\\bin\\libclang.dll` と書くが実際は `site-packages\\_rocm_sdk_core\\lib\\llvm\\bin\\...`。R6-04 は `MIOpenCKGroupedConv_gfx1151.dll` `rocsparse.dll` と書くが実際は `site-packages\\_rocm_sdk_libraries\\bin\\...`。節（path）の不完全な引用。",
+    "correction": "R6-03 逐語＝\"site-packages\\_rocm_sdk_core\\bin\\amd_comgr.dll\",\"121750016\",\"NotSigned\",\"\",\"no\",\"_rocm_sdk_core\" ／ \"site-packages\\_rocm_sdk_core\\lib\\llvm\\bin\\clang.exe\",\"110282240\",... ／ \"site-packages\\_rocm_sdk_core\\lib\\llvm\\bin\\libclang.dll\",\"91644416\",...。R6-04 逐語＝\"site-packages\\_rocm_sdk_libraries\\bin\\MIOpen.dll\",\"493655040\",... ／ \"...\\bin\\MIOpenCKGroupedConv_gfx1151.dll\",\"307915264\",... ／ \"...\\bin\\rocsparse.dll\",\"69463040\",...。バイト数・Status はいずれも記載どおり。"
+   },
+   {
+    "item_id": "R6-06 q#1, R6-08 q#1, R6-09 q#1, R6-10 q#1, R6-11 q#1, R6-15 q#1, R6-16 q#1",
+    "severity": "medium",
+    "problem": "いずれも CSV 行をタブ区切りに組み替えた（R6-08・R6-11 は status 列を落とし、R6-09 は signer_subject を `CN=Microsoft Windows Software Compatibility Publisher` までで切って O=／L=／S=／C= を省いた）版で、原文にその文字列は無い。",
+    "correction": "逐語は例えば \"site-packages\\sklearn\\.libs\\msvcp140.dll\",\"642720\",\"Valid\",\"CN=Microsoft Windows Software Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US\",\"yes\",\"sklearn\" と \"site-packages\\sklearn\\.libs\\vcomp140.dll\",\"213072\",\"Valid\",\"（同左）\",\"yes\",\"sklearn\"。他の 6 件も同様に CSV 行そのままへ差し替え可（bytes・Status・signer は全件記載どおりで、事実の誤りは無い）。"
+   },
+   {
+    "item_id": "R6-00 q#0, R6-33 q#0",
+    "severity": "high",
+    "problem": "「実測コマンド」として PowerShell のコマンド文字列が quotes[].text に入っているが、コマンドを記録した檔（実行ログ・スクリプト）は originals/ にも findings/ にも保存されておらず、記録された original_file（R6-signatures.csv／R6-wheel-*.csv）にも当然存在しない。再現性の根拠が引用の形で残っていない。",
+    "correction": "実測コマンドは quotes ではなく method／command 欄に移し、実際に走らせたスクリプトを originals/（または findings/）に .ps1 として保存して sha256 を記録すべき。現状は逐語照合の対象にできない。"
+   },
+   {
+    "item_id": "R6-00 q#2, R6-00 q#3, R6-00 q#4",
+    "severity": "high",
+    "problem": "Status 内訳・署名者内訳・TimeStamper の 3 引用はいずれも CSV に該当行が無く、本席の集計文。特に q#2 の `（UnknownError は 0）` と q#4 の `Valid 36 件はすべて has_timestamp=yes（反対署名のタイムスタンプあり）` は日本語の地の文であり引用の体をなしていない。",
+    "correction": "内容は再計算で全件裏が取れた＝status は NotSigned 409／Valid 36 のみ（それ以外の値の行は 0 件）、signer_subject は 3 種のみで CN=Python Software Foundation… 29／CN=Microsoft Windows Software Compatibility Publisher… 6／CN=Microsoft Corporation… 1、Valid 36 件で has_timestamp≠yes の行は 0 件。これらは derived として書き、引用扱いを外す。"
+   },
+   {
+    "item_id": "R6-33 q#1",
+    "severity": "medium",
+    "problem": "`WHEEL_PE_COUNT=282 / ARCHIVES_WITH_PE=26 / 98（build-cache の檔 101 件のうち .whl 95・.zip 3・.gz 2・.exe 1）` の「98」が何の数か本文に無く、しかも component 欄・notes・summary 7 は「build-cache の wheel 99 件」と書く。実測すると build-cache は 101 件＝.whl 95・.zip 3・.gz 2・.exe 1 で、.whl は 95 件。「99」は再現できない。",
+    "correction": "98 は「zip として開いた書庫 98 件＝.whl 95＋.zip 3」と読むのが唯一整合する（本席で 95+3=98 を確認）。「wheel 99 件」は「書庫 98 件（うち .whl 95 件）」へ訂正すべき。282／26 は再計算一致（R6-wheel-signatures.csv の行数 282、archive の異なり数 26）。"
+   },
+   {
+    "item_id": "R6-33 q#2, R6-33 q#3, R6-33 q#4",
+    "severity": "high",
+    "problem": "`NotSigned\\t247 / Valid\\t35 ...`・`== VERDICTS == sha256-match\\t282 ...`・265 文字パスで UnknownError が 117 件出たという「測定上の注意」は、いずれも R6-wheel-signatures.csv／R6-wheel-vs-deployed.csv に存在しない。特に 117 件の UnknownError は測り直し前の中間結果で、その記録檔がどこにも保存されていないため第三者が検証できない。",
+    "correction": "検証できた分＝R6-wheel-signatures.csv の status は NotSigned 247／Valid 35 のみ（Valid 35 の内訳も記載どおり＝python-3.12.10-embed-amd64.zip の PSF 29＋vcruntime140/_1 の 2、llvmlite/numpy/scikit_learn の msvcp140・vcomp140 の 4＝計 6 が Microsoft Windows Software Compatibility Publisher）。R6-wheel-vs-deployed.csv の verdict 列は sha256-match が 282 件で他の値は 0 件。117 件の UnknownError は裏付け檔が無いので not_done か notes へ落とし、quotes から外すべき。"
+   },
+   {
+    "item_id": "R6-02 q#3",
+    "severity": "medium",
+    "problem": "引用文 `This dll file does not have a signature. Would it be possible to start signing these dll files, such that Windows will consistently trust them?` は逐語として正しい（originals/pytorch-issue-182008-2026-09-14.json の .body を JSON 復号すると完全一致）が、R6-02 の original_file には findings/R6-signatures.csv しか記録されておらず、その檔にこの文は無い。引用と原文檔の対応が切れている。",
+    "correction": "R6-02 の original_file を `findings/R6-signatures.csv ／ originals/pytorch-issue-182008-2026-09-14.json` に改める（後者の sha256=5b819935f82191d4ba45fb0d247965e98c07750d8bdc7957f3030903a53518da・4,734 B を本席で再計算して一致を確認）。"
+   },
+   {
+    "item_id": "R6-02 q#3, R6-34 q#2, R6-02 notes",
+    "severity": "medium",
+    "problem": "引用元の Issue #182008 の報告環境は本文末尾に `torch==2.4.1+cu118, sourced from https://download.pytorch.org/whl/cu118` と明記されているが、引用にも notes にもこの版情報が無い。R6-02 は torch 2.13.0+rocm10.0.0 を扱っており、notes は「本席の実測（R6-02）と一致する」と書く。別版・別変種（cu118）の第三者観測であることが読み手に見えない。",
+    "correction": "引用に版の一節を足すか、notes に「報告は torch 2.4.1+cu118 に対するもの。本席の実測対象（2.13.0+rocm10.0.0）とは版も変種も異なるが、torch\\lib の DLL が未署名である点は一致」と明記する。本席は WebFetch で https://api.github.com/repos/pytorch/pytorch/issues/182008 を独自に再取得し、title=Windows Application Control (WDAC) blocks loading unsigned torch DLL・state=open・created_at=2026-04-30T10:10:35Z と body 全文が保存原文と一致することを確認した。"
+   },
+   {
+    "item_id": "R6-34 q#0, R6-34 q#1",
+    "severity": "high",
+    "problem": "quotes[].text に入っているのが引用文ではなく本席の地の文（「本機（Radeon PC）に NVIDIA の DLL は 1 件も存在しない＝…」「全文を 'sign' で検索したが、Authenticode／コード署名に当たる記述は見つからなかった（…）」）。原文檔（nvidia-cuda-install-guide-windows-2026-09-14.html）にこれらの文字列は当然無い。否定の所見を引用欄に地の文で置くと、逐語照合が原理的に通らない。",
+    "correction": "原文に実在する唯一の逐語は `signed by authorized representatives of NVIDIA and customer` の一節（保存 HTML 内に実在を確認）。q#1 は quotes から notes／method へ移し、代わりにこの一節を引用として置き、「'sign' の全ヒットは 3 件で、うち 2 件は design の部分一致、残る 1 件が上記の法務文」と手順を書くのが正しい形。本席も WebFetch で同 URL を独自に取得し、版 v13.4・Authenticode／コード署名に関する記述なし、を再確認した（保存 HTML は本文 29,374 字の実体があり JS シェルではない）。"
+   },
+   {
+    "item_id": "R6-00〜R6-33（33 件）",
+    "severity": "medium",
+    "problem": "original_file が全件 findings/ 配下の本席自身の出力 CSV を指しており、originals/ に保存された一次原文が 1 件も無い（一次原文があるのは R6-34 のみ）。さらに sha256 は \"n/a\"、bytes 欄には原文檔の大きさではなく測定対象の合計バイト（例 R6-00=3851785822、R6-33=0）が入っている。原文檔の同一性を後から確かめる手段が記録されていない。",
+    "correction": "本席で再計算した実値＝findings/R6-signatures.csv は 48,945 B・sha256=c503c8c1b67ff39f97f1dd68f45c9b7752725fe48b88ace341a9003ee0ea94f9、findings/R6-wheel-signatures.csv は 55,043 B・sha256=bbddaf8cd7b4487deac514e1095c017d58da9ccfac02a390c89d8f5b18b593f8、findings/R6-wheel-vs-deployed.csv は 77,091 B・sha256=b5bae1dd5fdfeaa66ff17ee849b353dc3b5af6bdbb333550baec219576e227cb。これらを sha256／bytes 欄に入れ、測定対象の合計バイトは measured_bytes など別名の欄へ分ける。"
+   },
+   {
+    "item_id": "R6-34",
+    "severity": "low",
+    "problem": "original_file に 2 檔（html と json）を「／」で併記しているのに sha256 は 2 値併記・bytes は 57692 の 1 値だけで、2 檔目の 4,734 B は quotes[].where の地の文の中にしか無い。",
+    "correction": "本席の再計算では 2 檔とも記録と完全一致（nvidia-cuda-install-guide-windows-2026-09-14.html=57,692 B・sha256=f685f42c86432462b1b2c4d04453f862348632dc0604bf6c294c514a7a00f8c7／pytorch-issue-182008-2026-09-14.json=4,734 B・sha256=5b819935f82191d4ba45fb0d247965e98c07750d8bdc7957f3030903a53518da）。檔ごとに {path, sha256, bytes, retrieved_at, http_status} の配列にすべき。"
+   },
+   {
+    "item_id": "R6-05 q#1",
+    "severity": "low",
+    "problem": "`scipy-1.18.1-cp312-cp312-win_amd64.whl\\tn=107\\tValid=0\\tNotSigned=107\\tUnknownError=0（長パス分を短パスで測り直した後の値）` は R6-wheel-signatures.csv に存在せず、しかも同 CSV に UnknownError という列も値も無いため「UnknownError=0」は成果物からは「そういう status の行が 0 件」としか裏が取れない。",
+    "correction": "検証できた事実＝R6-wheel-signatures.csv で archive に scipy を含む行は 107 件、status は全件 NotSigned、Valid／その他の status は 0 件。引用は derived に格下げし、UnknownError の話は測り直しの経緯として notes へ。"
+   }
+  ],
+  "missing_clauses": [
+   "quotes[] に出所の種別欄（原文からの逐語／本席の派生集計／本席の地の文）が無い。実際には 61 件のうち逐語は 2 件（R6-02 q#3・R6-34 q#2）だけで、残り 59 件は派生値か地の文だが、同じ text 欄に混在していて読み手に区別できない。",
+   "quotes[] に原文内の位置（行番号・CSV の行、JSON のキー名 .body、HTML の節）を示す欄が無い。R6-34 q#2 は originals/pytorch-issue-182008-2026-09-14.json の .body を JSON 復号して初めて一致するが、その旨の記載が無く、檔を素の文字列として grep すると一致しない（\\n が escape されているため）。",
+   "実測コマンドを記録したスクリプト檔そのものが保存されていない（R6-00 q#0・R6-33 q#0 はコマンド文字列を引用欄に置いただけ）。再現性の一次資料が無い。",
+   "R6-33 q#4 の「265 文字パスで UnknownError 117 件」という測り直し前の中間結果を記録した檔が保存されていない。",
+   "original_file に指定した findings/ の 3 檔（R6-signatures.csv・R6-wheel-signatures.csv・R6-wheel-vs-deployed.csv）自身の sha256／bytes が記録されていない。",
+   "取得時刻・HTTP 状態・取得 URL が構造化された欄になっておらず、R6-34 でだけ quotes[].where の日本語の地の文に埋め込まれている。",
+   "build-cache の書庫の内訳を数えた原表が無く、「wheel 99 件」「98」「101 件」という 3 つの数が突き合わせられない。",
+   "否定の所見（NVIDIA 文書にコード署名の記述が無い）を支える検索手順と全ヒット一覧が構造化されていない。現状は地の文 1 行のみ。",
+   "署名済み 36 件の証明書チェーン（発行 CA・有効期限・ダイジェスト種別）＝not_done に自認済みだが、v3 の署名方針を決めるには要る。",
+   "3 本の msvcp140 のうち実行時に読み込まれる版の実測＝not_done に自認済み。"
+  ],
+  "overall": "逐語の観点では不合格、事実の観点では合格。機械照合の結果、items 全 34 件の quotes 計 61 件のうち、記録された original_file の中に空白正規化のみで一字一句存在したのは 2 件だけだった（R6-02 q#3 と R6-34 q#2＝いずれも originals/pytorch-issue-182008-2026-09-14.json の .body を JSON 復号したものと完全一致。ただし R6-02 側はその檔を original_file に記録していない）。残り 59 件は、⑴ CSV に区画として存在しない「集計行」形式の派生値（33 件）、⑵ CSV 行を並べ替え・列落ち・path 切り詰めしたタブ区切り版の「個票」（14 件）、⑶ 引用ではなく本席の地の文やコマンド文字列（12 件）であり、原文にその文字列は無い。一方で、内容の誤りは 1 件も見つからなかった。findings/R6-signatures.csv（445 行）から再集計した GRAND files=445 valid=36 unsigned=409 total_bytes=3851785822 unsigned_bytes=3831107758、33 package すべての集計、引用された個票のバイト数・Status・署名者、署名者 3 種の内訳（PSF 29／Microsoft Windows Software Compatibility Publisher 6／Microsoft Corporation 1）、Valid 36 件が全件 has_timestamp=yes、AMD の CN が 445 件を通して 0 件、R6-wheel-signatures.csv の NotSigned 247／Valid 35・archive 26 種、R6-wheel-vs-deployed.csv の verdict が sha256-match 282 件・他 0 件、445−282=163 の内訳（_rocm_sdk_core 94＋_rocm_sdk_libraries 50＋torch 16＋torchaudio 3）＝すべて記載どおりに再現した。sha256／bytes を記録しているのは R6-34 のみで、2 檔とも再計算値が完全一致した（57,692 B／f685f42c…、4,734 B／5b819935…）。取得できていなかった URL は本席が WebFetch で独自に再取得でき、pytorch/pytorch#182008 は title・state・created_at・body 全文が保存原文と一致、NVIDIA の CUDA Windows インストールガイドは版 v13.4 でコード署名に関する記述なし＝R6-34 の「unknown のまま」という結論は支持される。数値上の唯一の要訂正点は「build-cache の wheel 99 件」で、実測は 101 件（.whl 95・.zip 3・.gz 2・.exe 1）＝zip として開いた書庫は 98 件。したがって卓への送り方としては、成果物の数値はそのまま使ってよいが、quotes 欄は「原文からの逐語」「本席の派生集計」「本席の地の文」の 3 種に分け、33 件の項目に一次原文が保存されていない（original_file が本席自身の出力 CSV を指す）ことを明示したうえで再提出すべき。リポジトリの檔は 1 件も書き換えていない。"
+ },
+ "R1-nvidia:verbatim": {
+  "seat": "検証席（R1-nvidia.json の逐語照合）",
+  "lens": "逐語照合＝items の quotes.text を、記録された original_file の中身と Python で機械照合（空白・NBSP の正規化と、報告書が行送りに使う区切り「 / 」のみを許容）。sha256／bytes を全件再計算。行番号の申し立ても原文オフセット→行番号の写像で検算。source_url は本日その場で再取得して sha256 が一致するかを確認し、未取得 URL は WebFetch／Invoke-WebRequest で自分でも取れるか試した。リポジトリの檔は 1 件も書き換えていない（読取のみ）。",
+  "problems": [
+   {
+    "item_id": "R1-04 q2（torch LICENSE:165-168）",
+    "severity": "high",
+    "problem": "この 1 件だけが原文に「そのまま」存在しない。text の中に報告者自身が入れた省略記号「 ... 」が 2 箇所あり、正規化しても原文に一致しない（機械照合＝SEG-NOT-FOUND）。しかも省略されているのは 166 行目の「License: MIT」という 1 行で、これは『PyTorch がこの第三者項目に何のライセンスを名乗らせているか』そのもの。項目の見出しが「NVIDIA 由来として名乗られている 1 件目」であるため、MIT 表示を落とすと『NVIDIA 由来＝NVIDIA の許諾』と読み違えられる。",
+    "correction": "originals/R1-torch-2.10.0-cu130-LICENSE.txt の 165-168 行は次の 4 行（実読）。\nName: C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\cudnn_frontend\nLicense: MIT\nFiles: C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\cudnn_frontend\n  For details, see the files concatenated below: C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\cudnn_frontend\\LICENSE.txt\n※ cudnn_frontend の許諾は MIT であって cuDNN SLA ではない（=cuDNN 本体 DLL の許諾を肩代わりしない）ことを本文で明示すべき。"
+   },
+   {
+    "item_id": "R1-01 q25（§1.6 Termination / :119-124）",
+    "severity": "medium",
+    "problem": "引いた語句自体は逐語だが、原文 126 行目の段落の途中で切れており、省略記号も無い。落ちているのは 2 文＝終了後の書面証明義務と、どの条項が存続するかの条。しかも同じ条の cuDNN 版（R1-02 q10）はその 2 文を含めて引いてあるため、両者を並べると CUDA 側だけが不完全に見える。行番号も 119-124 とあるが実際は 120-126（119 は見出し「1.6. Termination」）。",
+    "correction": "末尾に原文どおり次を続ける＝「Upon written request, you will certify in writing that you have complied with your commitments under this section. Upon any termination of this Agreement all provisions survive except for the license grant provisions.」／where は「§1.6 Termination / :120-126」。※ CUDA は「except for the license grant provisions」、cuDNN 6.4 は「except for the licenses granted to you」で文言が違う点も明記が要る。"
+   },
+   {
+    "item_id": "R1-01 q15〜q20・q22〜q24 および R1-03 q1・q2（§2.6 Attachment A の各欄）",
+    "severity": "medium",
+    "problem": "text は「Component CUDA Runtime Windows cudart.dll, …」のように 4 行（Component／部品名／Windows／ファイル名）を連ねたものなのに、where は「Windows 欄 / :155-156」のように末尾 2 行しか挙げていない。機械照合では全 10 件が『引用の実在範囲＝申し立て範囲の 2 行前から』と出た（例 q15 実際 153-156、q21 実際 243-248、q22 実際 261-264）。台帳から原文に当たり直すとき 2 行ずれる。",
+    "correction": "where の行範囲を実測値に直す＝q15:153-156／q16:163-166／q17:173-176／q18:191-194／q19:201-204／q20:211-214／q21:243-248／q22:261-264／q23:291-294／q24:299-302。R1-03 q1 は 201-204、R1-03 q2 は 243-248。"
+   },
+   {
+    "item_id": "R1-01 covers_files の nvJitLink_130_0.dll / nvJitLink_120_0.dll",
+    "severity": "medium",
+    "problem": "R1-01 は同 2 檔を「Attachment A に名がある族」に入れ、根拠として q22「Component NVIDIA JIT Linking Library Windows libnvJitLink.dll, libnvJitLink.lib」を引いている。しかし原文（264 行・実読）の Windows 欄は **lib 接頭辞つきの libnvJitLink.dll** であり、同梱物は nvJitLink_130_0.dll（接頭辞なし）。柱書が救うと書くのは「version number or architecture specific information embedded in the file name」の変種であって、接頭辞の有無はそこに書かれていない。R1-03 は .alt／nvperf／cusolverMg について同じ型の疑いを立てているのに、この 1 件だけ疑いを立てずに『名がある』側に入れている＝扱いが不揃い。",
+    "correction": "R1-01 から nvJitLink 2 檔を外すか、少なくとも R1-03 の open_points に 5 件目として「Attachment A Windows 欄は libnvJitLink.dll（lib 付き）で、同梱物 nvJitLink_130_0.dll には lib が無い。柱書の『version number or architecture specific information』に接頭辞の脱落が含まれるか」を立てる。※ grep 実測＝cuda-eula 中「nvJitLink」4 件、うち Windows 欄は 264 行の 1 件のみで、いずれも lib 付き。"
+   },
+   {
+    "item_id": "R1-01 q27（§1.5 Limitation of Liability / :117）",
+    "severity": "medium",
+    "problem": "「US$10.00」の上限文だけを引いて同じ行の続きを落としている（省略記号なし）。落ちているのは上限が請求件数で伸びないことを定める文で、上限条項の意味を確定させる部分。",
+    "correction": "末尾に原文どおり続ける＝「THE NATURE OF THE LIABILITY OR THE NUMBER OF CLAIMS OR SUITS SHALL NOT ENLARGE OR EXTEND THIS LIMIT.」"
+   },
+   {
+    "item_id": "R1-07 q3（§1.1.2 Distribution Requirements 第 5 条 / cuda:80）",
+    "severity": "medium",
+    "problem": "同じ第 5 条を R1-01 q1 では最後まで引いているのに、R1-07 q3 では 80 行目の途中で切っており、後半 1 文が省略記号なしで落ちている。同一条文の引用が 2 箇所で長さ違いになっている。",
+    "correction": "末尾に原文どおり続ける＝「Additionally, you agree that you will protect the privacy, security and legal rights of your application users.」（R1-01 q1 と同じ長さに揃える）"
+   },
+   {
+    "item_id": "R1-01 q26 / R1-02 q11（No Warranties）",
+    "severity": "medium",
+    "problem": "両方とも無保証条の最終文を省略記号なしで落としている（cuda:115 / cudnn:146 の行末）。",
+    "correction": "両方の末尾に原文どおり続ける＝「NO WARRANTY IS MADE ON THE BASIS OF TRADE USAGE, COURSE OF DEALING OR COURSE OF TRADE.」"
+   },
+   {
+    "item_id": "R1-01 notes（「signed」「signature」は 2 箇所）",
+    "severity": "low",
+    "problem": "実測が合わない。cuda-eula-2026-09-14.txt を語境界つきで数えると「signed」は 3 件（137 行＝契約の書面修正への署名、1024 行・1025 行＝Attachment B の affidavit 2 件）、「signature」は 0 件。報告は「2 箇所」と書いており、件数として誤り（文脈の分類そのものは正しい）。なお「signed」を部分一致で数えると designed を拾って 5 件になる。",
+    "correction": "notes を「『signed』は語境界一致で 3 件（§1.7 の書面修正への署名 1・Attachment B の affidavit 2）、『signature』は 0 件。部分一致だと designed を拾うので 5 件になる」に直す。"
+   },
+   {
+    "item_id": "R1-01 q0・q1・q12／R1-02 q1／R1-05 q0（行番号の端）",
+    "severity": "low",
+    "problem": "引用そのものは逐語で正しいが、where の行範囲が節見出し行を含めていたり 1 行はみ出したりしている。実測＝q0 申告 69-73／実際 70-73（69 は見出し 1.1.1. License Grant）、q1 申告 74-81／実際 75-81、q12 申告 143-144／実際 144 のみ、R1-02 q1 申告 109-116／実際 110-116、R1-05 q0 申告 3-22／実際 3-21（22 行目は「Click here to return to the zlib Home Page .」で許諾文ではない）。",
+    "correction": "where をそれぞれ :70-73／:75-81／:144／:110-116／:3-21 に直す。"
+   },
+   {
+    "item_id": "R1-05 q1（zlibwapi.dll の VS_VERSION_INFO）",
+    "severity": "low",
+    "problem": "この 1 件だけ original_file に対応する保存檔が無い（PowerShell の読み出し結果をそのまま text にしている）＝機械照合では NO-ORIGINAL。実物 DLL は保存されているので再現はできる。本席で再実行したところ 7 項目すべて一字一句一致した（CompanyName 空・FileDescription=zlib data compression library・FileVersion=1.2.3.0・ProductName=ZLib.DLL・ProductVersion 空・LegalCopyright=(C) 1995-2003 Jean-loup Gailly & Mark Adler・OriginalFilename=zlib.dll）。ただし記録されていない項目が 1 つある＝InternalName=[zlib]。",
+    "correction": "読み出し結果を originals/R1-zlibwapi-versioninfo-2026-09-14.txt として保存し、InternalName=[zlib] を加える（同定の手がかりが 1 つ増える）。本席の再測では Get-AuthenticodeSignature も Status=NotSigned で一致。"
+   },
+   {
+    "item_id": "R1-01 q29 / R1-02 q4（問い合わせ先アドレス）",
+    "severity": "low",
+    "problem": "「nvidia-compute-license-questions @ nvidia . com .」は保存した .txt に対しては逐語で正しいが、空白は自作 html2txt がアンカー内のタグを空白に置き換えたことによる産物。原 HTML の href は mailto:nvidia-compute-license-questions%40nvidia.com＝実アドレスに空白は無い。このまま台帳に逐語転記するとアドレスが壊れる。",
+    "correction": "quotes はそのまま残し、where か notes に「.txt 側の空白は html2txt の産物。実アドレスは nvidia-compute-license-questions@nvidia.com（原 HTML の href で確認）」と 1 行添える。"
+   },
+   {
+    "item_id": "R1-01 / R1-02 / R1-04 / R1-05 / R1-06 / R1-07 の bytes 欄",
+    "severity": "low",
+    "problem": "bytes の意味が項目ごとに違う。R1-01=103,131（HTML の方）／R1-02=52,540（HTML の方。txt 21,468 B はどこにも記録なし）／R1-03=79,670（txt の方）／R1-04=29,899（METADATA のみ。LICENSE 547,174・NOTICE 24,088 は original_file に挙がるが bytes 欄に無い）／R1-05=2,899（zlib HTML のみ。txt 1,462・DLL 89,088 は欄に無い）／R1-06・R1-07=79,670（cuda txt のみ。cudnn txt 21,468 B が無い）。sha256 欄は複数檔を併記しているのに bytes は 1 個だけなので対応が取れない。",
+    "correction": "bytes も sha256 と同じく「html=… / txt=…」の併記形にする。実測値＝cuda html 103,131／cuda txt 79,670／cudnn html 52,540／cudnn txt 21,468／METADATA 29,899／NOTICE 24,088／LICENSE 547,174／zlib html 2,899／zlib txt 1,462／zlibwapi.dll 89,088／cu126 METADATA 29,899。"
+   },
+   {
+    "item_id": "R1-04 q3（CuTeDSL の EULA リンク）",
+    "severity": "low",
+    "problem": "引用自体は逐語で正しい（原文 1903-1908 行に一致）。ただしその中で torch が示している参照先 https://docs.nvidia.com/cutlass/media/docs/pythonDSL/license.html を本席で取りに行くと **HTTP 404**（Invoke-WebRequest と WebFetch の両方で 404）。v3 の licenses/ でこのリンクをそのまま利用者に示すと死にリンクになる。",
+    "correction": "R1-04 の notes か open_points に「2026-09-14 時点で当該 URL は 404（本席で 2 経路から確認）。CuTeDSL の EULA は別途 cutlass のリポジトリ等から取り直す必要がある」を 1 行足す。"
+   }
+  ],
+  "missing_clauses": [
+   "authenticode_observed が 7 項目すべて \"not-checked\"。R1-06 は『署名の付け直しが modify に当たるか』を卓に上げているのに、NVIDIA の DLL が現状そもそも署名されているかの観測が 1 件も無い。裁定 150（スマート アプリ コントロール）対応の可否判断が観測ゼロの上に乗っている＝RTX 席で torch/lib の DLL に Get-AuthenticodeSignature を通す便が要る。",
+   "CUDA EULA §2.1 License Scope（cuda-eula-2026-09-14.txt:142「The SDK is licensed for you to develop applications only for use in systems with NVIDIA GPUs.」）が 7 項目のどの quotes にも無い。cuDNN 側の同趣旨（Supplement §4.1）は R1-02 q3 で引いてあるので、CUDA 側だけ欠けている。v3 が Radeon 版と同一の配布物に CUDA 実行系を同梱する形を採るなら、この条は直接掛かる。",
+   "nvJitLink_130_0.dll の lib 接頭辞の脱落（上記 problems 参照）が open_points_for_commander のどこにも立っていない。",
+   "CUDA EULA の PDF 版（https://docs.nvidia.com/cuda/pdf/EULA.pdf）は not_done に『取得していない』とあるが、本席で取れた＝HTTP 200・228,421 B・sha256 4f51a4318e8f7d86070e9c35f9797d233af23e4b6f9d42127704325b92dfc217（originals ではなく scratchpad/rights-v3/recheck/cuda-pdf.pdf に置いた）。v3 の licenses/ に添える版形式として PDF を採るなら取得可能。",
+   "Attachment B（cuda-eula-2026-09-14.txt:319 以下）の本文が 1 件も引かれていない。notes は Attachment B に触れるのに、そこに並ぶ第三者ソースの条件が v3 の同梱物に掛かるかの検分が無い。",
+   "cudnn-eula-2026-09-14.txt の byte 数（21,468 B）がどの項目の bytes 欄にも記録されていない（sha256 f2d637fb… は記録あり）。"
+  ],
+  "overall": "結論＝**逐語としてはおおむね健全。原文に無い引用は 68 件中 1 件（R1-04 q2）だけ**。ただし「省略記号なしの途中切り」が 5 件、行番号の申し立て違いが 19 件あるので、台帳に落とす前に直すべき。\n\n■ 再計算が全件一致（sha256・bytes）\n記載された 11 檔すべてを再ハッシュして一致を確認した＝cuda html 103,131 B/c441d0f8…、cuda txt 79,670 B/83b4545e…、cudnn html 52,540 B/24a31a9c…、cudnn txt 21,468 B/f2d637fb…、METADATA 29,899 B/b019104f…、NOTICE 24,088 B/1c3dec6c…、LICENSE 547,174 B/114a3beb…、zlib html 2,899 B/d16e1e49…、zlib txt 1,462 B/454f9fbf…、zlibwapi.dll 89,088 B/1f047fae…、cu126 METADATA 29,899 B/5212dc7e…。**sha256 違いは 0 件。**\n\n■ source_url をその場で取り直しても一致\n本日 Invoke-WebRequest で 3 本を取り直したところ、保存檔とバイト単位で同一だった＝cuda-eula 103,131 B（c441d0f8…）、cudnn-eula 52,540 B（24a31a9c…）、zlib 2,899 B（d16e1e49…）。originals は本物。\n\n■ 逐語照合（68 引用）\n空白正規化だけで原文に一致＝59 件。報告書が行送りに使う「 / 」を改行として扱うと一致＝7 件（R1-01 q1・q2・q25／R1-02 q1／R1-04 q0・q1／R1-05 q0）。この 7 件は**区切りの前後が原文でも連続していて、間に落とされた語は 0 件**であることを別途確認済み（隙間検査で全件 contiguous OK）。原文に無い＝1 件（R1-04 q2）。原文檔が保存されていない＝1 件（R1-05 q1。ただし実物 DLL が保存されていて本席で再現できた）。\n\n■ same_as_2026_09_04 の申し立ても再現\nrepo の research/lab/tmp/rt-license/cuda-eula.txt（79,382 B・80bb1e97…）と cudnn-sla.txt（21,640 B・be368480…）は実在し、語単位 diff を取り直すと報告どおり＝CUDA は非一致 opcode 5 個（v13.3→v13.4／Last updated Jun 25→Aug 14 の移動／Manage My Privacy Settings | Do Not Sell or Share My Data→Your Privacy Choices）、cuDNN は 1 個（HTML コメント断片）。**許諾条項の語句差 0 件は正しい。**\n\n■ grep 実測も全件再現\nR1-03 の主張＝nvperf 0／nvperf_host 0／nvperf_target 0／cusolverMg 0／.alt 0／nvrtc-builtins 4／cufftw 8／nvToolsExt 4／cupti 4／nvJitLink 4、すべて一致。R1-04 の主張＝LICENSE の Name: 行 116 件、LICENSE 内 zlib 0・zlibwapi 0・Jean-loup Gailly 0・Mark Adler 0・CUDA（大文字一致）0・cudnn 4、NOTICE 内 NVIDIA/CUDA/cuDNN/cublas/nvrtc/NVTX/zlib/EULA すべて 0、METADATA 内 NVIDIA 10・nvidia 15・CUDA 26・cuDNN 5・EULA 0・cublas 0・nvrtc 0、すべて一致。R1-06 の alter 0・authenticode 0・certificat 0（cuda・cudnn とも）も一致。**唯一ずれたのは notes の「signed 2 箇所」で、実際は 3 件。**\n\n■ 未取得 URL を自分でも試した結果\n・https://docs.nvidia.com/cuda/pdf/EULA.pdf ＝取れた（HTTP 200・228,421 B・sha256 4f51a431…）。not_done の 3 番目は解消可能。\n・https://docs.nvidia.com/cutlass/media/docs/pythonDSL/license.html（torch の LICENSE が CuTeDSL の EULA 参照先として書いている URL）＝**404**。Invoke-WebRequest と WebFetch の両方で同じ。v3 の licenses/ に転記すると死にリンクになる。\n・cuda-eula／cudnn-eula／zlib の 3 本は上記のとおり再取得で完全一致。\n\n■ リポジトリ\n1 檔も書き換えていない（research/lab/tmp/rt-license/ は読取のみ）。本席の作業物は scratchpad/rights-v3/ の verify_r1.py・verify_r1b.py・verify_r1c.py・verify_r1d.py・verify_r1e.py と recheck/ 配下に置いた。"
+ },
+ "R4-python-torch:overclaim": {
+  "seat": "検証席（R4-python-torch の検算）",
+  "lens": "過大主張（原文の文言を超える断定）と欠落（原文にあるのに items が引き落とした条項・台帳にあるのに項目が無い構成物）",
+  "problems": [
+   {
+    "item_id": "R4-01",
+    "severity": "high",
+    "problem": "redistribution_grant が \"explicit-yes\"。しかし covers_files は python.exe / pythonw.exe / python312.dll / python3.dll / vcruntime140.dll / vcruntime140_1.dll / python.cat ＝ Windows binary build そのもので、同じ LICENSE.txt の :300-301 は「Redistribution of the Windows binary build of the Python interpreter complies with this agreement, provided that you do not: …」と条件付きで書き、:291-298 は「you must require distributors and external end users to agree to terms that protect the Microsoft Distributable Code at least as much as Microsoft's own requirements」という転嫁義務を課している。PSF §2 の明文許諾は \"Python\" に対する物で、この binary build 全体を無条件に配ってよいという文言は原文に無い。items は Additional Conditions を丸ごと R4-02 に逃がしたうえで R4-01 を explicit-yes と宣言しており、『〜なので配ってよい』型の過大主張になっている。",
+    "correction": "redistribution_grant を \"conditional\" に落とす。conditions に LICENSE.txt:291-298（転嫁義務）と :300-314（4 つの禁止列挙）を逐語で加え、「PSF §2 は明文で許諾するが、この zip は Windows binary build であり同じ檔の :283-320 が別途条件を課す。両者の関係（PSF 許諾だけで足りるか）は卓の裁定」と open_points に書く。covers_files から MS 由来物を外して R4-02 に一本化するなら、R4-01 の component 名を『PSF 許諾の及ぶ Python 部分』に限定し直す。"
+   },
+   {
+    "item_id": "R4-01",
+    "severity": "medium",
+    "problem": "conditions の CWI 欄が「著作権表示と許諾文を全ての複製に付し」と書く。原文（:250-257）は「provided that the above copyright notice appear in all copies and that both that copyright notice and this permission notice appear in supporting documentation」＝『著作権表示は全複製に』『著作権表示と許諾文の両方は supporting documentation に』であり、許諾文を全複製に付す義務は原文に無い。原文の文言より重い義務を作っている（逆向きの過大主張）。",
+    "correction": "「CWI＝the above copyright notice appear in all copies（:252）／both that copyright notice and this permission notice appear in supporting documentation（:252-254）／Stichting Mathematisch Centrum・CWI の名を advertising or publicity pertaining to distribution に無断で使わない（:254-257）」と、原文の 3 分割のまま書く。"
+   },
+   {
+    "item_id": "R4-01",
+    "severity": "medium",
+    "problem": "modification_or_resigning.status が \"allowed-with-condition\"。この欄は BRIEF の schema 上『改変または署名の付け直し』を答える欄であり、埋め込み Python の LICENSE.txt には署名の付け直しについての文言が 1 件も無い（R4-08 自身が grep 0 件を実測し、同じ主題に \"not-stated\" を付けている）。同一調査内で同じ問いに allowed と not-stated の 2 つの答えが立っており、allowed 側は原文の文言を超えている。",
+    "correction": "status を「allowed-with-condition（改変のみ／PSF §2 \"prepare derivative works\" ＋ §3 の変更要約）」と限定し、quote に PSF §2 の該当句も併記したうえで、「署名の付け直しについては LICENSE.txt に文言が無い＝not-stated（R4-08 と同じ）」を明記する。"
+   },
+   {
+    "item_id": "R4-02",
+    "severity": "high",
+    "problem": "redistribution_grant が \"conditional\"。ところが同じ項目の実測は、covers_files に挙げた libcrypto-3.dll・libssl-3.dll・sqlite3.dll・_lzma.pyd・pyexpat.pyd・_decimal.pyd について zip 内 LICENSE.txt に許諾文が 1 件も無い（openssl 0／sqlite 0／expat 0／lzma 0／xz 0／mpdecimal 0）というもの。「conditional」＝条件付きで許諾が在る、と読める語を全体に付けるのは、許諾文が見つかっていない物にまで grant の存在を言う過大主張。",
+    "correction": "項目を割るか、grant を物ごとに書き分ける。「Microsoft Distributable Code（vcruntime140.dll・vcruntime140_1.dll・各 .exe/.dll/.pyd に埋め込まれた分）＝conditional（:291-314）」「libcrypto-3.dll・libssl-3.dll・sqlite3.dll・_lzma.pyd・pyexpat.pyd・_decimal.pyd ＝not-found（zip 内 LICENSE.txt に当該許諾文が存在しないという実測のみ。配布可否は本席では言わない）」「bzip2（_bz2.pyd）・libffi（libffi-8.dll・_ctypes.pyd）＝conditional（:326-362／:366-386）」。"
+   },
+   {
+    "item_id": "R4-02",
+    "severity": "medium",
+    "problem": "conditions の 2 番目が「bzip2・libffi・無名の Apache-2.0・Tcl/Tk/Tix ＝各段の本文どおり」。これは条件を書いたことにならず、逐語を義務づけた鉄則 2 に反する。実際には bzip2 に 4 条（うち 3. は改変版の明示義務）、libffi に全複製への表示義務、Apache-2.0 に §4(a)-(d) と §3 の特許終了条項、Tcl 系に「retained in all copies ／ included verbatim in any distributions」と GOVERNMENT USE 条項がある。",
+    "correction": "conditions を逐語で分解する。bzip2 :334-347（1.〜4.、特に 3. \"Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.\"）／libffi :377-378 \"The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\"／無名 Apache-2.0 :477-517 の §4(a)-(d) と :469-475 の特許終了、:526-530 の §6 Trademarks／Tcl 系 :572-580 \"provided that existing copyright notices are retained in all copies and that this notice is included verbatim in any distributions\" と :595-605 GOVERNMENT USE。"
+   },
+   {
+    "item_id": "R4-02",
+    "severity": "low",
+    "problem": "notes の構造列挙が「Tcl-Tk 系(:566) / Tix(:648)」で 2 段としているが、実際には Tcl 型の段は :566・:607・:648 の 3 段あり（:607 は ActiveState に Apple Inc. が加わった別版、DFARs の引用条番号も 252.227-7014(b)(3) と 252.227-7013(b)(3) で異なる）、さらに :691 の区切り線の後 :693-701 に「the original license terms … is included in the file docs/license.tcltk ／ docs/license.html_lib」という別檔を指す段がある。この 2 檔は zip の 35 エントリに存在しない（実測）。",
+    "correction": "notes の構造列挙を「Tcl 型 3 段（:566・:607・:648）＋ :693-701 の参照段」に直し、「:696 と :701 が指す docs/license.tcltk・docs/license.html_lib は embed zip に同梱されていない（35 エントリ実読）」という実測を足す。"
+   },
+   {
+    "item_id": "R4-05",
+    "severity": "high",
+    "problem": "open_points_for_commander が空配列で、conditions は BSD-3 §2・§3 と METADATA の宣言だけ。しかし同じ原文（記録した originals/torch-2.10.0+cu130-dist-info-LICENSE-2026-09-14.txt）の本文には ⑴ :2227-2237 に \"SPDX-License-Identifier: LicenseRef-NvidiaProprietary … Any use, reproduction, disclosure or distribution of this material and related documentation without an express license agreement from NVIDIA CORPORATION or its affiliates is strictly prohibited.\" という明文の禁止、⑵ :1903-1908 と :2099-2104 に cutlass の `python/CuTeDSL` を NVIDIA End User License Agreement (EULA) に送る文、⑶ :3746-4424 に GNU GENERAL PUBLIC LICENSE Version 3 の全文（third_party\\kineto\\…\\cpr\\test\\LICENSE の分・\"This license applies to everything inside this directory and all subdirectories.\"）、⑷ :6909 以降に LGPL-2.1（ffnvcodec）、:7975 以降に LGPL-3 がある。BSD-3 条件だけを挙げて全体を \"conditional\" と宣言するのは、禁止条項と copyleft 本文を落としたうえでの過大主張。",
+    "correction": "grant は \"conditional\" のままでよいが、conditions に上記 ⑴〜⑷ を逐語（行番号つき）で加え、open_points_for_commander に「LICENSE 内に明文の禁止（:2233-2236）と GPL-3.0／LGPL-2.1／LGPL-3.0 の本文が同梱されている。これらが wheel の同梱バイナリに及ぶか、及ぶとして自前配布で何が要るかは法解釈＝卓の裁定」を立てる。席は『及ばない』とも『及ぶ』とも書かない。"
+   },
+   {
+    "item_id": "R4-05",
+    "severity": "high",
+    "problem": "quotes の 2 件目が LICENSE:1-11 を「この BSD-3 が誰の分かを示す唯一の記載」と断定。原文は :13-57 に \"From Caffe2:\" の第 2 の帰属ブロック（Facebook・Google・Yangqing Jia・Kakao Brain・Cruise LLC・Tri Dao・Arm Limited・Caffe contributors・\"All other contributions\"）を持ち、:57 の \"All rights reserved.\" の直後に :59 の BSD-3 本文が続く。BSD-3 §1/§2 が再現を求める \"the above copyright notice\" はこの :1-57 全体であり、「:1-11 が唯一」は原文に反する断定であると同時に、配布時に再現すべき範囲を過小に見せる。",
+    "correction": "quotes を :1-57（From PyTorch と From Caffe2 の帰属ブロック全体）に広げ、conditions の BSD-3 §2 欄に「再現すべき \"the above copyright notice\" は :1-57、\"this list of conditions\" は :59-72、\"the following disclaimer\" は :74-84」と範囲を行番号で特定して書く。"
+   },
+   {
+    "item_id": "R4-05",
+    "severity": "medium",
+    "problem": "notes の「116 件の License 欄の内訳」が見出し名の羅列で、件数も無く、実際の分布と食い違う。実測（^License: 行の集計）は MIT 42／BSD-3-Clause 37／Apache-2.0 25／BSD-2-Clause 7／BSL-1.0 2／Public Domain 系 2（:546 \"Public Domain for core\"・:561 \"Public Domain\"）／\"Permissive (free to use)\" 1（:531）＝計 116。うち 12 件は \"with exception\"（:106 :111 :116 :271 :331 :336 :391 :521 :571 ほか）。さらに :331 の cpr\\test は宣言が \"License: MIT with exception\" なのに連結本文（:3746 以降）は GPL-3.0 全文であり、宣言欄と本文が一致しない。この不一致は自前配布の可否に直結する事実なのに記録されていない。",
+    "correction": "notes を実測の件数表（MIT 42／BSD-3 37／Apache-2.0 25／BSD-2 7／BSL-1.0 2／Public Domain 系 2／Permissive 1、with exception 12）に置き換え、「:331 の宣言 `License: MIT with exception` と、その Files が指す :3746-4424 の GNU GPL v3 本文が一致しない」を実測として別立てし、open_points に「宣言欄と連結本文のどちらを台帳に採るかは卓」と書く。"
+   },
+   {
+    "item_id": "R4-05",
+    "severity": "low",
+    "problem": "quotes の where は「dist-info/LICENSE:87-88（第三者物の連結の宣言）」だが notes は同じ文を「86-87 行の宣言」と書く。実測では :87-88。項目内で行番号が食い違う。",
+    "correction": "notes の「86-87 行」を「87-88 行」に直す。"
+   },
+   {
+    "item_id": "R4-06",
+    "severity": "high",
+    "problem": "redistribution_grant が \"conditional\"。しかし同項目の conditions 自身が libiomp5md.dll・libiompstubs5md.dll を「wheel の中の記載からは決まらない（未特定）」、zlibwapi.dll を「未特定」とし、open_points も「LICENSE には DLL 名が 1 件も書かれていない」という事実だけを出すと宣言している。許諾の所在が特定できていない物を含む項目に「条件付きで許諾あり」と読める値を付けるのは、席が自ら引いた線を越えている。",
+    "correction": "grant を \"unknown\" にするか、物ごとに分ける。「torch_cpu.dll ほか PyTorch 由来の 9 檔＝LICENSE 冒頭 :1-84 の BSD-3 が在るが、DLL 名との対応は原文に無い（事実のみ）」「uv.dll＝third_party\\tensorpipe\\third_party\\libuv（License: MIT・:660-663／本文 :9052 以降）が唯一の近接項目。対応は原文に無い」「libiomp5md.dll・libiompstubs5md.dll・zlibwapi.dll＝not-found（grep 0 件）」。"
+   },
+   {
+    "item_id": "R4-06",
+    "severity": "medium",
+    "problem": "conditions の 1 番目が 9 個の DLL 名を並べて「LICENSE のうち PyTorch・Caffe2 を名指しする節は冒頭 1-84 行の BSD-3 ブロックだけ」と書き、これを conditions（＝許諾の条件）欄に置いている。そのため「これらの DLL は冒頭 BSD-3 で覆われる」と読める。ところが同項目の open_points 3 番目は「冒頭 BSD-3 ブロックが torch_cpu.dll などのビルド成果物を覆うという読み自体は法解釈。席は事実だけを出す」と正反対のことを書いており、conditions 欄の置き方が自らの留保を壊している。",
+    "correction": "当該行を conditions から外し、notes（事実）に移す。conditions には「LICENSE 全文に torch_cpu.dll 等の DLL 名は 0 件（実測）」という事実のみを残し、覆う／覆わないの判断は open_points に一本化する。"
+   },
+   {
+    "item_id": "R4-07",
+    "severity": "medium",
+    "problem": "open_points_for_commander が「BSD-2 か BSD-3 かの整理」1 点のみ。しかし covers_files には libctc_prefix_decoder.pyd (5,587,456 B)・pybind11_prefixctc.pyd (708,608 B)・libtorchaudio.pyd (1,996,288 B) が並び、これらは名前からして第三者コードを静的に取り込んだ物であるのに、wheel 内の許諾檔は licenses/LICENSE 1 件（1,363 B）だけで NOTICE も無い（本席の実測と一致）。R4-06 で torch について立てた「同梱物から特定できない」という穴が、torchaudio では立てられていない。",
+    "correction": "open_points に「torchaudio の wheel には第三者物の許諾檔が 1 件も無い（dist-info エントリ 5 件・License-File 1 件・NOTICE 無しを実測）。libctc_prefix_decoder.pyd・pybind11_prefixctc.pyd・libtorchaudio.pyd に取り込まれた第三者物の許諾は wheel の中では特定できない＝別途一次資料が要るかの判断」を足し、これら .pyd についての grant は BSD-2 と別建てで unknown とする。"
+   },
+   {
+    "item_id": "R4-03",
+    "severity": "low",
+    "problem": "notes が「今日の /3.12/ 版でも同文が在る＝文言の変化は観測されない」と結ぶ。同じ notes で「sha256 比較はできない」と認め、same_as_2026_09_04 も \"unknown\" のまま。突き合わせたのは 2 文だけであり、節全体について変化が無いとまでは言えない。加えて保存した本文自体が \"python3.dll, python37.dll, python.exe and pythonw.exe are all provided\" と 3.7 時代の記述を残しており、節が版に追随していないことが読み取れる。",
+    "correction": "「引用した 2 文は 2026-09-04 の note 22 表 4c の引用と一致（目視）。節全体の同一性は原本が残っていないため未検証」と範囲を限定して書く。ついでに \"python37.dll\" の記述が残っている事実を notes に足す（節の記述と実物 35 エントリの食い違いの証拠になる）。"
+   },
+   {
+    "item_id": "summary",
+    "severity": "high",
+    "problem": "summary 1 が「埋め込み Python 3.12.10 の再配布は PSF §2 で明文許諾」とだけ言い切る。読み手には無条件の青信号に見えるが、配る対象は Windows binary build であり同じ檔の :291-314 が別条件を課す。さらに summary 全体が ⑴ PSF §6・BeOpen §5・CNRI §6 の自動終了条項、⑵ PSF §7・BeOpen §6・CNRI §7 の商標・推奨禁止条項、⑶ torch LICENSE 内の明文禁止（:2233-2236）と GPL-3.0／LGPL の本文、の 3 群に一言も触れていない。",
+    "correction": "summary 1 を「PSF §2 は配布を明文で許諾する。ただし対象は Windows binary build であり、同じ LICENSE.txt :291-314 が Microsoft Distributable Code について別条件（転嫁義務と 4 つの禁止）を課す。両者の関係は卓」に直し、終了条項・商標条項・torch LICENSE の禁止条項と copyleft 本文を summary の項として足す。"
+   }
+  ],
+  "missing_clauses": [
+   "【終了】py312-embed LICENSE.txt:109-110（PSF §6）\"6. This License Agreement will automatically terminate upon a material breach of its terms and conditions.\" ＝ items のどの conditions にも無い。",
+   "【終了】py312-embed LICENSE.txt:154-155（BeOpen §5）\"5. This License Agreement will automatically terminate upon a material breach of its terms and conditions.\"",
+   "【終了】py312-embed LICENSE.txt:217-218（CNRI §6）\"6. This License Agreement will automatically terminate upon a material breach of its terms and conditions.\"",
+   "【告知・商標】py312-embed LICENSE.txt:112-116（PSF §7）\"7. Nothing in this License Agreement shall be deemed to create any relationship of agency, partnership, or joint venture between PSF and Licensee.  This License Agreement does not grant permission to use PSF trademarks or trade name in a trademark sense to endorse or promote products or services of Licensee, or any third party.\"",
+   "【告知・商標】py312-embed LICENSE.txt:157-166（BeOpen §6）\"…This License Agreement does not grant permission to use BeOpen trademarks or trade names in a trademark sense to endorse or promote products or services of Licensee, or any third party.  As an exception, the \\\"BeOpen Python\\\" logos available at http://www.pythonlabs.com/logos.html may be used according to the permissions granted on that web page.\" ＝ 準拠法（State of California）と商標の両方が落ちている。",
+   "【告知・商標・オープンソース化】py312-embed LICENSE.txt:220-235（CNRI §7）\"…Notwithstanding the foregoing, with regard to derivative works based on Python 1.6.1 that incorporate non-separable material that was previously distributed under the GNU General Public License (GPL), the law of the Commonwealth of Virginia shall govern this License Agreement only as to issues arising under or with respect to Paragraphs 4, 5, and 7 of this License Agreement. … This License Agreement does not grant permission to use CNRI trademarks or trade name in a trademark sense to endorse or promote products or services of Licensee, or any third party.\"",
+   "【同意の成立】py312-embed LICENSE.txt:118-120（PSF §8）\"8. By copying, installing or otherwise using Python, Licensee agrees to be bound by the terms and conditions of this License Agreement.\" ／ :168-170（BeOpen §7）／ :237-241（CNRI §8 \"By clicking on the \\\"ACCEPT\\\" button where indicated, or by copying, installing or otherwise using Python 1.6.1, …\" ＋ :241 \"        ACCEPT\"）",
+   "【料金・再配布】py312-embed LICENSE.txt:267-271（ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON DOCUMENTATION）\"Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted.\" ＝ R4-01 は B 節柱書で 0BSD に触れるだけで、段そのものを conditions に入れていない。",
+   "【再配布・転嫁義務】py312-embed LICENSE.txt:291-298（Additional Conditions）\"If you further distribute programs that include the Microsoft Distributable Code, you must comply with the restrictions on distribution specified by Microsoft. In particular, you must require distributors and external end users to agree to terms that protect the Microsoft Distributable Code at least as much as Microsoft's own requirements for the Distributable Code.\" ＝ R4-02 の conditions は禁止 4 項目だけを写し、この積極的な転嫁義務を落としている。v3 の『自前の置き場から配る』に直結する。",
+   "【適用範囲】py312-embed LICENSE.txt:316-320 \"These restrictions apply only to the Microsoft Distributable Code as defined above, not to Python itself or any programs running on the Python interpreter. The redistribution of the Python interpreter and libraries is governed by the Python Software License included with this file, or by other licenses as marked.\" ＝ MS 条件と PSF 許諾の切り分けを原文自身が述べている一文が引かれていない。",
+   "【改変の明示】py312-embed LICENSE.txt:334-347（bzip2 1.〜4.）特に \"2. The origin of this software must not be misrepresented; you must not claim that you wrote the original software.\" と \"3. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.\" と \"4. The name of the author may not be used to endorse or promote products derived from this software without specific prior written permission.\"",
+   "【告知】py312-embed LICENSE.txt:377-378（libffi）\"The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\"",
+   "【再配布・改変・告知】py312-embed LICENSE.txt:477-517（無名 Apache-2.0 §4 Redistribution の (a)(b)(c)(d)）と :469-475（§3 の特許終了 \"If You institute patent litigation … then any patent licenses granted to You under this License for that Work shall terminate as of the date such litigation is filed.\"）と :526-530（§6 Trademarks）＝ R4-02 はこの段を『名前が無い』と記すだけで条項を一切引いていない。",
+   "【再配布・改変】py312-embed LICENSE.txt:572-580（Tcl 系 3 段に共通）\"The authors hereby grant permission to use, copy, modify, distribute, and license this software and its documentation for any purpose, provided that existing copyright notices are retained in all copies and that this notice is included verbatim in any distributions. No written agreement, license, or royalty fee is required for any of the authorized uses. Modifications to this software may be copyrighted by their authors and need not follow the licensing terms described here, provided that the new terms are clearly indicated on the first page of each file where they apply.\"（同文が :613-621・:656-664 にも在る）",
+   "【政府調達】py312-embed LICENSE.txt:595-605／:636-646／:679-689（GOVERNMENT USE の 3 段。DFARs 引用が 252.227-7014(b)(3)／252.227-7013(b)(3)／252.227-7013(c)(1) と段ごとに異なる）",
+   "【参照先の欠落】py312-embed LICENSE.txt:693-701 \"Parts of this software are based on the Tcl/Tk software … The original license terms of the Tcl/Tk software distribution is included in the file docs/license.tcltk.\" ／ \"… the HTML Library software … is included in the file docs/license.html_lib.\" ＝ この 2 檔は embed zip の 35 エントリに存在しない（実測）。",
+   "【明文の禁止】torch dist-info/LICENSE:2227-2237（見出し :2195 third_party\\fbgemm\\fbgemm_gpu\\experimental\\hstu\\LICENSE）\" * SPDX-License-Identifier: LicenseRef-NvidiaProprietary … Any use, reproduction, disclosure or distribution of this material and related documentation without an express license agreement from NVIDIA CORPORATION or its affiliates is strictly prohibited.\" ＝ R4-06 の notes に語としてだけ現れ、R4-05・R4-06 の conditions／open_points のどちらにも逐語で入っていない。",
+   "【別契約への送り】torch dist-info/LICENSE:1903-1908（および :2099-2104 の同文）\"Certain files within this repository are subject to separate licensing terms: - The files located in the `python/CuTeDSL` directory are licensed under the NVIDIA End User License Agreement (EULA). Please refer to https://docs.nvidia.com/cutlass/media/docs/pythonDSL/license.html for the full terms.\"",
+   "【オープンソース化（copyleft）】torch dist-info/LICENSE:3746-3750 \"C:\\actions-runner\\…\\dynolog\\third_party\\cpr\\test\\LICENSE\" に続く \"This license applies to everything inside this directory and all subdirectories.\" ＋ :3751-4424 の GNU GENERAL PUBLIC LICENSE Version 3 全文。なお当該 Name ブロックの宣言は :331 \"License: MIT with exception\" で本文と一致しない。",
+   "【オープンソース化（copyleft）】torch dist-info/LICENSE:6909-6921（ffnvcodec、宣言は :521 \"License: MIT with exception\"）\"GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999\" 以下全文、および :7975 以降の LGPL-3.0 本文 \"As used herein, \\\"this License\\\" refers to version 3 of the GNU Lesser General Public License, and the \\\"GNU GPL\\\" refers to version 3 of the GNU General Public License.\" ＋ :8002-8013 の結合物配布時の義務列挙（a）〜（e）。",
+   "【告知義務の免除】torch dist-info/LICENSE:936-950 \"---- LLVM Exceptions to the Apache 2.0 License ---- As an exception, if, as a result of your compiling your source code, portions of this Software are embedded into an Object form of such source code, you may redistribute such embedded portions in such Object form without complying with the conditions of Sections 4(a), 4(b) and 4(d) of the License.\" ＝ 25 件の Apache-2.0 のうち NVTX 3 件（:106 :111 :116）が \"with exception\" であり、R4-08 が引いた §4(a)(b)(d) が外れる場合があるのに、items はこの exception を一度も引いていない。",
+   "【改変の明示】torch dist-info/LICENSE:7945-7959（zlib 型の段）\"Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions: 1. The origin of this software must not be misrepresented … 2. Altered source versions must be plainly marked as such … 3. This notice may not be removed or altered from any source distribution.\" ＝ 署名の付け直しの議論（R4-08）に最も近い『notice を removed or altered してはならない』型の条文だが引かれていない。",
+   "【再配布時に再現すべき本文】torch dist-info/LICENSE:13-57（\"From Caffe2:\" の帰属ブロック全体＝Facebook／Google／Yangqing Jia／Kakao Brain／Cruise LLC／Tri Dao／Arm Limited／Caffe contributors／All other contributions）と :74-84（\"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \\\"AS IS\\\" …\" の免責全文）＝ BSD-3 §1/§2 が再現を求める \"the above copyright notice\" と \"the following disclaimer\" の実体。items は範囲を特定していない。",
+   "【再配布時に再現すべき本文】torchaudio dist-info/licenses/LICENSE:16-25（\"THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \\\"AS IS\\\" …\"）＝ BSD-2 第 2 条が再現を求める \"the following disclaimer\" の実体。R4-07 は :1-15 しか引いていない。",
+   "【対象物の取りこぼし・embed zip】35 エントリのうち R4-01（9 檔）と R4-02（12 檔）のどちらにも現れない 14 檔＝_ctypes.pyd (127,480 B)・_elementtree.pyd (135,160 B)・_asyncio.pyd・_msi.pyd・_multiprocessing.pyd・_overlapped.pyd・_queue.pyd・_socket.pyd・_uuid.pyd・_wmi.pyd・_zoneinfo.pyd・select.pyd・unicodedata.pyd (1,140,592 B)・winsound.pyd。特に _ctypes.pyd は libffi、_elementtree.pyd は expat、unicodedata.pyd は Unicode データを取り込む物で、R4-02 の『expat の許諾文が LICENSE.txt に無い』という穴の当事者。",
+   "【対象物の取りこぼし・embed zip】python.cat (574,231 B)。R4-01 の covers_files には在るが、R4-04 の『そのまま残す物（sha256 一致）』の列にも『差し替える物』の列にも無く、展開後の同一性が測られていない。これは Authenticode の catalog 檔であり、v3 の署名構想（BRIEF 前文・裁定 150）と python312._pth の差し替え（R4-04）の双方に直接関わる。",
+   "【対象物の取りこぼし・台帳】ledger/runtime-cpu.json（torch 2.10.0+cpu・torchaudio 2.10.0+cpu・計 101 件）が items にも not_done にも 1 度も現れない。BRIEF §2 は ledger/*.json を『対象物の全集合』としている。",
+   "【対象物の取りこぼし・台帳】ledger/runtime-rocm-gfx1151.json の torch 2.13.0+rocm10.0.0（BRIEF §5 が明示的に pin を挙げた版）・torchaudio 2.11.0.2+rocm10.0.0・amd-torch-device-gfx1151／gfx115x 2.13.0+rocm10.0.0（台帳の license 欄が『METADATA/PKG-INFO declares no License, no License-Expression and no License classifier』＝宣言ゼロ）について、R4 は担当外である旨すら not_done に書いていない。席の分掌（AMD 系は別席）であっても、torch を名に持つ席の not_done に境界を明記すべき。",
+   "【対象物の取りこぼし・台帳】ledger の torch-stoi 2.0.3系（torch-stoi 0.2.3・MIT）は名に torch を持つが items に無い。R5 の担当なら not_done にその旨を書く。",
+   "【輸出】3 つの原文（py312-embed LICENSE.txt・torch dist-info/LICENSE・NOTICE・torchaudio LICENSE）に輸出管理条項は無い（本席の実測＝export の語は torch LICENSE の opentelemetry-cpp\\exporters\\etw のパス名 4 件のみ、embed・NOTICE・torchaudio は 0 件）。ただし :1906 の NVIDIA EULA 参照先は檔の外にあり、そこに輸出条項が在るかは未確認＝not_done に立てるべき。"
+  ],
+  "overall": "R4 の実測部分は堅い。本席で再測して一致した物＝⑴ py312-embed LICENSE.txt の逐語（PSF §2 :81-89・§3 :91-95・BeOpen §2 :134-140・CNRI §2 :182-198・CWI :244-257・Additional Conditions :283-320）はすべて原文どおり、⑵ 区切り線 8 本の行番号（:74 :124 :245 :268 :284 :324 :364 :691）一致、⑶ 2026-09-04 版との CRLF 差だけの同一性（37,576 B → LF 化して 36,874 B と完全一致）True、⑷ embed zip 35 エントリと各サイズ一致、⑸ torch METADATA に License-Expression 行 0・License 分類子 0・License-File 2 件、⑹ NOTICE の 8 節構成、⑺ torchaudio METADATA :13 :27 :28 の逐語。したがって問題は測定ではなく、測った物の言い換え方に集中している。危険な順に 3 つ。第一に grant 欄の付け方＝R4-01 が Windows binary build を explicit-yes、R4-02 が許諾文の見つからない OpenSSL／SQLite／expat／lzma／mpdecimal を含んだまま conditional、R4-06 が未特定の libiomp5md・libiompstubs5md・zlibwapi を含んだまま conditional。いずれも『原文に無い許諾の存在』を一語で宣言しており、鉄則 1 に正面から触れる。第二に R4-05 の空の open_points＝同じ原文に LicenseRef-NvidiaProprietary の明文禁止（:2233-2236）、cutlass の NVIDIA EULA 送り（:1903-1908）、GPL-3.0 全文（:3746-4424）、LGPL-2.1／3.0 が入っているのに、条件は BSD-3 §2/§3 だけで卓に送る点が 0 件。しかも :331 の宣言（MIT with exception）と本文（GPL-3.0）が食い違うという、台帳の license 欄の作り方そのものに関わる矛盾が記録されていない。第三に終了条項と商標条項の全落ち＝PSF §6/§7、BeOpen §5/§6、CNRI §6/§7 は 1 つも items に無い。自動終了は『配れる／配れない』が事後に覆る条項で、v3 の判断材料として抜かせない。対象物では python.cat（署名カタログ・R4-04 の同一性測定から漏れ）、_ctypes.pyd／_elementtree.pyd／unicodedata.pyd ほか 14 檔、台帳の runtime-cpu.json 一式、rocm 系 torch の担当境界の未記載が穴。輸出条項は 4 檔とも 0 件という実測が取れたので、これは『欠落』ではなく『存在しない』と書ける（ただし :1906 の EULA 参照先は檔外・未取得）。リポジトリの檔は一切触っていない。"
+ },
+ "R4-python-torch:verbatim": {
+  "seat": "検証席（R4-python-torch の逐語照合）",
+  "lens": "逐語照合＝R4-python-torch.json の全 8 項目・36 引用を Python で機械照合（空白／改行コードのみ正規化、その他は一字一句一致を要求）。原文檔の sha256・bytes を再計算。行番号は原文を行分割して claim と突合。grep 件数・構造の記述も再計算。未取得 URL は WebFetch／HTTP で自分でも取れるか実射。リポジトリの檔は一切書き換えていない。",
+  "problems": [
+   {
+    "item_id": "R4-03 / quotes[1]（§4.4 の Note）",
+    "severity": "medium",
+    "problem": "引用が原文と一字違う。原文 originals/py-docs-windows-embeddable-2026-09-14.html は「a user’s system」（U+2019 右シングル引用符）だが、findings の text は ASCII アポストロフィ「a user's system」になっている。空白正規化だけでは一致せず、機械照合は FAIL（smart-quote を ASCII に落とすと一致）。語順・語句は完全一致。",
+    "correction": "text を原文どおりに直す（U+2019 を保持）：「The embedded distribution does not include the Microsoft C Runtime and it is the responsibility of the application installer to provide this. The runtime may have already been installed on a user’s system previously or automatically via Windows Update, and can be detected by finding ucrtbase.dll in the system directory.」"
+   },
+   {
+    "item_id": "R4-03 / quotes[2]（§4.4 vendoring の段）",
+    "severity": "medium",
+    "problem": "引用が原文と 2 字違う。原文は「(“vendoring”)」（U+201C／U+201D の曲がり引用符）だが、findings の text は ASCII の二重引用符「(\"vendoring\")」。機械照合は FAIL（曲がり引用符を ASCII に落とすと一致）。",
+    "correction": "text の当該箇所を「third-party packages should be treated as part of the application (“vendoring”) so that the developer can ensure compatibility with newer versions before providing updates to users.」に直す。"
+   },
+   {
+    "item_id": "R4-08 / quotes[4]（Apache-2.0 §4(c)(d)・LICENSE:3460-3476）",
+    "severity": "medium",
+    "problem": "最終行が原文に無い形に切り詰められている。引用の最終行は「          wherever such third-party notices normally appear.」だが、原文 :3475 は「          wherever such third-party notices normally appear. The contents」で、文の途中で行が続く。省略記号なしに行を途中で切って句点で閉じているため、当該行は原文にそのままは存在しない（16 行の完全一致は 0 件）。行範囲も不正確で、claim 3460-3476（17 行）に対し引用は 16 行、しかも :3476 は引用外の続き（「of the NOTICE file are for informational purposes only and」）。",
+    "correction": "where を「torch dist-info/LICENSE:3460-3475（:3475 は行途中まで）」とし、末尾を原文どおり「wherever such third-party notices normally appear. The contents」で閉じるか、切るなら「…normally appear.[…]」と省略を明示する。"
+   },
+   {
+    "item_id": "R4-05 / quotes[0]（dist-info/LICENSE:59-74）",
+    "severity": "medium",
+    "problem": "節番号（行範囲）違い。引用本文は 14 行で、原文の完全一致位置は :59-72。claim の「59-74」は 2 行過大（:73-74 は引用に含まれない DISCLAIMER 側）。本文自体は一字一句一致。",
+    "correction": "where を「dist-info/LICENSE:59-72（BSD-3-Clause 本文。binary redistribution 条は 2.）」に直す。"
+   },
+   {
+    "item_id": "R4-02 / quotes[0]（LICENSE.txt:283-322 Additional Conditions 全文）",
+    "severity": "medium",
+    "problem": "節番号（行範囲）違い。引用本文は 38 行で、原文の完全一致位置は :283-320。claim の「283-322」は 2 行過大。本文自体は一字一句一致（Microsoft Distributable Code の段の全文）。",
+    "correction": "where を「LICENSE.txt:283-320（Additional Conditions for this Windows binary build・全文）」に直す。"
+   },
+   {
+    "item_id": "R4-08 / notes（署名語の grep 0 件の主張）",
+    "severity": "medium",
+    "problem": "実測値が誤り。notes は「signature / Authenticode / code sign / digital signature を grep した結果は、torch dist-info/LICENSE・torchaudio dist-info/LICENSE・py312-embed LICENSE.txt のいずれでも該当語 0 件」と書くが、torch dist-info/LICENSE には signature が 1 件ある（:7077「signature of Ty Coon, 1 April 1990」）。これは LGPL の雛形文（third_party\\opentelemetry-cpp\\tools\\vcpkg\\ports\\ffnvcodec\\LICENSE.txt の連結本文 :6909 以降の中）で、Authenticode の意味ではないが、「0 件」という実測の申告としては誤り。Authenticode／code sign／digital signature は 3 檔とも本当に 0 件。",
+    "correction": "notes を「Authenticode／code sign／digital signature は 3 檔とも 0 件。signature は torch dist-info/LICENSE に 1 件あるが :7077『signature of Ty Coon, 1 April 1990』＝連結された LGPL 雛形文中の署名欄の例示であり、コード署名の意味ではない（torchaudio LICENSE・py312-embed LICENSE.txt は 0 件）」に直す。"
+   },
+   {
+    "item_id": "R4-05 / notes（LICENSE の構成＝『3 行ブロック』）",
+    "severity": "medium",
+    "problem": "構造の記述が誤り。notes は「90-665 行に `Name:` / `License:` / `Files:` の 3 行ブロックが 116 件」と書くが、実測では各ブロックは 4 行（Name: / License: / Files: / 先頭 2 空白の「  For details, see the files concatenated below: …」）＋空行 1 行で、ピッチは 5 行（:90 :95 :100 …:665）。R4-06 の quotes[0]（:660-663）が自ら 4 行で引用しており、notes と自己矛盾している。あわせて notes の「86-87 行の宣言」も誤りで、当該宣言は :87-88（同項目の quotes[2] の where と一致するのは :87-88 のほう）。",
+    "correction": "notes を「86 行の空行に続き :87-88 の宣言、:90-668 に `Name:` / `License:` / `Files:` / `  For details…` の 4 行ブロック＋空行（5 行ピッチ）が 116 件（先頭 :90、末尾 :665）」に直す。"
+   },
+   {
+    "item_id": "R4-05・R4-06 / 全体（GPL・LGPL 本文の連結を一言も書いていない）",
+    "severity": "medium",
+    "problem": "torch dist-info/LICENSE の連結本文に GPL／LGPL の全文が入っているのに、報告のどこにも出てこない（実測の行件数＝『GNU General Public License』21 行・『GNU Lesser』12 行・『Free Software Foundation』17 行・『copyleft』1 行）。該当箇所は :3751 以降（third_party\\kineto\\libkineto\\third_party\\dynolog\\third_party\\cpr\\test\\LICENSE＝:3746 の見出し）、:6911 以降（opentelemetry-cpp\\tools\\vcpkg\\ports\\ffnvcodec\\LICENSE.txt＝:6909）、:7964 以降（同 ports\\vulkan\\LICENSE.txt＝:7299）。116 件の `License:` 欄自体には GPL/LGPL の申告は 0 件で、これらは「MIT with exception」（:330 cpr\\test、:520 ffnvcodec）「Apache-2.0 with exception」（:570 vulkan）と宣言されている。v3 の自前配布の可否を見る席として、連結本文に copyleft 系の全文が在るという事実は出しておくべき。",
+    "correction": "R4-05 の notes に実測として追記：「連結本文には GPL／LGPL の全文が含まれる（GNU General Public License 21 行・GNU Lesser 12 行）。該当は :3746 cpr\\test（宣言は MIT with exception）・:6909 ffnvcodec（同 MIT with exception）・:7299 vulkan（同 Apache-2.0 with exception）の 3 見出しの配下。116 件の License 欄に GPL/LGPL の申告は 0 件。これらが torch/lib の DLL に実際に入っているかは PE の実測（別席）でないと決まらない」。open_points_for_commander に「宣言が『with exception』の 9 件（NVTX 3・fmt 2・cpr 2・ffnvcodec 1・vulkan 1）の中身を見るか」を足す。"
+   },
+   {
+    "item_id": "R4-01 / quotes[4]（LICENSE.txt:182-198 CNRI §2）",
+    "severity": "low",
+    "problem": "節番号（行範囲）が 1 行過大。引用本文は 16 行で、原文の完全一致位置は :182-197。本文は一字一句一致。",
+    "correction": "where を「zip 内 LICENSE.txt:182-197（CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1 §2）」に直す。"
+   },
+   {
+    "item_id": "R4-07 / quotes[0]（dist-info/licenses/LICENSE:1-15）",
+    "severity": "low",
+    "problem": "節番号（行範囲）が 1 行過大。引用本文は 14 行で、原文の完全一致位置は :1-14（:15 は空行、:16 以降が DISCLAIMER）。本文は一字一句一致（:3 の行末の 1 個の半角空白まで一致）。",
+    "correction": "where を「dist-info/licenses/LICENSE:1-14（全文 25 行の前半＝BSD 2-Clause の再頒布条項）」に直す。"
+   },
+   {
+    "item_id": "R4-02 / notes（LICENSE.txt の節の行番号一覧）",
+    "severity": "low",
+    "problem": "一覧の基準が混在し、CNRI だけ見出し行を指していない。実測＝A. HISTORY :1／B. TERMS :59／PSF v2 見出し :73（区切り線 :74）／BeOpen 見出し :123（区切り線 :124）／CNRI 見出し :173（区切り線 :174）／CWI 見出し :244（区切り線 :245）／0BSD 見出し :267（区切り線 :268）／Additional Conditions :283／bzip2 :326／libffi :366／無名 Apache-2.0 :389／Tcl 系 :566／Tix :648。notes の「CNRI(:176)」は見出しでも区切り線でもなく §1 の本文初行を指す。区切り線 8 本（:74 :124 :245 :268 :284 :324 :364 :691）は実測と完全一致。",
+    "correction": "notes の「CNRI(:176)」を「CNRI(:173)」に直す（他の番号はそのままでよい）。"
+   },
+   {
+    "item_id": "R4-02 / notes（grep -ci Tcl の件数）",
+    "severity": "low",
+    "problem": "実測値が 1 件ずれている。notes は「Tcl 2」と書くが、大小文字無視で tcl を含む行は 3 件（:693「…the Tcl/Tk software copyrighted by」／:695「…The original license terms of the Tcl/Tk software」／:696「…included in the file docs/license.tcltk.」）。他の件数（bzip2 2・libffi 1・Tix 1・apache 2、および openssl／sqlite／expat／lzma／xz／zlib／mpdecimal／libmpdec がすべて 0）は実測と完全一致。",
+    "correction": "notes の「Tcl 2」を「Tcl 3（:693 :695 :696）」に直す。"
+   },
+   {
+    "item_id": "R4-01 / notes（LICENSE.txt の行数）",
+    "severity": "low",
+    "problem": "「36,874 B・703 行」の 703 は、末尾の改行の後ろの空文字列を 1 行と数えた値。行として実在するのは 702 行（wc -l も 702）。同じ数え方の癖は R4-05 notes の「9,105 行」にも出るが、こちらは実測 9,105 行で正しい（末尾改行後の空を除く）。",
+    "correction": "「36,874 B・702 行」に直す（または「702 行＋末尾改行」と明記）。"
+   },
+   {
+    "item_id": "R4-05 / notes（連結本文の開始行）",
+    "severity": "low",
+    "problem": "「666-9105 行に各 LICENSE 檔の本文が…連結」とあるが、:666-669 はまだ最後の Name ブロック（:665 Name: …tensorpipe\\third_party\\pybind11／:666 License: BSD-3-Clause／:667 Files:／:668 For details…／:669 空行）で、連結本文の最初の見出しは :670（…third_party\\FP16\\LICENSE）。最後の見出しは :9075。見出し 116 件＝Name 行 116 件の 1 対 1 は実測どおり。",
+    "correction": "「:670-9105 に 116 個の見出し（ビルドマシンの絶対パス）付きで連結（先頭 :670・末尾 :9075）」に直す。"
+   },
+   {
+    "item_id": "R4-03 / sha256・bytes・原文の質",
+    "severity": "low",
+    "problem": "original_file は HTML 原本と節のテキスト化の 2 檔を挙げるのに、sha256／bytes 欄は HTML の分（4440460d…／116,897 B）しか記録していない。テキスト化の分は originals/py-docs-embeddable-section-2026-09-14.txt＝1,711 B・sha256 f8b6bc54289d40b3cf70bcc92a2a3ced8bcff3b2855e383e362977d6ba7e5dcc（本席で再計算）。さらにこのテキスト化は先頭が語の途中（「ython」＝python の途中）から始まっており、切り出しが 1 文字ずれている。HTML 原本の sha256・bytes は宣言どおりで一致。",
+    "correction": "sha256 欄を「HTML=4440460dafe99797ddea81404d859d0b6a3354c1cb96f81d0a459b36c3c4e132（116,897 B）／section.txt=f8b6bc54289d40b3cf70bcc92a2a3ced8bcff3b2855e383e362977d6ba7e5dcc（1,711 B）」と 2 本立てにし、section.txt は切り出しを 1 文字戻して取り直す（引用の照合は HTML 原本で足りる）。"
+   },
+   {
+    "item_id": "R4-04 / original_file（展開済み _pth が保存されていない）",
+    "severity": "low",
+    "problem": "original_file が「（原文の保存は不要＝リポジトリ内の檔と展開済みの実行系）」となっており、5 引用のうち 4 件は追跡可能（assemble-runtime.ps1 と python312._pth.template はリポジトリ管理下で :352-356・:377-382 とも逐語一致を確認、zip 内の元の _pth は originals/py312-embed-original-python312._pth.txt＝80 B・sha256 2820f241… に保存済みで zip 実物と同一バイト）だが、quotes[4] の「展開済み実行系の python312._pth」だけは originals/ に写しが無い。本席が %LOCALAPPDATA% の実物を読んで 378 B・sha256 a898b14187972ea6da5105a0d22569b8fe9623e80420acc07d4e24e6ae04cba7・内容一致を確認したが、この檔は再インストールで消えうる。",
+    "correction": "展開済みの python312._pth を originals/ に写して sha256 a898b141…（378 B）を記録する。あわせて R4-04 の sha256 欄に「zip 内 _pth=2820f241…（80 B）／展開後 _pth=a898b141…（378 B）」を書く。"
+   },
+   {
+    "item_id": "R4-05 / bytes 欄",
+    "severity": "low",
+    "problem": "covers_files が 6 檔（cu130／cu126 の LICENSE・NOTICE・METADATA）なのに bytes 欄は 547174（LICENSE 1 檔分）だけ。sha256 欄は 6 檔すべてを列挙しており、粒度が合っていない。なお sha256 欄の 6 件はすべて本席の再計算と一致（LICENSE cu130=cu126=114a3beb…／NOTICE cu130=cu126=1c3dec6c…／METADATA cu130=b019104f…・cu126=5212dc7e…）で、METADATA の差が :3 の Version 行 1 行だけという主張も実測で確認。",
+    "correction": "bytes 欄を「LICENSE=547,174 / NOTICE=24,088 / METADATA=29,899（cu130・cu126 とも同サイズ）」に直す。"
+   }
+  ],
+  "missing_clauses": [
+   "torch dist-info/LICENSE の連結本文に GPL／LGPL の全文が入っている事実（GNU General Public License 21 行・GNU Lesser 12 行・Free Software Foundation 17 行・copyleft 1 行）。該当は :3746 cpr\\test・:6909 ffnvcodec・:7299 vulkan の 3 見出しの配下。報告のどこにも出てこない。v3 の自前配布の可否に直結する類の事実。",
+   "116 件の `License:` 欄の全数内訳。実測＝MIT 37／BSD-3-Clause 37／Apache-2.0 21／BSD-2-Clause 7／MIT with exception 5／Apache-2.0 with exception 4／BSL-1.0 2／Permissive (free to use) 1／Public Domain for core 1／Public Domain 1。報告は見出し名の散文列挙だけで件数を出しておらず、卓が「全部 permissive か」を自分で確かめられない。",
+   "`with exception` という宣言語が 9 件あること（:105 :110 :115 NVTX／:270 fmt／:330 cpr\\test／:335／:390 kineto\\libkineto\\third_party\\fmt／:520 ffnvcodec／:570 vulkan）と、それが「その檔に別の許諾文も混ざっている」印であること。報告は NVTX と fmt を通りすがりに挙げるだけで、語の意味にも 9 件という数にも触れていない。",
+   "`Permissive (free to use)`（:530 hungarian）・`Public Domain for core`（:545 pdcurses）・`Public Domain`（:560 sigslot）という、SPDX 識別子ですらない宣言が 3 件あること。自前配布の表示義務を組むときに卓の判断が要る。",
+   "R4-03 の「§4.4」という節番号が版に依存すること。台帳の pin に合わせた /3.12/ 版では §4.4 だが、BRIEF が指す /3/ 版（本席が本日 WebFetch で取得＝Python 3.14.7）では同じ節が §4.2 に繰り上がっている。節番号で引くなら版を併記しないと後から追えない。",
+   "取得時の HTTP メタデータ（応答ヘッダ・Date・ETag）が originals/ に残っていない。docs.python.org のように改版される頁は、本文だけ保存しても「いつ時点の版か」を原本側から立証できない。"
+  ],
+  "overall": "【結論】引用の捏造は無い。36 引用すべて、記録された原文檔（または R4-04 のリポジトリ／実行系の実物）の中に実在した。high は 0 件。ただし「一字一句」の基準では 3 件が原文と違い（R4-03 の 2 件は smart quote を ASCII に落としている、R4-08 quotes[4] は原文の行を途中で切って句点で閉じている＝当該行は原文に無い）、行範囲の誤りが 5 件（R4-02 Q1 は 2 行過大、R4-05 Q1 は 2 行過大、R4-01 Q5 と R4-07 Q1 は 1 行過大、R4-08 Q5 は 1 行過大かつ末尾が行途中）、notes の実測値の誤りが 4 件（署名語 0 件の主張・3 行ブロックの主張・86-87 行の主張・Tcl 2 件の主張）。\n\n【sha256／bytes の再計算】宣言された 11 件の sha256 はすべて一致した。py312-embed LICENSE.txt e502c6b8…（36,874 B）、torch LICENSE 114a3beb…（547,174 B・cu130 と cu126 でバイト同一）、torch NOTICE 1c3dec6c…（24,088 B・同）、torch METADATA cu130 b019104f…／cu126 5212dc7e…（各 29,899 B・差は :3 の Version 行のみ＝本席で行単位 diff を取って確認）、torchaudio LICENSE 32638e17…（1,363 B）、torchaudio METADATA f02bee5c…（7,052 B）、埋め込み zip 4acbed6d…（11,133,606 B・35 エントリ）、zip 内の元の _pth 2820f241…（80 B）。さらに zip の実物を開いて LICENSE.txt と python312._pth が originals/ の写しとバイト同一であることを確認した＝原文の来歴は繋がっている。R4-04 の展開済み実行系（36 檔・.ledger.json 98,546 B）も実測どおり。\n\n【原文檔が保存されていない項目】R4-04 の quotes[4]（展開済み実行系の python312._pth・378 B・sha256 a898b141…）だけ originals/ に写しが無い。他は保存済みかリポジトリ管理下。R4-03 は 2 檔挙げながら sha256 は 1 檔分しか記録していない。\n\n【未取得 URL の実射】⑴ BRIEF が指す https://docs.python.org/3/using/windows.html を WebFetch で取得できた（HTTP 200）。embeddable package の 2 文（\"The embedded distribution is a ZIP file…\" と \"Third-party packages should be installed…\"）も Finding modules の ._pth の助言も /3/ 版に在り、文言は /3.12/ 版と同じ。ただし節番号は §4.4 ではなく §4.2（今の /3/ は Python 3.14.7）。ucrtbase.dll の Note は要約器が拾えず、在否は本席では未確定（不在の証拠ではない）。⑵ torchaudio 2.10.0+cu126 の wheel は落とせた＝HTTP 200・1,800,247 B・sha256 65bc0759c3154ab49282a91b5cec2cd3d9cd2335b19a213cfed2e00fbee9036a。dist-info は 5 エントリで cu130 と同形、licenses/LICENSE は cu130 とバイト同一（32638e17…・1,363 B）、METADATA は :3 の Version 行 1 行だけの差（284b4343…・7,052 B）。ネイティブは .pyd 4 件のみで独立 DLL 無し（うち libtorchaudio.pyd 1,865,216 B・libctc_prefix_decoder.pyd 4,572,672 B は cu130 と大きさが違う）。not_done の 3 番は本席で塞がった。\n\n【最も重いのは引用の瑕疵ではなく欠落】torch dist-info/LICENSE の連結本文に GPL／LGPL の全文が入っている（:3746 cpr\\test、:6909 ffnvcodec、:7299 vulkan の配下）のに、報告は一言も触れていない。116 件の申告欄自体に GPL/LGPL は 0 件で、該当 3 件はいずれも「with exception」と宣言されている＝申告だけ見ていると見落とす形になっている。自前配布の可否を見る席の出力としては、ここを事実として出しておくべきだった。\n\n【本席が触っていないもの】リポジトリの檔は読んだだけで一切書き換えていない（assemble-runtime.ps1・python312._pth.template とも読取のみ）。作業用の照合スクリプトと cu126 の wheel は scratchpad/rights-v3/work/ に置いた。findings/R4-python-torch.json 自体も書き換えていない＝訂正は correction 欄の提案までとした。"
+ },
+ "R1-nvidia:overclaim": {
+  "seat": "V-R1-nvidia（検証席・R1-nvidia.json の検証）",
+  "lens": "過大主張と欠落（BRIEF.md 鉄則 1＝推測で断定しない・法解釈は卓へ／鉄則 2 逐語＋行番号／鉄則 4 実測は実測と書く）を基準に、findings/R1-nvidia.json の items 7 件を原文と突き合わせた。原文は originals/cuda-eula-2026-09-14.txt（1,103 行）・originals/cudnn-eula-2026-09-14.txt（210 行）・originals/zlib-license-2026-09-14.txt（33 行）を通読。台帳は ledger/runtime-cu130.json・runtime-cu126.json、実物一覧は scratchpad の torch-cu130-lib-and-licenses.txt・torch-cu126-lib-and-licenses.txt・torch-cu130/126-entries.txt（各 11,756 エントリ）を再走査した。なお R1-01 の「2026-09-04 との語句差 0 件」は本席でも normdiff.py を独立に走らせて再現した（非一致 opcode 5 個＝v13.3→v13.4／Last updated 位置と日付／cookie 文言のみ。許諾条項の差は 0）＝この主張は妥当。",
+  "problems": [
+   {
+    "item_id": "R1-01",
+    "severity": "high",
+    "problem": "nvJitLink_130_0.dll（88,218,656 B）・nvJitLink_120_0.dll（39,236,608 B）を「Attachment A に名がある族」に入れ、redistribution_grant=conditional を与えている。しかし Attachment A の Windows 欄は逐語で「Component NVIDIA JIT Linking Library Windows libnvJitLink.dll, libnvJitLink.lib」（cuda:263-264）＝**lib 接頭辞つきの名**であり、wheel が積むのは接頭辞の無い nvJitLink_130_0.dll。柱書（cuda:152）が救うのは「certain variations of these files that have version number or architecture specific information embedded in the file name」だけで、lib 接頭辞の脱落は版番号でも architecture でもない。本席の実測＝`grep -n nvJitLink cuda-eula-2026-09-14.txt` は :264 と :266 の 2 行のみ、いずれも libnvJitLink。しかも R1-03 は「Attachment A に名が無い」組を nvperf_host／nvperf_target／nvrtc の .alt／cusolverMg の 4 語に確定し、nvJitLink には一言も触れていない（conditions 第 3 項「cufftw と nvToolsExt と nvrtc-builtins は Attachment A に明記があり、この項ではない」）。原文の文言を超えて「名がある」と断定している。",
+    "correction": "R1-01 の covers_files から nvJitLink_130_0.dll／nvJitLink_120_0.dll を外して R1-03（not-found 側）へ移すか、R1-01 に残すなら次の観測だけを書く：「Attachment A の Windows 欄の表記は『libnvJitLink.dll, libnvJitLink.lib』（cuda:263-264）。wheel の実名は nvJitLink_130_0.dll／nvJitLink_120_0.dll で lib 接頭辞が無い（実測）。柱書（cuda:152）の『version number or architecture specific information embedded in the file name』に接頭辞の脱落が当たるかは判断しない」。そのうえで open_points_for_commander に「libnvJitLink.dll と nvJitLink_130_0.dll の名の差が柱書で救われるかの読み」を追加し、summary ⑶ の「無いのは…4 語」を「4 語＋nvJitLink の接頭辞差」に改める。"
+   },
+   {
+    "item_id": "R1-07",
+    "severity": "high",
+    "problem": "covers_files に「R1-02 の cuDNN DLL 全件」を入れながら、conditions ②で「§1.1.6 第 2 段は、OSI 承認のオープンソースライセンスで公開するアプリの開発とテストに SDK を使ってよいと明文で許している」と書き、open_points ②でも同条を cuDNN 込みの論点として立てている。だが本席の実測では **cuDNN SLA に『Open Source Initiative』は 0 件**（`grep -c \"Open Source Initiative\" cudnn-eula-2026-09-14.txt` → 0／CUDA 側は 1）。cuDNN SLA の「Components Under Other Licenses」（cudnn:129）は第 1 段だけで終わり、次行は「Reservation of Rights」（cudnn:130-131）。CUDA EULA にしかない救いの文を cuDNN の DLL にも及ぶかのように並べている＝原文の文言を超えた断定。",
+    "correction": "conditions ②を「§1.1.6 第 2 段（cuda:94）『Subject to the other terms of this Agreement, you may use the SDK to develop and test applications released under Open Source Initiative (OSI) approved open source software licenses.』は **CUDA EULA にのみ在る**。cuDNN SLA には対応する文が無い（『Open Source Initiative』0 件・実測）。cuDNN 側の Components Under Other Licenses は cudnn:129 の第 1 段のみ」と書き分ける。open_points にも「CUDA には在り cuDNN には無いこの非対称を、同一配布物にどう反映するか」を 1 点として立てる。"
+   },
+   {
+    "item_id": "R1-05",
+    "severity": "high",
+    "problem": "redistribution_grant を「explicit-yes」、modification_or_resigning を「allowed」と断定している。しかし同じ項の open_points 第 1 項が「この DLL が NVIDIA 配布物か zlib 公式 build かの最終的な同定」を未了と認めており、not_done にも同じ item が挙がっている。さらに保存した原文は zlib **1.3.2・February 17th, 2026**（zlib:4「version 1.3.2, February 17th, 2026」）なのに、当該 DLL の版資源は FileVersion 1.2.3.0・LegalCopyright「(C) 1995-2003 Jean-loup Gailly & Mark Adler」＝**許諾文の版と実物の版が一致していない**（この不一致は notes にも書かれていない）。同定未了かつ版不一致のまま「explicit-yes／allowed」と書くと、卓には「この DLL は配ってよい・署名し直してよい」と読める。",
+    "correction": "redistribution_grant を『unknown』、modification_or_resigning.status を『unknown』に下げ、notes に分けて書く：⑴「zlib License 本文（originals/zlib-license-2026-09-14.txt:9-11『Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:』）そのものは explicit-yes」⑵「ただし torch/lib/zlibwapi.dll（89,088 B・cu130/cu126 で sha256 一致）が当該許諾の下にあるかは未同定」⑶「保存した本文は zlib 1.3.2（2026-02-17）で、DLL の版資源は 1.2.3.0・(C) 1995-2003＝版が一致しない。1.2.3 当時の本文は取得していない」。当てはめは open_points と not_done に残す。"
+   },
+   {
+    "item_id": "R1-01",
+    "severity": "medium",
+    "problem": "modification_or_resigning.status を『forbidden』と断言している（R1-02 も同じ）。一方 R1-06 は**同一の DLL 群**について status『not-stated』としている。同じ対象に二つの相反する結論が台帳に並ぶ。加えて原文の文言は『**Except as expressly provided in this Agreement**, you may not copy, sell, rent, sublicense, transfer, distribute, modify, or create derivative works…』（cuda:100）で、但書つきの禁止。無条件の『forbidden』は文言より強い。",
+    "correction": "3 項で表記を揃える。R1-01／R1-02 は『forbidden（ただし原文は「Except as expressly provided in this Agreement」の但書つき。Attachment A に挙がる物の object code 形での配布は §1.1.1 で明文許諾されている）』と但書を status の隣に明記し、**Authenticode 署名の付け直しに限っては R1-06 と同じ『not-stated』**であることを quote 欄に 1 行で書く。"
+   },
+   {
+    "item_id": "R1-04",
+    "severity": "medium",
+    "problem": "conditions の最終項が「＝22 の要点 2 の結論（PyTorch はライセンス面を肩代わりしていない＝**再配布側が CUDA EULA と cuDNN SLA を自分で添える**）は torch 2.10.0+cu130／+cu126 でもそのまま成り立つ（**実測**）」。実測が支えるのは「wheel に NVIDIA の EULA／SLA が入っていない」という事実までで、「だから再配布側が添える」は義務の断定＝法解釈。鉄則 4 の「実測は実測と書く」に反して、義務までを実測の札の内側に入れている。",
+    "correction": "conditions は「torch 2.10.0+cu130／+cu126 の wheel（各 11,756 エントリ）に NVIDIA の CUDA EULA・cuDNN SLA は 1 檔も無い。dist-info は 7 エントリ、License-File は LICENSE と NOTICE の 2 件のみ、NOTICE 内の NVIDIA/CUDA/cuDNN/EULA はいずれも 0 件（実測）」までで止める。「再配布側が自分で添えるほかない」は open_points_for_commander へ移す（summary ⑷・⑹ の同じ言い回しも同様）。"
+   },
+   {
+    "item_id": "R1-07",
+    "severity": "medium",
+    "problem": "conditions ③「無償で配ること自体を禁じる条文は CUDA EULA・cuDNN SLA のどちらにも無い（『no charge』の語は各 1 件で、いずれも §1.2 第 5 条／2.5 の列挙の中）」。1 語の grep から文書全体の不存在を断定している。実測でも `grep -in \"no.charge\"` は cuda:106（列挙内）のほか cuda:415・cuda:421（Attachment B の Apache-2.0 本文の「no-charge」）に当たり、件数自体も「1 件」では足りない。加えて §1.2 第 2 条（cuda:100）には『you may not **sell, rent**…』があり、対価まわりの条文が皆無というわけではない。",
+    "correction": "「『no charge』の語は §1.2 第 5 条（cuda:106）と cuDNN 2.5（cudnn:138）の列挙の中に各 1 件。ほかに Attachment B の Apache-2.0 本文中に『no-charge』が 2 件（cuda:415・cuda:421）＝実測」という件数と位置の記載だけにし、「無償配布を禁じる条文は無い」という全体判断は削って open_points_for_commander に回す。"
+   },
+   {
+    "item_id": "R1-07",
+    "severity": "medium",
+    "problem": "conditions ①「§1.2 第 5 条が**禁じているのは**『SDK を open source software license の subject にしてしまうような使い方』であり、条文の列挙（源コード開示・派生物作成の許諾・無償再配布可）は、**SDK 自体にその条件が及ぶ場合の例として書かれている**（『that the SDK be: …』の構文）」。条の射程を確定する読み＝法解釈であり、鉄則 1 が卓に留保した種類の記述。",
+    "correction": "観測だけに戻す：「§1.2 第 5 条（cuda:103-106）の列挙は『licenses that require … that **the SDK** be: Disclosed or distributed in source code form; Licensed for the purpose of making derivative works; or Redistributable at no charge.』＝列挙の主語は SDK（実測・逐語）」。そのうえで「この条の射程が、同一配布物に OSS が同居する形にまで及ぶかの読み」を open_points に立てる（既に近い 1 点があるので統合してよい）。"
+   },
+   {
+    "item_id": "R1-07",
+    "severity": "medium",
+    "problem": "open_points ① に「MIT は源コード開示も無償再配布も**強制しない**（MIT 本文に該当条項は無い）」と書いているが、MIT ライセンス本文は本席の originals/ に保存されておらず（index にも無い）、行番号も sha256 も無い。鉄則 2（逐語＋行番号）・鉄則 3（原文は必ず保存）に反する断定。",
+    "correction": "MIT 本文を originals/ に保存して sha256・バイト数・取得時刻・URL を記し、逐語と行番号で引くか、それをしないなら「本席は MIT 本文を取得していない。MIT の条項内容の当てはめは卓へ」と書き換える。"
+   },
+   {
+    "item_id": "R1-02",
+    "severity": "medium",
+    "problem": "conditions ④「Limitations 2.1〜2.5 は CUDA EULA §1.2 と**同趣旨**（notices 除去禁止・modify 禁止・open source 化禁止・no charge 条項含む）」。実際には条文に差がある。CUDA §1.2 第 2 条（cuda:100）は末尾に『For clarity, you may not distribute or sublicense the SDK as a stand-alone product.』を持つが、cuDNN 2.2（cudnn:135）にはこの 1 文が無い（R1-06 自身が『cudnn: stand-alone 0』と実測しており、R1-02 と食い違う）。「同趣旨」の一語が差を消している。",
+    "correction": "条ごとに一致／不一致を書く：「2.1＝CUDA §1.2 第 1 条と同文／2.2＝CUDA §1.2 第 2 条の第 1 文と同文だが、**CUDA 側にある『For clarity, you may not distribute or sublicense the SDK as a stand-alone product.』の 1 文が cuDNN 2.2 には無い**（『stand-alone』cuDNN 0 件・実測）／2.3・2.4 同文／2.5＝CUDA §1.2 第 5 条を 1 文にまとめた形」。"
+   },
+   {
+    "item_id": "R1-01",
+    "severity": "medium",
+    "problem": "§1.1.2 第 4 条『Unless a developer tool is identified in this Agreement as distributable, it is delivered for your **internal use only**.』（cuda:79）は quotes のブロックに含まれているのに、conditions ①〜⑩ から丸ごと落ちている。この条は R1-03 の nvperf_host.dll（Nsight／プロファイラ側の host ライブラリ）と cupti64_*.dll（CUDA Profiling Tools Interface）に直接掛かる条で、Attachment A に名が無い nvperf_host にとっては「再配布の根拠が無い」以上に「internal use only と明記された物に当たるか」という別の論点を生む。R1-03 の open_points にもこの条への言及が無い。",
+    "correction": "R1-01 の conditions に「⑪本 EULA が distributable と identify していない developer tool は internal use only（§1.1.2 第 4 条・cuda:79）」を追加し、R1-03 の open_points に「nvperf_host.dll が §1.1.2 第 4 条の『developer tool』に当たるか。当たる場合、Attachment A に名が無いことと合わせて『internal use only』の物を配布物に入れる形になる」を追加する。cupti は Attachment A（cuda:293-294）に名があるので identified 側である旨も 1 行で書く。"
+   },
+   {
+    "item_id": "R1-01",
+    "severity": "low",
+    "problem": "conditions ②に「＝汎用ライブラリとして置かない」という設計則の言い換えが足されている。原文は『The distributable portions of the SDK shall only be accessed by your application.』（cuda:76）だけで、「汎用ライブラリとして置かない」という形の要求は書かれていない（配置の話か参照の話かも文面からは決まらない）。",
+    "correction": "「②distributable portions は自分のアプリからしかアクセスされないこと（§1.1.2 第 2 条・cuda:76 逐語）」までにし、「汎用ライブラリとして置かない」は削除。運用の形の読みは既存の open_points 第 1 項（GitHub Release から落として専用フォルダに展開する形が本条を満たすか）に寄せる。"
+   },
+   {
+    "item_id": "R1-01",
+    "severity": "low",
+    "problem": "§1.6 Termination の引用が末尾 2 文を落としている。引用は『… Your prior distributions in accordance with this Agreement are not affected by the termination of this Agreement.』で終わっているが、原文 cuda:126 はその後に『Upon written request, you will certify in writing that you have complied with your commitments under this section. Upon any termination of this Agreement all provisions survive except for the license grant provisions.』が続く。行番号も『:119-124』とされているが、引用した本文が載るのは :126 で、範囲が本文に届いていない（:125 が (iii)、:126 が「Upon any termination…」）。R1-02 の cuDNN 6.4 の引用には同じ 2 文が入っており、同じ条の扱いが非対称。",
+    "correction": "where を『§1.6 Termination / cuda:119-126』に直し、text の末尾に『Upon written request, you will certify in writing that you have complied with your commitments under this section. Upon any termination of this Agreement all provisions survive except for the license grant provisions.』を足す。"
+   },
+   {
+    "item_id": "R1-01",
+    "severity": "low",
+    "problem": "notes の実測「『signed』『signature』は 2 箇所（§1.7 の契約書面の署名と、Attachment B 内の第三者ソースの affidavit）」が実測値と合わない。本席の実測＝`grep -oiE \"\\bsigned\\b\"` は **3 件**（cuda:137 の『signed by representatives of both parties』、cuda:1024・cuda:1025 の SQLite の『signed affidavits』2 件）、部分一致の `grep -oi signed` は **5 件**（cuda:139・cuda:146 の『designed』を拾う）、`grep -oi signature` は **0 件**。結論（コード署名を定める条文ではない）は変わらないが、鉄則 4 の実測値が不正確。",
+    "correction": "notes を「『signed』は語単位で 3 件（cuda:137 契約書面への署名／cuda:1024・1025 SQLite の affidavit）、部分一致では 5 件（cuda:139・146 の designed を含む）。『signature』0 件・『authenticode』0 件・『certificat』0 件（実測）」に直す。"
+   },
+   {
+    "item_id": "R1-02",
+    "severity": "low",
+    "problem": "component 名が「cuDNN 実行時 DLL **10 個**」だが、covers_files は 16 件（cu130 8 件＋cu126 8 件）。実物一覧（torch-cu130/126-lib-and-licenses.txt）でも各版 8 件で、10 という数はどこにも対応しない。",
+    "correction": "「cuDNN 実行時 DLL 各版 8 件（cu130 8＋cu126 8＝計 16 件）」に直す。"
+   },
+   {
+    "item_id": "R1-05",
+    "severity": "low",
+    "problem": "quotes の where が『zlib License 本文 / originals/zlib-license-2026-09-14.txt:3-22』だが、引用文は :21（『*/』）で終わっており、:22 は『Click here to return to the zlib Home Page .』＝許諾文ではない頁の飾り。範囲が 1 行過大。",
+    "correction": "where を『… :3-21』に直す。"
+   },
+   {
+    "item_id": "R1-04",
+    "severity": "low",
+    "problem": "torch の dist-info/LICENSE から『The files located in the `python/CuTeDSL` directory are licensed under the NVIDIA End User License Agreement (EULA).』（LICENSE:1903-1908）を引きながら、その `python/CuTeDSL` が wheel に実際に入るかを検分していない。NVIDIA EULA が掛かると名指しされた唯一の木なので、入る／入らないは v3 の配布物の権利に直結する。",
+    "correction": "本席の実測を足す：「wheel 全 11,756 エントリに `python/CuTeDSL` は 0 件。名に cutedsl を含むのは torch 自身の `torch/_inductor/codegen/cutedsl/` 9 件のみ（cu130・cu126 とも同数）。cudnn_frontend 0 件・DCGM 0 件、cutlass は torch の `_inductor/codegen/cuda/cutlass_*` 16 件（いずれも .py）＝NVIDIA EULA が名指しする木は wheel に入らない（実測）」。"
+   }
+  ],
+  "missing_clauses": [
+   "【再配布・使用範囲／CUDA EULA・どの項も未引用】§2.1 License Scope（cuda:142）＝「The SDK is licensed for you to develop applications only for use in systems with NVIDIA GPUs.」※R1-02 は cuDNN 側の同文（§4.1・cudnn:170）を引いているのに、CUDA 側の同条は 7 項のどこにも無い。",
+   "【再配布／CUDA EULA】§1.1.2 第 4 条（cuda:79）＝「Unless a developer tool is identified in this Agreement as distributable, it is delivered for your internal use only.」※R1-01 の quotes ブロック内には在るが conditions から落ち、Attachment A に名の無い nvperf_host.dll を扱う R1-03 でも一度も参照されていない。",
+   "【再配布／CUDA EULA・未引用】§1.1.7 Reservation of Rights（cuda:96）＝「NVIDIA reserves all rights, title, and interest in and to the SDK, not expressly granted to you under this Agreement.」",
+   "【再配布・譲渡／CUDA EULA・未引用】§1.7 General 第 1 段（cuda:128）＝「If you wish to assign this Agreement or your rights and obligations, including by merger, consolidation, dissolution or operation of law, contact NVIDIA to ask for permission. Any attempted assignment not approved by NVIDIA in writing shall be void and of no effect.」",
+   "【告知・監査／CUDA EULA・未引用】§1.7 General（cuda:129）＝「You agree to cooperate with NVIDIA and provide reasonably requested information to verify your compliance with this Agreement.」",
+   "【告知／CUDA EULA・未引用】§1.1.5 Updates（cuda:91）＝「You agree that the form and content of the SDK that NVIDIA provides may change without prior notice to you.」",
+   "【再配布・利用者／CUDA EULA・未引用】§1.1.3 Authorized Users（cuda:83-85）＝「You may allow employees and contractors of your entity or of your subsidiary(ies) to access and use the SDK from your secure network to perform work on your behalf. … You are responsible for the compliance with the terms of this Agreement by your authorized users.」",
+   "【改変・所有／CUDA EULA・未引用】§1.3 Ownership 第 1 項（cuda:111）＝「NVIDIA or its licensors hold all rights, title and interest in and to the SDK and its modifications and derivative works, including their respective intellectual property rights … these licensors are intended third party beneficiaries that may enforce this Agreement with respect to their intellectual property rights.」",
+   "【料金／CUDA EULA・未引用】§1.3 Ownership 第 3 項（cuda:113）＝「For any feedback that you voluntarily provide, you hereby grant NVIDIA and its affiliates a perpetual, non-exclusive, worldwide, irrevocable license to use, reproduce, modify, license, sublicense … and distribute … it without the payment of any royalties or fees to you.」",
+   "【終了／CUDA EULA・引用が途中で切れている】§1.6 Termination 末尾（cuda:126）＝「Upon written request, you will certify in writing that you have complied with your commitments under this section. Upon any termination of this Agreement all provisions survive except for the license grant provisions.」※R1-01 の §1.6 引用はこの 2 文を落としている（cuDNN 6.4 の引用には入っている）。",
+   "【輸出・政府使用／CUDA EULA・未引用】§1.7 General（cuda:134）＝「The SDK has been developed entirely at private expense and is “commercial items” … Use, duplication or disclosure by the U.S. Government or a U.S. Government subcontractor is subject to the restrictions in this Agreement pursuant to DFARS 227.7202-3(a) or as set forth in subparagraphs (c)(1) and (2) of the Commercial Computer Software - Restricted Rights clause at FAR 52.227-19, as applicable.」",
+   "【料金・第三者許諾／CUDA EULA・未引用。本アプリが音声を出す物である以上とくに効く】§2.4 Audio and Video Encoders and Decoders（cuda:148）＝「You acknowledge and agree that it is your sole responsibility to obtain any additional third-party licenses required to make, have made, use, have used, sell, import, and offer for sale your products or services that include or incorporate any third-party software and content relating to audio and/or video encoders and decoders from, including but not limited to, Microsoft, Thomson, Fraunhofer IIS, Sisvel S.p.A., MPEG-LA, and Coding Technologies. NVIDIA does not grant to you under this Agreement any necessary patent or other rights with respect to any audio and/or video encoders and decoders.」",
+   "【再配布／CUDA EULA・未引用】§2.6 Attachment A 末尾（cuda:317-318）＝「In addition to the rights above, for parties that are developing software intended solely for use on Jetson development kits or Jetson modules, and running Linux for Tegra software, the following shall apply: The SDK may be distributed in its entirety, as provided by NVIDIA, and without separation of its components …」※「丸ごと配ってよい」のはこの場合だけだと読める唯一の条で、v3 の「実行系一式を置いて配る」形と対になる。",
+   "【オープンソース化・告知／CUDA EULA・未引用】§2.7 Attachment B 柱書（cuda:321）＝「The following third party components included in the SOFTWARE are licensed to Licensee pursuant to the following terms and conditions:」および GDB の条（cuda:322-326）＝「Licensee’s use of the GDB third party component is subject to the terms and conditions of GNU GPL v3: This product includes copyrighted third-party software licensed under the terms of the GNU General Public License v3 (\"GPL v3\") …」",
+   "【オープンソース化・源コード提供の申し出／CUDA EULA・未引用】Attachment B（cuda:328）＝「Consistent with these licensing requirements, the software listed below is provided under the terms of the specified open source software licenses. To obtain source code for software provided under licenses that require redistribution of source code, including the GNU General Public License (GPL) and GNU Lesser General Public License (LGPL), contact oss-requests @ nvidia . com . This offer is valid for a period of three (3) years from the date of the distribution of this product by NVIDIA CORPORATION.」※R1-07 が LGPL 同居（libsndfile・libsoxr）を論点に挙げているのに、EULA 側の源コード提供条項が 1 度も引かれていない。",
+   "【料金／CUDA EULA・未引用】Attachment B（cuda:331）＝「Licensee represents and warrants that any and all third party licensing and/or royalty payment obligations in connection with Licensee’s use of the H.264 video codecs are solely the responsibility of Licensee.」",
+   "【告知／CUDA EULA・未引用の告知群】Attachment B の各条＝Thrust/Apache-2.0 と Boost の告知（cuda:332-333）、LLVM（cuda:357「Licensee’s use of the LLVM third party component is subject to the following terms and conditions:」＝nvrtc に関わる）、PCRE（cuda:589）、lz4（cuda:894）、Visual Studio Setup Configuration Samples（cuda:977）、linmath.h（cuda:995）、Zstandard（cuda:997「Components of the driver and compiler used for binary management, including nvFatBin, nvcc, and cuobjdump, use the Zstandard library which is subject to the following license:」）、SQLite（cuda:1022）、SLEEF・SoftFloat（cuda:1035 以降）。※配布物に添える通知の枚数を決める材料で、items はこの層に一切触れていない。",
+   "【オープンソース化の非対称／cuDNN SLA・未引用】Components Under Other Licenses（cudnn:129）＝「The SDK may come bundled with, or otherwise include or be distributed with, NVIDIA or third party software licensed with separate legal notices or terms as may be described in proprietary notices accompanying the SDK. …」※CUDA EULA §1.1.6 第 2 段の OSI 文（cuda:94）に相当する文は cuDNN SLA に無い（『Open Source Initiative』0 件・実測）。",
+   "【再配布／cuDNN SLA・未引用】Reservation of Rights（cudnn:131）＝「NVIDIA reserves all rights, title and interest in and to the SDK not expressly granted to you under this Agreement.」",
+   "【再配布／cuDNN SLA・未引用】Authorized Users（cudnn:118-120）＝「You may allow employees and contractors of your entity or of your subsidiary(ies) to access and use the SDK from your secure network to perform work on your behalf. …」",
+   "【告知／cuDNN SLA・未引用】Updates（cudnn:126-127）＝「You agree that the form and content of the SDK that NVIDIA provides may change without prior notice to you.」",
+   "【譲渡・監査・政府使用／cuDNN SLA・未引用】General（cudnn:156 assignment／cudnn:157「You agree to cooperate with NVIDIA and provide reasonably requested information to verify your compliance with this Agreement.」／cudnn:162 RESTRICTED RIGHTS・DFARS 227.7202-3(a)・FAR 52.227-19 の (b)(1) と (2)）※CUDA 側は (c)(1) と (2) で、subparagraph の指定が違う。",
+   "【再配布／cuDNN SLA・未引用】cuDNN Supplement Jetson 段（cudnn:172）＝「In addition to the rights above, for parties that are developing software intended solely for use on Jetson development kits or Jetson modules and running Linux for Tegra software the following shall apply: the SDK may be distributed in its entirety, as provided by NVIDIA and without separation of its components …」",
+   "【改変・所有／cuDNN SLA・未引用】3.1（cudnn:142）と 3.3（cudnn:144）＝Ownership と feedback の無償ライセンス。",
+   "【対象物の取りこぼし】torchaudio 2.10.0+cu130 / 2.10.0+cu126（ledger/runtime-cu130.json・runtime-cu126.json に kind=wheel で載る CUDA 変種）について、R1 は items にも not_done にも 1 行も置いていない。本席の実測＝work/ta-cu130.whl（2,008,471 B・87 エントリ）に .dll は 0 件、入っているのは torchaudio/lib/_torchaudio.pyd・libtorchaudio.pyd・libctc_prefix_decoder.pyd・pybind11_prefixctc.pyd の 4 件のみで、NVIDIA の再配布対象 DLL は同梱されていない。この『入っていない』という否定の事実こそ台帳に残すべき項目で、欠けている。",
+   "【対象物の取りこぼし】torch/lib/caffe2_nvrtc.dll（cu130 54,272 B／cu126 17,920 B）＝名に nvrtc を含むのに R1-01（Attachment A 族）にも R1-03（名の無い族）にも入っておらず、出所（PyTorch 自製か NVIDIA 由来か）を述べた項が無い。torch/lib の NVIDIA 系名の DLL のうち唯一の未分類。",
+   "【対象物の取りこぼし】nvJitLink_130_0.dll（88,218,656 B）・nvJitLink_120_0.dll（39,236,608 B）＝R1-01 が『Attachment A に名がある』側に置いているが、Attachment A の表記は libnvJitLink.dll（cuda:264）。名の一致を確かめた項が無く、R1-03 の『名が無い』一覧にも入っていない＝どちらの側にも正しく置かれていない構成物。"
+  ],
+  "overall": "R1-nvidia.json は全体としては規律が高い。逐語の量・行番号・grep の件数・HTTP Range による wheel の部分取得は BRIEF.md の鉄則 2〜5 をよく満たしており、とくに R1-03（Attachment A に名が無い物を not-found のまま卓へ回した）と R1-06（署名の付け直しについて当てはめを 1 行も書かなかった）は鉄則 1 の手本になっている。「2026-09-04 との語句差 0 件」という中核の主張も、本席が normdiff.py を独立に走らせて再現できた（非一致 opcode 5 個・許諾条項の差 0）。\n\nそのうえで、原文の文言を超えた断定が 3 箇所ある。⑴ nvJitLink_*.dll を「Attachment A に名がある族」に入れたこと（原文は libnvJitLink.dll で、接頭辞の脱落を柱書が救うかは未決。しかも R1-03 の『名が無い 4 語』にも入っていない＝どの項にも正しく置かれていない）。⑵ R1-07 が CUDA EULA にしかない §1.1.6 第 2 段の OSI 文を、cuDNN DLL を含む項の条件として並べたこと（cuDNN SLA に『Open Source Initiative』は 0 件）。⑶ R1-05 が、同定未了と自認しながら zlibwapi.dll に explicit-yes／allowed を与えたこと（しかも保存した本文は zlib 1.3.2 で、DLL の版資源は 1.2.3.0＝版が一致しない）。この 3 つは、卓が「配ってよい／当たらない」と読み違える形で効くので先に直すのが良い。次いで、義務の断定を「実測」の札の内側に入れた R1-04 と summary ⑹、条の射程を確定した R1-07 conditions ①③、原本に無い MIT の性質を根拠なく書いた R1-07 open_points ①、差を「同趣旨」で消した R1-02 conditions ④。\n\n欠落では、条文側で 24 件（CUDA EULA 17・cuDNN SLA 7）を挙げた。効き目の大きい順に、⑴ §1.1.2 第 4 条「identified されていない developer tool は internal use only」＝nvperf_host.dll の論点を一段深くする条なのに conditions からも R1-03 からも落ちている、⑵ §2.1 License Scope（cuDNN の同文だけが引かれ CUDA 側が無い）、⑶ §2.4 音声・映像コーデックの第三者許諾（TTS アプリに直で掛かる）、⑷ Attachment B の GPL/LGPL 源コード提供の申し出（cuda:328）＝R1-07 が LGPL 同居を論点に挙げながら EULA 側の対応条項を一度も引いていない、⑸ §1.6 終了条項の末尾 2 文（引用が切れており、cuDNN 6.4 の引用とは非対称）。対象物では、台帳にある torchaudio の cu 変種 2 件が items にも not_done にも無く（実測では NVIDIA の DLL を 1 件も積んでいない＝その否定こそ記録が要る）、caffe2_nvrtc.dll が未分類、nvJitLink_*.dll がどちらの族にも正しく置かれていない。\n\nリポジトリの檔は 1 つも書き換えていない（読取のみ。実行したのは sed／grep／wc／python の読み取りと、scratchpad の normdiff.py の再実行のみ）。"
+ }
+}

@@ -1,0 +1,1016 @@
+{
+ "seat": "R5-pypi",
+ "fetched_at": "2026-09-14T10:39:32.4786819+09:00",
+ "items": [
+  {
+   "id": "R5-01",
+   "component": "permissive 群（99 件のうち 71 件）＝ MIT／BSD-2／BSD-3／Apache-2.0／ISC／WTFPL ほか。wheel 内に許諾文の檔があり、台帳の license 欄と wheel の宣言が一致し、copyleft も表記の揺れも無い物（cffi・pyaml・typing-extensions・packaging は表記が特殊なので R5-19 に分けた）",
+   "covers_files": [
+    "absl-py 2.5.0",
+    "annotated-doc 0.0.5",
+    "annotated-types 0.8.0",
+    "anyio 4.15.0",
+    "blinker 1.9.0",
+    "charset-normalizer 3.5.1",
+    "click 8.5.0",
+    "cloudpickle 3.1.2",
+    "colorama 0.4.6",
+    "decorator 5.3.1",
+    "docstring-parser 0.18.0",
+    "einops 0.8.2",
+    "fastapi 0.141.1",
+    "filelock 3.32.5",
+    "flask 3.1.3",
+    "flatten-dict 0.5.0",
+    "fsspec 2026.7.0",
+    "h11 0.16.0",
+    "hf-xet 1.6.0",
+    "httpcore 1.0.9",
+    "httptools 0.8.0",
+    "httpx 0.28.1",
+    "huggingface-hub 1.30.0",
+    "idna 3.19",
+    "importlib-resources 7.1.0",
+    "itsdangerous 2.2.0",
+    "jinja2 3.1.6",
+    "joblib 1.6.0",
+    "julius 0.2.8",
+    "lazy-loader 0.5",
+    "librosa 1.0.0",
+    "markdown 3.10.3",
+    "markdown-it-py 4.2.0",
+    "markdown2 2.5.5",
+    "markupsafe 3.0.3",
+    "mdurl 0.1.2",
+    "mpmath 1.3.0",
+    "narwhals 2.25.0",
+    "networkx 3.6.1",
+    "numba 0.67.0",
+    "platformdirs 4.11.7",
+    "pooch 1.9.0",
+    "protobuf 7.36.1",
+    "pycparser 3.0",
+    "pydantic 2.13.5",
+    "pydantic-core 2.46.5",
+    "pydantic-settings 2.15.0",
+    "pydub 0.25.1",
+    "pygments 2.21.0",
+    "pyloudnorm 0.2.0",
+    "pystoi 0.4.1",
+    "python-dotenv 1.2.3",
+    "python-multipart 0.0.32",
+    "pyyaml 6.0.3",
+    "rich 15.0.0",
+    "safetensors 0.8.0",
+    "shellingham 1.5.4",
+    "starlette 1.6.0",
+    "sympy 1.14.0",
+    "tensorboard 2.21.0",
+    "termcolor 3.3.0",
+    "threadpoolctl 3.6.0",
+    "torch-stoi 0.2.3",
+    "transformers 5.16.1",
+    "typer 0.27.2",
+    "typing-inspection 0.4.4",
+    "urllib3 2.7.0",
+    "uvicorn 0.52.4",
+    "watchfiles 1.2.0",
+    "websockets 17.1",
+    "werkzeug 3.1.8"
+   ],
+   "license_name": "MIT / MIT-0 / BSD-2-Clause / BSD-3-Clause / Apache-2.0 / ISC / PSF-2.0 / WTFPL / MIT-CMU ほか（各 wheel の宣言どおり）",
+   "source_url": "各 wheel は ledger/runtime-cu130.json の url 欄（files.pythonhosted.org）。実物は build/out/handoff-stage/build-cache/",
+   "original_file": "originals/（個別に保存したのは cffi-LICENSE.txt・pyaml-COPYING.txt・librosa-LICENSE.md・shellingham-LICENSE.txt・mpmath-LICENSE.txt・packaging-LICENSE.txt・typing_extensions-LICENSE.txt・msgpack-COPYING.txt。残りは wheel 内にそのまま在る）",
+   "sha256": "originals/R5-originals-index.json に 1 件ずつ記録",
+   "bytes": 0,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "cffi-2.1.1.dist-info/licenses/LICENSE（1,123 B）",
+     "text": "MIT No Attribution\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so."
+    },
+    {
+     "where": "pyaml-26.7.0.dist-info/licenses/COPYING（491 B）",
+     "text": "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE\n                    Version 2, December 2004\n\n Copyright (C) 2012 Mike Kazantsev <mk.fraggod@gmail.com>\n...\n  0. You just DO WHAT THE FUCK YOU WANT TO."
+    },
+    {
+     "where": "librosa-1.0.0.dist-info/licenses/LICENSE.md:1-8（766 B）",
+     "text": "## ISC License\n\nCopyright (c) 2013--2026, librosa development team.\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies."
+    },
+    {
+     "where": "packaging-26.3.dist-info/licenses/LICENSE（197 B・全文）",
+     "text": "This software is made available under the terms of *either* of the licenses found in LICENSE.APACHE or LICENSE.BSD. Contributions to this software is made under the terms of *both* these licenses."
+    },
+    {
+     "where": "typing_extensions-4.16.0.dist-info/licenses/LICENSE（13,936 B）＝ Python の LICENSE（PSF／BeOpen／CNRI／CWI の 4 段）。CNRI 節:182-190",
+     "text": "2. Subject to the terms and conditions of this License Agreement, CNRI hereby grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce, analyze, test, perform and/or display publicly, prepare derivative works, distribute, and otherwise use Python 1.6.1 alone or in any derivative version, provided, however, that CNRI's License Agreement and CNRI's notice of copyright, i.e., \"Copyright (c) 1995-2001 Corporation for National Research Initiatives; All Rights Reserved\" are retained in Python 1.6.1 alone or in any derivative version prepared by Licensee."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "各許諾文（LICENSE／COPYING）と著作権表示を配布物に添えること（MIT・BSD 系の定型条件）",
+    "cffi は MIT-0＝表示義務すら課さない文言だが、檔自体は wheel に在るのでそのまま写せば足りる",
+    "pyaml は WTFPL（分類子は License :: Public Domain）＝条件文が実質無い",
+    "packaging は Apache-2.0 と BSD-2-Clause の選択制（OR）＝どちらを採るかは配布側の選択"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "MIT／BSD／Apache いずれも改変を明文で許す（例＝cffi LICENSE「the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software」）。Authenticode の付け直しを禁ずる文言は、この 78 件のどの許諾文にも見つからなかった（実測＝全 99 件の許諾文檔を機械検索）"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [],
+   "notes": "実測＝python 3.14.7 で build-cache の 99 件を zipfile／tarfile で開き、dist-info/METADATA（sdist は PKG-INFO）の License-Expression・License・Classifier: License ::・License-File を読み、LICENSE|LICENCE|COPYING|NOTICE|AUTHORS|COPYRIGHT に当たる檔名と file_size を全部取った（scripts＝scratchpad/rights-v3/scan.py・report.py・final_csv.py）。表は findings/R5-pypi-table.csv（99 行・UTF-8）。台帳の license 欄と wheel の実値は 96/99 が一致、不一致 1（scipy＝R5-12）、宣言そのものが無い 2（dacvae・silentcipher＝R5-20）。ネイティブ物の合計は 251 檔（.pyd／.dll／.exe）。"
+  },
+  {
+   "id": "R5-02",
+   "component": "許諾文の檔が wheel に 1 件も入っていない 5 件＝descript-audiotools 0.7.2・ffmpy 1.0.0・sentencepiece 0.2.2・tensorboard-data-server 0.7.2・tokenizers 0.23.2",
+   "covers_files": [
+    "descript_audiotools-0.7.2-py2.py3-none-any.whl",
+    "ffmpy-1.0.0-py3-none-any.whl",
+    "sentencepiece-0.2.2-cp312-cp312-win_amd64.whl",
+    "tensorboard_data_server-0.7.2-py3-none-any.whl",
+    "tokenizers-0.23.2-cp310-abi3-win_amd64.whl"
+   ],
+   "license_name": "descript-audiotools＝MIT（METADATA License:）／ffmpy＝MIT（License-Expression）／sentencepiece＝Apache-2.0（License-Expression）／tensorboard-data-server＝Apache 2.0（License:）／tokenizers＝分類子 License :: OSI Approved :: Apache Software License のみ",
+   "source_url": "https://raw.githubusercontent.com/descriptinc/audiotools/master/LICENSE / https://raw.githubusercontent.com/Ch00k/ffmpy/master/LICENSE / https://raw.githubusercontent.com/google/sentencepiece/master/LICENSE / https://raw.githubusercontent.com/tensorflow/tensorboard/master/LICENSE / https://raw.githubusercontent.com/huggingface/tokenizers/main/LICENSE",
+   "original_file": "originals/up-descript-audiotools-LICENSE.txt / up-ffmpy-LICENSE.txt / up-sentencepiece-LICENSE.txt / up-tensorboard-LICENSE.txt / up-tokenizers-LICENSE.txt",
+   "sha256": "descript-audiotools=e4075451f4ce5837e89240b4d6761d49e2ee03bdaf776f2f46a6249e65ebafa8 (1,074 B) / ffmpy=19ee5defbb6148c54c2d605adddbb49e37b1f37fbf18e5b45e4e1fae94be5331 (1,059 B) / sentencepiece=cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 (11,358 B) / tensorboard=d7c9068d896188264b60827b8cd1e25fdb9f5b5cad0b1589e90b96c87729c404 (11,416 B) / tokenizers=c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4 (11,357 B)",
+   "bytes": 0,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "descript_audiotools-0.7.2.dist-info/METADATA（先頭ヘッダ）",
+     "text": "Name: descript-audiotools\nVersion: 0.7.2\nLicense: MIT"
+    },
+    {
+     "where": "tokenizers-0.23.2.dist-info/METADATA（先頭ヘッダ）",
+     "text": "Name: tokenizers\nVersion: 0.23.2\nClassifier: License :: OSI Approved :: Apache Software License\nProject-URL: Homepage, https://github.com/huggingface/tokenizers"
+    },
+    {
+     "where": "tensorboard_data_server-0.7.2.dist-info/METADATA（先頭ヘッダ）",
+     "text": "Home-page: https://github.com/tensorflow/tensorboard/tree/master/tensorboard/data/server\nLicense: Apache 2.0"
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "MIT／Apache-2.0 の定型条件（許諾文の写しを添える）は掛かるが、その**写しが wheel の中に無い**＝v3 の配布側が上流から取って自分で用意する",
+    "Apache-2.0 §4(a)「You must give any other recipients of the Work or Derivative Works a copy of this License」に対し、sentencepiece・tensorboard-data-server・tokenizers の wheel は本文を 1 檔も持たない（実測＝dist-info 内も含め LICENSE|COPYING|NOTICE が 0 件）"
+   ],
+   "modification_or_resigning": {
+    "status": "not-stated",
+    "quote": "wheel 内に許諾文が無いので、改変・再署名についての文言は wheel からは読めない（上流の LICENSE は MIT／Apache-2.0 で、いずれも改変を許す定型文）"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "上流から取った 5 檔は **HEAD（master／main）の檔**であって、台帳が pin した版（0.7.2／1.0.0／0.2.2／0.7.2／0.23.2）のタグの檔ではない。版に合わせたタグの檔を使うかは配布方針の判断",
+    "descript-audiotools と ffmpy は **METADATA のヘッダにも PyPI の JSON にも project_urls／home_page が無い**（実測＝pypi.org/pypi/<name>/<ver>/json の info.project_urls が null、home_page が空／null）。上の GitHub URL は METADATA 本文（README 由来）に出てくる URL から辿ったもので、上流が「公式の許諾文の所在」として宣言した URL ではない"
+   ],
+   "notes": "実測（2026-09-14 10:39〜10:48 JST）＝5 件の wheel を開き、LICENSE|LICENCE|COPYING|NOTICE|AUTHORS|COPYRIGHT に当たる檔が 0 件であることを確認。上流の LICENSE は curl.exe -sS -L で取得し、HTTP=200・バイト数・sha256 を記録した。sentencepiece の上流 LICENSE（11,358 B・sha256 cfc7749b...）は **apache.org の LICENSE-2.0.txt（同日取得・11,358 B・同 sha256）と 1 バイト違わず同一**。dacvae の同梱 LICENSE も同じ sha256 だった。"
+  },
+  {
+   "id": "R5-03",
+   "component": "許諾文が package_dir の外に在るため導入手順で落ちる 4 件＝dacvae（GitHub archive）・silentcipher（GitHub archive）・argbind（sdist）・randomname（sdist）",
+   "covers_files": [
+    "dacvae-414c20785fc3a28373073ea8ef7a1316eeeaca6e.zip",
+    "silentcipher-d46d7d0893a583d8968ab3a6626e2289faec9152.zip",
+    "argbind-0.3.9.tar.gz",
+    "randomname-0.2.1.tar.gz"
+   ],
+   "license_name": "dacvae＝Apache-2.0（同梱 LICENSE 11,358 B）／silentcipher＝MIT（同梱 LICENSE 1,075 B・Copyright (c) 2024 Sony Research Inc.）／argbind＝MIT（LICENSE.md 1,073 B）／randomname＝MIT（LICENSE 1,067 B）",
+   "source_url": "https://github.com/facebookresearch/dacvae/archive/414c20785fc3a28373073ea8ef7a1316eeeaca6e.zip / https://github.com/SesameAILabs/silentcipher/archive/d46d7d0893a583d8968ab3a6626e2289faec9152.zip / https://files.pythonhosted.org/packages/8e/25/.../argbind-0.3.9.tar.gz / https://files.pythonhosted.org/packages/e8/c2/.../randomname-0.2.1.tar.gz",
+   "original_file": "originals/dacvae-LICENSE.txt / silentcipher-LICENSE.txt / argbind-LICENSE.md / randomname-LICENSE.txt",
+   "sha256": "dacvae=cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 (11,358 B) / silentcipher=157b6af8c1bc4eac646abdf17473934a85e8815ade3a346cd83a58a171586a73 (1,075 B) / argbind=0820a7c2f431f1d79b289a362f394322de156624353d5f0cc9f75cc6489d7db4 (1,073 B) / randomname=7b38b39ef5e420ab6cb1af1df645482fec28923900693c72efa45fccfea987f2 (1,067 B)",
+   "bytes": 0,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "dacvae-414c20785fc3a28373073ea8ef7a1316eeeaca6e/setup.py:28",
+     "text": "license_files = (\"LICENSE.txt\",),"
+    },
+    {
+     "where": "silentcipher-d46d7d0893a583d8968ab3a6626e2289faec9152/pyproject.toml:12",
+     "text": "\"License :: OSI Approved :: MIT License\","
+    },
+    {
+     "where": "ledger/runtime-cu130.json（dacvae 項）",
+     "text": "\"install\": \"pure-python-src\", \"archive_root_strip\": true, \"package_dir\": \"dacvae\""
+    },
+    {
+     "where": "ledger/runtime-cu130.json（silentcipher 項）",
+     "text": "\"install\": \"pure-python-src\", \"archive_root_strip\": true, \"package_dir\": \"src/silentcipher\""
+    },
+    {
+     "where": "ledger/runtime-cu130.json（argbind 項）",
+     "text": "\"install\": \"pure-python-src\", \"archive_root\": \"argbind-0.3.9/\", \"package_dirs\": [\"argbind\"]"
+    },
+    {
+     "where": "silentcipher-.../LICENSE:1-3",
+     "text": "MIT License\n\nCopyright (c) 2024 Sony Research Inc."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "MIT／Apache-2.0 の写しを添える義務は掛かる。4 件とも許諾文は **archive／sdist の根に在る**",
+    "ただし台帳の install は pure-python-src で、写すのは package_dir（dacvae／src/silentcipher／argbind／randomname）だけ＝**根の LICENSE は導入先の木に渡らない**（実測＝4 件の全エントリを列挙し、LICENSE が package_dir の外に在ることを確認）",
+    "dacvae は加えて setup.py:28 の license_files が \"LICENSE.txt\" を指すのに実体の檔名は \"LICENSE\"（拡張子なし）＝**wheel／sdist を作っても LICENSE は入らない**（研究ノート 16 (g)・first-run-notices A13 の観測を本席が同じ pin で再確認）",
+    "ソース配布の形（sdist・GitHub archive）でも許諾文は要る＝v3 で自前の置き場から配る場合は、**archive をそのまま置くなら根の LICENSE ごと配る**か、**package_dir だけ配るなら licenses/ に別途写す**かのどちらかになる"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "MIT「Permission is hereby granted ... to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies」／Apache-2.0 §4「You may reproduce and distribute copies of the Work or Derivative Works thereof in any medium, with or without modifications」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "silentcipher の LICENSE の著作権者は Sony Research Inc. だが台帳の取得先は github.com/SesameAILabs/silentcipher＝**組織名が一致しない**（観測事実のみ。権利の帰属の読みは席が書かない）"
+   ],
+   "notes": "実測＝4 件のアーカイブを開いて全エントリを列挙（scratchpad/rights-v3/scan8.py ほか）。dacvae 18 檔・silentcipher 148 檔・argbind 14 檔・randomname 175 檔。4 件とも根に許諾文があり、package_dir の下には無い。"
+  },
+  {
+   "id": "R5-04",
+   "component": "soxr 1.1.0（weak copyleft・LGPL）＝ python-soxr と libsoxr。ネイティブ実体は独立 DLL ではなく soxr/soxr_ext.pyd（354,304 B）に組み込み",
+   "covers_files": [
+    "soxr-1.1.0-cp312-abi3-win_amd64.whl",
+    "soxr/soxr_ext.pyd"
+   ],
+   "license_name": "LGPL-2.1-or-later（wheel の宣言＝soxr-1.1.0.dist-info/METADATA の License-Expression: LGPL-2.1-or-later）",
+   "source_url": "https://github.com/dofuuz/python-soxr（libsoxr 本体＝https://sourceforge.net/projects/soxr/）。※ この 2 URL は first-run-notices A17 に既に載っている記載であり、wheel の中には「ソースの所在」を名乗る檔は無い（実測＝wheel 11 エントリ全読）",
+   "original_file": "originals/soxr-COPYING.LGPL.txt・soxr-LICENSE.txt・soxr-LICENSE-libsoxr.txt・soxr-LICENSE-PFFFT.txt",
+   "sha256": "COPYING.LGPL=317dfba8116739654c8c2d8acbc9c7edfcf34e3932e7a4b15307435228f98c3a (26,934 B) / LICENSE.txt=16ce7f03077f25fac6a9b89fdf6136927595f6b85db9197381ee99c1ecba357b (728 B) / LICENSE-libsoxr.txt=73b946c198ad27fc2ae7bea2de6ec6d1b6c0733340d1759a450150271347e5af (1,047 B) / LICENSE-PFFFT.txt=7847a2f45a0da613240a7e542980677c16613b1c8258190c15f8bf275032bb2d (2,174 B)",
+   "bytes": 26934,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "soxr-1.1.0.dist-info/licenses/COPYING.LGPL:271-284（LGPL-2.1 §6 本文）",
+     "text": "6. As an exception to the Sections above, you may also combine or link a \"work that uses the Library\" with the Library to produce a work containing portions of the Library, and distribute that work under terms of your choice, provided that the terms permit modification of the work for the customer's own use and reverse engineering for debugging such modifications.\n\n  You must give prominent notice with each copy of the work that the Library is used in it and that the Library and its use are covered by this License.  You must supply a copy of this License.  If the work during execution displays copyright notices, you must include the copyright notice for the Library among them, as well as a reference directing the user to the copy of this License.  Also, you must do one of these things:"
+    },
+    {
+     "where": "同 :286-296（§6 a）",
+     "text": "a) Accompany the work with the complete corresponding machine-readable source code for the Library including whatever changes were used in the work (which must be distributed under Sections 1 and 2 above); and, if the work is an executable linked with the Library, with the complete machine-readable \"work that uses the Library\", as object code and/or source code, so that the user can modify the Library and then relink to produce a modified executable containing the modified Library.  (It is understood that the user who changes the contents of definitions files in the Library will not necessarily be able to recompile the application to use the modified definitions.)"
+    },
+    {
+     "where": "同 :298-304（§6 b）",
+     "text": "b) Use a suitable shared library mechanism for linking with the Library.  A suitable mechanism is one that (1) uses at run time a copy of the library already present on the user's computer system, rather than copying library functions into the executable, and (2) will operate properly with a modified version of the library, if the user installs one, as long as the modified version is interface-compatible with the version that the work was made with."
+    },
+    {
+     "where": "同 :306-309（§6 c）",
+     "text": "c) Accompany the work with a written offer, valid for at least three years, to give the same user the materials specified in Subsection 6a, above, for a charge no more than the cost of performing this distribution."
+    },
+    {
+     "where": "同 :311-313（§6 d）",
+     "text": "d) If distribution of the work is made by offering access to copy from a designated place, offer equivalent access to copy the above specified materials from the same place."
+    },
+    {
+     "where": "同 :315-316（§6 e）",
+     "text": "e) Verify that the user has already received a copy of these materials or that you have already sent this user a copy."
+    },
+    {
+     "where": "soxr-1.1.0.dist-info/licenses/LICENSE.txt（全文 728 B）",
+     "text": "Python-SoXR, Resampler library for Python.\nCopyright (c) 2021 Myungchul Keum\n\nThis library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or (at your option) any later version."
+    },
+    {
+     "where": "soxr-1.1.0.dist-info/licenses/LICENSE-libsoxr.txt:1-7",
+     "text": "SoX Resampler Library       Copyright (c) 2007-18 robs@users.sourceforge.net\n\nThis library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or (at your option) any later version."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "§6 前段＝①「the Library is used in it」の目立つ通知 ②「You must supply a copy of this License」＝LGPL-2.1 全文を添える（wheel の COPYING.LGPL 26,934 B をそのまま写せる）",
+    "§6 a〜e のいずれか 1 つ＝ソース入手手段。所在は https://github.com/dofuuz/python-soxr と https://sourceforge.net/projects/soxr/",
+    "第 4 の檔＝LICENSE-PFFFT.txt（2,174 B）も wheel に入っている＝libsoxr が pffft.c を取り込んでいる分（LICENSE-libsoxr.txt の Notes 2「If building with pffft.c, see the licence embedded in that file.」に対応）"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "§6 本文「distribute that work under terms of your choice, provided that the terms permit modification of the work for the customer's own use and reverse engineering for debugging such modifications」＝改変と逆解析を許す条件つきで配れる。Authenticode の付け直しを禁ずる文言は COPYING.LGPL 全文に無い（実測＝全文検索）"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "§6 a〜e のどれで満たすか（first-run-notices §C 2 と同じ論点）。**実体が独立 DLL でなく soxr_ext.pyd に組み込まれている**という観測は変わらない＝b)(1)「a copy of the library already present on the user's computer system」との当てはめは席が断定しない",
+    "v3 では配布側が未署名バイナリに Authenticode 署名を付ける構想がある（BRIEF §0）。soxr_ext.pyd に署名を付ける行為が §6 の「改変」に当たるかは法解釈＝卓"
+   ],
+   "notes": "実測＝wheel（174,357 B・11 エントリ）を開き、dist-info/licenses/ の 4 檔と soxr/soxr_ext.pyd を確認。§6 の行番号は originals/soxr-COPYING.LGPL.txt を 1 行目から数えた値。soundfile の _soundfile_data/COPYING（26,518 B）と行番号が完全に一致する（§6 が両方とも 271 行目）＝どちらも同じ LGPL-2.1 本文だが、檔のバイト数は 26,934 と 26,518 で異なる（末尾の付録の差。sha256 も別）。"
+  },
+  {
+   "id": "R5-05",
+   "component": "soundfile 0.14.0（weak copyleft・LGPL）＝同梱の _soundfile_data/libsndfile_x64.dll（2,364,416 B）。libsndfile が取り込む libmp3lame（LGPL-2+）・libmpg123（LGPL-2.1）も同じ DLL の中",
+   "covers_files": [
+    "soundfile-0.14.0-py2.py3-none-win_amd64.whl",
+    "_soundfile_data/libsndfile_x64.dll"
+   ],
+   "license_name": "soundfile 本体＝BSD 3-Clause（METADATA License: BSD 3-Clause License）／libsndfile＝LGPL-2.1（同梱 _soundfile_data/COPYING 26,518 B）",
+   "source_url": "https://github.com/libsndfile/libsndfile（リリース＝https://github.com/libsndfile/libsndfile/releases）。libmp3lame＝https://sourceforge.net/p/lame/svn/HEAD/tree/ ／libmpg123＝https://www.mpg123.de/trunk/（いずれも wheel 内 licensing/license_notes.md が自ら挙げた URL）",
+   "original_file": "originals/soundfile-COPYING.LGPL21.txt・soundfile-license_notes.md・soundfile-LICENSE.txt",
+   "sha256": "COPYING=ad01ea5cd2755f6048383c8d54c88459cd6fcb17757c5c8892f8c5ea060f6140 (26,518 B) / license_notes.md=35630e1f59b5c54b0bcbe2ec173bcf5a63b727a6e2f7834ca6d35a1af91a2b5f (2,631 B) / dist-info/LICENSE=0dd2e411fed553ba891845077e5a32c5b726d1bbc46ff31a2118ae1ccf816752 (1,512 B)",
+   "bytes": 26518,
+   "same_as_2026_09_04": "true",
+   "quotes": [
+    {
+     "where": "_soundfile_data/COPYING:278-284（LGPL-2.1 §6 前段）",
+     "text": "You must give prominent notice with each copy of the work that the Library is used in it and that the Library and its use are covered by this License.  You must supply a copy of this License.  If the work during execution displays copyright notices, you must include the copyright notice for the Library among them, as well as a reference directing the user to the copy of this License.  Also, you must do one of these things:"
+    },
+    {
+     "where": "licensing/license_notes.md:6-11",
+     "text": "While python-soundfile itself is licensed under the [BSD-3-Clause](https://opensource.org/license/bsd-3-clause) license, it links against media libraries that are licensed under a mixture of LGPL and BSD licenses within [libsndfile](https://github.com/libsndfile/libsndfile). To help ensure compliance for each of these libraries, copyrights and links to the corresponding source code are included below."
+    },
+    {
+     "where": "licensing/license_notes.md（libmp3lame 節）",
+     "text": "License: LGPL-2+\n\nSource: [here](https://sourceforge.net/p/lame/svn/HEAD/tree/)"
+    },
+    {
+     "where": "licensing/license_notes.md（libmpg123 節）",
+     "text": "License: LGPL-2.1\n\nSource: [here](https://www.mpg123.de/trunk/)"
+    },
+    {
+     "where": "licensing/license_notes.md（libflac 節の註）",
+     "text": "Note: FLAC is GFDL-1.3, GPL-2.0, LGPL-2.1, and BSD-3-Clause licensed for different components. We are only using the libFLAC component, which is BSD-3-Clause."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "LGPL-2.1 §6＝目立つ通知・LGPL-2.1 全文・a〜e のいずれか 1 つ（R5-04 の逐語と同文）",
+    "通知とライセンス全文は wheel が既に持っている（COPYING 26,518 B と license_notes.md 2,631 B）＝そのまま写せば足りる。残るのは a〜e の選択のみ",
+    "libmp3lame（LGPL-2+）と libmpg123（LGPL-2.1）は libsndfile_x64.dll の中に在り、ソースの所在は license_notes.md が自ら挙げている"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "§6「distribute that work under terms of your choice, provided that the terms permit modification of the work for the customer's own use and reverse engineering for debugging such modifications」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "§6 a〜e のどれで満たすか（first-run-notices §C 2＝既に卓に上がっている論点）。**soxr と soundfile の 2 件に同じ判断が掛かる**",
+    "v3 で libsndfile_x64.dll に Authenticode 署名を付ける場合、§6 の「改変」に当たるかは法解釈＝卓"
+   ],
+   "notes": "実測＝wheel（1,021,480 B・11 エントリ）を開き、COPYING・license_notes.md・dist-info/LICENSE を抽出した。バイト数は 2026-09-04 の研究ノート 22 表 6（26,518 B・2,631 B・1,512 B）と一致＝same_as_2026_09_04: true はこの 3 檔のバイト数一致の意味であって、sha256 の突合ではない（2026-09-04 の檔は本リポジトリに写されていない＝first-run-notices 冒頭の註）。"
+  },
+  {
+   "id": "R5-06",
+   "component": "【新規・first-run-notices に無い】setuptools 84.0.0 が同梱（vendor）する autocommand 2.2.2＝LGPL-3.0",
+   "covers_files": [
+    "setuptools-84.0.0-py3-none-any.whl",
+    "setuptools/_vendor/autocommand/__init__.py",
+    "setuptools/_vendor/autocommand/autoasync.py",
+    "setuptools/_vendor/autocommand/autocommand.py",
+    "setuptools/_vendor/autocommand/automain.py",
+    "setuptools/_vendor/autocommand/autoparse.py",
+    "setuptools/_vendor/autocommand/errors.py"
+   ],
+   "license_name": "setuptools 自身＝MIT（License-Expression: MIT）／同梱の autocommand 2.2.2＝LGPLv3（setuptools/_vendor/autocommand-2.2.2.dist-info/METADATA の License: LGPLv3・Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)）",
+   "source_url": "https://github.com/Lucretiel/autocommand（同梱 METADATA の Home-page／Project-URL, Homepage）",
+   "original_file": "originals/setuptools-vendor-autocommand-LICENSE.txt",
+   "sha256": "ade78d04982d69972d444a8e14a94f87a2334dd3855cc80348ea8e240aa0df2d",
+   "bytes": 7634,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "setuptools/_vendor/autocommand-2.2.2.dist-info/METADATA（ヘッダ）",
+     "text": "Name: autocommand\nVersion: 2.2.2\nHome-page: https://github.com/Lucretiel/autocommand\nLicense: LGPLv3\nClassifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)\nLicense-File: LICENSE"
+    },
+    {
+     "where": "setuptools/_vendor/autocommand-2.2.2.dist-info/LICENSE:1-11（7,634 B）",
+     "text": "GNU LESSER GENERAL PUBLIC LICENSE\n                       Version 3, 29 June 2007\n\n Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>\n Everyone is permitted to copy and distribute verbatim copies\n of this license document, but changing it is not allowed.\n\n\n  This version of the GNU Lesser General Public License incorporates\nthe terms and conditions of version 3 of the GNU General Public\nLicense, supplemented by the additional permissions listed below."
+    },
+    {
+     "where": "setuptools-84.0.0.dist-info/METADATA（ヘッダ）",
+     "text": "Name: setuptools\nVersion: 84.0.0\nLicense-Expression: MIT"
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "LGPL-3.0 は本文 1 行目で「incorporates the terms and conditions of version 3 of the GNU General Public License, supplemented by the additional permissions listed below」と述べる＝**GPL-3.0 本文が別途要る**。setuptools の wheel に GPL-3.0 全文は入っていない（実測＝同梱 LICENSE は 7,634 B の LGPL-3 補則のみ。GPL-3.0 本文は約 35 KB で、この檔には無い）",
+    "setuptools 自身の宣言（License-Expression: MIT）には LGPL-3 の語が 1 つも無い＝**setuptools を配れば済む、にはならない**",
+    "実体は純 Python 6 檔（ネイティブなし）"
+   ],
+   "modification_or_resigning": {
+    "status": "unknown",
+    "quote": "LGPL-3 本文（7,634 B）は「additional permissions」の列挙で、改変・再署名に触れる §4 等の当てはめは GPL-3 本文と併せて読む必要がある。GPL-3 本文が wheel に無いため、wheel だけからは断定できない"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "**この 1 件は first-run-notices.md の A17（soxr）・A18（certifi・tqdm）のどちらにも載っていない**＝copyleft の 3 件目。v3 で配るなら通知と許諾文をどう扱うかの判断が要る",
+    "setuptools を配布物から落とせるか（実行時に import されるか）は本席の担当外＝合成／実行系の席に回す論点"
+   ],
+   "notes": "実測＝setuptools wheel（818,216 B・343 エントリ）を開き、_vendor 配下の LICENSE 全 17 檔の本文を機械検索して copyleft の語を探した結果、autocommand の LICENSE だけが LGPL-3 本文だった（scratchpad/rights-v3/scan3.py・scan5.py）。autocommand のコード 6 檔が wheel に実在することも列挙で確認。"
+  },
+  {
+   "id": "R5-07",
+   "component": "certifi 2026.7.22（weak copyleft・MPL-2.0）＝certifi/cacert.pem（Mozilla の root 証明書束）",
+   "covers_files": [
+    "certifi-2026.7.22-py3-none-any.whl"
+   ],
+   "license_name": "MPL-2.0（METADATA の License: MPL-2.0・Classifier: License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)）",
+   "source_url": "https://github.com/certifi/python-certifi（first-run-notices A18 の記載）／MPL-2.0 本文＝https://www.mozilla.org/media/MPL/2.0/index.txt",
+   "original_file": "originals/certifi-LICENSE.txt（wheel 内）・originals/mpl-2.0-2026-09-14.txt（外部取得）",
+   "sha256": "certifi-LICENSE.txt=e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7 (989 B) / mpl-2.0-2026-09-14.txt=3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04 (16,726 B・HTTP=200・2026-09-14T10:43:09+09:00 取得)",
+   "bytes": 989,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "certifi-2026.7.22.dist-info/licenses/LICENSE（989 B・全文のうち許諾部分）",
+     "text": "***** BEGIN LICENSE BLOCK *****\nThis Source Code Form is subject to the terms of the Mozilla Public License,\nv. 2.0. If a copy of the MPL was not distributed with this file, You can obtain\none at http://mozilla.org/MPL/2.0/.\n\n***** END LICENSE BLOCK *****"
+    },
+    {
+     "where": "MPL-2.0 §3.2（originals/mpl-2.0-2026-09-14.txt:170-183）",
+     "text": "3.2. Distribution of Executable Form\n\nIf You distribute Covered Software in Executable Form then:\n\n(a) such Covered Software must also be made available in Source Code\n    Form, as described in Section 3.1, and You must inform recipients of\n    the Executable Form how they can obtain a copy of such Source Code\n    Form by reasonable means in a timely manner, at a charge no more\n    than the cost of distribution to the recipient; and\n\n(b) You may distribute such Executable Form under the terms of this\n    License, or sublicense it under different terms, provided that the\n    license for the Executable Form does not attempt to limit or alter\n    the recipients' rights in the Source Code Form under this License."
+    },
+    {
+     "where": "MPL-2.0 §3.3（同 :185-196）",
+     "text": "3.3. Distribution of a Larger Work\n\nYou may create and distribute a Larger Work under terms of Your choice,\nprovided that You also comply with the requirements of this License for\nthe Covered Software. If the Larger Work is a combination of Covered\nSoftware with a work governed by one or more Secondary Licenses, and the\nCovered Software is not Incompatible With Secondary Licenses, this\nLicense permits You to additionally distribute such Covered Software\nunder the terms of such Secondary License(s), so that the recipient of\nthe Larger Work may, at their option, further distribute the Covered\nSoftware under the terms of either this License or such Secondary\nLicense(s)."
+    },
+    {
+     "where": "MPL-2.0 §3.4（同 :198-204）",
+     "text": "3.4. Notices\n\nYou may not remove or alter the substance of any license notices\n(including copyright notices, patent notices, disclaimers of warranty,\nor limitations of liability) contained within the Source Code Form of\nthe Covered Software, except that You may alter any license notices to\nthe extent required to remedy known factual inaccuracies."
+    },
+    {
+     "where": "MPL-2.0 §2.7（同 :152-155）",
+     "text": "Sections 3.1, 3.2, 3.3, and 3.4 are conditions of the licenses granted\nin Section 2.1."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "§3.3 Larger Work＝「You may create and distribute a Larger Work under terms of Your choice, provided that You also comply with the requirements of this License for the Covered Software」＝アプリ全体を自分の条件で配ってよいが、certifi の部分は MPL の要件を満たすこと",
+    "§3.4＝通知の実質を削除・改変しない",
+    "**wheel が持っているのは Exhibit A の 5 行だけで、MPL-2.0 の本文（16,726 B）は入っていない**（実測＝989 B の LICENSE 全文を読んだ）。「If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/」という文言そのものが本文の不同梱を前提にしている＝v3 の配布側が本文を用意する道が素直"
+   ],
+   "modification_or_resigning": {
+    "status": "not-stated",
+    "quote": "MPL-2.0 §3.4 は Source Code Form 内の通知の改変を禁ずるが、バイナリへの署名付与に触れる条項は本文中に見つからなかった（実測＝16,726 B 全文の検索で signature／sign の語は 0 件）。certifi は純 Python でネイティブ物 0 件なので署名の論点は立たない"
+   },
+   "authenticode_observed": "unsigned",
+   "open_points_for_commander": [
+    "MPL-2.0 §3.2(a) の「such Covered Software must also be made available in Source Code Form」を、改変せず配る場合にどう満たすか（上流の GitHub を指すだけで足りるかは法解釈）"
+   ],
+   "notes": "実測＝wheel（136,983 B・12 エントリ）を開き LICENSE 989 B を読んだ。ネイティブ物 0 件。MPL-2.0 本文は 2026-09-14T10:43:09+09:00 に curl.exe -sS -L で https://www.mozilla.org/media/MPL/2.0/index.txt から取得（HTTP=200・16,726 B・sha256 3f3d9e00...）。"
+  },
+  {
+   "id": "R5-08",
+   "component": "tqdm 4.70.0（weak copyleft・MPL-2.0 AND MIT）",
+   "covers_files": [
+    "tqdm-4.70.0-py3-none-any.whl"
+   ],
+   "license_name": "MPL-2.0 AND MIT（METADATA の License: MPL-2.0 AND MIT）",
+   "source_url": "https://github.com/tqdm/tqdm（first-run-notices A18 の記載）",
+   "original_file": "originals/tqdm-LICENCE.txt",
+   "sha256": "fcff87c3a47ce8028a8512aa182d4fcf0ad1c90544ee75cf9b343684cac194de",
+   "bytes": 1985,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "tqdm-4.70.0.dist-info/licenses/LICENCE:1-18（1,985 B）",
+     "text": "`tqdm` is a product of collaborative work.\nUnless otherwise stated, all authors (see commit logs) retain copyright\nfor their respective work, and release the work under the MIT licence\n(text below).\n\nExceptions or notable authors are listed below\nin reverse chronological order:\n\n* files: *\n  MPL-2.0 2015-2026 (c) Casper da Costa-Luis\n  [casperdcl](https://github.com/casperdcl).\n* files: tqdm/_tqdm.py\n  MIT 2016 (c) [PR #96] on behalf of Google Inc.\n* files: tqdm/_tqdm.py README.rst .gitignore\n  MIT 2013 (c) Noam Yorav-Raphael, original author."
+    },
+    {
+     "where": "同（MPL Exhibit A の節）",
+     "text": "Mozilla Public Licence (MPL) v. 2.0 - Exhibit A\n-----------------------------------------------\n\nThis Source Code Form is subject to the terms of the\nMozilla Public License, v. 2.0.\nIf a copy of the MPL was not distributed with this project,\nYou can obtain one at https://mozilla.org/MPL/2.0/."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "MPL-2.0 §3.2・§3.3・§3.4（逐語は R5-07 に同じ。§2.7 によりこの 3 節は許諾の条件）",
+    "MIT の定型条件（著作権表示と許諾文の写し）",
+    "**wheel が持つのは MPL の Exhibit A だけで、MPL-2.0 本文は入っていない**（実測＝1,985 B の LICENCE 全文を読んだ。中身は上の帰属表＋Exhibit A＋MIT 本文）",
+    "檔名が LICENCE（イギリス綴り）＝機械的に LICENSE を探す組み立て器は取りこぼす"
+   ],
+   "modification_or_resigning": {
+    "status": "not-stated",
+    "quote": "LICENCE 全文に改変・署名を禁ずる文言は無い（MIT 本文は「to deal in the Software without restriction, including without limitation the rights to use, copy, modify, ...」）"
+   },
+   "authenticode_observed": "unsigned",
+   "open_points_for_commander": [
+    "「MPL-2.0 AND MIT」の AND を、どの檔にどちらが掛かるかまで配布物の通知で書き分けるか（LICENCE 冒頭の帰属表がその対応を書いている）"
+   ],
+   "notes": "実測＝wheel（80,184 B・39 エントリ）を開いた。ネイティブ物 0 件。MPL-2.0 本文は R5-07 の originals/mpl-2.0-2026-09-14.txt を共用できる。"
+  },
+  {
+   "id": "R5-09",
+   "component": "【新規・first-run-notices に無い】grpcio 1.83.1 が同梱する grpc/_cython/_credentials/roots.pem（623,801 B）＝MPL-2.0",
+   "covers_files": [
+    "grpcio-1.83.1-cp312-cp312-win_amd64.whl",
+    "grpc/_cython/_credentials/roots.pem",
+    "grpc/_cython/cygrpc.cp312-win_amd64.pyd"
+   ],
+   "license_name": "grpcio 自身＝Apache-2.0（License-Expression: Apache-2.0）／同梱 roots.pem＝MPL-2.0（同梱 LICENSE が自ら宣言）",
+   "source_url": "https://files.pythonhosted.org/packages/.../grpcio-1.83.1-cp312-cp312-win_amd64.whl（台帳の url 欄）",
+   "original_file": "（wheel 内 grpcio-1.83.1.dist-info/licenses/LICENSE・30,814 B。originals には未抽出＝下の notes 参照）",
+   "sha256": "unknown",
+   "bytes": 30814,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "grpcio-1.83.1.dist-info/licenses/LICENSE:246-252",
+     "text": "-----------------------------------------------------------\n\nFollowing applies to:\n./etc/roots.pem\n\nMozilla Public License Version 2.0\n=================================="
+    },
+    {
+     "where": "grpcio-1.83.1.dist-info/licenses/LICENSE:2-3",
+     "text": "Apache License\n                           Version 2.0, January 2004"
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "Apache-2.0 §4(a)（本文 1 部）＋ MPL-2.0 §3.2・§3.3・§3.4（roots.pem の分）",
+    "**grpcio は certifi・tqdm と違い MPL-2.0 の本文を LICENSE の中に丸ごと持っている**（:251 以降）＝この 1 檔を写せば MPL の本文義務は満たせる形になっている（実測）",
+    "LICENSE が指す檔名は「./etc/roots.pem」だが、wheel 内の実体の場所は grpc/_cython/_credentials/roots.pem（623,801 B）＝**名前が一致しない**（観測事実。同一物かの断定は席が書かない）"
+   ],
+   "modification_or_resigning": {
+    "status": "not-stated",
+    "quote": "MPL-2.0 §3.4「You may not remove or alter the substance of any license notices ... contained within the Source Code Form of the Covered Software」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "roots.pem（CA 証明書束）を v3 の配布物に含めるか。certifi の cacert.pem と役割が重なる＝落とせるかは合成の席の論点"
+   ],
+   "notes": "実測＝wheel（5,161,512 B・66 エントリ）を開き、LICENSE 30,814 B の全行を走査して MPL の節の開始行（:246-252）を特定した。ネイティブは cygrpc.cp312-win_amd64.pyd の 1 件。LICENSE 本体は 30 KB あり、originals への個別保存は省いた（wheel はローカルに在り、いつでも同じ手順で再抽出できる）＝やり残しとして not_done に記す。"
+  },
+  {
+   "id": "R5-10",
+   "component": "【新規・first-run-notices に無い】setuptools 84.0.0 が同梱する validate-pyproject 由来の JSON スキーマ 2 檔＝MPL-2.0",
+   "covers_files": [
+    "setuptools-84.0.0-py3-none-any.whl",
+    "setuptools/config/NOTICE",
+    "setuptools/config/_validate_pyproject/NOTICE"
+   ],
+   "license_name": "MPL-2.0（同梱 NOTICE が自ら宣言）。setuptools 自身は MIT",
+   "source_url": "https://github.com/abravalheri/validate-pyproject（同梱 NOTICE の記載）",
+   "original_file": "originals/setuptools-config-NOTICE.txt",
+   "sha256": "2dddf08818297a3b89d43d95ff659d8da85741108c9136dfa3a4d856c0623bd8",
+   "bytes": 493,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "setuptools/config/NOTICE（全文 493 B）",
+     "text": "The following files include code from opensource projects\n(either as direct copies or modified versions):\n\n- `setuptools.schema.json`, `distutils.schema.json`:\n    - project: `validate-pyproject` - licensed under MPL-2.0\n      (https://github.com/abravalheri/validate-pyproject):\n\n      This Source Code Form is subject to the terms of the Mozilla Public\n      License, v. 2.0. If a copy of the MPL was not distributed with this file,\n      You can obtain one at https://mozilla.org/MPL/2.0/."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "MPL-2.0 §3.2・§3.3・§3.4（逐語は R5-07）",
+    "NOTICE は「either as direct copies or **modified versions**」と述べる＝MPL §3.1 の Modifications に当たる物が setuptools 側に在るという上流自身の記述（観測事実。当てはめの読みは席が書かない）",
+    "ここでも MPL-2.0 の本文は setuptools の wheel に入っていない（実測）"
+   ],
+   "modification_or_resigning": {
+    "status": "not-stated",
+    "quote": "—"
+   },
+   "authenticode_observed": "unsigned",
+   "open_points_for_commander": [
+    "setuptools を v3 の配布物に残すか（R5-06 の LGPL-3 と合わせて、setuptools 1 件で copyleft が 2 種類付いてくる）"
+   ],
+   "notes": "実測＝setuptools wheel 内の NOTICE 2 檔（493 B と 18,737 B）。18,737 B の setuptools/config/_validate_pyproject/NOTICE も同趣旨で、こちらは第三者プロジェクト（fastjsonschema 等）の許諾文を並べたもの。**この 2 件は Apache-2.0 §4(d) の NOTICE ではない**（setuptools は MIT）。"
+  },
+  {
+   "id": "R5-11",
+   "component": "numpy 2.5.2＝同梱 numpy.libs/libscipy_openblas64_-327b2e0bcffce2882e0dc04cdeb4eaa6.dll に libgfortran が静的リンクされている（GPL-3.0-or-later WITH GCC-exception-3.1）。さらに numpy.libs/msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll を同梱",
+   "covers_files": [
+    "numpy-2.5.2-cp312-cp312-win_amd64.whl",
+    "numpy.libs/libscipy_openblas64_-327b2e0bcffce2882e0dc04cdeb4eaa6.dll",
+    "numpy.libs/msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll"
+   ],
+   "license_name": "宣言＝License-Expression: BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0（台帳の license 欄と一致）。**同梱 LICENSE.txt はこの式に無い GPL-3.0-or-later WITH GCC-exception-3.1 と BSD-3-Clause-Open-MPI を名乗る**",
+   "source_url": "https://files.pythonhosted.org/packages/.../numpy-2.5.2-cp312-cp312-win_amd64.whl（台帳の url 欄）。libgfortran のソース＝https://gcc.gnu.org/git/?p=gcc.git;a=tree;f=libgfortran（LICENSE.txt:134 の Availability 欄）",
+   "original_file": "originals/numpy-LICENSE.txt",
+   "sha256": "a804dff0ead9fadc5293456410bcbfc32bf024be9c4513459663fb7b442d2341",
+   "bytes": 45831,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "numpy-2.5.2.dist-info/licenses/LICENSE.txt:131-135",
+     "text": "Name: GCC runtime library\nFiles: numpy.libs\\libscipy_openblas*.dll\nDescription: statically linked to files compiled with gcc\nAvailability: https://gcc.gnu.org/git/?p=gcc.git;a=tree;f=libgfortran\nLicense: GPL-3.0-or-later WITH GCC-exception-3.1"
+    },
+    {
+     "where": "同 :138-155",
+     "text": "Libgfortran is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3, or (at your option) any later version.\n\n  Libgfortran is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\n  Under Section 7 of GPL version 3, you are granted additional permissions described in the GCC Runtime Library Exception, version 3.1, as published by the Free Software Foundation.\n\n  You should have received a copy of the GNU General Public License and a copy of the GCC Runtime Library Exception along with this program; see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see <http://www.gnu.org/licenses/>."
+    },
+    {
+     "where": "同 :159-161",
+     "text": "Full text of license texts referred to above follows (that they are listed below does not necessarily imply the conditions apply to the present binary release):"
+    },
+    {
+     "where": "同 :77-80",
+     "text": "Name: LAPACK\nFiles: numpy.libs\\libscipy_openblas*.dll\n...\nLicense: BSD-3-Clause-Open-MPI"
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "BSD-3-Clause ほか permissive 群の定型条件（許諾文の写し）。LICENSE.txt 45,831 B と、dist-info/licenses/ 配下の個別 17 檔をディレクトリごと写す",
+    "GCC Runtime Library Exception 3.1 の本文は LICENSE.txt:165 以降に、GPL-3.0 本文は :241 以降（Version 3, 29 June 2007）に**同梱されている**＝外部取得は要らない（実測）",
+    "numpy.libs/msvcp140-<hash>.dll ＝ Microsoft の再頒布物が **檔名にハッシュを付けた形**で wheel に入っている（実測）。これは MSVC 再頒布の「You may not modify these files」（研究ノート 22 表 3）と並べて読む材料"
+   ],
+   "modification_or_resigning": {
+    "status": "not-stated",
+    "quote": "LICENSE.txt:159-161「Full text of license texts referred to above follows (that they are listed below does not necessarily imply the conditions apply to the present binary release)」＝上流自身が「掲載＝条件の適用ではない」と註を付けている。この註の意味は法解釈＝席が断定しない"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "**宣言（License-Expression）に GPL 系が 1 語も無いのに、同梱 LICENSE.txt は GPL-3.0-or-later WITH GCC-exception-3.1 を名乗る**＝どちらを正本として配布物の通知に書くか",
+    "numpy.libs/msvcp140-<hash>.dll を配ることが MSVC 再頒布の条件（licensed Visual Studio users／改変禁止）にどう掛かるか＝first-run-notices §C 1 と同じ論点の派生。**檔名が改変されている**のは観測事実",
+    "R5-12（scipy）にも同じ論点がそのまま掛かる"
+   ],
+   "notes": "実測＝wheel（12,464,674 B・945 エントリ）を開き、ネイティブ物 21 檔（.pyd 19・.dll 2）を列挙し、dist-info/licenses/ 配下の 17 檔＋パッケージ内 3 檔の許諾文を見つけた。全パスは findings/R5-pypi-table.csv の native_paths 欄（R6 との突合用）。"
+  },
+  {
+   "id": "R5-12",
+   "component": "scipy 1.18.1＝同梱 scipy.libs/libscipy_openblas-197ee2fc9b4d071f7e048078cac74115.dll（numpy と同じく libgfortran を静的リンク）。加えて**台帳の license 欄と wheel の実値が食い違う唯一の 1 件**",
+   "covers_files": [
+    "scipy-1.18.1-cp312-cp312-win_amd64.whl",
+    "scipy.libs/libscipy_openblas-197ee2fc9b4d071f7e048078cac74115.dll"
+   ],
+   "license_name": "台帳の license 欄＝「License :: OSI Approved :: BSD License」（分類子）。**wheel の METADATA には License-Expression 欄も License :: の分類子も無く、License: 欄が BSD-3 の全文（複数行）を直に書いている**。License-File 欄も 0 件",
+   "source_url": "https://files.pythonhosted.org/packages/.../scipy-1.18.1-cp312-cp312-win_amd64.whl（台帳の url 欄）",
+   "original_file": "originals/scipy-LICENSE.txt",
+   "sha256": "f0f5c56b298ec9795df1199edc328a987242716d14a1bde6813112e22dc15f99",
+   "bytes": 45881,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "scipy-1.18.1.dist-info/METADATA の License: 欄（1 行目）",
+     "text": "Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers. All rights reserved."
+    },
+    {
+     "where": "scipy-1.18.1.dist-info/LICENSE.txt:132-136",
+     "text": "Name: GCC runtime library\nFiles: scipy.libs\\libscipy_openblas*.dll\nDescription: statically linked to files compiled with gcc\nAvailability: https://gcc.gnu.org/git/?p=gcc.git;a=tree;f=libgfortran\nLicense: GPL-3.0-or-later WITH GCC-exception-3.1"
+    },
+    {
+     "where": "scipy-1.18.1.dist-info/LICENSE.txt:243",
+     "text": "Version 3, 29 June 2007"
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "BSD-3-Clause の定型条件。許諾文は dist-info/LICENSE.txt（45,881 B）に集約されており、GPL-3.0 本文と GCC Runtime Library Exception 本文も同梱されている（実測）",
+    "パッケージ内にも scipy/fft/_duccfft/LICENSE.md・scipy/integrate/LICENSE_DOP・scipy/spatial/qhull_src/COPYING_QHULL.txt・scipy/_lib/_uarray/LICENSE が在る＝木ごと残す",
+    "**dist-info の場所が dist-info/LICENSE.txt（licenses/ サブフォルダではない）**＝dist-info/licenses/ だけを写す組み立て器は取りこぼす（実測）"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "BSD-3-Clause「Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "台帳の license 欄「License :: OSI Approved :: BSD License」は wheel に無い値＝make-ledger.ps1 が PyPI の classifiers から取った値と思われるが、**wheel の METADATA には分類子が無い**（実測）。台帳の出所を書き直すかは配布方針の判断",
+    "numpy（R5-11）と同じ GPL-3.0-or-later WITH GCC-exception-3.1 の論点"
+   ],
+   "notes": "実測＝wheel（36,658,278 B・1,535 エントリ）を開き、ネイティブ物 107 檔（.pyd 106・.dll 1）を列挙。台帳と wheel の突合で不一致と出た唯一の件（96/99 一致・不一致 1・宣言なし 2）。"
+  },
+  {
+   "id": "R5-13",
+   "component": "pillow 12.3.0（MIT-CMU）＝同梱の .pyd 8 件に brotli・freetype・harfbuzz・lcms2・libavif・libjpeg-turbo・libpng・libwebp・openjpeg・tiff・xz・zlib-ng が静的リンクされている",
+   "covers_files": [
+    "pillow-12.3.0-cp312-cp312-win_amd64.whl",
+    "PIL/_avif.cp312-win_amd64.pyd",
+    "PIL/_imaging.cp312-win_amd64.pyd",
+    "PIL/_imagingcms.cp312-win_amd64.pyd",
+    "PIL/_imagingft.cp312-win_amd64.pyd",
+    "PIL/_imagingmath.cp312-win_amd64.pyd",
+    "PIL/_imagingmorph.cp312-win_amd64.pyd",
+    "PIL/_imagingtk.cp312-win_amd64.pyd",
+    "PIL/_webp.cp312-win_amd64.pyd"
+   ],
+   "license_name": "License-Expression: MIT-CMU（台帳の license 欄と一致）。同梱 LICENSE（78,016 B・1,617 行）が 12 の第三者ライブラリの許諾文を連ねる",
+   "source_url": "https://files.pythonhosted.org/packages/.../pillow-12.3.0-cp312-cp312-win_amd64.whl（台帳の url 欄）",
+   "original_file": "originals/pillow-LICENSE.txt",
+   "sha256": "4f7866a74802c6326f81faff59a56546b6aec2b10b91973e0e9308de95e79857",
+   "bytes": 78016,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "pillow-12.3.0.dist-info/licenses/LICENSE:10-22（MIT-CMU の本文）",
+     "text": "Like PIL, Pillow is licensed under the open source MIT-CMU License:\n\nBy obtaining, using, and/or copying this software and/or its associated\ndocumentation, you agree that you have read, understood, and will comply\nwith the following terms and conditions:\n\nPermission to use, copy, modify and distribute this software and its\ndocumentation for any purpose and without fee is hereby granted,\nprovided that the above copyright notice appears in all copies, and that\nboth that copyright notice and this permission notice appear in supporting\ndocumentation, and that the name of Secret Labs AB or the author not be\nused in advertising or publicity pertaining to distribution of the software\nwithout specific, written prior permission."
+    },
+    {
+     "where": "同 :59-81（freetype 節）",
+     "text": "The FreeType  2 font  engine is  copyrighted work  and cannot  be used\nlegally without  a software  license.  In order  to make  this project\nusable to  a vast majority of  developers, we distribute it  under two\nmutually exclusive open-source licenses.\n\nThis means that *you* must choose  *one* of the two licenses described\nbelow, then obey all its terms and conditions when using FreeType 2 in\nany of your projects or products.\n\n  - The FreeType License,  found in the file  `docs/FTL.TXT`, which is\n    similar to the  original BSD license *with*  an advertising clause\n    that forces  you to explicitly  cite the FreeType project  in your\n    ...\n    `docs/GPLv2.TXT`  (any  later  version  can  be  used  also),  for\n    programs  which  already  use  the  GPL.  Note  that  the  FTL  is\n    incompatible with GPLv2 due to its advertisement clause."
+    },
+    {
+     "where": "同 :1530-1535（xz 節）",
+     "text": "Different licenses apply to different files in this package. Here\n    is a summary of which licenses apply to which parts of this package:\n\n      - liblzma is under the BSD Zero Clause License (0BSD)."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "MIT-CMU＝①著作権表示を全コピーに載せる ②著作権表示と許諾文を supporting documentation にも載せる ③**Secret Labs AB または著者の名を、事前の書面許可なく広告・宣伝に使わない**（permissive だが「宣伝に名前を使うな」条項が付く＝MIT より 1 条多い）",
+    "**FreeType は FTL と GPLv2 の二者択一**（上の逐語）。LICENSE には GPLv2 の全文（:272-610 付近）も FTL の全文（:113-270 付近）も同梱されているので、外部取得は要らない。**どちらを選ぶかは配布側が決める**",
+    "12 ライブラリの許諾文はすべて 1 檔（78,016 B）に入っている＝この 1 檔を写せば足りる形になっている"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "MIT-CMU「Permission to use, copy, modify and distribute this software and its documentation for any purpose and without fee is hereby granted」。ただし同じ文に「the name of Secret Labs AB or the author not be used in advertising or publicity pertaining to distribution of the software without specific, written prior permission」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "**FreeType を FTL と GPLv2 のどちらで受けるか**。FTL には広告条項（プロジェクトを明示的に引用させる）が付く。GPLv2 を選ぶと配布物全体との関係が変わる＝法解釈＝卓",
+    "MIT-CMU の「advertising or publicity」条項が、landing page や Release ページでの記載にどう掛かるか"
+   ],
+   "notes": "実測＝wheel（7,227,137 B・121 エントリ）を開き、LICENSE 78,016 B の「===== <lib>-<ver> =====」見出しを全部抜いた＝brotli-1.2.0／freetype-2.14.3／harfbuzz-14.2.1／lcms2-2.19.1／libavif-1.4.2／libjpeg-turbo-3.1.4.1／libpng-1.6.58／libwebp-1.6.0／openjpeg-2.5.4／tiff-4.7.1／xz-5.8.3／zlib-ng-2.3.3 の 12 件。**独立 DLL は 0 件**＝すべて .pyd に静的リンクされている（ネイティブ 8 檔はすべて .pyd）。"
+  },
+  {
+   "id": "R5-14",
+   "component": "regex 2026.9.3＝「Apache-2.0 AND CNRI-Python」。CNRI-Python の本文が wheel に入っていない",
+   "covers_files": [
+    "regex-2026.9.3-cp312-cp312-win_amd64.whl",
+    "regex/_regex.cp312-win_amd64.pyd"
+   ],
+   "license_name": "License-Expression: Apache-2.0 AND CNRI-Python（台帳の license 欄と一致）",
+   "source_url": "https://files.pythonhosted.org/packages/.../regex-2026.9.3-cp312-cp312-win_amd64.whl（台帳の url 欄）。CNRI-Python 本文の所在＝python-3.12.10-embed-amd64.zip 内 LICENSE.txt（36,874 B）／typing_extensions-4.16.0.dist-info/licenses/LICENSE（13,936 B）のいずれにも CNRI 節が入っている（実測）",
+   "original_file": "originals/regex-LICENSE.txt・originals/typing_extensions-LICENSE.txt",
+   "sha256": "regex-LICENSE.txt=3d220c06594b826bbabf110312f60f385f99e57e529fa4b9e536f79091f8b4c7 (11,792 B) / typing_extensions-LICENSE.txt=3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf (13,936 B)",
+   "bytes": 11792,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "regex-2026.9.3.dist-info/licenses/LICENSE.txt:1-5（全 208 行のうち冒頭）",
+     "text": "This work was derived from the 're' module of CPython 2.6 and CPython 3.1,\ncopyright (c) 1998-2001 by Secret Labs AB and licensed under CNRI's Python 1.6\nlicense.\n\nAll additions and alterations are licensed under the Apache 2.0 License."
+    },
+    {
+     "where": "typing_extensions-4.16.0.dist-info/licenses/LICENSE:173（CNRI 節の見出し）",
+     "text": "CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1"
+    },
+    {
+     "where": "同 :182-190（CNRI §2）",
+     "text": "2. Subject to the terms and conditions of this License Agreement, CNRI hereby grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce, analyze, test, perform and/or display publicly, prepare derivative works, distribute, and otherwise use Python 1.6.1 alone or in any derivative version, provided, however, that CNRI's License Agreement and CNRI's notice of copyright, i.e., \"Copyright (c) 1995-2001 Corporation for National Research Initiatives; All Rights Reserved\" are retained in Python 1.6.1 alone or in any derivative version prepared by Licensee."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "CNRI §2＝「CNRI's License Agreement and CNRI's notice of copyright ... are retained」＝CNRI の許諾文と著作権表示を残す",
+    "Apache-2.0 §4(a)＝本文 1 部（regex の LICENSE.txt:8-208 に Apache-2.0 全文が入っている）",
+    "**regex の LICENSE.txt に入っているのは Apache-2.0 の全文だけで、CNRI-Python の本文は 3 行の言及だけ**（実測＝208 行全部を走査）＝v3 の配布側が CNRI 本文を別途添える必要がある",
+    "ただし本文は **同じ配布物の中にすでに 2 箇所ある**＝python-embed の LICENSE.txt（A1 で配る物）と typing_extensions の LICENSE。外部取得は要らない"
+   ],
+   "modification_or_resigning": {
+    "status": "not-stated",
+    "quote": "CNRI §2 は「prepare derivative works」を明文で許す。改変後の表示については同 §3 相当の規定を本文で確認する必要がある（本席は §2 のみ逐語で引いた）"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "CNRI §2 の代替文（「Alternately, in lieu of CNRI's License Agreement, Licensee may substitute the following text ... handle: 1895.22/1013」）を使うか、本文をそのまま添えるか"
+   ],
+   "notes": "実測＝wheel（277,773 B・10 エントリ）を開き LICENSE.txt 11,792 B・208 行を全走査。CNRI 本文が typing_extensions の LICENSE に入っていることは、そちらの 13,936 B を別途読んで確認した（:173 に「CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1」）。"
+  },
+  {
+   "id": "R5-15",
+   "component": "llvmlite 0.49.0＝「BSD-2-Clause AND Apache-2.0 WITH LLVM-exception」。同梱 llvmlite.libs/msvcp140-8f141b4454fa78db34bc1f28c571b4da.dll（檔名にハッシュが付いた MSVC 再頒布物）",
+   "covers_files": [
+    "llvmlite-0.49.0-cp312-cp312-win_amd64.whl",
+    "llvmlite/binding/llvmlite.dll",
+    "llvmlite.libs/msvcp140-8f141b4454fa78db34bc1f28c571b4da.dll"
+   ],
+   "license_name": "License-Expression: BSD-2-Clause AND Apache-2.0 WITH LLVM-exception（台帳の license 欄と一致）",
+   "source_url": "https://files.pythonhosted.org/packages/.../llvmlite-0.49.0-cp312-cp312-win_amd64.whl（台帳の url 欄）",
+   "original_file": "originals/llvmlite-LICENSE.txt・originals/llvmlite-LICENSE.thirdparty.txt",
+   "sha256": "LICENSE=7d6aa93e52a7ae9a995ff6a40c0ea5628311cdf1bd8dcd29c8ce9181f4af3a81 (1,309 B) / LICENSE.thirdparty=7b564c7af9ab446d245ba66adc8cda2f61d1d162f842899557499e80b715993a (12,786 B)",
+   "bytes": 12786,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "llvmlite-0.49.0.dist-info/licenses/LICENSE.thirdparty:5",
+     "text": "The Apache License v2.0 with LLVM Exceptions:"
+    },
+    {
+     "where": "同 :211-225（LLVM Exception 全文）",
+     "text": "---- LLVM Exceptions to the Apache 2.0 License ----\n\nAs an exception, if, as a result of your compiling your source code, portions\nof this Software are embedded into an Object form of such source code, you\nmay redistribute such embedded portions in such Object form without complying\nwith the conditions of Sections 4(a), 4(b) and 4(d) of the License.\n\nIn addition, if you combine or link compiled forms of this Software with\nsoftware that is licensed under the GPLv2 (\"Combined Software\") and if a\ncourt of competent jurisdiction determines that the patent provision (Section\n3), the indemnity provision (Section 9) or other Section of the License\nconflicts with the conditions of the GPLv2, you may retroactively and\nprospectively choose to deem waived or otherwise exclude such Section(s) of\nthe License, but only in their entirety and only with respect to the Combined\nSoftware."
+    },
+    {
+     "where": "llvmlite-0.49.0.dist-info/licenses/LICENSE:1-13（BSD-2-Clause）",
+     "text": "Copyright (c) 2014, Anaconda Inc.\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n\nRedistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n\nRedistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "BSD-2-Clause の定型条件（バイナリ配布では著作権表示・条件列・免責を再現）",
+    "Apache-2.0 §4(a)（本文 1 部）。ただし **LLVM Exception は「コンパイルの結果として埋め込まれた部分」については §4(a)(b)(d) の条件を免除する**＝上の逐語。どこまでが「embedded portions」かの当てはめは席が書かない",
+    "llvmlite.libs/msvcp140-<hash>.dll ＝ Microsoft の再頒布物が**檔名を変えた形**で同梱されている（実測）"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "BSD-2-Clause「Redistribution and use in source and binary forms, with or without modification, are permitted」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "LLVM Exception の「without complying with the conditions of Sections 4(a), 4(b) and 4(d)」がどこまで及ぶか＝法解釈",
+    "msvcp140 が **numpy・scikit-learn・llvmlite の 3 つの wheel に別々に同梱されている**（llvmlite と numpy はハッシュ付きの改名、scikit-learn は素の msvcp140.dll）。MSVC 再頒布の「You may not modify these files」との関係＝first-run-notices §C 1 の派生論点"
+   ],
+   "notes": "実測＝wheel（41,865,543 B・47 エントリ）を開き、ネイティブ 2 檔（llvmlite/binding/llvmlite.dll・llvmlite.libs/msvcp140-<hash>.dll）を確認。LICENSE.thirdparty は 225 行で、Apache-2.0 全文（:8-208）＋LLVM Exception（:211-225）。"
+  },
+  {
+   "id": "R5-16",
+   "component": "scikit-learn 1.9.0＝同梱 sklearn/.libs/msvcp140.dll と sklearn/.libs/vcomp140.dll（Microsoft の再頒布物を素の檔名で同梱）",
+   "covers_files": [
+    "scikit_learn-1.9.0-cp312-cp312-win_amd64.whl",
+    "sklearn/.libs/msvcp140.dll",
+    "sklearn/.libs/vcomp140.dll"
+   ],
+   "license_name": "License-Expression: BSD-3-Clause（台帳の license 欄と一致）",
+   "source_url": "https://files.pythonhosted.org/packages/.../scikit_learn-1.9.0-cp312-cp312-win_amd64.whl（台帳の url 欄）",
+   "original_file": "（wheel 内 scikit_learn-1.9.0.dist-info/licenses/COPYING 2,629 B）",
+   "sha256": "unknown",
+   "bytes": 2629,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "scikit_learn-1.9.0.dist-info/METADATA（ヘッダ）",
+     "text": "License-Expression: BSD-3-Clause"
+    },
+    {
+     "where": "scikit_learn-1.9.0.dist-info/licenses/COPYING（2,629 B・BSD-3 本文）",
+     "text": "（BSD-3-Clause 本文。同梱の許諾文は COPYING 1 件のみ＝License-File 欄も 1 件）"
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "BSD-3-Clause の定型条件",
+    "**同梱の msvcp140.dll と vcomp140.dll について、scikit-learn の許諾文（COPYING 2,629 B）にも License-File 欄（1 件）にも記載が無い**（実測＝wheel 内の許諾文 4 檔＝COPYING・sklearn/externals/array_api_compat/LICENSE・array_api_extra/LICENSE・sklearn/svm/src/liblinear/COPYRIGHT を全部読んだが msvcp/vcomp の語は 0 件）",
+    "＝torch が NVIDIA の DLL を同梱しながら CUDA EULA を持たない構図（研究ノート 22 表 1b）と**同じ穴**が PyPI 側にもある"
+   ],
+   "modification_or_resigning": {
+    "status": "not-stated",
+    "quote": "—"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "vcomp140.dll（OpenMP ランタイム）と msvcp140.dll は Microsoft の REDIST リストに載る物＝「licensed Visual Studio users」の要件（first-run-notices §C 1）が**PyPI の wheel を再配布する形にも掛かるか**は法解釈＝卓"
+   ],
+   "notes": "実測＝wheel（8,211,173 B・1,059 エントリ）を開き、ネイティブ 71 檔（.pyd 69・.dll 2）を列挙。全パスは findings/R5-pypi-table.csv の native_paths 欄。"
+  },
+  {
+   "id": "R5-17",
+   "component": "Apache-2.0 §4(d) の NOTICE 義務が発動する物＝99 件中 1 件（requests 2.34.2）だけ",
+   "covers_files": [
+    "requests-2.34.2-py3-none-any.whl",
+    "requests-2.34.2.dist-info/licenses/NOTICE"
+   ],
+   "license_name": "Apache-2.0（METADATA の License: Apache-2.0・Classifier: License :: OSI Approved :: Apache Software License）",
+   "source_url": "https://www.apache.org/licenses/LICENSE-2.0.txt（2026-09-14T10:50:56+09:00 取得・HTTP=200・11,358 B）",
+   "original_file": "originals/requests-NOTICE.txt・originals/requests-LICENSE.txt・originals/apache-2.0-2026-09-14.txt",
+   "sha256": "NOTICE=f5110972dedad2b4e9d314518daf3b7d72d6e02e499acd802181de6f74571dcc (38 B) / LICENSE=09e8a9bcec8067104652c168685ab0931e7868f9c8284b66f5ae6edae5f1130b (10,142 B) / apache-2.0-2026-09-14.txt=cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 (11,358 B)",
+   "bytes": 38,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "requests-2.34.2.dist-info/licenses/NOTICE（全文 38 B）",
+     "text": "Requests\nCopyright 2019 Kenneth Reitz"
+    },
+    {
+     "where": "Apache-2.0 §4(d)（originals/apache-2.0-2026-09-14.txt）",
+     "text": "If the Work includes a \"NOTICE\" text file as part of its distribution, then any Derivative Works that You distribute must include a readable copy of the attribution notices contained within such NOTICE file, excluding those notices that do not pertain to any part of the Derivative Works, in at least one of the following places: within a NOTICE text file distributed as part of the Derivative Works; within the Source form or documentation, if provided along with the Derivative Works; or, within a display generated by the Derivative Works, if and wherever such third-party notices normally appear."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "§4(a)「You must give any other recipients of the Work or Derivative Works a copy of this License」＝Apache-2.0 本文 1 部（配布物の共有分 1 檔で足りる）",
+    "§4(d)＝NOTICE の中身を配布物に写す。**該当は requests の 38 B の 1 件のみ**（実測）",
+    "setuptools の NOTICE 2 檔（setuptools/config/NOTICE 493 B・setuptools/config/_validate_pyproject/NOTICE 18,737 B）は **Apache-2.0 §4(d) の NOTICE ではない**＝setuptools は MIT で、中身は MPL-2.0 の告知（R5-10）"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "Apache-2.0 §4「You may reproduce and distribute copies of the Work or Derivative Works thereof in any medium, with or without modifications, and in Source or Object form, provided that You meet the following conditions」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [],
+   "notes": "実測＝99 件の全アーカイブのエントリ名を走査し、パス要素が NOTICE で始まる檔を数えた＝requests 1 件（dist-info/licenses/NOTICE・38 B）と setuptools 2 件のみ。torch／torchaudio は本席の担当外（研究ノート 22 表 1b が「NOTICE という名の檔は 0 件」と記録）。Apache-2.0 の本文は今日取り直した（11,358 B・sha256 cfc7749b...）＝dacvae の同梱 LICENSE・sentencepiece の上流 LICENSE と 1 バイト違わず同一だった。"
+  },
+  {
+   "id": "R5-18",
+   "component": "Apache-2.0 を宣言しながら、同梱の許諾文が定型の告知 13 行だけで本文を含まない 2 件＝fire 0.7.1・msgpack 1.2.2",
+   "covers_files": [
+    "fire-0.7.1-py3-none-any.whl",
+    "msgpack-1.2.2-cp312-cp312-win_amd64.whl",
+    "msgpack/_cmsgpack.cp312-win_amd64.pyd"
+   ],
+   "license_name": "fire＝Apache-2.0（METADATA License:）／msgpack＝Apache-2.0（License-Expression）",
+   "source_url": "https://www.apache.org/licenses/LICENSE-2.0.txt（本文の入手元）",
+   "original_file": "originals/msgpack-COPYING.txt・originals/apache-2.0-2026-09-14.txt",
+   "sha256": "msgpack-COPYING.txt=4fbdff42eba4593c16f7a7ea7078883b2b734870a1e2b636284ce2dce62bf4f7 (628 B)",
+   "bytes": 628,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "fire-0.7.1.dist-info/licenses/LICENSE（全文 573 B）",
+     "text": "Copyright 2017 Google Inc. All rights reserved.\n\nLicensed under the Apache License, Version 2.0 (the \"License\");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0"
+    },
+    {
+     "where": "msgpack-1.2.2.dist-info/licenses/COPYING（全文 628 B）",
+     "text": "Copyright (C) 2008-2011 INADA Naoki <songofacandy@gmail.com>\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0"
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "§4(a) の「a copy of this License」に当たる本文が wheel に無い＝配布物の共有の Apache-2.0 本文 1 檔（11,358 B）でまとめて満たす形になる",
+    "NOTICE は両方とも無い＝§4(d) は発動しない（実測）"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "Apache-2.0 §4「with or without modifications」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [],
+   "notes": "実測＝fire は 52 エントリ・msgpack は 10 エントリを開き、許諾文の全文を読んだ。同じ Apache-2.0 宣言でも absl-py（11,358 B）・python-multipart（11,358 B）・huggingface-hub（11,357 B）・transformers（11,418 B）・hf-xet（11,558 B）・safetensors（11,558 B）・importlib-resources（10,278 B）・requests（10,142 B）は本文を持っている。"
+  },
+  {
+   "id": "R5-19",
+   "component": "見慣れない表記のうち、条件が定型と違う 4 件＝cffi（MIT-0）・pyaml（WTFPL）・typing-extensions（PSF-2.0）・packaging（Apache-2.0 OR BSD-2-Clause）",
+   "covers_files": [
+    "cffi-2.1.1-cp312-cp312-win_amd64.whl",
+    "pyaml-26.7.0-py3-none-any.whl",
+    "typing_extensions-4.16.0-py3-none-any.whl",
+    "packaging-26.3-py3-none-any.whl"
+   ],
+   "license_name": "MIT-0（MIT No Attribution）／WTFPL（分類子は License :: Public Domain）／PSF-2.0（実体は Python の 4 段 LICENSE）／Apache-2.0 OR BSD-2-Clause",
+   "source_url": "各 wheel＝ledger/runtime-cu130.json の url 欄",
+   "original_file": "originals/cffi-LICENSE.txt・pyaml-COPYING.txt・typing_extensions-LICENSE.txt・packaging-LICENSE.txt",
+   "sha256": "cffi=5ba24ddc57067f9249add644c3afc41a5d6dc37e23433ef759d95df370b0af63 (1,123 B) / pyaml=dc1342cc1cb49e24c1c9e8a495acc9625ce2e04146c116279af0ab0949cd829c (491 B) / typing_extensions=3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf (13,936 B) / packaging=cad1ef5bd340d73e074ba614d26f7deaca5c7940c3d8c34852e65c4909686c48 (197 B)",
+   "bytes": 0,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "cffi-2.1.1.dist-info/licenses/LICENSE（1,123 B）",
+     "text": "Except when otherwise stated (look for LICENSE files in directories or information at the beginning of each file) all software and documentation is licensed as follows: \n\n    MIT No Attribution\n\n    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so."
+    },
+    {
+     "where": "pyaml-26.7.0.dist-info/licenses/COPYING（491 B・条項部）",
+     "text": "  0. You just DO WHAT THE FUCK YOU WANT TO."
+    },
+    {
+     "where": "packaging-26.3.dist-info/licenses/LICENSE（197 B・全文）",
+     "text": "This software is made available under the terms of *either* of the licenses found in LICENSE.APACHE or LICENSE.BSD. Contributions to this software is made under the terms of *both* these licenses."
+    },
+    {
+     "where": "typing_extensions-4.16.0.dist-info/licenses/LICENSE:66",
+     "text": "the documentation are dual licensed under the PSF License Version 2"
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "cffi＝MIT-0＝「MIT No Attribution」で、MIT 本文にある「The above copyright notice and this permission notice shall be included in all copies」の一文が**無い**（実測＝1,123 B 全文を読んだ）＝表示義務が課されない形。ただし冒頭に「Except when otherwise stated (look for LICENSE files in directories or information at the beginning of each file)」の逃げがある",
+    "pyaml＝WTFPL＝条項は 1 行のみ。**檔名が COPYING**（LICENSE ではない）",
+    "typing-extensions＝PSF-2.0 の実体は Python の LICENSE（PSF／BeOpen／CNRI／CWI の 4 段・13,936 B）＝R5-14 の CNRI 本文の供給元にもなる",
+    "packaging＝Apache-2.0 と BSD-2-Clause の**選択（OR）**。本文は 2 檔（LICENSE.APACHE 10,174 B・LICENSE.BSD 1,344 B）とも同梱されている"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "cffi「the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software」／pyaml「You just DO WHAT THE FUCK YOU WANT TO」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "packaging の OR をどちらで受けるか（配布物の通知にどちらを書くか）",
+    "pyaml の WTFPL は表現が公開文書に出せる体裁ではない（メモリの web 用語規則＝公開文に出す語の制約）。配布物の licenses/ に原文を入れる以上は avoid できないが、landing page の一覧での見せ方は卓の判断"
+   ],
+   "notes": "実測＝4 件の wheel を開いて許諾文の全文を読んだ。台帳の license 欄はいずれも wheel の宣言と一致。"
+  },
+  {
+   "id": "R5-20",
+   "component": "アーカイブの中に license の宣言（METADATA／PKG-INFO の License 欄）が 1 つも無い 2 件＝dacvae・silentcipher（台帳の license 欄だけが根拠）",
+   "covers_files": [
+    "dacvae-414c20785fc3a28373073ea8ef7a1316eeeaca6e.zip",
+    "silentcipher-d46d7d0893a583d8968ab3a6626e2289faec9152.zip"
+   ],
+   "license_name": "台帳の license 欄＝dacvae「Apache-2.0」・silentcipher「MIT」。**アーカイブに dist-info も PKG-INFO も無い**（GitHub の /archive/<sha>.zip は素のソース木）",
+   "source_url": "https://raw.githubusercontent.com/facebookresearch/dacvae/414c20785fc3a28373073ea8ef7a1316eeeaca6e/LICENSE / https://raw.githubusercontent.com/SesameAILabs/silentcipher/d46d7d0893a583d8968ab3a6626e2289faec9152/LICENSE（台帳の license_url 欄）",
+   "original_file": "originals/dacvae-LICENSE.txt・originals/silentcipher-LICENSE.txt",
+   "sha256": "dacvae=cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 (11,358 B) / silentcipher=157b6af8c1bc4eac646abdf17473934a85e8815ade3a346cd83a58a171586a73 (1,075 B)",
+   "bytes": 0,
+   "same_as_2026_09_04": "unknown",
+   "quotes": [
+    {
+     "where": "dacvae-.../setup.py:28",
+     "text": "license_files = (\"LICENSE.txt\",),"
+    },
+    {
+     "where": "silentcipher-.../pyproject.toml:12",
+     "text": "\"License :: OSI Approved :: MIT License\","
+    },
+    {
+     "where": "dacvae-.../LICENSE:2-3",
+     "text": "Apache License\n                           Version 2.0, January 2004"
+    },
+    {
+     "where": "silentcipher-.../LICENSE:1-3",
+     "text": "MIT License\n\nCopyright (c) 2024 Sony Research Inc."
+    }
+   ],
+   "redistribution_grant": "conditional",
+   "conditions": [
+    "dacvae＝同梱 LICENSE（11,358 B）は **apache.org の LICENSE-2.0.txt（同日取得・11,358 B）と sha256 が完全一致**＝Apache-2.0 の原文そのもの（実測）。setup.py に license 欄は無く、license_files の指す檔名が実体と食い違う",
+    "silentcipher＝pyproject.toml の分類子が MIT を名乗り、根の LICENSE は MIT 本文（Sony Research Inc.）",
+    "どちらも許諾文は archive の根に在るので、**archive をそのまま配るなら足りる**（R5-03 の package_dir 問題と表裏）"
+   ],
+   "modification_or_resigning": {
+    "status": "allowed",
+    "quote": "Apache-2.0 §4「with or without modifications」／MIT「to deal in the Software without restriction, including without limitation the rights to ... modify」"
+   },
+   "authenticode_observed": "not-checked",
+   "open_points_for_commander": [
+    "GitHub の /archive/<sha>.zip は要求のたびに再生成される（台帳の note）＝v3 で自前の置き場に置くなら**今 build-cache に在る実体を正本にする**という判断が要る"
+   ],
+   "notes": "実測＝2 件のアーカイブの全エントリを列挙し、dist-info／PKG-INFO が無いことを確認した。ネイティブ物は 0 件（両方とも純 Python）。"
+  }
+ ],
+ "summary": "1) 99 件を実測で開いた＝台帳の license 欄と wheel の実値は 96 件一致・1 件不一致（scipy＝台帳が分類子を書くが wheel に分類子は無い）・2 件は宣言そのものが無い（dacvae・silentcipher）。2) 許諾文の檔が 1 件も入っていない wheel は 5 件（descript-audiotools・ffmpy・sentencepiece・tensorboard-data-server・tokenizers）＝v3 の配布側が上流から用意する。今日 5 件とも取得して sha256 を記録した。3) 加えて 4 件（dacvae・silentcipher・argbind・randomname）は許諾文が package_dir の外に在り、pure-python-src の導入では木に渡らない。4) weak copyleft は first-run-notices の A17（soxr）・A18（certifi・tqdm）に加えて**新規 3 件**＝setuptools が同梱する autocommand 2.2.2（LGPL-3.0）・grpcio が同梱する roots.pem（MPL-2.0）・setuptools の validate-pyproject スキーマ（MPL-2.0）。5) LGPL-2.1 §6 a〜e と MPL-2.0 §3.2／§3.3／§3.4 は逐語で引いた（§6 は wheel 内 COPYING から・MPL 本文は certifi にも tqdm にも入っていないので mozilla.org から取得）。6) Apache-2.0 §4(d) の NOTICE 義務が発動するのは **requests 1 件だけ**（38 B）。setuptools の NOTICE 2 件は MPL の告知で §4(d) ではない。7) numpy と scipy の同梱 openblas DLL は **GPL-3.0-or-later WITH GCC-exception-3.1**（libgfortran の静的リンク）を wheel 自身の LICENSE が名乗る＝宣言の License-Expression には無い語。8) msvcp140 が numpy・llvmlite（いずれも檔名にハッシュを付けた改名）・scikit-learn（素の檔名）の 3 wheel に同梱され、scikit-learn は同梱物の許諾文をどこにも持たない。9) pillow の FreeType は FTL と GPLv2 の二者択一＝選択が要る。10) ネイティブ物は 99 件で計 251 檔＝全パスを findings/R5-pypi-table.csv の native_paths 欄に入れた（R6 との突合用）。",
+ "not_done": [
+  "grpcio の LICENSE（30,814 B）を originals/ に個別保存していない＝wheel はローカルに在るので同じ手順で再抽出できるが、sha256 は未取得",
+  "scikit-learn の COPYING（2,629 B）も originals/ に未保存・sha256 未取得",
+  "R5-02 で取得した上流 5 檔は HEAD（master／main）の檔であって、台帳が pin した版のタグの檔ではない",
+  "2026-09-04 の生檔置き場（irodori-native-research/lab/tmp/rt-license/）は本リポジトリに無いため、sha256 での差分比較は soundfile の 3 檔のバイト数一致（26,518／2,631／1,512）でしか照合していない＝same_as_2026_09_04 は大半 unknown のまま",
+  "torch・torchaudio は担当外（除外 2 件）。python-3.12.10-embed-amd64.zip と VC_redist.x64.exe も本席の担当外",
+  "wheel 内のネイティブ物の PE 署名は未確認（R6 の担当）。本席は檔名とパスの一覧だけを CSV に出した",
+  "pillow の 12 ライブラリ・numpy の 17 檔・setuptools の 17 檔など、連結された第三者許諾文の中身は見出しと copyleft の語の検索までで、1 件ずつの全文精読はしていない",
+  "cpu 変種・rocm 変種の台帳との一致（依頼文の「3 変種共通」）は、本席は cu130 の台帳 1 本しか開いていない＝突合は未実施"
+ ]
+}

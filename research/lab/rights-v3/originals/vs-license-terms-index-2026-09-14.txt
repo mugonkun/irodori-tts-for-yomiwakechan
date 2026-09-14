@@ -1,0 +1,271 @@
+ Skip to main content
+ Visual Studio
+ Overview
+ Features
+ Editions
+ Extensions
+ Get Started FAQ Support
+ Documentation
+ Service Status
+ Blog
+ Downloads
+ Buy
+ Overview
+ Support
+ Administrator Portal
+ Subscriber Portal
+ Dev Essentials
+ Visual Studio Hub
+ Free Visual Studio
+ Microsoft Security
+ Azure
+ Dynamics 365
+ Microsoft 365
+ Microsoft Teams
+ Windows 365
+ Microsoft AI
+ Azure Space
+ Mixed reality
+ Microsoft HoloLens
+ Microsoft Viva
+ Quantum computing
+ Sustainability
+ Education
+ Automotive
+ Financial services
+ Government
+ Healthcare
+ Manufacturing
+ Retail
+ Find a partner
+ Become a partner
+ Partner Network
+ Microsoft Marketplace
+ Software companies
+ Blog
+ Microsoft Advertising
+ Developer Center
+ Documentation
+ Events
+ Licensing
+ Microsoft Learn
+ Microsoft Research
+ View Sitemap
+ This device is not currently supported for these products.
+ Visual Studio IDE
+ Visual Studio for Mac
+ Visual Studio Code
+ To continue downloading, click here
+ License Terms | Legal Overview 2026-06-15T17:59:21-07:00
+ Visual Studio License Directory
+ Visual Studio
+ License terms for Visual Studio when purchased through a Visual Studio Subscription are covered under the Microsoft Product Terms .
+ For additional information about Visual Studio Licensing, see the Microsoft Visual Studio Licensing Whitepaper .
+ For Product Lifecycle information, see Visual Studio Product Lifecycle and Servicing .
+ Visual Studio 2026
+ EULAs
+ Microsoft Visual Studio Community 2026
+ Microsoft Visual Studio Enterprise 2026, Visual Studio Professional 2026, and Trial Edition
+ Microsoft Diagnostic and Build Tools for Visual Studio 2026
+ Microsoft Visual C++ V14 Redistributable and Runtime 2026
+ Microsoft Visual Studio 2026 Add-Ons and Extensions
+ Microsoft Visual Studio Team Explorer 2026
+ Pre-release EULAs
+ Microsoft Visual Studio 2026 Product Family Pre-Release Software
+ Third Party Notices
+ Microsoft Visual Studio 2026 Third Party Notices
+ Visual Studio 2022
+ EULAs
+ Microsoft Visual Studio Community 2022
+ Microsoft Visual Studio Enterprise 2022, Visual Studio Professional 2022, and Trial Edition
+ Microsoft Diagnostic Build Tools for Visual Studio 2022
+ Microsoft Visual C++ Runtime 2015-2022 Software
+ Supplement for Microsoft Visual Studio 2022
+ Microsoft Visual Studio 2022 Add-Ons and Extensions
+ Microsoft Visual Studio Tools for Applications 2022
+ Microsoft Visual Studio Tools for Applications SDK 2022
+ Microsoft Visual Studio Team Explorer 2022
+ Pre-release EULAs
+ Microsoft Visual Studio 2022 Product Family Pre-Release Software (RC)
+ Microsoft Visual Studio Community 2022 Pre-Release Software (RC)
+ Microsoft Visual Studio 2022 Product Family Pre-Release Software
+ Security Issue Analysis Bug Detection and Fix for Microsoft Visual Studio 2022 Pre-release
+ Supplemental Licenses
+ Microsoft Visual Studio 2022 Supplement for GitHub Copilot
+ Visual Studio 2019
+ EULAs
+ Microsoft Visual Studio Enterprise 2019, Visual Studio Professional 2019, Visual Studio Test Professional 2019, and Trial Edition
+ Microsoft Visual Studio Community 2019
+ Microsoft Visual Studio 2019 Diagnostic Build Tools
+ Microsoft Visual Studio 2019 Add-Ons and Extensions
+ Pre-release EULAs
+ Microsoft Visual Studio Enterprise 2019, Visual Studio Professional 2019, and Trial Edition Pre-Release Software (RC)
+ Microsoft Visual Studio Community 2019 Pre-Release Software (RC)
+ Microsoft Visual Studio 2019 Product Family Pre-Release Software
+ Supplemental Licenses
+ Supplemental License Terms for Microsoft Visual Studio IntelliCode Extension Preview
+ Visual Studio 2017
+ EULAs
+ Microsoft Visual Studio Enterprise 2017, Visual Studio Professional 2017, Visual Studio Test Professional 2017, and Trial Edition
+ Microsoft Visual Studio Community 2017
+ Microsoft Visual Studio 2017 Express for Windows Desktop
+ Microsoft Visual Studio 2017 Tools, Add-Ons, and C++ Redistributable
+ Microsoft Connected Services SDK for Visual Studio 2017
+ Pre-release EULAs
+ Microsoft Visual Studio Enterprise 2017, Visual Studio Professional 2017, Visual Studio Test Professional 2017 Pre-release Software (RC)
+ Microsoft Visual Studio Community 2017 Pre-release Software (RC)
+ Microsoft Visual Studio 2017 Express for Windows Desktop Pre-release Software
+ Microsoft Visual Studio 2017 Pre-release Software
+ Supplemental Licenses
+ Supplement for Microsoft Visual Studio 2017
+ Supplemental License Terms for Microsoft Visual Studio Agents 2017
+ Visual Studio 2015
+ EULAs
+ Microsoft Visual Studio Enterprise 2015, Visual Studio Professional 2015, Visual Studio Test Professional 2015, and Trial Edition
+ Microsoft Visual Studio Community 2015
+ Microsoft Visual Studio Express 2015
+ Microsoft Visual Studio 2015 Software Development Kit
+ Microsoft Visual Studio 2015 Add-ons, Visual Studio Shells, and C++ Redistributable
+ Pre-release EULAs
+ Microsoft Visual Studio 2015 Product Family Pre-Release Software (RC)
+ Microsoft Visual Studio Community 2015 Product Family Pre-Release Software (RC)
+ Microsoft Visual Studio 2015 (and Next Version Code-Name 15) Pre-Release Software
+ Supplemental Licenses
+ Supplement for Microsoft Visual Studio 2015
+ Visual Studio 2013
+ EULAs
+ Microsoft Visual Studio Community 2013
+ Other Visual Studio Licensing Documents
+ Visual Studio Team Services’ Code of Conduct
+ Microsoft Visual Studio Internal Utilities
+ Microsoft Visual Studio Remote Control
+ Microsoft Visual Studio Telemetry
+ Microsoft Visual Studio Glass Test Package
+ Microsoft Visual Studio Graphics Tools Extension Pre-Release Software
+ Microsoft .NET Core Debugger
+ Microsoft Visual C++ Build Tools
+ Microsoft Visual C++ Build Tools NuGet Pre Release Software
+ Microsoft Visual Studio Tools For Unity
+ Microsoft Project System Extensibility Preview
+ Microsoft Visual Studio Pre-Release Servicing Software
+ Microsoft Visual Studio Emulator For Android
+ Microsoft Visual C++ Cross-Platform Mobile Development (Android)
+ Microsoft Visual C++ Cross-Platform Mobile Development (iOS)
+ Clang with Microsoft CodeGen
+ Microsoft HLSL Compilation in C# and VB projects
+ vstest Test Platform
+ Visual C++ Build Insights Software Development Kit
+ Visual Studio Tools for Office Runtime and Language Pack
+ Sample Applications
+ IOT Sample Application Preview
+ Visual Studio for Mac
+ License terms for Visual Studio when purchased through a Visual Studio Subscription are covered under the Microsoft Product Terms .
+ For additional information about Visual Studio Licensing, see the Microsoft Visual Studio Licensing Whitepaper .
+ For Product Lifecycle information, see Visual Studio Product Lifecycle and Servicing .
+ Visual Studio 2022 for Mac
+ EULAs
+ Microsoft Visual Studio Community 2022 for Mac, Visual Studio Professional 2022 for Mac, Visual Studio Enterprise 2022 for Mac
+ Pre-release EULAs
+ Microsoft Visual Studio Community 2022 for Mac, Visual Studio Professional 2022 for Mac, Visual Studio Enterprise 2022 for Mac Pre-release
+ Visual Studio 2019 for Mac
+ EULAs
+ Microsoft Visual Studio Community 2019 for Mac, Visual Studio Professional 2019 for Mac, and Visual Studio Enterprise 2019 for Mac
+ Azure DevOps Server
+ Azure DevOps Server
+ EULAs
+ Microsoft Azure DevOps Server, Trial Version, and Azure DevOps Server Express
+ Pre-release EULAs
+ Microsoft Azure DevOps Server Pre-release Software Terms
+ Azure DevOps Server 2022
+ EULAs
+ Microsoft Azure DevOps Server 2022, Trial Version, and Azure DevOps Server Express 2022
+ Azure DevOps Server 2020
+ EULAs
+ Microsoft Azure DevOps Server 2020, Trial Version, and Azure DevOps Server Express 2020
+ Azure DevOps Server 2019
+ EULAs
+ Microsoft Azure DevOps Server 2019, Trial Version, and Azure DevOps Server Express 2019
+ Pre-release EULAs
+ Microsoft Azure DevOps Server 2019 Pre-release Software Terms
+ Team Foundation Server
+ Team Foundation Server 2018
+ EULAs
+ Microsoft Visual Studio Team Foundation Server 2018 and Team Foundation Server Express Editions
+ Pre-release EULAs
+ Microsoft Visual Studio Team Foundation Server 2018 Pre-release Software License Terms
+ Team Foundation Server 2017
+ EULAs
+ Microsoft Visual Studio Team Foundation Server 2017 and Team Foundation Server Express Editions
+ Pre-release EULAs
+ Microsoft Visual Studio Team Foundation Server 2017 Product Family Pre-Release Software (RC)
+ Microsoft Visual Studio Team Foundation Server Code-Name 15 Product Family Pre-release Software (RC)
+ Team Foundation Server 2015
+ EULAs
+ Microsoft Visual Studio Team Foundation Server 2015, Trial Edition, and Team Foundation Server Express
+ Pre-release EULAs
+ Microsoft Visual Studio Team Foundation Server 2015 Product Family Pre-Release Software (RC)
+ Microsoft Visual Studio Team Foundation Server 2015 Product Family Pre-Release Software
+ Follow us
+ Dev Essentials
+ Developer Community
+ Blogs:
+ Visual Studio
+ .NET
+ C++
+ Surface Pro
+ Surface Laptop
+ Surface Laptop Ultra
+ Surface RTX Spark Dev Box
+ Copilot for organizations
+ Copilot for personal use
+ Explore Microsoft products
+ Windows 11 apps
+ Account profile
+ Download Center
+ Microsoft Store support
+ Returns
+ Order tracking
+ Certified Refurbished
+ Microsoft Store Promise
+ Flexible Payments
+ Microsoft in education
+ Devices for education
+ Microsoft Teams for Education
+ Microsoft 365 Education
+ How to buy for your school
+ Educator training and development
+ Deals for students and parents
+ AI for education
+ Microsoft AI
+ Microsoft Security
+ Dynamics 365
+ Microsoft 365
+ Microsoft Power Platform
+ Microsoft Teams
+ Microsoft 365 Copilot
+ Small Business
+ Azure
+ Microsoft Developer
+ Microsoft Learn
+ Support for AI marketplace apps
+ Microsoft Tech Community
+ Microsoft Marketplace
+ Software companies
+ Visual Studio
+ Careers
+ About Microsoft
+ Company news
+ Privacy at Microsoft
+ Investors
+ Diversity and inclusion
+ Accessibility
+ Sustainability
+ English (United States)
+ Your Privacy Choices
+ Consumer Health Privacy
+ Contact us
+ Privacy & cookies
+ Manage cookies
+ Terms of use
+ Trademarks
+ About our ads

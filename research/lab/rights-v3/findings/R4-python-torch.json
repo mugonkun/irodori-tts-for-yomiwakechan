@@ -1,0 +1,459 @@
+{
+  "seat": "R4-python-torch",
+  "fetched_at": "2026-09-14T10:47:11.1070945+09:00",
+  "items": [
+    {
+      "id": "R4-01",
+      "component": "埋め込み Python 3.12.10 本体（python-3.12.10-embed-amd64.zip・11,133,606 B・35 エントリ）を v3 で自前の置き場から配る権利",
+      "covers_files": [
+        "python.exe",
+        "pythonw.exe",
+        "python312.dll",
+        "python3.dll",
+        "python312.zip",
+        "python.cat",
+        "vcruntime140.dll",
+        "vcruntime140_1.dll",
+        "LICENSE.txt"
+      ],
+      "license_name": "PSF License Agreement（zip 内 LICENSE.txt。PSF v2／BeOpen v1／CNRI／CWI の 4 段＋0BSD＋Windows binary build の追加条件＋bzip2＋libffi＋無名の Apache-2.0＋Tcl/Tk/Tix）",
+      "source_url": "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip （台帳 ledger/python-embed.json の url。本席は実物 build/out/handoff-stage/build-cache/python-3.12.10-embed-amd64.zip を開いた＝再取得はしていない）",
+      "original_file": "originals/py312-embed-LICENSE-2026-09-14.txt",
+      "sha256": "e502c6b880ff58d614901495a9009c136539cd0b1e2a2abb8fc00b934c203419",
+      "bytes": 36874,
+      "same_as_2026_09_04": "yes-modulo-line-endings",
+      "quotes": [
+        {
+          "where": "zip 内 LICENSE.txt:59-70（B 節の柱書）",
+          "text": "B. TERMS AND CONDITIONS FOR ACCESSING OR OTHERWISE USING PYTHON\n===============================================================\n\nPython software and documentation are licensed under the\nPython Software Foundation License Version 2.\n\nStarting with Python 3.8.6, examples, recipes, and other code in\nthe documentation are dual licensed under the PSF License Version 2\nand the Zero-Clause BSD license.\n\nSome software incorporated into Python is under different licenses.\nThe licenses are listed with code falling under that license."
+        },
+        {
+          "where": "zip 内 LICENSE.txt:81-89（PSF LICENSE VERSION 2 §2）",
+          "text": "2. Subject to the terms and conditions of this License Agreement, PSF hereby\ngrants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,\nanalyze, test, perform and/or display publicly, prepare derivative works,\ndistribute, and otherwise use Python alone or in any derivative version,\nprovided, however, that PSF's License Agreement and PSF's notice of copyright,\ni.e., \"Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,\n2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Python Software Foundation;\nAll Rights Reserved\" are retained in Python alone or in any derivative version\nprepared by Licensee."
+        },
+        {
+          "where": "zip 内 LICENSE.txt:91-95（PSF LICENSE VERSION 2 §3）",
+          "text": "3. In the event Licensee prepares a derivative work that is based on\nor incorporates Python or any part thereof, and wants to make\nthe derivative work available to others as provided herein, then\nLicensee hereby agrees to include in any such work a brief summary of\nthe changes made to Python."
+        },
+        {
+          "where": "zip 内 LICENSE.txt:134-140（BEOPEN PYTHON OPEN SOURCE LICENSE AGREEMENT VERSION 1 §2）",
+          "text": "2. Subject to the terms and conditions of this BeOpen Python License\nAgreement, BeOpen hereby grants Licensee a non-exclusive,\nroyalty-free, world-wide license to reproduce, analyze, test, perform\nand/or display publicly, prepare derivative works, distribute, and\notherwise use the Software alone or in any derivative version,\nprovided, however, that the BeOpen Python License is retained in the\nSoftware, alone or in any derivative version prepared by Licensee."
+        },
+        {
+          "where": "zip 内 LICENSE.txt:182-198（CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1 §2）",
+          "text": "2. Subject to the terms and conditions of this License Agreement, CNRI\nhereby grants Licensee a nonexclusive, royalty-free, world-wide\nlicense to reproduce, analyze, test, perform and/or display publicly,\nprepare derivative works, distribute, and otherwise use Python 1.6.1\nalone or in any derivative version, provided, however, that CNRI's\nLicense Agreement and CNRI's notice of copyright, i.e., \"Copyright (c)\n1995-2001 Corporation for National Research Initiatives; All Rights\nReserved\" are retained in Python 1.6.1 alone or in any derivative\nversion prepared by Licensee.  Alternately, in lieu of CNRI's License\nAgreement, Licensee may substitute the following text (omitting the\nquotes): \"Python 1.6.1 is made available subject to the terms and\nconditions in CNRI's License Agreement.  This Agreement together with\nPython 1.6.1 may be located on the internet using the following\nunique, persistent identifier (known as a handle): 1895.22/1013.  This\nAgreement may also be obtained from a proxy server on the internet\nusing the following URL: http://hdl.handle.net/1895.22/1013\"."
+        },
+        {
+          "where": "zip 内 LICENSE.txt:199-200（CNRI §3 の冒頭・§3 本文は PSF §3 と同趣旨の改変要約条項）",
+          "text": "3. In the event Licensee prepares a derivative work that is based on\nor incorporates Python 1.6.1 or any part thereof, and wants to make"
+        },
+        {
+          "where": "zip 内 LICENSE.txt:244-257（CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2）",
+          "text": "CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2\n--------------------------------------------------\n\nCopyright (c) 1991 - 1995, Stichting Mathematisch Centrum Amsterdam,\nThe Netherlands.  All rights reserved.\n\nPermission to use, copy, modify, and distribute this software and its\ndocumentation for any purpose and without fee is hereby granted,\nprovided that the above copyright notice appear in all copies and that\nboth that copyright notice and this permission notice appear in\nsupporting documentation, and that the name of Stichting Mathematisch\nCentrum or CWI not be used in advertising or publicity pertaining to\ndistribution of the software without specific, written prior\npermission."
+        }
+      ],
+      "redistribution_grant": "explicit-yes",
+      "conditions": [
+        "PSF §2＝配布は明文で許されるが、PSF の License Agreement と著作権表示を Python（およびその派生版）の中に保持すること（retained）",
+        "BeOpen §2＝BeOpen Python License を Software 内に保持すること",
+        "CNRI §2＝CNRI の License Agreement と著作権表示を保持すること（または §2 が示す代替文言に差し替えること）",
+        "CWI＝著作権表示と許諾文を全ての複製に付し、Stichting Mathematisch Centrum／CWI の名を広告・宣伝に使わないこと",
+        "PSF §3・CNRI §3＝derivative work を作って他人に提供するときは a brief summary of the changes made to Python を同梱すること"
+      ],
+      "modification_or_resigning": {
+        "status": "allowed-with-condition",
+        "quote": "3. In the event Licensee prepares a derivative work that is based on or incorporates Python or any part thereof, and wants to make the derivative work available to others as provided herein, then Licensee hereby agrees to include in any such work a brief summary of the changes made to Python.（LICENSE.txt:91-95）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "PSF §3 の「derivative work」「the changes made to Python」に、配布側が python312._pth を差し替えること（R4-04 の事実）が当たるか＝法解釈。席は断定しない",
+        "PSF §2 の「retained in Python」を満たすために LICENSE.txt を展開先に置いたままにする運用で足りるか（実測では配布物は LICENSE.txt を同一バイトで残している＝R4-04）"
+      ],
+      "notes": "【実測】build/out/handoff-stage/build-cache/python-3.12.10-embed-amd64.zip を Python の zipfile で開いた（2026-09-14 10:39〜10:41 JST）。zip 全体 sha256 = 4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3（台帳 ledger/python-embed.json の sha256 と一致）・11,133,606 B・35 エントリ。LICENSE.txt を originals/py312-embed-LICENSE-2026-09-14.txt に取り出した＝36,874 B・703 行・sha256 e502c6b8...。【2026-09-04 との差】research/lab/tmp/rt-license/py-embed-LICENSE.txt は 37,576 B（sha256 0fa275dd...）で、CRLF に変換された同一内容（37,576 = 36,874 + 702 改行）。Python で a.replace(CRLF,LF)==b を評価して True＝内容差分ゼロ。"
+    },
+    {
+      "id": "R4-02",
+      "component": "embed zip 内の第三者ネイティブ物（OpenSSL・libffi・sqlite3・bzip2・lzma・expat 等）の許諾が zip 内 LICENSE.txt に入っているかの実測",
+      "covers_files": [
+        "libcrypto-3.dll (5,231,472 B)",
+        "libssl-3.dll (794,992 B)",
+        "libffi-8.dll (39,696 B)",
+        "sqlite3.dll (1,583,608 B)",
+        "_bz2.pyd (86,896 B)",
+        "_lzma.pyd (161,136 B)",
+        "pyexpat.pyd (205,304 B)",
+        "_decimal.pyd (262,000 B)",
+        "_ssl.pyd / _hashlib.pyd / _sqlite3.pyd",
+        "vcruntime140.dll / vcruntime140_1.dll"
+      ],
+      "license_name": "zip 内 LICENSE.txt の「Additional Conditions for this Windows binary build」ほか（下記の実測を参照）",
+      "source_url": "python-3.12.10-embed-amd64.zip 内 LICENSE.txt（ローカル実物）",
+      "original_file": "originals/py312-embed-LICENSE-2026-09-14.txt",
+      "sha256": "e502c6b880ff58d614901495a9009c136539cd0b1e2a2abb8fc00b934c203419",
+      "bytes": 36874,
+      "same_as_2026_09_04": "yes-modulo-line-endings",
+      "quotes": [
+        {
+          "where": "LICENSE.txt:283-322（Additional Conditions for this Windows binary build・全文）",
+          "text": "Additional Conditions for this Windows binary build\n---------------------------------------------------\n\nThis program is linked with and uses Microsoft Distributable Code,\ncopyrighted by Microsoft Corporation. The Microsoft Distributable Code\nis embedded in each .exe, .dll and .pyd file as a result of running\nthe code through a linker.\n\nIf you further distribute programs that include the Microsoft\nDistributable Code, you must comply with the restrictions on\ndistribution specified by Microsoft. In particular, you must require\ndistributors and external end users to agree to terms that protect the\nMicrosoft Distributable Code at least as much as Microsoft's own\nrequirements for the Distributable Code. See Microsoft's documentation\n(included in its developer tools and on its website at microsoft.com)\nfor specific details.\n\nRedistribution of the Windows binary build of the Python interpreter\ncomplies with this agreement, provided that you do not:\n\n- alter any copyright, trademark or patent notice in Microsoft's\nDistributable Code;\n\n- use Microsoft's trademarks in your programs' names or in a way that\nsuggests your programs come from or are endorsed by Microsoft;\n\n- distribute Microsoft's Distributable Code to run on a platform other\nthan Microsoft operating systems, run-time technologies or application\nplatforms; or\n\n- include Microsoft Distributable Code in malicious, deceptive or\nunlawful programs.\n\nThese restrictions apply only to the Microsoft Distributable Code as\ndefined above, not to Python itself or any programs running on the\nPython interpreter. The redistribution of the Python interpreter and\nlibraries is governed by the Python Software License included with this\nfile, or by other licenses as marked."
+        },
+        {
+          "where": "LICENSE.txt:326-330（bzip2 の段）",
+          "text": "This program, \"bzip2\", the associated library \"libbzip2\", and all\ndocumentation, are copyright (C) 1996-2019 Julian R Seward.  All\nrights reserved.\n\nRedistribution and use in source and binary forms, with or without"
+        },
+        {
+          "where": "LICENSE.txt:366-367（libffi の段）",
+          "text": "libffi - Copyright (c) 1996-2022  Anthony Green, Red Hat, Inc and others.\nSee source files for details."
+        },
+        {
+          "where": "LICENSE.txt:389-391（名前の付いていない Apache-2.0 の段の冒頭）",
+          "text": "                                 Apache License\n                           Version 2.0, January 2004\n                        https://www.apache.org/licenses/"
+        },
+        {
+          "where": "LICENSE.txt:566-570（Tcl/Tk 系の段の冒頭）",
+          "text": "This software is copyrighted by the Regents of the University of\nCalifornia, Sun Microsystems, Inc., Scriptics Corporation, ActiveState\nCorporation and other parties.  The following terms apply to all files\nassociated with the software unless explicitly disclaimed in\nindividual files."
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "Microsoft Distributable Code＝著作権／商標／特許表示を改変しない・Microsoft の商標を製品名に使わない・Microsoft OS 以外のプラットフォーム向けに配らない・悪意ある/欺瞞的/違法なプログラムに含めない",
+        "bzip2・libffi・無名の Apache-2.0・Tcl/Tk/Tix ＝各段の本文どおり"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "- alter any copyright, trademark or patent notice in Microsoft's Distributable Code;（LICENSE.txt:303-304＝「してはならない」側の列挙。Authenticode 署名の付け直しについての文言は LICENSE.txt 全文に無い）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "LICENSE.txt に OpenSSL・SQLite・expat・liblzma(xz)・zlib・mpdecimal の許諾文が入っていない（下記の実測）。v3 で libcrypto-3.dll / libssl-3.dll / sqlite3.dll / _lzma.pyd / pyexpat.pyd / _decimal.pyd を自前の置き場から配るなら、これらの許諾文を別途用意するかどうかの判断が要る",
+        "LICENSE.txt:389-566 の Apache-2.0 が「何に掛かるか」が原文に書かれていない（見出しも Name 行も無い）。何の分かの特定は席では断定しない"
+      ],
+      "notes": "【実測・grep（大小文字無視）2026-09-14 10:42 JST】originals/py312-embed-LICENSE-2026-09-14.txt に対して grep -ci した件数＝openssl 0／sqlite 0／expat 0／lzma 0／xz 0／zlib 0／mpdecimal 0／libmpdec 0／asyncio 0。一方 bzip2 2／libffi 1／Tcl 2／Tix 1／apache 2。見出し語の有無＝『Additional Conditions』1 件（:283）、『Licenses and Acknowledgements』0 件、『Incorporated Software』0 件。つまり CPython の Doc/license.rst にある『Licenses and Acknowledgements for Incorporated Software』相当の節は embed zip の LICENSE.txt には無く、あるのは『Additional Conditions for this Windows binary build』（Microsoft Distributable Code の分）だけである。LICENSE.txt の構造＝A. HISTORY OF THE SOFTWARE(:1) / B. TERMS AND CONDITIONS(:59) / PSF v2(:74) / BeOpen(:124) / CNRI(:176) / CWI(:245) / 0BSD(:267) / Additional Conditions for this Windows binary build(:283) / bzip2(:326) / libffi(:366) / 名前の無い Apache-2.0(:389) / Tcl-Tk 系(:566) / Tix(:648) の順。区切り線（^-{40,}）は 8 本（:74 :124 :245 :268 :284 :324 :364 :691）で、Apache-2.0 の段と Tcl の段の前には区切り線も名前も無い。【対象 DLL の実在（zip の全 35 エントリを実読）】libcrypto-3.dll 5,231,472 B・libssl-3.dll 794,992 B・libffi-8.dll 39,696 B・sqlite3.dll 1,583,608 B・_bz2.pyd 86,896 B・_lzma.pyd 161,136 B・pyexpat.pyd 205,304 B・_decimal.pyd 262,000 B・vcruntime140.dll 120,400 B・vcruntime140_1.dll 49,776 B。msvcp140.dll は無い（2026-09-04 の note 22 §4b と一致）。"
+    },
+    {
+      "id": "R4-03",
+      "component": "埋め込みパッケージ（embeddable package）の位置づけ＝公式 docs を 2026-09-14 に取り直した原文",
+      "covers_files": ["python-3.12.10-embed-amd64.zip"],
+      "license_name": "（ライセンスではなく公式ドキュメント。PSF の許諾とは別物）",
+      "source_url": "https://docs.python.org/3.12/using/windows.html#the-embeddable-package",
+      "original_file": "originals/py-docs-windows-embeddable-2026-09-14.html（HTML 原本）／originals/py-docs-embeddable-section-2026-09-14.txt（当該節のテキスト化）",
+      "sha256": "4440460dafe99797ddea81404d859d0b6a3354c1cb96f81d0a459b36c3c4e132",
+      "bytes": 116897,
+      "same_as_2026_09_04": "unknown",
+      "quotes": [
+        {
+          "where": "§4.4. The embeddable package（2026-09-14 10:41 JST 取得）",
+          "text": "The embedded distribution is a ZIP file containing a minimal Python environment. It is intended for acting as part of another application, rather than being directly accessed by end-users."
+        },
+        {
+          "where": "§4.4 の Note",
+          "text": "The embedded distribution does not include the Microsoft C Runtime and it is the responsibility of the application installer to provide this. The runtime may have already been installed on a user's system previously or automatically via Windows Update, and can be detected by finding ucrtbase.dll in the system directory."
+        },
+        {
+          "where": "§4.4（vendoring の段）",
+          "text": "Third-party packages should be installed by the application installer alongside the embedded distribution. Using pip to manage dependencies as for a regular Python installation is not supported with this distribution, though with some care it may be possible to include and use pip for automatic updates. In general, third-party packages should be treated as part of the application (\"vendoring\") so that the developer can ensure compatibility with newer versions before providing updates to users."
+        },
+        {
+          "where": "§4.8 Finding modules（\"For those who want to bundle Python into their application or distribution\" の第 1 助言）",
+          "text": "Include a ._pth file alongside your executable containing the directories to include. This will ignore paths listed in the registry and environment variables, and also ignore site unless import site is listed."
+        }
+      ],
+      "redistribution_grant": "not-applicable",
+      "conditions": [],
+      "modification_or_resigning": {"status": "not-stated"},
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [],
+      "notes": "【実測】curl -sS -L で https://docs.python.org/3.12/using/windows.html を取得＝HTTP 200・116,897 B（2026-09-14 10:41 JST）。sha256 4440460d...。BRIEF の URL は /3/ 版だが、台帳の pin が 3.12.10 なので /3.12/ を取った（/3/ 版は本席では取得していない＝not_done に記載）。HTML から該当節をタグ除去してテキスト化し originals/py-docs-embeddable-section-2026-09-14.txt に保存。2026-09-04 の note 22 表 4c は同じ 2 文（\"The embedded distribution is a ZIP file...\" と \"Third-party packages should be installed...\" ）を /3/ 版から引いており、今日の /3.12/ 版でも同文が在る＝文言の変化は観測されない。ただし 2026-09-04 の生 HTML は lab/tmp/rt-license/ に無く（保存されているのは py-embed-LICENSE.txt のみ）、sha256 比較はできない。"
+    },
+    {
+      "id": "R4-04",
+      "component": "配布側が埋め込み Python に何を足し・何を変えるか（PSF §3 の当てはめに必要な事実のみ。判断は書かない）",
+      "covers_files": [
+        "build/assemble-runtime.ps1",
+        "server/python312._pth.template",
+        "%LOCALAPPDATA%/irodori-tts-ywk-radeon/runtime/rocm-gfx1151/"
+      ],
+      "license_name": "（PSF License Agreement §3 の対象事実。R4-01 の逐語を参照）",
+      "source_url": "（ローカルの実物・リポジトリの檔。読むだけ）",
+      "original_file": "（原文の保存は不要＝リポジトリ内の檔と展開済みの実行系）",
+      "sha256": "n/a",
+      "bytes": 0,
+      "same_as_2026_09_04": "unknown",
+      "quotes": [
+        {
+          "where": "build/assemble-runtime.ps1:352-356（2. embedded python）",
+          "text": "Write-YwkLog -Level 'STEP' -Message 'unpacking the embedded python'\n$embedItem = $embed.items[0]\n$embedZip = Get-YwkCachedItem -Item $embedItem\n$n = Expand-YwkZip -ZipPath $embedZip -Destination $RuntimeDir\nWrite-YwkLog -Message ('  ' + $n + ' files from ' + [System.IO.Path]::GetFileName($embedZip))"
+        },
+        {
+          "where": "build/assemble-runtime.ps1:377-382（3. ._pth）",
+          "text": "foreach ($old in (Get-ChildItem -LiteralPath $RuntimeDir -Filter '*._pth' -File)) {\n    Remove-Item -LiteralPath $old.FullName -Force\n}\n$pthPath = Join-Path $RuntimeDir 'python312._pth'\n$null = Write-YwkTextFile -Path $pthPath -Text $pth -Newline 'CRLF'\nWrite-YwkLog -Message ('  wrote ' + $pthPath)"
+        },
+        {
+          "where": "server/python312._pth.template（全文・6 行）",
+          "text": "python312.zip\n.\n@RUNTIME_DIR@/site-packages\n@APP_DIR@/server\n@APP_DIR@/server/upstream/Irodori-TTS\n@APP_DIR@/server/upstream/Irodori-TTS-Server/src"
+        },
+        {
+          "where": "zip 内の元の python312._pth（80 B・sha256 2820f241bc9d6810d4db21c21cca3845799367fbdf0199620fb37c86a74b945c）",
+          "text": "python312.zip\n.\n\n# Uncomment to run site.main() automatically\n#import site"
+        },
+        {
+          "where": "展開済み実行系の python312._pth（378 B・2026-09-14 10:41 JST 実読）",
+          "text": "python312.zip\n.\nC:/Users/mugonkun/AppData/Local/irodori-tts-ywk-radeon/runtime/rocm-gfx1151/site-packages\nC:/Users/mugonkun/AppData/Local/Programs/irodori-tts-ywk-radeon/server\nC:/Users/mugonkun/AppData/Local/Programs/irodori-tts-ywk-radeon/server/upstream/Irodori-TTS\nC:/Users/mugonkun/AppData/Local/Programs/irodori-tts-ywk-radeon/server/upstream/Irodori-TTS-Server/src"
+        }
+      ],
+      "redistribution_grant": "not-applicable",
+      "conditions": [
+        "【足す物】site-packages/ ディレクトリ（台帳の wheel／sdist を展開）と .ledger.json（98,546 B）",
+        "【差し替える物】python312._pth（zip の 80 B → 展開後 378 B）。assemble-runtime.ps1:377-379 が展開先の *._pth を全て削除してから書き直す",
+        "【そのまま残す物（実測で同一バイト）】LICENSE.txt・python312.zip・python.exe・python312.dll・libcrypto-3.dll・libssl-3.dll・sqlite3.dll"
+      ],
+      "modification_or_resigning": {
+        "status": "not-applicable",
+        "quote": "（本項は事実の列挙のみ。PSF §3 の逐語は R4-01 に置いた）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "PSF §3 の「a brief summary of the changes made to Python」が、⑴ python312._pth の差し替え ⑵ site-packages/ の追加 ⑶ python312.zip をそのまま置くこと のどれに掛かるか（あるいは掛からないか）＝法解釈。席は断定しない",
+        "公式 docs（R4-03 の §4.8）は ._pth の同梱を bundling の推奨手段として書いている。この事実を PSF §3 の読みに使えるかも法解釈"
+      ],
+      "notes": "【実測 2026-09-14 10:41 JST】%LOCALAPPDATA%/irodori-tts-ywk-radeon/runtime/rocm-gfx1151/ の直下は 36 檔＝zip の 35 エントリ＋.ledger.json（98,546 B）。sha256 突合（Python hashlib で zip エントリと展開後の実檔を比較）＝python312.zip fb131c0e...（一致）・python.exe 一致・python312.dll 一致・libcrypto-3.dll 一致・libssl-3.dll 一致・sqlite3.dll 一致。LICENSE.txt は Get-FileHash で E502C6B8...＝zip 内と同一。python312._pth だけが 80 B → 378 B に置き換わっている。python312.zip（標準ライブラリの .pyc 束・3,835,482 B）は 1 バイトも変えていない。assemble-runtime.ps1 は他に :374-375 で ._pth に 'import site' が入っていないことを、:417-419 で site-packages に *.pth が残っていないことを検分して止まる。"
+    },
+    {
+      "id": "R4-05",
+      "component": "torch 2.10.0+cu130 ／ 2.10.0+cu126 の wheel 本体（NVIDIA DLL 以外の部分）の許諾宣言＝dist-info の LICENSE・NOTICE・METADATA",
+      "covers_files": [
+        "torch-2.10.0+cu130.dist-info/LICENSE (547,174 B)",
+        "torch-2.10.0+cu130.dist-info/NOTICE (24,088 B)",
+        "torch-2.10.0+cu130.dist-info/METADATA (29,899 B)",
+        "torch-2.10.0+cu126.dist-info/LICENSE (547,174 B)",
+        "torch-2.10.0+cu126.dist-info/NOTICE (24,088 B)",
+        "torch-2.10.0+cu126.dist-info/METADATA (29,899 B)"
+      ],
+      "license_name": "BSD-3-Clause（METADATA:6 の `License: BSD-3-Clause`）＋ LICENSE 内に 116 件の第三者物の許諾を連結",
+      "source_url": "https://download-r2.pytorch.org/whl/cu130/torch-2.10.0%2Bcu130-cp312-cp312-win_amd64.whl#sha256=224649fa0ab181ec483cc368e3303dda1760e4ba31bea806b88979f855436aaa ／ https://download-r2.pytorch.org/whl/cu126/torch-2.10.0%2Bcu126-cp312-cp312-win_amd64.whl#sha256=95d8409b8a15191de4c2958e86ca47f3ea8f9739b994ee4ca0e7586f37336413",
+      "original_file": "originals/torch-2.10.0+cu130-dist-info-LICENSE-2026-09-14.txt ／ -NOTICE- ／ -METADATA- ／ originals/torch-2.10.0+cu126-dist-info-{LICENSE,NOTICE,METADATA}-2026-09-14.txt",
+      "sha256": "LICENSE(cu130)=114a3bebc194e8d5b1518f69a5406b5608835f0f5c8478b55744e19a4b3517e2 / NOTICE(cu130)=1c3dec6c0342c7ed9e12af59b296c7bb1d394af5cf881db74191cc8299efce5c / METADATA(cu130)=b019104fa502911a0b6d9f884afae2717c52b32d2dbb0312d9e9aabb92d5bbc6 / LICENSE(cu126)=114a3bebc194e8d5b1518f69a5406b5608835f0f5c8478b55744e19a4b3517e2 / NOTICE(cu126)=1c3dec6c0342c7ed9e12af59b296c7bb1d394af5cf881db74191cc8299efce5c / METADATA(cu126)=5212dc7e67178bf42b2af8e4e859a05c2684de4a8749abb95e0af00f60b1ec0d",
+      "bytes": 547174,
+      "same_as_2026_09_04": "not-comparable",
+      "quotes": [
+        {
+          "where": "dist-info/LICENSE:59-74（BSD-3-Clause 本文。binary redistribution 条は 2.）",
+          "text": "Redistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright\n   notice, this list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright\n   notice, this list of conditions and the following disclaimer in the\n   documentation and/or other materials provided with the distribution.\n\n3. Neither the names of Facebook, Deepmind Technologies, NYU, NEC Laboratories America\n   and IDIAP Research Institute nor the names of its contributors may be\n   used to endorse or promote products derived from this software without\n   specific prior written permission."
+        },
+        {
+          "where": "dist-info/LICENSE:1-11（冒頭の帰属。この BSD-3 が誰の分かを示す唯一の記載）",
+          "text": "From PyTorch:\n\nCopyright (c) 2016-     Facebook, Inc            (Adam Paszke)\nCopyright (c) 2014-     Facebook, Inc            (Soumith Chintala)\nCopyright (c) 2011-2014 Idiap Research Institute (Ronan Collobert)\nCopyright (c) 2012-2014 Deepmind Technologies    (Koray Kavukcuoglu)\nCopyright (c) 2011-2012 NEC Laboratories America (Koray Kavukcuoglu)\nCopyright (c) 2011-2013 NYU                      (Clement Farabet)\nCopyright (c) 2006-2010 NEC Laboratories America (Ronan Collobert, Leon Bottou, Iain Melvin, Jason Weston)\nCopyright (c) 2006      Idiap Research Institute (Samy Bengio)\nCopyright (c) 2001-2004 Idiap Research Institute (Ronan Collobert, Samy Bengio, Johnny Mariethoz)"
+        },
+        {
+          "where": "dist-info/LICENSE:87-88（第三者物の連結の宣言）",
+          "text": "The PyTorch repository and source distributions bundle several libraries that are \ncompatibly licensed.  We list these here."
+        },
+        {
+          "where": "dist-info/METADATA:1-6（cu130 版）",
+          "text": "Metadata-Version: 2.1\nName: torch\nVersion: 2.10.0+cu130\nSummary: Tensors and Dynamic neural networks in Python with strong GPU acceleration\nAuthor-email: PyTorch Team <packages@pytorch.org>\nLicense: BSD-3-Clause"
+        },
+        {
+          "where": "dist-info/METADATA:32-33（License-File 行は 2 件だけ）",
+          "text": "License-File: LICENSE\nLicense-File: NOTICE"
+        },
+        {
+          "where": "dist-info/NOTICE:1-6（先頭の節）",
+          "text": "=======================================================================\nSoftware under third_party\n=======================================================================\nSoftware libraries under third_party are provided as github submodule\nlinks, and their content is not part of the Caffe2 codebase. Their\nlicences can be found under the respective software repositories."
+        },
+        {
+          "where": "dist-info/LICENSE:3449-3458（連結された Apache-2.0（third_party\\ideep\\mkl-dnn\\LICENSE の分）§4 冒頭と (a)(b)）",
+          "text": "   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and"
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "BSD-3 §2＝バイナリで再頒布するときは著作権表示・条件一覧・免責文を、配布物に付す文書その他の資料に再現すること",
+        "BSD-3 §3＝Facebook / Deepmind Technologies / NYU / NEC Laboratories America / IDIAP Research Institute および貢献者の名を、事前の書面許可なく推奨・宣伝に使わないこと",
+        "METADATA の宣言は `License: BSD-3-Clause` の 1 行のみ。`License-Expression:` 行も `Classifier: License ::` 行も 0 件（実測）",
+        "`License-File:` は LICENSE と NOTICE の 2 件のみ＝2.14 系にあった licenses/third_party/ の 93 檔に当たる物が 2.10.0 には無く、代わりに LICENSE 1 檔（547,174 B・9,105 行）に 116 件が連結されている"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:（dist-info/LICENSE:59-60）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [],
+      "notes": "【実測 2026-09-14 10:43〜10:45 JST】research/lab/tmp/rt-license/zipget.py で HTTP Range により dist-info の 3 檔だけを抽出（wheel 本体 1,867,405,006 B／2,589,881,452 B は落としていない）。cu130 と cu126 の LICENSE は sha256 完全一致（114a3beb...・547,174 B）、NOTICE も完全一致（1c3dec6c...・24,088 B）。METADATA だけ差があり、diff は 3 行目の `Version: 2.10.0+cu130` と `Version: 2.10.0+cu126` の 1 行のみ（29,899 B で同サイズ）。【LICENSE の構成】冒頭 1-84 行＝From PyTorch / From Caffe2 の著作権表示＋BSD-3-Clause 本文。86-87 行の宣言に続き 90-665 行に `Name:` / `License:` / `Files:` の 3 行ブロックが 116 件。666-9105 行に各 LICENSE 檔の本文が 116 個の見出し（ビルドマシンの絶対パス `C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\...`）付きで連結（見出し 116 件＝Name 行 116 件で 1 対 1）。116 件の License 欄の内訳（見出し名の羅列）＝FP16 MIT／FXdiv MIT／NNPACK BSD-2／NVTX（3 件）Apache-2.0 with exception／VulkanMemoryAllocator MIT／XNNPACK BSD-3／aiter MIT／benchmark Apache-2.0／composable_kernel MIT／cpp-httplib MIT／cpuinfo BSD-2／clog BSD-2／cudnn_frontend MIT／cutlass BSD-3／fbgemm BSD-3 ほか／flash-attention BSD-3／flatbuffers Apache-2.0／fmt MIT with exception／gemmlowp Apache-2.0／gloo BSD-3／googletest BSD-3／ideep MIT／ideep\\mkl-dnn Apache-2.0／kineto BSD-3 と dynolog 配下 20 件強／mimalloc MIT／miniz-3.0.2 MIT／nccl BSD-3／onnx Apache-2.0／pybind11 BSD-3／opentelemetry-cpp Apache-2.0 と vcpkg ports 多数／protobuf BSD-3／psimd MIT／pthreadpool BSD-2／python-peachpy BSD-2／sleef BSL-1.0／tensorpipe BSD-3／tensorpipe\\third_party\\libuv MIT／pybind11 BSD-3。【wheel 内の license 檔の総数】cu130・cu126 とも全 11,756 エントリを正規表現 licen[sc]e|notice|copying|copyright で走査して 2 件だけ（dist-info/LICENSE と dist-info/NOTICE）＝dist-info/licenses/ ディレクトリは存在しない。【NOTICE の中身】8 節＝Software under third_party／Earlier BSD License／Caffe's BSD License／Caffe2's Apache License／Cephes's 3-Clause BSD License／SciPy's 3-Clause BSD License／Boost's 1.0 Software License／PILLOW-SIMD Software License。【2026-09-04 との比較不能の理由】note 22 が読んだのは torch 2.14.0+cu130（dist-info/licenses/LICENSE 3,548 B ＋ third_party/ 93 檔・METADATA に License-Expression 6 件 AND・License-File 94 件）。台帳の pin は 2.10.0 なので別物＝sha256 比較の対象が無い。「2.10.0 には licenses/third_party/ が無く LICENSE 1 檔に連結されている」は本席の実測。"
+    },
+    {
+      "id": "R4-06",
+      "component": "torch/lib の NVIDIA 以外の DLL が dist-info/LICENSE・NOTICE のどの節に対応するか（見出しと grep 件数だけを並べる）",
+      "covers_files": [
+        "torch/lib/torch_cpu.dll (265,100,288 B)",
+        "torch/lib/torch_cuda.dll (408,946,688 B)",
+        "torch/lib/torch_python.dll (19,076,096 B)",
+        "torch/lib/c10.dll (1,081,344 B)",
+        "torch/lib/c10_cuda.dll (412,160 B)",
+        "torch/lib/caffe2_nvrtc.dll (54,272 B)",
+        "torch/lib/torch.dll (9,728 B)",
+        "torch/lib/torch_global_deps.dll (9,728 B)",
+        "torch/lib/shm.dll (15,360 B)",
+        "torch/lib/uv.dll (195,072 B)",
+        "torch/lib/libiomp5md.dll (1,614,192 B)",
+        "torch/lib/libiompstubs5md.dll (43,888 B)",
+        "torch/lib/zlibwapi.dll (89,088 B)"
+      ],
+      "license_name": "（対応づけは wheel の中に書かれていない。以下は見出しの有無と grep 件数の実測）",
+      "source_url": "同 R4-05（cu130／cu126 の wheel）",
+      "original_file": "originals/torch-2.10.0+cu130-dist-info-LICENSE-2026-09-14.txt ／ -NOTICE-",
+      "sha256": "114a3bebc194e8d5b1518f69a5406b5608835f0f5c8478b55744e19a4b3517e2",
+      "bytes": 547174,
+      "same_as_2026_09_04": "not-comparable",
+      "quotes": [
+        {
+          "where": "dist-info/LICENSE:660-663（libuv の Name ブロック＝uv.dll に名前が近い唯一の項目）",
+          "text": "Name: C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\tensorpipe\\third_party\\libuv\nLicense: MIT\nFiles: C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\tensorpipe\\third_party\\libuv\n  For details, see the files concatenated below: C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\tensorpipe\\third_party\\libuv\\LICENSE"
+        },
+        {
+          "where": "dist-info/LICENSE:9052-9061（連結された libuv の MIT 本文の冒頭）",
+          "text": "C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\tensorpipe\\third_party\\libuv\\LICENSE\n------------------------------------------------------------------------------------------------\nCopyright (c) 2015-present libuv project contributors.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to\ndeal in the Software without restriction, including without limitation the\nrights to use, copy, modify, merge, publish, distribute, sublicense, and/or\nsell copies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:"
+        },
+        {
+          "where": "dist-info/LICENSE:3336-3338（Intel の名が出る 1 件目＝ideep・MIT）",
+          "text": "C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\ideep\\LICENSE\n-------------------------------------------------------------------------\nCopyright (c) 2018 Intel Corporation."
+        },
+        {
+          "where": "dist-info/LICENSE:3540（Intel の名が出る 2 件目＝ideep\\mkl-dnn・Apache-2.0 の付録）",
+          "text": "   Copyright 2016-2023 Intel Corporation"
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "torch_cpu / torch_cuda / torch_python / c10 / c10_cuda / caffe2_nvrtc / torch / torch_global_deps / shm ＝ LICENSE のうち PyTorch・Caffe2 を名指しする節は冒頭 1-84 行の BSD-3 ブロックだけ（LICENSE 内に個々の DLL 名を書いた行は 1 件も無い＝実測）",
+        "uv.dll ＝ LICENSE 内で libuv に触れるのは third_party\\tensorpipe\\third_party\\libuv（License: MIT）の 1 項目だけ。grep -ci libuv = 5 件（:660 :662 :663 の Name ブロック 3 行と :9052 の見出し・:9054 の著作権行）。grep -ci 'uv.dll' = 0 件",
+        "libiomp5md.dll / libiompstubs5md.dll ＝ LICENSE・NOTICE とも grep -ci openmp = 0 件、grep -ci iomp = 0 件。116 件の Name 見出しに llvm-openmp は無い。'Intel Corporation' は LICENSE に 2 件あるが、いずれも ideep（MIT）と ideep\\mkl-dnn（Apache-2.0）の著作権行で OpenMP を名乗っていない ＝ この 2 つの DLL が Intel OpenMP か LLVM openmp かは wheel の中の記載からは決まらない（未特定）",
+        "zlibwapi.dll ＝ LICENSE・NOTICE とも grep -ci zlib = 0 件、zlibwapi = 0 件 ＝ 未特定"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（MIT の逐語＝ \"...to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software...\" ／ dist-info/LICENSE:9056-9059）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "libiomp5md.dll・libiompstubs5md.dll のライセンスが wheel の同梱物から特定できない（Intel OpenMP か LLVM openmp か）。v3 で自前配布するなら別途一次資料が要るかどうかの判断",
+        "zlibwapi.dll のライセンスが wheel の同梱物から特定できない（note 22 未確認 2・first-run-notices A14 と同じ穴が 2.10.0 でも開いたまま）",
+        "冒頭 BSD-3 ブロックが torch_cpu.dll などのビルド成果物を覆うという読み自体は法解釈。席は「LICENSE には DLL 名が 1 件も書かれていない」という事実だけを出す"
+      ],
+      "notes": "【実測 2026-09-14 10:45 JST】grep -ci の件数（originals/torch-2.10.0+cu130-dist-info-LICENSE-2026-09-14.txt ／ -NOTICE-）＝openmp 0/0・iomp 0/0・'Intel Corporation' 2/0・intel 5/0・libuv 5/0・'uv.dll' 0/0・zlib 0/0・zlibwapi 0/0・mkl 8/0・nvidia 39/0・cudnn 4/0・nvtx 16/0・cuda 0/0・cublas 0/0・nvrtc 0/0・nvjitlink 0/0・nvperf 0/0・cupti 0/0。NVIDIA 関係はすべて 0 かつ NOTICE は全項目 0＝NVIDIA 由来は cudnn_frontend（MIT・LICENSE:165-168 と :1848 以降）と NVTX（Apache-2.0 with exception・:105-119）と cutlass（BSD-3・:170 だが :1906-1907 に \"NVIDIA End User License Agreement (EULA). Please refer to https://docs.nvidia.com/cutlass/media/docs/pythonDSL/license.html\" の行がある）と fbgemm\\fbgemm_gpu\\experimental\\hstu の中の SPDX-License-Identifier: LicenseRef-NvidiaProprietary 行（:2229）だけ＝2026-09-04 の note 22 の 1b と同じ結論が 2.10.0 でも成り立つ。NVIDIA の DLL 本体は R1 の担当。torch/lib の全 58 エントリは scratchpad の torch-cu130-lib-and-licenses.txt／torch-cu126-lib-and-licenses.txt のとおり。cu126 側の対応 DLL 名は版番号が違う（cublasLt64_12・cufft64_11・nvrtc64_120_0 等）が、NVIDIA 以外の 13 檔は名も大きさも cu130 と同じ（uv.dll 195,072 B・libiomp5md.dll 1,614,192 B・libiompstubs5md.dll 43,888 B・zlibwapi.dll 89,088 B・c10.dll 1,081,344 B・torch_cpu.dll は 265,089,024 B と 11,264 B だけ違う）。"
+    },
+    {
+      "id": "R4-07",
+      "component": "torchaudio 2.10.0+cu130（wheel 全体 2,008,471 B・落として dist-info を実読）",
+      "covers_files": [
+        "torchaudio-2.10.0+cu130.dist-info/licenses/LICENSE (1,363 B)",
+        "torchaudio-2.10.0+cu130.dist-info/METADATA (7,052 B)",
+        "torchaudio/lib/_torchaudio.pyd (616,448 B)",
+        "torchaudio/lib/libtorchaudio.pyd (1,996,288 B)",
+        "torchaudio/lib/libctc_prefix_decoder.pyd (5,587,456 B)",
+        "torchaudio/lib/pybind11_prefixctc.pyd (708,608 B)"
+      ],
+      "license_name": "BSD 2-Clause License（wheel 内 LICENSE の 1 行目がそう名乗る。METADATA の宣言は `Classifier: License :: OSI Approved :: BSD License` のみ）",
+      "source_url": "https://download-r2.pytorch.org/whl/cu130/torchaudio-2.10.0%2Bcu130-cp312-cp312-win_amd64.whl#sha256=267c6724da81b9f0773c4707079f8e92b31fc95bf543845fb06ef9b5fdce99b0",
+      "original_file": "originals/torchaudio-2.10.0+cu130-dist-info-LICENSE-2026-09-14.txt ／ originals/torchaudio-2.10.0+cu130-dist-info-METADATA-2026-09-14.txt",
+      "sha256": "LICENSE=32638e179931bfe551eabf67b0e67a13b483e166b58dd7263634ab7f89f396f5 / METADATA=f02bee5c012e99abf23befebb84af178b62e5916308f232d386a9921ced01d26 / wheel=267c6724da81b9f0773c4707079f8e92b31fc95bf543845fb06ef9b5fdce99b0",
+      "bytes": 1363,
+      "same_as_2026_09_04": "not-compared",
+      "quotes": [
+        {
+          "where": "dist-info/licenses/LICENSE:1-15（全文の前半＝BSD 2-Clause の再頒布条項）",
+          "text": "BSD 2-Clause License\n\nCopyright (c) 2017 Facebook Inc. (Soumith Chintala), \nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n* Redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n\n* Redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution."
+        },
+        {
+          "where": "dist-info/METADATA:1-3, :13, :27-28",
+          "text": "Metadata-Version: 2.4\nName: torchaudio\nVersion: 2.10.0+cu130\n...\nClassifier: License :: OSI Approved :: BSD License\n...\nLicense-File: LICENSE\nRequires-Dist: torch==2.10.0"
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "BSD-2 第 2 条＝バイナリで再頒布するときは著作権表示・条件一覧・免責文を、配布物に付す文書その他の資料に再現すること",
+        "dist-info に NOTICE は無い。`License-File:` は LICENSE 1 件のみ。`License-Expression:` 行も `License:` 行も無い（実測）"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:（dist-info/licenses/LICENSE:6-7）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "torchaudio の LICENSE は BSD **2**-Clause であり、torch 本体の BSD-3 とは別文である（台帳の license 欄は分類子どおり `License :: OSI Approved :: BSD License`）。配布物の licenses/ に torch の分と別に 1 檔置くかの整理"
+      ],
+      "notes": "【実測 2026-09-14 10:46 JST】curl で wheel 全体（2,008,471 B）を落として sha256 を取った＝267c6724da81b9f0773c4707079f8e92b31fc95bf543845fb06ef9b5fdce99b0＝ledger/runtime-cu130.json の sha256 と一致。dist-info のエントリは 5 件のみ＝licenses/LICENSE 1,363 B・METADATA 7,052 B・WHEEL 101 B・top_level.txt 11 B・RECORD 7,926 B。ネイティブは .pyd 4 件だけで独立 DLL を同梱しない（first-run-notices A19 ⑷ の観測と一致）。cu126 版の torchaudio（1,800,247 B）は本席では落としていない。"
+    },
+    {
+      "id": "R4-08",
+      "component": "改変（Authenticode 署名の付け直し）に関係しうる条文の逐語（BSD-3・BSD-2・Apache-2.0・MIT）。判断は書かない",
+      "covers_files": [
+        "torch/lib の各 DLL",
+        "torchaudio/lib の各 .pyd",
+        "埋め込み Python の .exe / .dll / .pyd"
+      ],
+      "license_name": "BSD-3-Clause ／ BSD-2-Clause ／ Apache-2.0 ／ MIT（いずれも torch・torchaudio の同梱檔から引用）",
+      "source_url": "同 R4-05・R4-07",
+      "original_file": "originals/torch-2.10.0+cu130-dist-info-LICENSE-2026-09-14.txt ／ originals/torchaudio-2.10.0+cu130-dist-info-LICENSE-2026-09-14.txt ／ originals/py312-embed-LICENSE-2026-09-14.txt",
+      "sha256": "n/a（各檔の sha256 は R4-01・R4-05・R4-07 に記載）",
+      "bytes": 0,
+      "same_as_2026_09_04": "not-comparable",
+      "quotes": [
+        {
+          "where": "BSD-3-Clause（torch dist-info/LICENSE:59-60・柱書）",
+          "text": "Redistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:"
+        },
+        {
+          "where": "BSD-3-Clause（torch dist-info/LICENSE:65-67・binary redistribution 条）",
+          "text": "2. Redistributions in binary form must reproduce the above copyright\n   notice, this list of conditions and the following disclaimer in the\n   documentation and/or other materials provided with the distribution."
+        },
+        {
+          "where": "BSD-2-Clause（torchaudio dist-info/licenses/LICENSE:6-7, :12-14）",
+          "text": "Redistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n...\n* Redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution."
+        },
+        {
+          "where": "Apache-2.0 §4(a)(b)（torch dist-info/LICENSE:3449-3458）",
+          "text": "   4. Redistribution. You may reproduce and distribute copies of the\n      Work or Derivative Works thereof in any medium, with or without\n      modifications, and in Source or Object form, provided that You\n      meet the following conditions:\n\n      (a) You must give any other recipients of the Work or\n          Derivative Works a copy of this License; and\n\n      (b) You must cause any modified files to carry prominent notices\n          stating that You changed the files; and"
+        },
+        {
+          "where": "Apache-2.0 §4(c)(d)（torch dist-info/LICENSE:3460-3476）",
+          "text": "      (c) You must retain, in the Source form of any Derivative Works\n          that You distribute, all copyright, patent, trademark, and\n          attribution notices from the Source form of the Work,\n          excluding those notices that do not pertain to any part of\n          the Derivative Works; and\n\n      (d) If the Work includes a \"NOTICE\" text file as part of its\n          distribution, then any Derivative Works that You distribute must\n          include a readable copy of the attribution notices contained\n          within such NOTICE file, excluding those notices that do not\n          pertain to any part of the Derivative Works, in at least one\n          of the following places: within a NOTICE text file distributed\n          as part of the Derivative Works; within the Source form or\n          documentation, if provided along with the Derivative Works; or,\n          within a display generated by the Derivative Works, if and\n          wherever such third-party notices normally appear."
+        },
+        {
+          "where": "MIT（torch dist-info/LICENSE:9056-9064・libuv の分）",
+          "text": "Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to\ndeal in the Software without restriction, including without limitation the\nrights to use, copy, modify, merge, publish, distribute, sublicense, and/or\nsell copies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software."
+        },
+        {
+          "where": "埋め込み Python LICENSE.txt:303-304（Microsoft Distributable Code の禁止列挙の 1 つ）",
+          "text": "- alter any copyright, trademark or patent notice in Microsoft's\nDistributable Code;"
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "BSD-3／BSD-2＝「with or without modification」を明文で許し、バイナリ再頒布時の表示義務を課す",
+        "Apache-2.0 §4(b)＝改変した檔には変更した旨の prominent notices を付す",
+        "MIT＝modify を明文で許し、著作権表示と許諾文を全複製に含めることを条件とする",
+        "いずれの条文にも Authenticode／code signing／digital signature の語は無い（実測＝下記 notes）"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:（BSD-3・torch dist-info/LICENSE:59-60）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "Authenticode 署名を付け直す行為が BSD-3／BSD-2 の「modification」、Apache-2.0 §4(b) の「modified files」、MIT の「modify」に当たるか＝法解釈。席は断定しない",
+        "埋め込み Python の .exe/.dll/.pyd に署名を付け直す場合、LICENSE.txt:303-304 の「alter any copyright, trademark or patent notice in Microsoft's Distributable Code」に触れるかも法解釈（Authenticode は notice ではないという読みも、PE の署名領域を書き換えるという読みも、本席では取らない）"
+      ],
+      "notes": "【実測】3 つの原文に対して signature / Authenticode / code sign / digital signature を grep（大小文字無視）した結果は、torch dist-info/LICENSE・torchaudio dist-info/LICENSE・py312-embed LICENSE.txt のいずれでも該当語 0 件（Apache-2.0 本文中の \"signature\" も無い）。署名の実測（PE の署名読み）は R6 の担当なので本席では行っていない。"
+    }
+  ],
+  "summary": "1. 埋め込み Python 3.12.10 の再配布は PSF §2 で明文許諾。BeOpen §2・CNRI §2・CWI も同様の許諾＋表示保持を求める（逐語は R4-01）。条件は「License Agreement と著作権表示を保持」＋PSF §3「改変したら変更の要約を添える」。2. 【新】embed zip の LICENSE.txt（36,874 B）には OpenSSL・SQLite・expat・lzma(xz)・zlib・mpdecimal の語が 1 件も無い（実測 grep 0 件）。あるのは Microsoft Distributable Code の『Additional Conditions for this Windows binary build』・bzip2・libffi・名前の無い Apache-2.0・Tcl/Tk/Tix だけ。CPython docs にある『Licenses and Acknowledgements for Incorporated Software』相当の節は無い。libcrypto-3.dll 5.2 MB と libssl-3.dll・sqlite3.dll は zip に実在する＝v3 で自前配布するなら卓の判断が要る。3. LICENSE.txt は 2026-09-04 取得分と内容一致（CRLF 差のみ・Python で突合）。4. 配布側が embed に加える改変は python312._pth の差し替え 1 点だけ（80 B→378 B。assemble-runtime.ps1:377-382 が削除して書き直す）。LICENSE.txt・python312.zip・python.exe・python312.dll・libcrypto-3.dll・libssl-3.dll・sqlite3.dll は sha256 一致で無改変（実測）。足す物は site-packages/ と .ledger.json。PSF §3 に当たるかは卓。5. 【新・重】torch 2.10.0 の wheel には dist-info/licenses/ ディレクトリが無い（2.14.0 との違い）。全 11,756 エントリ中 license 檔は LICENSE 547,174 B と NOTICE 24,088 B の 2 件だけ。METADATA の宣言は `License: BSD-3-Clause` 1 行のみで、License-Expression 行も License 分類子も 0 件。License-File は 2 件。6. LICENSE は冒頭に BSD-3 本文、次に `Name:`/`License:` の 116 件の一覧、続いて 116 個の許諾本文を連結した形。cu130 と cu126 の LICENSE・NOTICE は sha256 完全一致、METADATA は Version 行 1 行だけの差。7. 【新・穴】libiomp5md.dll・libiompstubs5md.dll を覆う節が無い＝LICENSE/NOTICE とも openmp 0 件・iomp 0 件、116 見出しに llvm-openmp 無し。2.14.0 にあった third_party/llvm-openmp/LICENSE.txt が 2.10.0 には無い（first-run-notices A3 の前提が pin 版では成り立たない）。zlibwapi.dll も zlib 0 件で未特定のまま。uv.dll に近いのは third_party\\tensorpipe\\third_party\\libuv（MIT・本文は :9052 以降）1 項目のみで、DLL 名との対応は原文に書かれていない。8. torchaudio 2.10.0+cu130 は BSD **2**-Clause（1,363 B・NOTICE 無し・License-File 1 件）。wheel を実際に落として sha256 が台帳と一致。9. BSD-3/BSD-2/Apache-2.0/MIT のいずれにも Authenticode・署名の語は無い（grep 0 件）＝署名の付け直しが「modification」に当たるかは卓の裁定。",
+  "not_done": [
+    "https://docs.python.org/3/using/windows.html#the-embeddable-package（BRIEF が指す /3/ 版）は取得していない。台帳の pin に合わせて /3.12/ 版を取った。2 つの版の差分は見ていない。",
+    "2026-09-04 に取得した docs.python.org の生 HTML が lab/tmp/rt-license/ に無いため、embeddable package 節の sha256 比較ができていない（文言の一致は目視のみ）。",
+    "torchaudio 2.10.0+cu126（1,800,247 B）は落としていない。cu130 と同じかは未確認。",
+    "libiomp5md.dll / libiompstubs5md.dll / zlibwapi.dll の一次資料（Intel OpenMP の再頒布条件、LLVM openmp の LICENSE、zlib の LICENSE）は本席では探していない＝wheel の中に無いという事実までが担当範囲。",
+    "embed zip 内の OpenSSL・SQLite・expat・liblzma・mpdecimal の一次ライセンス（openssl.org 等）は取得していない＝「zip の LICENSE.txt に無い」という実測までが担当範囲。",
+    "PE の Authenticode 署名の実測は R6 の担当のため実施していない。",
+    "torch/lib の各 DLL の PE インポートテーブルは読んでいない（note 22 §3b の msvcp140.dll の件は 2.14.0 での実測であり、2.10.0 では本席は未検証）。"
+  ]
+}

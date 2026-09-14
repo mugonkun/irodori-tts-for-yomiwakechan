@@ -1,0 +1,26 @@
+ROCm/ROCm	ROCm/legacy-rocm-build	MIT	MIT License
+ROCm/TheRock	ROCm/TheRock	MIT	MIT License
+ROCm/clr	ROCm/clr	MIT	MIT License
+ROCm/rocBLAS	ROCm/rocBLAS	NOASSERTION	Other
+ROCm/hipBLASLt	ROCm/hipBLASLt	MIT	MIT License
+ROCm/MIOpen	ROCm/MIOpen	NOASSERTION	Other
+ROCm/llvm-project	ROCm/llvm-project	NOASSERTION	Other
+ROCm/ROCR-Runtime	ROCm/ROCR-Runtime	NOASSERTION	Other
+ROCm/rocm-libraries	ROCm/rocm-libraries	null	null
+ROCm/aotriton	ROCm/aotriton	MIT	MIT License
+ROCm/HIP	ROCm/hip	MIT	MIT License
+ROCm/hipcc	ROCm/HIPCC	null	null
+ROCm/ROCm-CompilerSupport	ROCm/ROCm-CompilerSupport	null	null
+ROCm/rocFFT	ROCm/rocFFT	NOASSERTION	Other
+ROCm/rocSOLVER	ROCm/rocSOLVER	NOASSERTION	Other
+ROCm/hipSPARSE	ROCm/hipSPARSE	MIT	MIT License
+ROCm/rocSPARSE	ROCm/rocSPARSE	MIT	MIT License
+ROCm/rocRAND	ROCm/rocRAND	MIT	MIT License
+ROCm/hipBLAS	ROCm/hipBLAS	NOASSERTION	Other
+ROCm/rccl	ROCm/rccl	NOASSERTION	Other
+ROCm/composable_kernel	ROCm/composable_kernel	NOASSERTION	Other
+ROCm/ROCm-Device-Libs	ROCm/ROCm-Device-Libs	null	null
+ROCm/hipDNN	ROCm/hipDNN	MIT	MIT License
+ROCm/hipFFT	ROCm/hipFFT	NOASSERTION	Other
+ROCm/hipRAND	ROCm/hipRAND	MIT	MIT License
+ROCm/hipSOLVER	ROCm/hipSOLVER	MIT	MIT License

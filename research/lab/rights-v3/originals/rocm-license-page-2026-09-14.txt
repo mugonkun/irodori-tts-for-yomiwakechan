@@ -1,0 +1,660 @@
+
+
+    ROCm licenses — AMD ROCm 10.0.0
+
+  Skip to main content
+
+    Back to top
+
+  Ctrl+K
+
+    ROCm™ Core SDK 10.0.0
+
+                    Version List
+
+                                    Core SDK
+
+                                    AI Ecosystem
+
+                                    GPU Systems and Infrastructure
+
+                                    Toolkits
+
+                                            AMD Data Science
+
+                                            AMD Finance
+
+                                            AMD Life Science
+
+                                            AMD LLM Extension
+
+                                            AMD Simulation
+
+                                    ROCm.AI
+
+                                            AMD Skills
+
+                                            Hyperloom
+
+                                            ROCm CLI
+
+                                    Blogs
+
+                                    Developer Hub
+
+    AMD ROCm 10.0.0
+
+Release notes
+
+Transition guide
+
+What is ROCm?
+
+Compatibility matrix
+
+Install
+
+Install ROCm
+Prerequisites
+
+Installation
+
+Post-installation
+
+Uninstalling
+
+ROCm Runfile Installer
+
+Build ROCm from source
+
+Install AI frameworks
+PyTorch
+
+JAX
+
+vLLM
+
+SGLang
+
+Components
+
+ROCm Core SDK
+Math and compute libraries
+Composable Kernel
+
+hipBLAS
+
+hipBLASLt
+
+hipCUB
+
+hipFFT
+
+hipRAND
+
+hipSOLVER
+
+hipSPARSE
+
+hipSPARSELt
+
+MIOpen
+
+rocBLAS
+
+rocFFT
+
+rocPRIM
+
+rocRAND
+
+rocSOLVER
+
+rocSPARSE
+
+rocThrust
+
+rocWMMA
+
+Communication libraries
+RCCL
+
+rocSHMEM
+
+Media libraries
+rocDecode
+
+rocJPEG
+
+Storage libraries
+hipFile
+
+Runtime and compilers
+HIP
+
+HIPIFY
+
+LLVM
+
+Profiling and debugging tools
+ROCm Compute Profiler (rocprofiler-compute)
+
+ROCm Systems Profiler (rocprofiler-systems)
+
+ROCprofiler-SDK
+
+ROCdbgapi
+
+ROCm Debugger (ROCgdb)
+
+ROCR Debug Agent
+
+Control and monitoring tools
+AMD SMI
+
+ROCm Data Center Tool (RDC)
+
+rocminfo
+
+ROCm HPC SDK
+Install HPC SDK
+
+ROCm Extras
+ROCm Validation Suite (RVS)
+
+TransferBench
+
+ROCm Optiq
+
+Tutorials
+
+AI Developer Hub
+
+ROCm examples
+
+Reference
+
+AMD GPU specifications
+
+AMD GPU architectures
+MI350 microarchitecture
+CDNA4 ISA reference
+
+CDNA4 white paper
+
+Instinct MI350 Series performance counters
+
+MI300 microarchitecture
+CDNA3 ISA reference
+
+CDNA3 white paper
+
+Instinct MI300 and MI200 Series performance counters
+
+MI250 microarchitecture
+CDNA2 ISA reference
+
+CDNA2 white paper
+
+MI100 microarchitecture
+CDNA1 ISA reference
+
+CDNA1 white paper
+
+AMD GPU system optimization
+AMD Instinct GPUs
+AMD MI355X
+
+AMD MI350X
+
+AMD MI325X
+
+AMD MI300X
+
+AMD MI300A
+
+AMD MI250 / MI250X
+
+AMD MI210
+
+AMD MI100
+
+AMD Radeon and Ryzen GPUs
+RDNA3.5
+
+RDNA2
+
+Common system settings
+GPU isolation techniques
+
+BAR access limits
+
+AMD GPU and ROCm components data types and precision support
+
+ROCm libraries graph-safe support
+
+AMD GPU atomics operation support
+
+ROCm environment variables
+Set the number of CUs
+
+AMD GPU programming on ROCm
+
+Contribute
+
+Contributing to the ROCm documentation
+ROCm documentation toolchain
+
+Building documentation
+
+Providing feedback about the ROCm documentation
+
+ROCm licenses
+
+    ROCm licenses
+
+Repository
+
+Open issue
+
+.md
+
+.pdf
+
+    ROCm licenses
+
+                 Contents
+
+ROCm component licenses
+Package licensing
+
+ROCm licenses#
+
+MIT License
+
+Copyright © 2023 - 2026 Advanced Micro Devices, Inc. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Note
+
+The preceding license applies to the ROCm repository, which
+primarily contains documentation. For licenses related to other ROCm components, refer to the
+following section.
+
+ROCm component licenses#
+
+ROCm is released by Advanced Micro Devices, Inc. (AMD) and is licensed per component separately.
+The following table is a list of ROCm components with links to their respective license
+terms. These components may include third party components subject to
+additional licenses. Please review individual repositories for more information.
+
+Component
+
+License
+
+AMD Compute Language Runtime (CLR)
+
+MIT
+
+AMD SMI
+
+MIT
+
+aomp
+
+Apache 2.0
+
+aomp-extras
+
+MIT
+
+AQLprofile
+
+MIT
+
+Code Object Manager (Comgr)
+
+The University of Illinois/NCSA
+
+Composable Kernel
+
+MIT
+
+half
+
+MIT
+
+HIP
+
+MIT
+
+hipamd
+
+MIT
+
+hipBLAS
+
+MIT
+
+hipBLASLt
+
+MIT
+
+HIPCC
+
+MIT
+
+hipCUB
+
+Custom
+
+hipFFT
+
+MIT
+
+hipFile
+
+MIT
+
+hipfort
+
+MIT
+
+HIPIFY
+
+MIT
+
+hipRAND
+
+MIT
+
+hipSOLVER
+
+MIT
+
+hipSPARSE
+
+MIT
+
+hipSPARSELt
+
+MIT
+
+hipTensor
+
+MIT
+
+llvm-project
+
+Apache
+
+llvm-project/flang
+
+Apache 2.0
+
+MIGraphX
+
+MIT
+
+MIOpen
+
+MIT
+
+MIVisionX
+
+MIT
+
+rocAL
+
+MIT
+
+rocALUTION
+
+MIT
+
+rocBLAS
+
+MIT
+
+ROCdbgapi
+
+MIT
+
+rocDecode
+
+MIT
+
+rocFFT
+
+MIT
+
+ROCgdb
+
+GNU General Public License v3.0
+
+rocJPEG
+
+MIT
+
+ROCK-Kernel-Driver
+
+GPL 2.0 WITH Linux-syscall-note
+
+rocminfo
+
+The University of Illinois/NCSA
+
+ROCm Bandwidth Test
+
+MIT
+
+ROCm CMake
+
+MIT
+
+ROCm Communication Collectives Library (RCCL)
+
+Custom
+
+ROCm-Core
+
+MIT
+
+ROCm Compute Profiler
+
+MIT
+
+ROCm Data Center (RDC)
+
+MIT
+
+ROCm-Device-Libs
+
+The University of Illinois/NCSA
+
+ROCm-OpenCL-Runtime
+
+MIT
+
+ROCm Performance Primitives (RPP)
+
+MIT
+
+ROCm SMI Lib
+
+MIT
+
+ROCm Systems Profiler
+
+MIT
+
+ROCm Validation Suite
+
+MIT
+
+rocPRIM
+
+MIT
+
+ROCProfiler
+
+MIT
+
+ROCprofiler-SDK
+
+MIT
+
+rocPyDecode
+
+MIT
+
+rocRAND
+
+MIT
+
+ROCR Debug Agent
+
+The University of Illinois/NCSA
+
+ROCR-Runtime
+
+The University of Illinois/NCSA
+
+rocSHMEM
+
+MIT
+
+rocSOLVER
+
+BSD-2-Clause
+
+rocSPARSE
+
+MIT
+
+rocThrust
+
+Apache 2.0
+
+ROCTracer
+
+MIT
+
+rocWMMA
+
+MIT
+
+Tensile
+
+MIT
+
+TransferBench
+
+MIT
+
+Open sourced ROCm components are released via public GitHub
+repositories, packages on https://repo.radeon.com and other distribution channels.
+Proprietary products are only available on https://repo.radeon.com.
+Proprietary components are organized in a proprietary subdirectory in the package
+repositories to distinguish from open sourced packages.
+
+Note
+
+The following additional terms and conditions apply to your use of ROCm technical documentation.
+
+©2023 - 2025 Advanced Micro Devices, Inc. All rights reserved.
+
+The information presented in this document is for informational purposes only
+and may contain technical inaccuracies, omissions, and typographical errors. The
+information contained herein is subject to change and may be rendered inaccurate
+for many reasons, including but not limited to product and roadmap changes,
+component and motherboard version changes, new model and/or product releases,
+product differences between differing manufacturers, software changes, BIOS
+flashes, firmware upgrades, or the like. Any computer system has risks of
+security vulnerabilities that cannot be completely prevented or mitigated. AMD
+assumes no obligation to update or otherwise correct or revise this information.
+However, AMD reserves the right to revise this information and to make changes
+from time to time to the content hereof without obligation of AMD to notify any
+person of such revisions or changes.
+
+THIS INFORMATION IS PROVIDED “AS IS.” AMD MAKES NO REPRESENTATIONS OR WARRANTIES
+WITH RESPECT TO THE CONTENTS HEREOF AND ASSUMES NO RESPONSIBILITY FOR ANY
+INACCURACIES, ERRORS, OR OMISSIONS THAT MAY APPEAR IN THIS INFORMATION. AMD
+SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT,
+MERCHANTABILITY, OR FITNESS FOR ANY PARTICULAR PURPOSE. IN NO EVENT WILL AMD BE
+LIABLE TO ANY PERSON FOR ANY RELIANCE, DIRECT, INDIRECT, SPECIAL, OR OTHER
+CONSEQUENTIAL DAMAGES ARISING FROM THE USE OF ANY INFORMATION CONTAINED HEREIN,
+EVEN IF AMD IS EXPRESSLY ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+AMD, the AMD Arrow logo, ROCm, and combinations thereof are trademarks of
+Advanced Micro Devices, Inc. Other product names used in this publication are
+for identification purposes only and may be trademarks of their respective
+companies.
+
+Package licensing#
+
+Attention
+
+ROCprof Trace Decoder and AOCC CPU optimizations are provided in binary form, subject to the license agreement enclosed on GitHub for ROCprof Trace Decoder, and Developer Central for AOCC. By using, installing,
+copying or distributing ROCprof Trace Decoder or AOCC CPU Optimizations, you agree to
+the terms and conditions of this license agreement. If you do not agree to the
+terms of this agreement, do not install, copy or use ROCprof Trace Decoder or the
+AOCC CPU Optimizations.
+
+For the rest of the ROCm packages, you can find the licensing information at the
+following location: /opt/rocm/share/doc/<component-name>/ or in the locations
+specified in the preceding table.
+
+For example, you can fetch the licensing information of the amd_comgr
+component (Code Object Manager) from the /opt/rocm/share/doc/amd_comgr/LICENSE.txt file.
+
+        previous
+
+        Providing feedback about the ROCm documentation
+
+     Contents
+
+ROCm component licenses
+Package licensing
+
+   so the DOM is not blocked -->
+
+                        Terms and Conditions
+
+                        ROCm Licenses and Disclaimers
+
+                        Privacy
+
+                        Trademarks
+
+                        Supply Chain Transparency
+
+                        Fair and Open Competition
+
+                        UK Tax Strategy
+
+                        Cookie Policy
+
+                        Cookie Settings
+
+                        © 2026 Advanced Micro Devices, Inc
+
+ -->
+

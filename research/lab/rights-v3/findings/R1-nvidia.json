@@ -1,0 +1,579 @@
+{
+  "seat": "R1-nvidia",
+  "fetched_at": "2026-09-14T10:40:26.1267616+09:00",
+  "items": [
+    {
+      "id": "R1-01",
+      "component": "CUDA Toolkit 実行時 DLL（torch 2.10.0+cu130／+cu126 の torch/lib 同梱分のうち Attachment A に名がある族）",
+      "covers_files": [
+        "cu130: cudart64_13.dll (470,640 B)",
+        "cu130: cublas64_13.dll (50,288,240 B)",
+        "cu130: cublasLt64_13.dll (477,896,816 B)",
+        "cu130: cufft64_12.dll (284,331,040 B)",
+        "cu130: cufftw64_12.dll (201,264 B)",
+        "cu130: cusparse64_12.dll (150,326,304 B)",
+        "cu130: cusolver64_12.dll (126,421,024 B)",
+        "cu130: curand64_10.dll (58,863,672 B)",
+        "cu130: nvrtc64_130_0.dll (90,961,440 B)",
+        "cu130: nvrtc-builtins64_130.dll (4,471,328 B)",
+        "cu130: nvJitLink_130_0.dll (88,218,656 B)",
+        "cu130: cupti64_2025.3.0.dll (2,067,488 B)",
+        "cu130: nvToolsExt64_1.dll (48,128 B)",
+        "cu126: cudart64_12.dll (556,544 B)",
+        "cu126: cublas64_12.dll (104,883,712 B)",
+        "cu126: cublasLt64_12.dll (531,812,352 B)",
+        "cu126: cufft64_11.dll (277,351,424 B)",
+        "cu126: cufftw64_11.dll (163,328 B)",
+        "cu126: cusparse64_12.dll (287,642,112 B)",
+        "cu126: cusolver64_11.dll (138,290,688 B)",
+        "cu126: curand64_10.dll (63,279,104 B)",
+        "cu126: nvrtc64_120_0.dll (45,865,984 B)",
+        "cu126: nvrtc-builtins64_126.dll (5,345,792 B)",
+        "cu126: nvJitLink_120_0.dll (39,236,608 B)",
+        "cu126: cupti64_2024.3.2.dll (4,759,624 B)",
+        "cu126: nvToolsExt64_1.dll (48,128 B)"
+      ],
+      "license_name": "License Agreement for NVIDIA Software Development Kits ＋ CUDA Toolkit Supplement（NVIDIA CUDA Toolkit EULA・v13.4）",
+      "source_url": "https://docs.nvidia.com/cuda/eula/index.html",
+      "original_file": "originals/cuda-eula-2026-09-14.html（生 HTML）／originals/cuda-eula-2026-09-14.txt（テキスト化）",
+      "sha256": "html=c441d0f8e3ad7ede569d4c5b2a9a50c4d46f278e820a6be81f2e34f1d6f89653 / txt=83b4545eee4f4f4822b9f2f9605a3179c7a9a738d2eb123226c94710d8ce9e05",
+      "bytes": 103131,
+      "same_as_2026_09_04": "本文は同じ（下記 notes の正規化比較で、差は ⑴ 版表示 v13.3→v13.4 ⑵ 頁末 Last updated on Jun 25, 2026→Aug 14, 2026 ⑶ cookie 同意の文言の 3 箇所のみ。許諾条項の語句の差は 0）",
+      "quotes": [
+        {
+          "where": "§1.1.1 License Grant / originals/cuda-eula-2026-09-14.txt:69-73",
+          "text": "Subject to the terms of this Agreement, NVIDIA hereby grants you a non-exclusive, non-transferable license, without the right to sublicense (except as expressly provided in this Agreement) to: Install and use the SDK, Modify and create derivative works of sample source code delivered in the SDK, and Distribute those portions of the SDK that are identified in this Agreement as distributable, as incorporated in object code format into a software application that meets the distribution requirements indicated in this Agreement."
+        },
+        {
+          "where": "§1.1.2 Distribution Requirements / :74-81（全 6 条）",
+          "text": "These are the distribution requirements for you to exercise the distribution grant: Your application must have material additional functionality, beyond the included portions of the SDK. / The distributable portions of the SDK shall only be accessed by your application. / The following notice shall be included in modifications and derivative works of sample source code distributed: “This software contains source code provided by NVIDIA Corporation.” / Unless a developer tool is identified in this Agreement as distributable, it is delivered for your internal use only. / The terms under which you distribute your application must be consistent with the terms of this Agreement, including (without limitation) terms relating to the license grant and license restrictions and protection of NVIDIA’s intellectual property rights. Additionally, you agree that you will protect the privacy, security and legal rights of your application users. / You agree to notify NVIDIA in writing of any known or suspected distribution or use of the SDK not in compliance with the requirements of this Agreement, and to enforce the terms of your agreements with respect to distributed SDK."
+        },
+        {
+          "where": "§1.1.6 Components Under Other Licenses / :93-94",
+          "text": "The SDK may come bundled with, or otherwise include or be distributed with, NVIDIA or third-party components with separate legal notices or terms as may be described in proprietary notices accompanying the SDK. If and to the extent there is a conflict between the terms in this Agreement and the license terms associated with the component, the license terms associated with the components control only to the extent necessary to resolve the conflict. / Subject to the other terms of this Agreement, you may use the SDK to develop and test applications released under Open Source Initiative (OSI) approved open source software licenses."
+        },
+        {
+          "where": "§1.2 Limitations 冒頭 / :98",
+          "text": "The following license limitations apply to your use of the SDK:"
+        },
+        {
+          "where": "§1.2 Limitations 第 1 条 / :99",
+          "text": "You may not reverse engineer, decompile or disassemble, or remove copyright or other proprietary notices from any portion of the SDK or copies of the SDK."
+        },
+        {
+          "where": "§1.2 Limitations 第 2 条 / :100",
+          "text": "Except as expressly provided in this Agreement, you may not copy, sell, rent, sublicense, transfer, distribute, modify, or create derivative works of any portion of the SDK. For clarity, you may not distribute or sublicense the SDK as a stand-alone product."
+        },
+        {
+          "where": "§1.2 Limitations 第 3 条 / :101",
+          "text": "Unless you have an agreement with NVIDIA for this purpose, you may not indicate that an application created with the SDK is sponsored or endorsed by NVIDIA."
+        },
+        {
+          "where": "§1.2 Limitations 第 4 条 / :102",
+          "text": "You may not bypass, disable, or circumvent any encryption, security, digital rights management or authentication mechanism in the SDK."
+        },
+        {
+          "where": "§1.2 Limitations 第 5 条 / :103-106",
+          "text": "You may not use the SDK in any manner that would cause it to become subject to an open source software license. As examples, licenses that require as a condition of use, modification, and/or distribution that the SDK be: Disclosed or distributed in source code form; Licensed for the purpose of making derivative works; or Redistributable at no charge."
+        },
+        {
+          "where": "§1.2 Limitations 第 6 条（Critical Application）/ :107",
+          "text": "You acknowledge that the SDK as delivered is not tested or certified by NVIDIA for use in connection with the design, construction, maintenance, and/or operation of any system where the use or failure of such system could result in a situation that threatens the safety of human life or results in catastrophic damages (each, a “Critical Application”). Examples of Critical Applications include use in avionics, navigation, autonomous vehicle applications, ai solutions for automotive products, military, medical, life support or other life critical applications. NVIDIA shall not be liable to you or any third party, in whole or in part, for any claims or damages arising from such uses. You are solely responsible for ensuring that any product or service developed with the SDK as a whole includes sufficient features to comply with all applicable legal and regulatory standards and requirements."
+        },
+        {
+          "where": "§1.2 Limitations 第 7 条（indemnity）/ :108",
+          "text": "You agree to defend, indemnify and hold harmless NVIDIA and its affiliates, and their respective employees, contractors, agents, officers and directors, from and against any and all claims, damages, obligations, losses, liabilities, costs or debt, fines, restitutions and expenses (including but not limited to attorney’s fees and costs incident to establishing the right of indemnification) arising out of or related to products or services that use the SDK in or for Critical Applications, and for use of the SDK outside of the scope of this Agreement or not in compliance with its terms."
+        },
+        {
+          "where": "§1.2 Limitations 第 8 条 / :109",
+          "text": "You may not reverse engineer, decompile or disassemble any portion of the output generated using SDK elements for the purpose of translating such output artifacts to target a non-NVIDIA platform."
+        },
+        {
+          "where": "§2.2 Distribution / :143-144",
+          "text": "The portions of the SDK that are distributable under the Agreement are listed in Attachment A."
+        },
+        {
+          "where": "§2.3 Operating Systems / :146",
+          "text": "Those portions of the SDK designed exclusively for use on the Linux or FreeBSD operating systems, or other operating systems derived from the source code to these operating systems, may be copied and redistributed for use in accordance with this Agreement, provided that the object code files are not modified in any way (except for unzipping of compressed files)."
+        },
+        {
+          "where": "§2.6 Attachment A 柱書 / :152",
+          "text": "The following CUDA Toolkit files may be distributed with applications developed by you, including certain variations of these files that have version number or architecture specific information embedded in the file name - as an example only, for release version 9.0 of the 64-bit Windows software, the file cudart64_90.dll is redistributable."
+        },
+        {
+          "where": "§2.6 Attachment A / CUDA Runtime / Windows 欄 / :155-156",
+          "text": "Component CUDA Runtime Windows cudart.dll, cudart_static.lib, cudadevrt.lib"
+        },
+        {
+          "where": "§2.6 Attachment A / CUDA FFT Library / Windows 欄 / :165-166",
+          "text": "Component CUDA FFT Library Windows cufft.dll, cufftw.dll, cufft.lib, cufftw.lib"
+        },
+        {
+          "where": "§2.6 Attachment A / CUDA BLAS Library / Windows 欄 / :175-176",
+          "text": "Component CUDA BLAS Library Windows cublas.dll, cublasLt.dll"
+        },
+        {
+          "where": "§2.6 Attachment A / CUDA Sparse Matrix Library / Windows 欄 / :193-194",
+          "text": "Component CUDA Sparse Matrix Library Windows cusparse.dll, cusparse.lib"
+        },
+        {
+          "where": "§2.6 Attachment A / CUDA Linear Solver Library / Windows 欄 / :203-204",
+          "text": "Component CUDA Linear Solver Library Windows cusolver.dll, cusolver.lib"
+        },
+        {
+          "where": "§2.6 Attachment A / CUDA Random Number Generation Library / Windows 欄 / :213-214",
+          "text": "Component CUDA Random Number Generation Library Windows curand.dll, curand.lib"
+        },
+        {
+          "where": "§2.6 Attachment A / NVIDIA Runtime Compilation Library and Header / :244-248",
+          "text": "Component NVIDIA Runtime Compilation Library and Header All nvrtc.h Windows nvrtc.dll, nvrtc-builtins.dll"
+        },
+        {
+          "where": "§2.6 Attachment A / NVIDIA JIT Linking Library / Windows 欄 / :263-264",
+          "text": "Component NVIDIA JIT Linking Library Windows libnvJitLink.dll, libnvJitLink.lib"
+        },
+        {
+          "where": "§2.6 Attachment A / CUDA Profiling Tools Interface (CUPTI) Library / Windows 欄 / :293-294",
+          "text": "Component CUDA Profiling Tools Interface (CUPTI) Library Windows cupti.dll"
+        },
+        {
+          "where": "§2.6 Attachment A / NVIDIA Tools Extension Library / Windows 欄 / :301-302",
+          "text": "Component NVIDIA Tools Extension Library Windows nvToolsExt.dll, nvToolsExt.lib"
+        },
+        {
+          "where": "§1.6 Termination / :119-124",
+          "text": "This Agreement will continue to apply until terminated by either you or NVIDIA as described below. / If you want to terminate this Agreement, you may do so by stopping to use the SDK. / NVIDIA may, at any time, terminate this Agreement if: (i) you fail to comply with any term of this Agreement and the non-compliance is not fixed within thirty (30) days following notice from NVIDIA (or immediately if you violate NVIDIA’s intellectual property rights); (ii) you commence or participate in any legal proceeding against NVIDIA with respect to the SDK; or (iii) NVIDIA decides to no longer provide the SDK in a country or, in NVIDIA’s sole discretion, the continued use of it is no longer commercially viable. / Upon any termination of this Agreement, you agree to promptly discontinue use of the SDK and destroy all copies in your possession or control. Your prior distributions in accordance with this Agreement are not affected by the termination of this Agreement."
+        },
+        {
+          "where": "§1.4 No Warranties / :115",
+          "text": "THE SDK IS PROVIDED BY NVIDIA “AS IS” AND “WITH ALL FAULTS.” TO THE MAXIMUM EXTENT PERMITTED BY LAW, NVIDIA AND ITS AFFILIATES EXPRESSLY DISCLAIM ALL WARRANTIES OF ANY KIND OR NATURE, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, OR THE ABSENCE OF ANY DEFECTS THEREIN, WHETHER LATENT OR PATENT."
+        },
+        {
+          "where": "§1.5 Limitation of Liability / :117",
+          "text": "IN NO EVENT WILL NVIDIA’S AND ITS AFFILIATES TOTAL CUMULATIVE LIABILITY UNDER OR ARISING OUT OF THIS AGREEMENT EXCEED US$10.00."
+        },
+        {
+          "where": "§1.7 General（輸出）/ :135",
+          "text": "The SDK is subject to United States export laws and regulations. You agree that you will not ship, transfer or export the SDK into any country, or use the SDK in any manner, prohibited by the United States Bureau of Industry and Security or economic sanctions regulations administered by the U.S. Department of Treasury’s Office of Foreign Assets Control (OFAC), or any applicable export laws, restrictions or regulations. These laws include restrictions on destinations, end users and end use. By accepting this Agreement, you confirm that you are not located in a country currently embargoed by the U.S. or otherwise prohibited from receiving the SDK under U.S. law."
+        },
+        {
+          "where": "§2.5 Licensing（問い合わせ先）/ :150",
+          "text": "If the distribution terms in this Agreement are not suitable for your organization, or for any questions regarding this Agreement, please contact NVIDIA at nvidia-compute-license-questions @ nvidia . com ."
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "①アプリに material additional functionality があること（§1.1.2 第 1 条）",
+        "②distributable portions は自分のアプリからしかアクセスされないこと（§1.1.2 第 2 条）＝汎用ライブラリとして置かない",
+        "③配布形態は object code format で、アプリに incorporated されていること（§1.1.1 第 3 文）",
+        "④自分のアプリの配布条件が本 EULA と consistent であること（§1.1.2 第 5 条）",
+        "⑤非準拠の配布・使用を知ったら NVIDIA に書面で通知し、自分の契約の条項を行使すること（§1.1.2 第 6 条）",
+        "⑥sample source code の改変・派生物には “This software contains source code provided by NVIDIA Corporation.” を入れること（§1.1.2 第 3 条。本件は sample source code を配らないので該当物なし＝観測）",
+        "⑦SDK を open source software license の対象にする使い方をしないこと（§1.2 第 5 条）",
+        "⑧著作権表示その他の proprietary notices を除去しないこと（§1.2 第 1 条）",
+        "⑨SDK を stand-alone product として配布・サブライセンスしないこと（§1.2 第 2 条）",
+        "⑩EULA に明記された以外の copy／distribute／modify／derivative works は不可（§1.2 第 2 条）"
+      ],
+      "modification_or_resigning": {
+        "status": "forbidden",
+        "quote": "§1.2 第 2 条（:100）「Except as expressly provided in this Agreement, you may not copy, sell, rent, sublicense, transfer, distribute, modify, or create derivative works of any portion of the SDK.」／§1.2 第 1 条（:99）「You may not reverse engineer, decompile or disassemble, or remove copyright or other proprietary notices from any portion of the SDK or copies of the SDK.」（＝「modify」の明文禁止と「remove … proprietary notices」の明文禁止がある。Authenticode 署名の付け直しがこの「modify」に当たるか否かは本席では判断しない＝R1-06 と open_points_for_commander 参照）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "§1.1.2 第 2 条「The distributable portions of the SDK shall only be accessed by your application.」が、v3 の「GitHub Release に実行系一式を置いて利用者が落とす」形（配布物はアプリ専用フォルダに展開される）を満たすかの読み。",
+        "§1.1.2 第 5 条「The terms under which you distribute your application must be consistent with the terms of this Agreement」と、自作分 MIT／無償配布との整合（R1-07 参照）。",
+        "§1.2 第 5 条（open source software license に subject にする使い方の禁止）と、同一配布物に GPL／LGPL 系（libsndfile・libsoxr）が同居することの読み。22 §表 2a が FFmpeg について同じ論点を挙げている。",
+        "§1.2 第 2 条の「modify」に、NVIDIA の DLL への Authenticode 再署名（PE の証明書テーブルの追記）が当たるかの読み（EULA 側に signing／signature／certificate の語は 0 件＝下記 notes の grep 結果）。"
+      ],
+      "notes": "取得＝2026-09-14T10:40:26.1267616+09:00（Get-Date -Format o）、PowerShell Invoke-WebRequest -UseBasicParsing、HTTP 200、生 HTML 103,131 B を originals/cuda-eula-2026-09-14.html に保存（sha256 c441d0f8…）。テキスト化＝自作 html2txt.py（script/style/comment 除去→ブロック要素を改行→残りタグを空白→HTML entity 復元→行内空白畳み）で 79,670 B（sha256 83b4545e…）。／2026-09-04 の research/lab/tmp/rt-license/cuda-eula.txt（79,382 B・sha256 80bb1e97…）とは sha256 が違うが、これはテキスト化の手順が違うため。空白を畳んだ正規化テキストで語単位差分を取ると、非一致の opcode は 5 個だけで、内容は ⑴ 版表示「v13.3」→「v13.4」⑵ 頁末の「Copyright © 2007-2026, NVIDIA Corporation & affiliates. All rights reserved. Last updated on Jun 25, 2026.」→「… Last updated on Aug 14, 2026.」（位置も移動）⑶ cookie 同意リンクの「Manage My Privacy Settings | Do Not Sell or Share My Data」→「Your Privacy Choices」。正規化テキストの長さは 77,347 → 77,319 文字。**許諾・制限・Attachment A の語句の差は 0 件**（実測）。／grep 実測（originals/cuda-eula-2026-09-14.txt に対し大小文字無視）＝「cudnn」0 件・「zlib」0 件・「alter」0 件・「authenticode」0 件・「certificat」0 件。「signed」「signature」は 2 箇所（§1.7 の契約書面の署名と、Attachment B 内の第三者ソースの affidavit）＝コード署名の条項ではない。"
+    },
+    {
+      "id": "R1-02",
+      "component": "cuDNN 実行時 DLL 10 個（torch 2.10.0+cu130／+cu126 の torch/lib 同梱分）",
+      "covers_files": [
+        "cu130: cudnn64_9.dll (266,352 B)",
+        "cu130: cudnn_adv64_9.dll (88,123,936 B)",
+        "cu130: cudnn_cnn64_9.dll (1,428,080 B)",
+        "cu130: cudnn_engines_precompiled64_9.dll (188,558,368 B)",
+        "cu130: cudnn_engines_runtime_compiled64_9.dll (19,942,944 B)",
+        "cu130: cudnn_graph64_9.dll (2,285,600 B)",
+        "cu130: cudnn_heuristic64_9.dll (53,315,104 B)",
+        "cu130: cudnn_ops64_9.dll (29,970,976 B)",
+        "cu126: cudnn64_9.dll (266,288 B)",
+        "cu126: cudnn_adv64_9.dll (282,445,872 B)",
+        "cu126: cudnn_cnn64_9.dll (4,618,272 B)",
+        "cu126: cudnn_engines_precompiled64_9.dll (513,926,688 B)",
+        "cu126: cudnn_engines_runtime_compiled64_9.dll (20,201,008 B)",
+        "cu126: cudnn_graph64_9.dll (2,420,256 B)",
+        "cu126: cudnn_heuristic64_9.dll (56,823,328 B)",
+        "cu126: cudnn_ops64_9.dll (126,508,576 B)"
+      ],
+      "license_name": "LICENSE AGREEMENT FOR NVIDIA SOFTWARE DEVELOPMENT KITS ＋ cuDNN SUPPLEMENT（v. February 22, 2022）",
+      "source_url": "https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+      "original_file": "originals/cudnn-eula-2026-09-14.html（生 HTML）／originals/cudnn-eula-2026-09-14.txt（テキスト化）",
+      "sha256": "html=24a31a9c49d1e4bed996a6beab151c1028e836a62a1e96a9bfe62951efc5394e / txt=f2d637fbfac5ddb6762355d3f8ce96a0a3482de19c89afe8cfcdc30a43e88ed7",
+      "bytes": 52540,
+      "same_as_2026_09_04": "本文は同じ（正規化比較の非一致 opcode は 1 個だけで、それは 2026-09-04 のテキスト化が HTML コメントの断片「so the DOM is not blocked -->」を拾っていた分。許諾条項の語句の差は 0 件）",
+      "quotes": [
+        {
+          "where": "SLA License / Grant / originals/cudnn-eula-2026-09-14.txt:105-108",
+          "text": "Subject to the terms of this Agreement, NVIDIA hereby grants you a non-exclusive, nontransferable license, without the right to sublicense (except as expressly provided in this Agreement) to: Install and use the SDK, Modify and create derivative works of sample source code delivered in the SDK, and Distribute those portions of the SDK that are identified in this Agreement as distributable, as incorporated in object code format into a software application that meets the distribution requirements indicated in this Agreement."
+        },
+        {
+          "where": "SLA Distribution Requirements / :109-116（全 6 条・CUDA EULA §1.1.2 と同文）",
+          "text": "These are the distribution requirements for you to exercise the distribution grant: Your application must have material additional functionality, beyond the included portions of the SDK. / The distributable portions of the SDK shall only be accessed by your application. / The following notice shall be included in modifications and derivative works of sample source code distributed: “This software contains source code provided by NVIDIA Corporation.” / Unless a developer tool is identified in this Agreement as distributable, it is delivered for your internal use only. / The terms under which you distribute your application must be consistent with the terms of this Agreement, including (without limitation) terms relating to the license grant and license restrictions and protection of NVIDIA’s intellectual property rights. Additionally, you agree that you will protect the privacy, security and legal rights of your application users. / You agree to notify NVIDIA in writing of any known or suspected distribution or use of the SDK not in compliance with the requirements of this Agreement, and to enforce the terms of your agreements with respect to distributed SDK."
+        },
+        {
+          "where": "cuDNN SUPPLEMENT §2 Distribution / :171",
+          "text": "2. Distribution . The following portions of the SDK are distributable under the Agreement: the runtime files .so and .dll."
+        },
+        {
+          "where": "cuDNN SUPPLEMENT §4.1 License Scope / :170",
+          "text": "4.1 License Scope . The SDK is licensed for you to develop applications only for use in systems with NVIDIA GPUs."
+        },
+        {
+          "where": "cuDNN SUPPLEMENT §3 Licensing / :173",
+          "text": "3. Licensing . If the distribution terms in this Agreement are not suitable for your organization, or for any questions regarding this Agreement, please contact NVIDIA at nvidia-compute-license-questions @ nvidia . com ."
+        },
+        {
+          "where": "SLA Limitations 2.1 / :134",
+          "text": "2.1 You may not reverse engineer, decompile or disassemble, or remove copyright or other proprietary notices from any portion of the SDK or copies of the SDK."
+        },
+        {
+          "where": "SLA Limitations 2.2 / :135",
+          "text": "2.2 Except as expressly provided in this Agreement, you may not copy, sell, rent, sublicense, transfer, distribute, modify, or create derivative works of any portion of the SDK."
+        },
+        {
+          "where": "SLA Limitations 2.3 / :136",
+          "text": "2.3 Unless you have an agreement with NVIDIA for this purpose, you may not indicate that an application created with the SDK is sponsored or endorsed by NVIDIA."
+        },
+        {
+          "where": "SLA Limitations 2.4 / :137",
+          "text": "2.4 You may not bypass, disable, or circumvent any encryption, security, digital rights management or authentication mechanism in the SDK."
+        },
+        {
+          "where": "SLA Limitations 2.5 / :138",
+          "text": "2.5 You may not use the SDK in any manner that would cause it to become subject to an open source software license. As examples, licenses that require as a condition of use, modification, and/or distribution that the SDK be (i) disclosed or distributed in source code form; (ii) licensed for the purpose of making derivative works; or (iii) redistributable at no charge."
+        },
+        {
+          "where": "SLA 6.4 Termination / :154",
+          "text": "6.4 Upon any termination of this Agreement, you agree to promptly discontinue use of the SDK and destroy all copies in your possession or control. Your prior distributions in accordance with this Agreement are not affected by the termination of this Agreement. Upon written request, you will certify in writing that you have complied with your commitments under this section. Upon any termination of this Agreement all provisions survive except for the licenses granted to you."
+        },
+        {
+          "where": "SLA No Warranties / :146",
+          "text": "THE SDK IS PROVIDED BY NVIDIA “AS IS” AND “WITH ALL FAULTS.” TO THE MAXIMUM EXTENT PERMITTED BY LAW, NVIDIA AND ITS AFFILIATES EXPRESSLY DISCLAIM ALL WARRANTIES OF ANY KIND OR NATURE, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, OR THE ABSENCE OF ANY DEFECTS THEREIN, WHETHER LATENT OR PATENT."
+        },
+        {
+          "where": "SLA General（輸出）/ :163",
+          "text": "The SDK is subject to United States export laws and regulations. You agree that you will not ship, transfer or export the SDK into any country, or use the SDK in any manner, prohibited by the United States Bureau of Industry and Security or economic sanctions regulations administered by the U.S. Department of Treasury’s Office of Foreign Assets Control (OFAC), or any applicable export laws, restrictions or regulations. These laws include restrictions on destinations, end users and end use. By accepting this Agreement, you confirm that you are not a resident or citizen of any country currently embargoed by the U.S. and that you are not otherwise prohibited from receiving the SDK."
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "①「the runtime files .so and .dll」だけが distributable（cuDNN Supplement §2）＝ヘッダ・静的ライブラリ・サンプルは対象外",
+        "②Distribution Requirements 6 条は CUDA EULA §1.1.2 と同文（R1-01 の①〜⑥と同じ）",
+        "③NVIDIA GPU を積んだ系で使うアプリの開発に限る（Supplement §4.1）",
+        "④Limitations 2.1〜2.5 は CUDA EULA §1.2 と同趣旨（notices 除去禁止・modify 禁止・open source 化禁止・no charge 条項含む）"
+      ],
+      "modification_or_resigning": {
+        "status": "forbidden",
+        "quote": "SLA Limitations 2.2（:135）「Except as expressly provided in this Agreement, you may not copy, sell, rent, sublicense, transfer, distribute, modify, or create derivative works of any portion of the SDK.」／2.1（:134）「You may not reverse engineer, decompile or disassemble, or remove copyright or other proprietary notices from any portion of the SDK or copies of the SDK.」（署名の付け直しが「modify」に当たるかは本席では判断しない）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "cuDNN Supplement §2 の「the runtime files .so and .dll」に、cudnn_engines_precompiled64_9.dll のような「実行時カーネル像を抱えた .dll」も含まれるか（文面は .dll とだけ書き、種別で分けていない＝観測）。",
+        "CUDA EULA と cuDNN SLA は別文書であり、cudnn の語は CUDA EULA 全文に 0 件（実測）＝v3 の配布物には 2 枚添えるほかない、という手当てで足りるか。"
+      ],
+      "notes": "取得＝2026-09-14T10:40:26+09:00、HTTP 200、生 HTML 52,540 B。2026-09-04 の research/lab/tmp/rt-license/cudnn-sla.txt（21,640 B・sha256 be368480…）と正規化テキストで比較＝非一致 opcode 1 個のみ（09-04 側に HTML コメント断片「so the DOM is not blocked -->」が混入していた分。正規化長 20,998 → 20,968）。**条項の語句の差は 0 件**（実測）。文書末尾の版表記は今日も「(v. February 22, 2022)」で 09-04 と同じ。／grep 実測（大小文字無視）＝「alter」0 件・「authenticode」0 件・「certificat」0 件。"
+    },
+    {
+      "id": "R1-03",
+      "component": "Attachment A に名が見つからない NVIDIA 由来 DLL（nvperf_host／nvrtc の .alt／cusolverMg）",
+      "covers_files": [
+        "cu130: nvperf_host.dll (27,764,256 B)",
+        "cu126: nvperf_host.dll (15,363,656 B)",
+        "cu130: nvrtc64_130_0.alt.dll (91,028,512 B)",
+        "cu126: nvrtc64_120_0.alt.dll (45,926,912 B)",
+        "cu130: cusolverMg64_12.dll (95,365,152 B)",
+        "cu126: cusolverMg64_11.dll (84,664,320 B)"
+      ],
+      "license_name": "NVIDIA CUDA Toolkit EULA（Attachment A に個別の名が無い）",
+      "source_url": "https://docs.nvidia.com/cuda/eula/index.html",
+      "original_file": "originals/cuda-eula-2026-09-14.txt",
+      "sha256": "83b4545eee4f4f4822b9f2f9605a3179c7a9a738d2eb123226c94710d8ce9e05",
+      "bytes": 79670,
+      "same_as_2026_09_04": "同じ（22 の未確認 1・3 で報告された「nvperf 0 件」は今日の取り直しでも 0 件のまま）",
+      "quotes": [
+        {
+          "where": "§2.6 Attachment A 柱書 / originals/cuda-eula-2026-09-14.txt:152",
+          "text": "The following CUDA Toolkit files may be distributed with applications developed by you, including certain variations of these files that have version number or architecture specific information embedded in the file name - as an example only, for release version 9.0 of the 64-bit Windows software, the file cudart64_90.dll is redistributable."
+        },
+        {
+          "where": "§2.6 Attachment A / CUDA Linear Solver Library / Windows 欄 / :203-204（cusolverMg は無く cusolver のみ）",
+          "text": "Component CUDA Linear Solver Library Windows cusolver.dll, cusolver.lib"
+        },
+        {
+          "where": "§2.6 Attachment A / NVIDIA Runtime Compilation Library and Header / :244-248（.alt の語は無い）",
+          "text": "Component NVIDIA Runtime Compilation Library and Header All nvrtc.h Windows nvrtc.dll, nvrtc-builtins.dll"
+        }
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "grep 実測（originals/cuda-eula-2026-09-14.txt・大小文字無視）＝「nvperf」0 件／「nvperf_host」0 件／「nvperf_target」0 件／「cusolverMg」0 件（大小文字区別でも 0 件）／固定文字列「.alt」0 件。",
+        "同じ grep で在るほう＝「nvrtc-builtins」4 件（All／Windows／Mac OSX／Linux 各 1）・「cufftw」8 件・「nvToolsExt」4 件・「cupti」4 件・「nvJitLink」4 件。",
+        "＝依頼の (3) の「無ければ変種の文をそのまま引く」に該当するのは nvperf_host／nvperf_target／nvrtc の .alt／cusolverMg の 4 語。cufftw と nvToolsExt と nvrtc-builtins は Attachment A に明記があり、この項ではない。",
+        "nvperf_target.dll は torch 2.10.0+cu130／+cu126 の wheel 目次に 1 件も無い（torch/lib 58 エントリの全読・実測）＝配布物に入らないので論点にならない。"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（Attachment A に当該ファイル名が無いため、そのファイルについての改変可否を述べる文が EULA に無い。§1.2 の一般則は SDK 全体に掛かる＝R1-01 の逐語を参照）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "nvperf_host.dll が Attachment A 柱書の「certain variations of these files that have version number or architecture specific information embedded in the file name」に当たるか。当たらない場合、この 1 個（cu130 で 27,764,256 B）は再配布の明文根拠が無い＝v3 で torch/lib をそのまま配る形が採れるかに直結する。",
+        "nvrtc64_130_0.alt.dll の「.alt」が同柱書の「version number or architecture specific information」に当たるか（「alt」は版番号でも architecture でもない＝観測）。",
+        "cusolverMg64_12.dll（Multi-GPU cuSOLVER）が「cusolver.dll」の variation に当たるか（Attachment A の Linux 欄にも libcusolverMg の名は無い＝実測 0 件）。",
+        "上 3 者を配布物から外せるか（torch が読み込み時に要求するかの技術検分）は本席の担当外＝別席か実射で潰す必要がある。"
+      ],
+      "notes": "実測コマンド＝`grep -oi -- \"<語>\" originals/cuda-eula-2026-09-14.txt | wc -l`（Git Bash）。結果は上の conditions に「○件」で記載。2026-09-04 の cuda-eula.txt に対する 22 の未確認 1・3 と同じ結論が、今日取り直した v13.4 の本文でも変わらないことを確認した（本文の語句差 0 件＝R1-01 の notes）。"
+    },
+    {
+      "id": "R1-04",
+      "component": "torch 2.10.0+cu130／+cu126 の wheel が NVIDIA の EULA／SLA を同梱していないという事実（v3 の配布側が自分で添える必要があるか）",
+      "covers_files": [
+        "torch-2.10.0+cu130.dist-info/METADATA (29,899 B)",
+        "torch-2.10.0+cu130.dist-info/LICENSE (547,174 B)",
+        "torch-2.10.0+cu130.dist-info/NOTICE (24,088 B)",
+        "torch-2.10.0+cu126.dist-info/METADATA (29,899 B)"
+      ],
+      "license_name": "（torch 自身の宣言）License: BSD-3-Clause",
+      "source_url": "https://download-r2.pytorch.org/whl/cu130/torch-2.10.0%2Bcu130-cp312-cp312-win_amd64.whl ／ https://download-r2.pytorch.org/whl/cu126/torch-2.10.0%2Bcu126-cp312-cp312-win_amd64.whl",
+      "original_file": "originals/R1-torch-2.10.0-cu130-METADATA.txt ／ originals/R1-torch-2.10.0-cu130-NOTICE.txt ／ originals/R1-torch-2.10.0-cu130-LICENSE.txt",
+      "sha256": "METADATA=b019104fa502911a0b6d9f884afae2717c52b32d2dbb0312d9e9aabb92d5bbc6 / NOTICE=1c3dec6c0342c7ed9e12af59b296c7bb1d394af5cf881db74191cc8299efce5c / LICENSE=114a3bebc194e8d5b1518f69a5406b5608835f0f5c8478b55744e19a4b3517e2",
+      "bytes": 29899,
+      "same_as_2026_09_04": "結論は同じ（NVIDIA の EULA／SLA は wheel に入っていない）。ただし**檔の形は 2026-09-04 に見た torch 2.14.0+cu130 と違う**＝2.10.0 では `dist-info/licenses/` の木が無く（0 エントリ）、`License-File:` は `LICENSE` と `NOTICE` の 2 件だけ。宣言も `License-Expression:` ではなく `License: BSD-3-Clause` の 1 行。",
+      "quotes": [
+        {
+          "where": "torch-2.10.0+cu130.dist-info/METADATA:1-6",
+          "text": "Metadata-Version: 2.1 / Name: torch / Version: 2.10.0+cu130 / Summary: Tensors and Dynamic neural networks in Python with strong GPU acceleration / Author-email: PyTorch Team <packages@pytorch.org> / License: BSD-3-Clause"
+        },
+        {
+          "where": "torch-2.10.0+cu130.dist-info/METADATA:32-33",
+          "text": "License-File: LICENSE / License-File: NOTICE"
+        },
+        {
+          "where": "torch-2.10.0+cu130.dist-info/LICENSE:165-168（NVIDIA 由来として名乗られている 1 件目）",
+          "text": "Name: C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\cudnn_frontend ... Files: C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\cudnn_frontend ... For details, see the files concatenated below: C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\third_party\\cudnn_frontend\\LICENSE.txt"
+        },
+        {
+          "where": "torch-2.10.0+cu130.dist-info/LICENSE:1903-1908（NVIDIA の EULA が言及される唯一の箇所＝CuTeDSL）",
+          "text": "Certain files within this repository are subject to separate licensing terms: - The files located in the `python/CuTeDSL` directory are licensed under the NVIDIA End User License Agreement (EULA). Please refer to https://docs.nvidia.com/cutlass/media/docs/pythonDSL/license.html for the full terms."
+        },
+        {
+          "where": "torch-2.10.0+cu130.dist-info/NOTICE:1-6",
+          "text": "======================================================================= Software under third_party ======================================================================= Software libraries under third_party are provided as github submodule links, and their content is not part of the Caffe2 codebase. Their licences can be found under the respective software repositories."
+        }
+      ],
+      "redistribution_grant": "not-found",
+      "conditions": [
+        "wheel 目次の実測（11,756 エントリ・HTTP Range で中央ディレクトリを読んだ）＝`.dist-info/` のエントリは cu130／cu126 とも **7 件だけ**（LICENSE 547,174 B・METADATA 29,899 B・NOTICE 24,088 B・RECORD・WHEEL・entry_points.txt・top_level.txt）。`dist-info/licenses/` の木は **0 エントリ**。",
+        "wheel 全 11,756 エントリのうち名前に license／licence／notice／copying／copyright／eula／legal／third.?party を含むものは **2 件だけ**（上記 LICENSE と NOTICE）＝実測。",
+        "dist-info/NOTICE（24,088 B）の中の語の出現数（実測）＝NVIDIA 0 件・CUDA 0 件・cuDNN 0 件・cublas 0 件・nvrtc 0 件・NVTX 0 件・zlib 0 件・EULA 0 件。",
+        "dist-info/LICENSE（547,174 B）は third_party の許諾文を連結した檔で `Name:` 行が **116 件**。そのうち NVIDIA 由来を名乗るのは **NVTX**（と NVTX\\docs・NVTX\\python）と **cudnn_frontend**（ヘッダのみの frontend API）と **DCGM** と **cutlass**。**CUDA Toolkit の実行時ライブラリ（cudart／cublas／cufft／cusparse／cusolver／curand／nvrtc／nvJitLink／cupti）と cuDNN 本体の許諾文を名乗る項目は 0 件**（実測。「CUDA」は LICENSE 内に大文字で 0 件、「cudnn」は 4 件で全て cudnn_frontend のパス）。",
+        "dist-info/METADATA（29,899 B）の語の出現数（実測）＝NVIDIA 10 件・nvidia 15 件・CUDA 26 件・cuDNN 5 件だが、**EULA 0 件**・cublas 0 件・nvrtc 0 件。METADATA は README 由来の説明本文で、再配布条件の記述ではない。",
+        "＝22 の要点 2 の結論（PyTorch はライセンス面を肩代わりしていない＝再配布側が CUDA EULA と cuDNN SLA を自分で添える）は **torch 2.10.0+cu130／+cu126 でもそのまま成り立つ**（実測）。"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（torch の dist-info には NVIDIA の DLL の改変可否を述べる文が無い＝上の実測。改変可否の文は R1-01・R1-02 の EULA／SLA 側にある）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "v3 の配布物に添える licenses/ の枚数＝22 の A4（CUDA EULA）と A5（cuDNN SLA）は 2.10.0 でも必要。加えて 2.10.0 は `dist-info/licenses/` の木を持たないので、22 の A3（third_party 93 檔をディレクトリごとコピー）は **2.10.0 では該当せず、`dist-info/LICENSE`（547,174 B・連結形）1 檔のコピーに変わる**。この差を台帳・first-run-notices.md に反映するかは卓の判断（本席は檔を書き換えない）。"
+      ],
+      "notes": "実測コマンド＝`python research/lab/tmp/rt-license/zipget.py <wheel url> whl130 \"torch-2.10.0+cu130.dist-info/NOTICE\" \"torch-2.10.0+cu130.dist-info/METADATA\" \"torch-2.10.0+cu130.dist-info/LICENSE\"`（HTTP Range。wheel 全体 1,867,405,006 B のうち実取得は 3 檔分のみ）。cu126 側も同様に METADATA を抽出（sha256 5212dc7e67178bf42b2af8e4e859a05c2684de4a8749abb95e0af00f60b1ec0d・29,899 B・`Version: 2.10.0+cu126`・`License: BSD-3-Clause`・`License-File: LICENSE` と `License-File: NOTICE` の 2 件）。目次の走査は scratchpad の torch-cu130-entries.txt／torch-cu126-entries.txt（本便の前段が保存したもの・各 11,756 エントリ）を Python で読んで数えた。語の計数は `grep -o <語> <檔> | wc -l`。"
+    },
+    {
+      "id": "R1-05",
+      "component": "torch/lib/zlibwapi.dll（89,088 B）の出所",
+      "covers_files": [
+        "cu130: torch/lib/zlibwapi.dll (89,088 B)",
+        "cu126: torch/lib/zlibwapi.dll (89,088 B)"
+      ],
+      "license_name": "zlib License（本文を取得・保存。ただし当該 DLL への当てはめは下記 open_points）",
+      "source_url": "https://zlib.net/zlib_license.html",
+      "original_file": "originals/zlib-license-2026-09-14.html ／ originals/zlib-license-2026-09-14.txt ／ 実物 originals/R1-torch-cu130-zlibwapi.dll",
+      "sha256": "zlib_license.html=d16e1e49584a44abccebc8fc9eda5378ce0e08d25d8fb00d99f7e4c40a84e594 / zlib_license.txt=454f9fbf2b58579ca975092a25febadb5fab27765970f310df2063bc913aa9c8 / zlibwapi.dll=1f047faec08d9a35c304fb4a7cf13853589359a8f7cbfdd48c5d5807712dcf05",
+      "bytes": 2899,
+      "same_as_2026_09_04": "unknown（2026-09-04 には zlib License 本文を取得していない＝22 の未確認 2 が未解消のままだった。今日が初取得）",
+      "quotes": [
+        {
+          "where": "zlib License 本文 / originals/zlib-license-2026-09-14.txt:3-22",
+          "text": "/* zlib.h -- interface of the 'zlib' general purpose compression library version 1.3.2, February 17th, 2026 Copyright (C) 1995-2026 Jean-loup Gailly and Mark Adler / This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software. / Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions: / 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required. / 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software. / 3. This notice may not be removed or altered from any source distribution. / Jean-loup Gailly Mark Adler jloup@gzip.org madler@alumni.caltech.edu */"
+        },
+        {
+          "where": "実測＝torch/lib/zlibwapi.dll の VS_VERSION_INFO（PowerShell [System.Diagnostics.FileVersionInfo]::GetVersionInfo）",
+          "text": "CompanyName = []（空） / FileDescription = [zlib data compression library] / FileVersion = [1.2.3.0] / ProductName = [ZLib.DLL] / ProductVersion = []（空） / LegalCopyright = [(C) 1995-2003 Jean-loup Gailly & Mark Adler] / OriginalFilename = [zlib.dll]"
+        }
+      ],
+      "redistribution_grant": "explicit-yes",
+      "conditions": [
+        "zlib License の制限は 3 条のみ＝①出所を偽らない（謝辞は推奨であって必須ではない）②改変した source version は改変済みと明示する ③この notice を source distribution から除去・改変しない。",
+        "本文に「no charge」「stand-alone 禁止」「open source 化禁止」のような条項は無い（本文全体が上の逐語で尽きている）。"
+      ],
+      "modification_or_resigning": {
+        "status": "allowed",
+        "quote": "zlib License 本文（:11-13）「Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:」／制限 2（:18-19）「Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.」／制限 3（:20）「This notice may not be removed or altered from any source distribution.」"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "この DLL が「NVIDIA が cuDNN 向けに配っていた zlibwapi」か「zlib 公式（contrib/vstudio の WINAPI build）」かの**最終的な同定**。本席が読めたのは版資源の名乗りだけ＝製品名 ZLib.DLL・版 1.2.3.0・著作権表示 (C) 1995-2003 Jean-loup Gailly & Mark Adler・元檔名 zlib.dll・**CompanyName は空で NVIDIA の名は 1 文字も無い**。NVIDIA の名乗りが無いこと自体は観測事実だが、「だから NVIDIA 由来ではない」と断定はしない。",
+        "zlib License 本文の制限 2・3 は文面上「source version」「source distribution」に掛かる。バイナリ 1 檔だけを再配布する場合に何を添えるべきかの読み。",
+        "22 の未確認 2・first-run-notices.md の A14 の札を外すかどうか。"
+      ],
+      "notes": "実測＝`python zipget.py <cu130 whl url> whl130 \"torch/lib/zlibwapi.dll\"` で 89,088 B を抽出（HTTP Range）。cu126 側も同じ手順で抽出し、**sha256 が完全一致**（両方とも 1f047faec08d9a35c304fb4a7cf13853589359a8f7cbfdd48c5d5807712dcf05）＝cu130 と cu126 で同一バイナリ。版資源は PowerShell の [System.Diagnostics.FileVersionInfo]::GetVersionInfo で読んだ（上の逐語）。／torch の dist-info への記載の計数（実測）＝NOTICE（24,088 B）に「zlib」0 件・「zlibwapi」0 件。LICENSE（547,174 B）に「zlib」0 件・「zlibwapi」0 件・「Jean-loup Gailly」0 件・「Mark Adler」0 件。**torch は zlib の許諾文を 1 檔も名乗っていない**＝再配布側が自分で添えるほかない（22 の A14 の穴はそのまま）。／参考の実測（Get-AuthenticodeSignature）＝この 1 檔は Status=NotSigned。ただし本席の authenticode_observed 欄は依頼の指示どおり \"not-checked\"（本機に CUDA 版の実行系が無く、CUDA／cuDNN の DLL 群そのものは 1 つも署名検分していないため）。"
+    },
+    {
+      "id": "R1-06",
+      "component": "NVIDIA の DLL に配布側が Authenticode 署名を付け直すことに関わる条文（EULA／SLA の逐語のみ）",
+      "covers_files": [
+        "R1-01 の CUDA Toolkit DLL 全件",
+        "R1-02 の cuDNN DLL 全件",
+        "R1-03 の nvperf_host / nvrtc .alt / cusolverMg"
+      ],
+      "license_name": "NVIDIA CUDA Toolkit EULA ＋ cuDNN SLA",
+      "source_url": "https://docs.nvidia.com/cuda/eula/index.html ／ https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+      "original_file": "originals/cuda-eula-2026-09-14.txt ／ originals/cudnn-eula-2026-09-14.txt",
+      "sha256": "cuda=83b4545eee4f4f4822b9f2f9605a3179c7a9a738d2eb123226c94710d8ce9e05 / cudnn=f2d637fbfac5ddb6762355d3f8ce96a0a3482de19c89afe8cfcdc30a43e88ed7",
+      "bytes": 79670,
+      "same_as_2026_09_04": "同じ（該当条文の語句差 0 件＝R1-01・R1-02 の比較結果）",
+      "quotes": [
+        {
+          "where": "CUDA EULA §1.2 Limitations 第 2 条 / cuda:100",
+          "text": "Except as expressly provided in this Agreement, you may not copy, sell, rent, sublicense, transfer, distribute, modify, or create derivative works of any portion of the SDK. For clarity, you may not distribute or sublicense the SDK as a stand-alone product."
+        },
+        {
+          "where": "CUDA EULA §1.2 Limitations 第 1 条 / cuda:99",
+          "text": "You may not reverse engineer, decompile or disassemble, or remove copyright or other proprietary notices from any portion of the SDK or copies of the SDK."
+        },
+        {
+          "where": "CUDA EULA §1.2 Limitations 第 4 条 / cuda:102",
+          "text": "You may not bypass, disable, or circumvent any encryption, security, digital rights management or authentication mechanism in the SDK."
+        },
+        {
+          "where": "CUDA EULA §1.2 Limitations 第 3 条 / cuda:101",
+          "text": "Unless you have an agreement with NVIDIA for this purpose, you may not indicate that an application created with the SDK is sponsored or endorsed by NVIDIA."
+        },
+        {
+          "where": "CUDA EULA §2.3 Operating Systems / cuda:146（改変禁止を明文で書く唯一の条。ただし対象は Linux／FreeBSD 向けの部分）",
+          "text": "Those portions of the SDK designed exclusively for use on the Linux or FreeBSD operating systems, or other operating systems derived from the source code to these operating systems, may be copied and redistributed for use in accordance with this Agreement, provided that the object code files are not modified in any way (except for unzipping of compressed files)."
+        },
+        {
+          "where": "CUDA EULA §1.1.1 License Grant 第 3 項 / cuda:73",
+          "text": "Distribute those portions of the SDK that are identified in this Agreement as distributable, as incorporated in object code format into a software application that meets the distribution requirements indicated in this Agreement."
+        },
+        {
+          "where": "CUDA EULA §1.1.2 Distribution Requirements 第 3 条 / cuda:78（「改変」に添える通知を定める唯一の条。対象は sample source code）",
+          "text": "The following notice shall be included in modifications and derivative works of sample source code distributed: “This software contains source code provided by NVIDIA Corporation.”"
+        },
+        {
+          "where": "cuDNN SLA Limitations 2.2 / cudnn:135",
+          "text": "2.2 Except as expressly provided in this Agreement, you may not copy, sell, rent, sublicense, transfer, distribute, modify, or create derivative works of any portion of the SDK."
+        },
+        {
+          "where": "cuDNN SLA Limitations 2.1 / cudnn:134",
+          "text": "2.1 You may not reverse engineer, decompile or disassemble, or remove copyright or other proprietary notices from any portion of the SDK or copies of the SDK."
+        },
+        {
+          "where": "cuDNN SLA Limitations 2.4 / cudnn:137",
+          "text": "2.4 You may not bypass, disable, or circumvent any encryption, security, digital rights management or authentication mechanism in the SDK."
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "EULA／SLA の両方に「modify」の明文禁止がある（CUDA §1.2 第 2 条・cuDNN 2.2）。ただし「Except as expressly provided in this Agreement」の但書付き。",
+        "EULA／SLA の両方に「remove copyright or other proprietary notices」の明文禁止がある（CUDA §1.2 第 1 条・cuDNN 2.1）。",
+        "**「alter」の語は CUDA EULA・cuDNN SLA とも 0 件**（大小文字無視の grep 実測）。",
+        "**「signature」「signing」「code sign」「Authenticode」「certificate」に当たる語は、コード署名の文脈では 0 件**（実測＝CUDA EULA の「signed」2 箇所は §1.7 の契約書面への署名と Attachment B 内の第三者 affidavit。「authenticode」0 件・「certificat」0 件。cuDNN SLA も「authenticode」0 件・「certificat」0 件）。",
+        "「object code files are not modified in any way」という明示の無改変要求は §2.3 にあるが、その条は Linux／FreeBSD 向けの部分に限定して書かれている（Windows 向けの同趣旨の条は無い＝実測）。"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "EULA／SLA に「署名」「Authenticode」「証明書」を名指しする条文は 0 件（実測）。掛かりうるのは一般則の「modify」（CUDA §1.2 第 2 条／cuDNN 2.2）と「remove copyright or other proprietary notices」（CUDA §1.2 第 1 条／cuDNN 2.1）と「bypass, disable, or circumvent any encryption, security, digital rights management or authentication mechanism」（CUDA §1.2 第 4 条／cuDNN 2.4）の 3 本。**どれに当たるかの当てはめは本席では書かない。**"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "PE の証明書テーブルに Authenticode 署名を追記する行為が、CUDA EULA §1.2 第 2 条／cuDNN SLA 2.2 の「modify」に当たるか。",
+        "NVIDIA が既に署名している DLL に別の署名を付け直す（元の署名を置き換える）場合、CUDA EULA §1.2 第 1 条／cuDNN SLA 2.1 の「remove copyright or other proprietary notices」に当たるか。※本機に CUDA 版の実行系が無いため、NVIDIA の DLL が実際に署名されているかは**本便では検分していない**（authenticode_observed = not-checked）。",
+        "自分の証明書で署名した NVIDIA の DLL が、CUDA EULA §1.2 第 3 条「you may not indicate that an application created with the SDK is sponsored or endorsed by NVIDIA」との関係で問題になるか。",
+        "§1.2 第 4 条の「authentication mechanism」に、NVIDIA 自身の署名が含まれる読みがあるか。",
+        "裁定 150（未署名ネイティブモジュールがスマート アプリ コントロールに遮断される）への対処として、署名の付け直し以外の道（署名済みの上流バイナリだけを使う・ランチャ側で扱う等）を採るかどうか。"
+      ],
+      "notes": "実測コマンド＝`grep -oi -- \"<語>\" originals/cuda-eula-2026-09-14.txt | wc -l` と同 cudnn 版。結果＝cuda: alter 0／modif 40／remove copyright 1／proprietary notices 2／not modified 1／stand-alone 1／authenticode 0／certificat 0／digital rights 1。cudnn: alter 0／modif 8／remove copyright 1／proprietary notices 2／not modified 0／stand-alone 0／authenticode 0／certificat 0／digital rights 1。／依頼の (5) は「文だけを引き、判断は書かない」なので、上の quotes と conditions が答えであり、当てはめは全て open_points_for_commander に回した。"
+    },
+    {
+      "id": "R1-07",
+      "component": "§1.2「Redistributable at no charge」条項と、本アプリが無償配布・自作分 MIT であることの関係（逐語の並置のみ）",
+      "covers_files": [
+        "R1-01 の CUDA Toolkit DLL 全件",
+        "R1-02 の cuDNN DLL 全件"
+      ],
+      "license_name": "NVIDIA CUDA Toolkit EULA §1.2 ／ cuDNN SLA 2.5",
+      "source_url": "https://docs.nvidia.com/cuda/eula/index.html ／ https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html",
+      "original_file": "originals/cuda-eula-2026-09-14.txt ／ originals/cudnn-eula-2026-09-14.txt",
+      "sha256": "cuda=83b4545eee4f4f4822b9f2f9605a3179c7a9a738d2eb123226c94710d8ce9e05 / cudnn=f2d637fbfac5ddb6762355d3f8ce96a0a3482de19c89afe8cfcdc30a43e88ed7",
+      "bytes": 79670,
+      "same_as_2026_09_04": "同じ（語句差 0 件）",
+      "quotes": [
+        {
+          "where": "CUDA EULA §1.2 Limitations 第 5 条 / cuda:103-106（全文）",
+          "text": "You may not use the SDK in any manner that would cause it to become subject to an open source software license. As examples, licenses that require as a condition of use, modification, and/or distribution that the SDK be: Disclosed or distributed in source code form; Licensed for the purpose of making derivative works; or Redistributable at no charge."
+        },
+        {
+          "where": "cuDNN SLA Limitations 2.5 / cudnn:138（同趣旨・1 文にまとめた形）",
+          "text": "2.5 You may not use the SDK in any manner that would cause it to become subject to an open source software license. As examples, licenses that require as a condition of use, modification, and/or distribution that the SDK be (i) disclosed or distributed in source code form; (ii) licensed for the purpose of making derivative works; or (iii) redistributable at no charge."
+        },
+        {
+          "where": "CUDA EULA §1.1.6 Components Under Other Licenses 第 2 段 / cuda:94",
+          "text": "Subject to the other terms of this Agreement, you may use the SDK to develop and test applications released under Open Source Initiative (OSI) approved open source software licenses."
+        },
+        {
+          "where": "CUDA EULA §1.1.2 Distribution Requirements 第 5 条 / cuda:80",
+          "text": "The terms under which you distribute your application must be consistent with the terms of this Agreement, including (without limitation) terms relating to the license grant and license restrictions and protection of NVIDIA’s intellectual property rights."
+        },
+        {
+          "where": "CUDA EULA §1.2 Limitations 第 2 条 / cuda:100",
+          "text": "Except as expressly provided in this Agreement, you may not copy, sell, rent, sublicense, transfer, distribute, modify, or create derivative works of any portion of the SDK. For clarity, you may not distribute or sublicense the SDK as a stand-alone product."
+        }
+      ],
+      "redistribution_grant": "conditional",
+      "conditions": [
+        "§1.2 第 5 条が禁じているのは「SDK を open source software license の subject にしてしまうような使い方」であり、条文の列挙（源コード開示・派生物作成の許諾・無償再配布可）は、**SDK 自体にその条件が及ぶ場合の例**として書かれている（「that the SDK be: ...」の構文）。",
+        "§1.1.6 第 2 段は、**OSI 承認のオープンソースライセンスで公開するアプリの開発とテストに SDK を使ってよい**と明文で許している（「develop and test」の語）。",
+        "無償で配ること自体を禁じる条文は CUDA EULA・cuDNN SLA のどちらにも無い（「no charge」の語は各 1 件で、いずれも §1.2 第 5 条／2.5 の列挙の中）。",
+        "本アプリの現況（事実のみ）＝配布は無償、自作分は MIT、第三者バイナリは v2 では同梱せず初回取得。v3 は自前の置き場から配る構想。"
+      ],
+      "modification_or_resigning": {
+        "status": "not-stated",
+        "quote": "（本項は課金・ライセンス表示に関わる条文のみを扱う。改変については R1-06 を参照）"
+      },
+      "authenticode_observed": "not-checked",
+      "open_points_for_commander": [
+        "「自作分 MIT ＋ NVIDIA の DLL 同梱 ＋ 無償配布」という形が §1.2 第 5 条の「use the SDK in any manner that would cause it to become subject to an open source software license」に当たるか。MIT は源コード開示も無償再配布も**強制しない**（MIT 本文に該当条項は無い）が、当てはめは法解釈。",
+        "§1.1.6 第 2 段の「develop and test applications released under OSI approved open source software licenses」が、**そのアプリと一緒に SDK の再配布分を配る**場面まで覆うか（条文は develop and test としか書いていない）。",
+        "§1.1.2 第 5 条「The terms under which you distribute your application must be consistent with the terms of this Agreement」を満たすために、配布ページ／LICENSE の書き方をどう組むか（例：自作分は MIT、NVIDIA の DLL は EULA のまま、と切り分けて明示する形にするか）。",
+        "§1.2 第 5 条の同じ論点は、同一配布物に LGPL 系（libsndfile・libsoxr）が同居する v3 の形にも掛かる（22 §表 2a・first-run-notices.md §C 2 と接続）。"
+      ],
+      "notes": "実測＝「no charge」の出現数は cuda-eula 1 件・cudnn-eula 1 件（大小文字無視の grep）。いずれも §1.2 第 5 条／2.5 の列挙内。依頼の (8) は「逐語を並べ、判断は open_points に回す」なので、当てはめは 1 行も書いていない。"
+    }
+  ],
+  "summary": "⑴ CUDA EULA は今日 v13.4 を取得（HTTP 200・103,131 B）。2026-09-04 の cuda-eula.txt と正規化テキストで語単位比較した結果、**許諾・制限・Attachment A の語句の差は 0 件**（差は版表示 v13.3→v13.4、頁末の Last updated 日付、cookie 同意の文言の 3 箇所のみ）。cuDNN SLA も同じく本文差 0 件で、版表記は今日も (v. February 22, 2022)。⑵ 再配布の明文許諾は両方にある（CUDA §1.1.1＋§2.2＋Attachment A／cuDNN Supplement §2「the runtime files .so and .dll」）。ただし条件付き＝Distribution Requirements 6 条（material additional functionality・自分のアプリからのみアクセス・配布条件の整合ほか）と Limitations（notices 除去禁止・modify 禁止・stand-alone 配布禁止・open source 化禁止）。⑶ Attachment A の Windows 欄に名があるのは cudart／cufft・cufftw／cublas・cublasLt／cusparse／cusolver／curand／nvrtc・nvrtc-builtins／libnvJitLink／cupti／nvToolsExt。**無いのは nvperf（0 件）・nvperf_target（0 件）・cusolverMg（0 件）・nvrtc の .alt（固定文字列 .alt が 0 件）の 4 語**＝柱書の「certain variations …」で救えるかは卓へ回した（nvperf_target.dll は wheel に 1 件も無いので実害なし）。⑷ torch 2.10.0+cu130／+cu126 は NVIDIA の EULA も SLA も同梱していない（dist-info は 7 エントリ・License-File は LICENSE と NOTICE の 2 件だけ・NOTICE に NVIDIA/CUDA/cuDNN の語は 0 件）＝**22 の要点 2 は 2.10.0 でも成立**。ただし形は変わった＝2.14.0 にあった dist-info/licenses/ の木は 2.10.0 には**無く**（0 エントリ）、宣言も License-Expression ではなく `License: BSD-3-Clause` の 1 行。⑸ 署名の付け直しを名指しする条文は EULA／SLA とも 0 件（authenticode 0・certificat 0・alter 0）。掛かりうるのは modify／remove notices／bypass authentication mechanism の 3 本で、当てはめは全て卓へ。⑹ zlibwapi.dll（89,088 B・cu130 と cu126 で sha256 一致）の版資源を実読＝製品名 ZLib.DLL・版 1.2.3.0・(C) 1995-2003 Jean-loup Gailly & Mark Adler・元檔名 zlib.dll・CompanyName 空で **NVIDIA の名は 1 文字も無い**。zlib License 本文を今日初めて保存した。torch の NOTICE／LICENSE に zlib の記載は 0 件＝許諾文は再配布側が添えるほかない。⑺ 「Redistributable at no charge」は §1.2 第 5 条／2.5 の列挙内の 1 語で、無償配布そのものを禁じる条文ではない（§1.1.6 第 2 段は OSI ライセンスのアプリの develop and test を明文で許す）＝自作分 MIT との整合は卓の裁定へ。",
+  "not_done": [
+    "NVIDIA の DLL の Authenticode 署名の実検分（本機に CUDA 版の実行系が無い＝依頼の指示どおり authenticode_observed は全項 \"not-checked\"）。参考として zlibwapi.dll 1 檔だけは Get-AuthenticodeSignature で Status=NotSigned を観測したが、CUDA／cuDNN の DLL は 1 つも見ていない。",
+    "nvperf_host.dll・nvrtc64_130_0.alt.dll・cusolverMg64_12.dll を配布物から外せるか（torch が読み込み時に要求するか）の技術検分。ライセンスの調査範囲外。",
+    "CUDA EULA の .txt／PDF 別形式の取得（https://docs.nvidia.com/cuda/pdf/EULA.pdf 等）。HTML 版で条文が全て取れたので取得していない。",
+    "zlibwapi.dll が NVIDIA 配布物由来か zlib 公式 build かの最終同定（版資源に NVIDIA の名が無いことまでが観測。PE の他の手がかり＝リンカ版・タイムスタンプ・エクスポート表は読んでいない）。",
+    "PyPI の nvidia-* wheel（nvidia-cublas 等）の中身に license 檔が入っているかの実読（22 の未確認 7）。本便は torch の cu wheel のみを扱った。",
+    "torch 2.10.0 の dist-info/LICENSE 547,174 B に連結された 116 件の Name: 項目のうち、NVIDIA 由来 4 件（NVTX・cudnn_frontend・DCGM・cutlass）以外の網羅的な読み。"
+  ]
+}

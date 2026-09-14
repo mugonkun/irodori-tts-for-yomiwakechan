@@ -1,0 +1,212 @@
+[
+ {
+  "archive": "soxr-1.1.0-cp312-abi3-win_amd64.whl",
+  "inner": "soxr-1.1.0.dist-info/licenses/COPYING.LGPL",
+  "saved": "soxr-COPYING.LGPL.txt",
+  "bytes": 26934,
+  "sha256": "317dfba8116739654c8c2d8acbc9c7edfcf34e3932e7a4b15307435228f98c3a"
+ },
+ {
+  "archive": "soxr-1.1.0-cp312-abi3-win_amd64.whl",
+  "inner": "soxr-1.1.0.dist-info/licenses/LICENSE-libsoxr.txt",
+  "saved": "soxr-LICENSE-libsoxr.txt",
+  "bytes": 1047,
+  "sha256": "73b946c198ad27fc2ae7bea2de6ec6d1b6c0733340d1759a450150271347e5af"
+ },
+ {
+  "archive": "soxr-1.1.0-cp312-abi3-win_amd64.whl",
+  "inner": "soxr-1.1.0.dist-info/licenses/LICENSE.txt",
+  "saved": "soxr-LICENSE.txt",
+  "bytes": 728,
+  "sha256": "16ce7f03077f25fac6a9b89fdf6136927595f6b85db9197381ee99c1ecba357b"
+ },
+ {
+  "archive": "soxr-1.1.0-cp312-abi3-win_amd64.whl",
+  "inner": "soxr-1.1.0.dist-info/licenses/LICENSE-PFFFT.txt",
+  "saved": "soxr-LICENSE-PFFFT.txt",
+  "bytes": 2174,
+  "sha256": "7847a2f45a0da613240a7e542980677c16613b1c8258190c15f8bf275032bb2d"
+ },
+ {
+  "archive": "soundfile-0.14.0-py2.py3-none-win_amd64.whl",
+  "inner": "_soundfile_data/COPYING",
+  "saved": "soundfile-COPYING.LGPL21.txt",
+  "bytes": 26518,
+  "sha256": "ad01ea5cd2755f6048383c8d54c88459cd6fcb17757c5c8892f8c5ea060f6140"
+ },
+ {
+  "archive": "soundfile-0.14.0-py2.py3-none-win_amd64.whl",
+  "inner": "licensing/license_notes.md",
+  "saved": "soundfile-license_notes.md",
+  "bytes": 2631,
+  "sha256": "35630e1f59b5c54b0bcbe2ec173bcf5a63b727a6e2f7834ca6d35a1af91a2b5f"
+ },
+ {
+  "archive": "soundfile-0.14.0-py2.py3-none-win_amd64.whl",
+  "inner": "soundfile-0.14.0.dist-info/LICENSE",
+  "saved": "soundfile-LICENSE.txt",
+  "bytes": 1512,
+  "sha256": "0dd2e411fed553ba891845077e5a32c5b726d1bbc46ff31a2118ae1ccf816752"
+ },
+ {
+  "archive": "certifi-2026.7.22-py3-none-any.whl",
+  "inner": "certifi-2026.7.22.dist-info/licenses/LICENSE",
+  "saved": "certifi-LICENSE.txt",
+  "bytes": 989,
+  "sha256": "e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7"
+ },
+ {
+  "archive": "tqdm-4.70.0-py3-none-any.whl",
+  "inner": "tqdm-4.70.0.dist-info/licenses/LICENCE",
+  "saved": "tqdm-LICENCE.txt",
+  "bytes": 1985,
+  "sha256": "fcff87c3a47ce8028a8512aa182d4fcf0ad1c90544ee75cf9b343684cac194de"
+ },
+ {
+  "archive": "regex-2026.9.3-cp312-cp312-win_amd64.whl",
+  "inner": "regex-2026.9.3.dist-info/licenses/LICENSE.txt",
+  "saved": "regex-LICENSE.txt",
+  "bytes": 11792,
+  "sha256": "3d220c06594b826bbabf110312f60f385f99e57e529fa4b9e536f79091f8b4c7"
+ },
+ {
+  "archive": "pillow-12.3.0-cp312-cp312-win_amd64.whl",
+  "inner": "pillow-12.3.0.dist-info/licenses/LICENSE",
+  "saved": "pillow-LICENSE.txt",
+  "bytes": 78016,
+  "sha256": "4f7866a74802c6326f81faff59a56546b6aec2b10b91973e0e9308de95e79857"
+ },
+ {
+  "archive": "numpy-2.5.2-cp312-cp312-win_amd64.whl",
+  "inner": "numpy-2.5.2.dist-info/licenses/LICENSE.txt",
+  "saved": "numpy-LICENSE.txt",
+  "bytes": 45831,
+  "sha256": "a804dff0ead9fadc5293456410bcbfc32bf024be9c4513459663fb7b442d2341"
+ },
+ {
+  "archive": "llvmlite-0.49.0-cp312-cp312-win_amd64.whl",
+  "inner": "llvmlite-0.49.0.dist-info/licenses/LICENSE",
+  "saved": "llvmlite-LICENSE.txt",
+  "bytes": 1309,
+  "sha256": "7d6aa93e52a7ae9a995ff6a40c0ea5628311cdf1bd8dcd29c8ce9181f4af3a81"
+ },
+ {
+  "archive": "llvmlite-0.49.0-cp312-cp312-win_amd64.whl",
+  "inner": "llvmlite-0.49.0.dist-info/licenses/LICENSE.thirdparty",
+  "saved": "llvmlite-LICENSE.thirdparty.txt",
+  "bytes": 12786,
+  "sha256": "7b564c7af9ab446d245ba66adc8cda2f61d1d162f842899557499e80b715993a"
+ },
+ {
+  "archive": "requests-2.34.2-py3-none-any.whl",
+  "inner": "requests-2.34.2.dist-info/licenses/NOTICE",
+  "saved": "requests-NOTICE.txt",
+  "bytes": 38,
+  "sha256": "f5110972dedad2b4e9d314518daf3b7d72d6e02e499acd802181de6f74571dcc"
+ },
+ {
+  "archive": "requests-2.34.2-py3-none-any.whl",
+  "inner": "requests-2.34.2.dist-info/licenses/LICENSE",
+  "saved": "requests-LICENSE.txt",
+  "bytes": 10142,
+  "sha256": "09e8a9bcec8067104652c168685ab0931e7868f9c8284b66f5ae6edae5f1130b"
+ },
+ {
+  "archive": "setuptools-84.0.0-py3-none-any.whl",
+  "inner": "setuptools/config/NOTICE",
+  "saved": "setuptools-config-NOTICE.txt",
+  "bytes": 493,
+  "sha256": "2dddf08818297a3b89d43d95ff659d8da85741108c9136dfa3a4d856c0623bd8"
+ },
+ {
+  "archive": "typing_extensions-4.16.0-py3-none-any.whl",
+  "inner": "typing_extensions-4.16.0.dist-info/licenses/LICENSE",
+  "saved": "typing_extensions-LICENSE.txt",
+  "bytes": 13936,
+  "sha256": "3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf"
+ },
+ {
+  "archive": "pyaml-26.7.0-py3-none-any.whl",
+  "inner": "pyaml-26.7.0.dist-info/licenses/COPYING",
+  "saved": "pyaml-COPYING.txt",
+  "bytes": 491,
+  "sha256": "dc1342cc1cb49e24c1c9e8a495acc9625ce2e04146c116279af0ab0949cd829c"
+ },
+ {
+  "archive": "cffi-2.1.1-cp312-cp312-win_amd64.whl",
+  "inner": "cffi-2.1.1.dist-info/licenses/LICENSE",
+  "saved": "cffi-LICENSE.txt",
+  "bytes": 1123,
+  "sha256": "5ba24ddc57067f9249add644c3afc41a5d6dc37e23433ef759d95df370b0af63"
+ },
+ {
+  "archive": "msgpack-1.2.2-cp312-cp312-win_amd64.whl",
+  "inner": "msgpack-1.2.2.dist-info/licenses/COPYING",
+  "saved": "msgpack-COPYING.txt",
+  "bytes": 628,
+  "sha256": "4fbdff42eba4593c16f7a7ea7078883b2b734870a1e2b636284ce2dce62bf4f7"
+ },
+ {
+  "archive": "scipy-1.18.1-cp312-cp312-win_amd64.whl",
+  "inner": "scipy-1.18.1.dist-info/LICENSE.txt",
+  "saved": "scipy-LICENSE.txt",
+  "bytes": 45881,
+  "sha256": "f0f5c56b298ec9795df1199edc328a987242716d14a1bde6813112e22dc15f99"
+ },
+ {
+  "archive": "packaging-26.3-py3-none-any.whl",
+  "inner": "packaging-26.3.dist-info/licenses/LICENSE",
+  "saved": "packaging-LICENSE.txt",
+  "bytes": 197,
+  "sha256": "cad1ef5bd340d73e074ba614d26f7deaca5c7940c3d8c34852e65c4909686c48"
+ },
+ {
+  "archive": "mpmath-1.3.0-py3-none-any.whl",
+  "inner": "mpmath-1.3.0.dist-info/LICENSE",
+  "saved": "mpmath-LICENSE.txt",
+  "bytes": 1537,
+  "sha256": "c26cae81da4508e5e249985777a33821f183223ebb74d7f8cfbf90fe7eef2fb7"
+ },
+ {
+  "archive": "dacvae-414c20785fc3a28373073ea8ef7a1316eeeaca6e.zip",
+  "inner": "dacvae-414c20785fc3a28373073ea8ef7a1316eeeaca6e/LICENSE",
+  "saved": "dacvae-LICENSE.txt",
+  "bytes": 11358,
+  "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+ },
+ {
+  "archive": "silentcipher-d46d7d0893a583d8968ab3a6626e2289faec9152.zip",
+  "inner": "silentcipher-d46d7d0893a583d8968ab3a6626e2289faec9152/LICENSE",
+  "saved": "silentcipher-LICENSE.txt",
+  "bytes": 1075,
+  "sha256": "157b6af8c1bc4eac646abdf17473934a85e8815ade3a346cd83a58a171586a73"
+ },
+ {
+  "archive": "argbind-0.3.9.tar.gz",
+  "inner": "argbind-0.3.9/LICENSE.md",
+  "saved": "argbind-LICENSE.md",
+  "bytes": 1073,
+  "sha256": "0820a7c2f431f1d79b289a362f394322de156624353d5f0cc9f75cc6489d7db4"
+ },
+ {
+  "archive": "randomname-0.2.1.tar.gz",
+  "inner": "randomname-0.2.1/LICENSE",
+  "saved": "randomname-LICENSE.txt",
+  "bytes": 1067,
+  "sha256": "7b38b39ef5e420ab6cb1af1df645482fec28923900693c72efa45fccfea987f2"
+ },
+ {
+  "archive": "librosa-1.0.0-py3-none-any.whl",
+  "inner": "librosa-1.0.0.dist-info/licenses/LICENSE.md",
+  "saved": "librosa-LICENSE.md",
+  "bytes": 766,
+  "sha256": "79aa4a8086d51ac89f9a7322f546670cdef73e758c67f04587b7af8afafd6df8"
+ },
+ {
+  "archive": "shellingham-1.5.4-py2.py3-none-any.whl",
+  "inner": "shellingham-1.5.4.dist-info/LICENSE",
+  "saved": "shellingham-LICENSE.txt",
+  "bytes": 751,
+  "sha256": "f388fd38cad13112c1dc0f669bbe80e7f84541edbafb72f3030d2ca7642c3c9d"
+ }
+]
