@@ -33,6 +33,10 @@ public partial class MainWindow : Window
 {
     private readonly IAudioPlayer _player = new NAudioPlayer();
     private readonly MainViewModel _model;
+
+    /// <summary>アプリ内更新の口（裁定 160）＝HttpClient を抱えるので閉じるときに捨てる。</summary>
+    private readonly Services.Update.AppUpdateService _updater;
+
     private ReleaseFlavor _flavor = ReleaseFlavor.Cuda;
     private bool _firstRunShown;
 
@@ -105,6 +109,25 @@ public partial class MainWindow : Window
         AboutPage.SaveLogRequested += (_, e) => e.Path = SaveReportLog();
         AboutPage.OpenReportFolderRequested += (_, e) => SelectInExplorer(e.Path);
 
+        // アプリ内更新（裁定 160・2026-09-24）＝**配線はここ 1 箇所**である。
+        // ⑴ 版（RTX（CUDA）／Radeon（ROCm））は上で樹から読んだ物をそのまま渡す
+        //    ＝app.json の installers のどちらを読むかが決まる。
+        // ⑵ 終わらせる手は **既存の終了の入口 1 本**（Close → OnClosing → App.OnExit で
+        //    子をツリー kill）＝ViewModel は Process も Application も知らない。
+        // ⑶ 読み上げ中の柵は状態の標本（/ywk/status の requests.in_flight）を覗くだけ。
+        // 記録の 1 行は**取得のスレッドから飛んでくる**ので、ほかの子の事象と同じく
+        // Dispatcher で窓のスレッドへ渡す（跨ぐ marshal は View の仕事）。
+        _updater = new Services.Update.AppUpdateService(
+            AppVersion.Display,
+            _flavor,
+            paths.UpdatesDir,
+            log: line => Dispatcher.BeginInvoke(() =>
+            {
+                _model.AppendLog(line);
+                RefreshLogButton();
+            }));
+        _model.About.AttachUpdater(_updater, Close, () => _model.Status.HostBusy);
+
         RefreshLogButton();
 
         // **檔が生えた瞬間に釦を出す**（是正・検分）＝当日のログ檔を作るのは
@@ -172,6 +195,7 @@ public partial class MainWindow : Window
         _model.Status.PropertyChanged -= OnStatusPropertyChanged;
         _model.WizardRequested -= OnWizardRequested;
         _player.Dispose();
+        _updater.Dispose();
         base.OnClosing(e);
     }
 

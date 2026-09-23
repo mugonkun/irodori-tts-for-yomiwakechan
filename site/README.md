@@ -8,6 +8,7 @@
 | 檔 | 何 |
 |---|---|
 | `index.html` | 頁の全部（CSS も JS も中に書いてある・**外部資産ゼロ**＝画像・font・CDN を 1 つも読まない） |
+| `app.json` | **アプリ内更新の配布 manifest**（裁定 160・下の §app.json）。人が手で書かない＝`build/make-app-manifest.ps1` が書く |
 | `README.md` | この檔（公開の仕方の記帳・**頁には出ない**） |
 | `img/`（未作成） | 使い方の 3 枚の画面写真の置き場。撮れるまで頁には**枠だけ**が出る（下の §画像） |
 
@@ -67,6 +68,44 @@ JS が `tag_name` を拾えた回にだけ「最新版 v…」へ書き換わり
 - `api.github.com` は `Access-Control-Allow-Origin: *` を返します。無認証の回数制限は **60 回／時・IP** で、
   超えると 403＝上の 3 の道に落ちます。
 
+## app.json（アプリ内更新の配布 manifest・裁定 160・2026-09-24）
+
+アプリの〔このアプリについて〕の版の行の下に〔新しい版を確認〕が在り、押すと
+`https://mugonkun.github.io/irodori-tts-for-yomiwakechan/app.json` を 1 回だけ読みます。
+**この頁と同じ枝（`gh-pages` の根）に置く 1 檔**で、`index.html` と同じ手で写します。
+設計＝`docs/design/app-update.md`。読み手の実装＝
+`launcher/IrodoriTtsYwk.Launcher/Services/Update/AppDistributionContract.cs`。
+
+```json
+{ "v": 1, "name": "irodori-tts-ywk", "version": "v2.0.7",
+  "builtAt": "…Z", "pageUrl": "https://mugonkun.github.io/irodori-tts-for-yomiwakechan/", "note": null,
+  "installers": {
+    "cuda":   { "url": "…/releases/download/v2.0.7/irodori-tts-ywk-setup-v2.0.7-cuda.exe",   "sha256": "…", "sizeBytes": 0 },
+    "radeon": { "url": "…/releases/download/v2.0.7/irodori-tts-ywk-setup-v2.0.7-radeon.exe", "sha256": "…", "sizeBytes": 0 } } }
+```
+
+- 必須＝`v`（1 以外は不成立）・`name`・`version`（**v 前置の表示形**）・
+  `installers.<cuda|radeon>.url`（https）・`.sha256`（64 桁の小文字 hex）。
+- 任意＝`builtAt`・`pageUrl`・`note`・`sizeBytes`（**表示のみ**＝値で枝を分けない）。未知の欄は無視。
+- **手で書かない。** `pwsh -NoProfile -File build/make-app-manifest.ps1` が
+  `build/out/installer/` の実物から sha256 と長さを計り、`launcher/Directory.Build.props` の
+  `AppDisplayVersion` を版として書きます（`SHA256SUMS.txt` と食い違えば止まる＝嘘の manifest を作らない）。
+- リポに置いてある `site/app.json` は**まだ公開していない版の置き札**でも構いません
+  （sha256 が 0 が 64 個の初期値）。**公開のスイッチは下の順序の 3 番**です。
+
+## 公開の順序（**資産が先・manifest が後**）
+
+**この順を逆にしない。** 逆にすると、アプリが「新しい版がある」と言ってから取りにいく先が 404 になります。
+
+1. **GitHub Release の資産を先に上げる**（タグ `v<版>`・`…-cuda.exe` と `…-radeon.exe` と `SHA256SUMS.txt`）。
+   この時点で着地頁の釦は新しい版を指し始めます（釦は Releases API を読む＝§落とす釦）。
+2. `pwsh -NoProfile -ExecutionPolicy Bypass -File build/make-app-manifest.ps1` で
+   `site/app.json` を書き直し、`main` に commit します。
+3. **`site/` を `gh-pages` の根へ写して push**（下の §公開の仕方）。
+   **この push が「アプリ内更新に降ろす」スイッチ**です＝ここまでは、どの利用者のアプリも
+   古い `app.json` を読み、「最新です」と答えます。
+4. 公開した `app.json` を 1 度ブラウザで開いて、`version` と 2 本の `url` が実物を指していることを見る。
+
 ## 画像（3 枚・未撮影）
 
 使い方の 3 手順には、いま**枠だけ**が出ています（`<div class="shot">`）。撮るのは RTX 機の席で、**v2.0 の画面**です。
@@ -101,10 +140,11 @@ cd "$SCRATCH/gh-pages" && git pull --ff-only origin gh-pages
 ```sh
 # 写して commit（site\ という階を gh-pages に作らない＝index.html は根に置く）
 cp <repo>/site/index.html "$SCRATCH/gh-pages/index.html"
+cp <repo>/site/app.json   "$SCRATCH/gh-pages/app.json"  # 版を上げた回（＝公開のスイッチ・裁定 160）
 cp -r <repo>/site/img     "$SCRATCH/gh-pages/img"      # 画像を入れた回だけ
 touch "$SCRATCH/gh-pages/.nojekyll"                    # 初回だけ（Jekyll に触らせない）
 cd "$SCRATCH/gh-pages"
-git add index.html .nojekyll img 2>/dev/null
+git add index.html app.json .nojekyll img 2>/dev/null
 git commit -m "landing page v2.0.0"
 git push origin gh-pages
 ```

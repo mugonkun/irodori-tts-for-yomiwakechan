@@ -14,6 +14,10 @@
     （裁定 131）。〔報告用のログを保存〕の隣に同じ 1 行を置く。
     文言は ViewModels/UiStrings.cs が唯一の出所である。
   -->
+  <UserControl.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+  </UserControl.Resources>
+
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
 
@@ -28,6 +32,28 @@
 
       <TextBlock Text="{x:Static vm:UiStrings.AboutVersionLabel}" FontWeight="Bold" Margin="0,16,0,4" />
       <TextBlock x:Name="VersionText" AutomationProperties.AutomationId="AboutVersionText" />
+
+      <!--
+        更新（裁定 160・2026-09-24＝本体 yomiwakechan2 の更新シーケンスを写した二段確認）。
+        **版の行の直下**に置く＝「いまの版」と「新しい版」を同じ目線で読ませる。
+        釦は 1 つで、一押し目は「新しい版を確認」・二押し目は札が「vX に更新する」へ変わる
+        （同じ面でもう一押し＝二段確認）。**失敗はすべて下の 1 行**＝窓も例外も出さない。
+        押す前は 1 行を出さない（AboutUpdateStatusText は UpdateStatusVisible で畳む）。
+        未配線なら釦は押せない（AboutViewModel.AttachUpdater を通すのは主窓 1 箇所）。
+      -->
+      <StackPanel Margin="0,10,0,0">
+        <Button HorizontalAlignment="Left" Padding="14,5"
+                AutomationProperties.AutomationId="AboutUpdateButton"
+                Content="{Binding UpdateButtonText, Mode=OneWay}"
+                Command="{Binding UpdateCommand}" />
+        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="AboutUpdateStatusText"
+                   Text="{Binding UpdateStatusText, Mode=OneWay}"
+                   Visibility="{Binding UpdateStatusVisible, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+        <TextBlock Margin="0,4,0,0" TextWrapping="Wrap" Foreground="#666666" FontSize="11"
+                   AutomationProperties.AutomationId="AboutUpdateNoteText"
+                   Text="{x:Static vm:UiStrings.AboutUpdateNote}" />
+      </StackPanel>
 
       <TextBlock Text="{x:Static vm:UiStrings.AboutWatermarkLabel}" FontWeight="Bold" Margin="0,16,0,4" />
       <TextBlock x:Name="WatermarkText" TextWrapping="Wrap"

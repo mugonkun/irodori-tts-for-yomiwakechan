@@ -457,6 +457,76 @@ public static class UiStrings
     /// <summary>報告用のログを保存（在り処を出すだけ）。</summary>
     public const string AboutSaveLogButton = "報告用のログを保存";
 
+    // ---- 更新（裁定 160・2026-09-24＝本体の更新シーケンスを写した二段確認）----
+    // 一行に組み立てるのは AboutViewModel.DescribeUpdateResult（純関数）である。
+    // **ここに無い字を VM で直に書かない**＝語の検分（WordLintTests）が ViewModels の
+    // リテラルも舐めるので、文はすべてこの並びから引く。
+
+    /// <summary>釦の初期の札（一押し目＝確認するだけ）。</summary>
+    public const string AboutUpdateCheckButton = "新しい版を確認";
+
+    /// <summary>釦の二押し目の札の後半（前に版が付く＝<c>v2.0.8 に更新する</c>）。</summary>
+    public const string AboutUpdateApplySuffix = " に更新する";
+
+    /// <summary>更新の釦の下の薄字（自動では見にいかないことを先に言う）。</summary>
+    public const string AboutUpdateNote =
+        "この釦を押したときだけ、新しい版があるかを見にいきます。ふだんは何も通信しません。";
+
+    /// <summary>一押し目の最中。</summary>
+    public const string AboutUpdateChecking = "新しい版があるかを見ています…";
+
+    /// <summary>二押し目の最中の後半（前に版が付く）。</summary>
+    public const string AboutUpdateDownloadingSuffix =
+        " をダウンロードしています…（数分かかることがあります）";
+
+    /// <summary>最新だった（括弧の中に版が入る）。</summary>
+    public const string AboutUpdateUpToDatePrefix = "お使いの版は最新です（";
+
+    /// <summary>同上・閉じ。</summary>
+    public const string AboutUpdateUpToDateSuffix = "）。";
+
+    /// <summary>新しい版がある（前半・このあとに版が入る）。</summary>
+    public const string AboutUpdateAvailablePrefix = "新しい版 ";
+
+    /// <summary>新しい版がある（後半＝次の一押しが何をするかを言い切る）。</summary>
+    public const string AboutUpdateAvailableSuffix =
+        " があります。もう一度押すと、ダウンロードしてインストーラーを開きます"
+        + "（そのときこのアプリはいったん終了します）。";
+
+    /// <summary>配布元が添えた一行（表示のみ）の前。</summary>
+    public const string AboutUpdateNotePrefix = "（お知らせ: ";
+
+    /// <summary>同上・閉じ。</summary>
+    public const string AboutUpdateNoteSuffix = "）";
+
+    /// <summary>確認できなかった（括弧の中に理由が入る）。</summary>
+    public const string AboutUpdateFailedPrefix = "新しい版を確認できませんでした（";
+
+    /// <summary>同上・閉じ（道順を添える）。</summary>
+    public const string AboutUpdateFailedSuffix = "。しばらくおいてからもう一度お試しください）。";
+
+    /// <summary>検分に通らなかった（括弧の中に理由が入る）。</summary>
+    public const string AboutUpdateVerifyFailedPrefix = "更新をやめました（";
+
+    /// <summary>同上・閉じ。</summary>
+    public const string AboutUpdateVerifyFailedSuffix = "）。";
+
+    /// <summary>インストーラーを起こした＝このアプリは閉じる。</summary>
+    public const string AboutUpdateLaunched =
+        "インストーラーを開きました。このアプリはいったん終了します。"
+        + "インストールが終わったら、最後の画面のチェックでもう一度開けます。";
+
+    /// <summary>インストーラーを起こせなかった（在り処を出して手動の道を残す）。</summary>
+    public const string AboutUpdateLaunchFailedPrefix =
+        "インストーラーを開けませんでした。ダウンロードしたファイルは ";
+
+    /// <summary>同上・閉じ。</summary>
+    public const string AboutUpdateLaunchFailedSuffix = " にあります（手で開いても同じです）。";
+
+    /// <summary>読み上げ中の柵（司令官の指示 2026-09-24＝終わってから押してもらう）。</summary>
+    public const string AboutUpdateBusy =
+        "読み上げ中は更新できません。終わってからもう一度押してください。";
+
     // ===================== 文（ViewModel から出る 1 行）=====================
 
     // ---- 発話テスト ----

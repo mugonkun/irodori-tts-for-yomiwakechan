@@ -1,0 +1,20 @@
+{
+  "v": 1,
+  "name": "irodori-tts-ywk",
+  "version": "v2.0.7",
+  "builtAt": "2026-09-24T00:00:00Z",
+  "pageUrl": "https://mugonkun.github.io/irodori-tts-for-yomiwakechan/",
+  "note": null,
+  "installers": {
+    "cuda": {
+      "url": "https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.7/irodori-tts-ywk-setup-v2.0.7-cuda.exe",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "sizeBytes": 0
+    },
+    "radeon": {
+      "url": "https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.7/irodori-tts-ywk-setup-v2.0.7-radeon.exe",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "sizeBytes": 0
+    }
+  }
+}

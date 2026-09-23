@@ -310,6 +310,28 @@ public sealed class AutomationIdsTests
     }
 
     /// <summary>
+    /// <b>裁定 160（アプリ内更新・2026-09-24）で新設した id</b>。
+    /// <para>
+    /// 3 つである＝〔このアプリについて〕の版の行の下に置いた<b>二段確認の釦</b>
+    /// （札は 1 押し目「新しい版を確認」→ 2 押し目「vX に更新する」＝<b>同じ要素・同じ id</b>）と、
+    /// その下の<b>結末の 1 行</b>・<b>薄字の註</b>。<b>退役させた id は 1 つも無い。</b>
+    /// </para>
+    /// <para>
+    /// この 3 つは<b>畳みの外</b>に置いた（<c>AboutAdvancedExpander</c> の中ではない）＝
+    /// 台本は <c>Open-YwkFold</c> を挟まずに触れる。
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void 裁定160で新設したidが揃っている()
+    {
+        var found = AllIds();
+        string[] added = ["AboutUpdateButton", "AboutUpdateStatusText", "AboutUpdateNoteText"];
+
+        var missing = added.Where(id => !found.Contains(id)).ToArray();
+        Assert.True(missing.Length == 0, "新設できていない AutomationId：" + string.Join("・", missing));
+    }
+
+    /// <summary>
     /// <b>退役させた id は本当に画面から消えているか</b>（段 C）＝
     /// 「消した」と帳面に書いておいて XAML に残っている、を止める錠である。
     /// </summary>

@@ -955,3 +955,10 @@ dotnet test launcher -c Debug --nologo    # 1029 合格・1 skip・1 失敗（�
 **この機体に Radeon 版が入っている**ことによる（`OtherFlavorInstalled` が登録簿を読む＝環境依存・今回の差分と無関係）。
 `docs\guide.md` の語句も揃えた。`site\index.html` と `README.md`（着地頁）は **公開中の v2.0.3 の画面のまま**＝
 次の版を公開する回に揃える。**窓は立てていない**（走っている個体を止めない＝実射は次の回）。
+## 17. アプリ内更新（2026-09-24・裁定 160）
+
+〔このアプリについて〕の版の行の下に **〔新しい版を確認〕** が入った（二段確認＝一押し目は照合だけ・
+二押し目でインストーラの取得と検分と起動、そのあと既存の終了の入口 1 本を通ってアプリが畳む）。
+**設計と manifest の型と公開の順序は `docs/design/app-update.md` が正本**である（写しをここに作らない）。
+置き場＝`Services/Update/`（`AppUpdateService`・`AppDistributionContract`）・画面＝`ViewModels/AboutViewModel.cs`
+＋`Views/AboutView.xaml`・配線は `Views/MainWindow.xaml.cs` の 1 箇所・文言は `ViewModels/UiStrings.cs`。

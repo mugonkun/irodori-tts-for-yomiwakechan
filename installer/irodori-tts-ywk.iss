@@ -193,7 +193,14 @@ AppMutex=Local\irodori-tts-ywk-launcher-{#Flavor}
 ; ↑ 2 つの版を同時に開いた回は、後から起きた側が **つなぎ口 18088 の塞がり**で止まる（裁定 133 ⑷）。
 ;   つなぎ口だけが 1 つで、錠は版ごとである。
 RestartApplications=no
+; ↑ 裁定 160（2026-09-24・アプリ内更新）で**要る 1 行になった**＝アプリ内の〔新しい版を確認〕から
+;   起きたインストーラは、**このアプリが走っている最中**に動く唯一の経路である。Restart Manager の
+;   復帰起動を止めておかないと、完了画面のチェック（下の [Run]）と合わせて**二重に起きる**。
+;   この行は既に在った（旧＝一般則としての no）ので、裁定 160 は 1 字も足していない。
 ; CloseApplications は書かない（既定 yes のまま・頼らない＝設計書 §8 危険 6）
+;   ※ 裁定 160 でも据え置く＝アプリ内更新の経路では、インストーラが起きたあとに**アプリ自身が**
+;     既存の終了の入口（主窓の Closing → App.OnExit → 子のツリー kill）を通って畳む。
+;     Inno が掴んだ檔を閉じに来るより先に消えているので、既定のままで塞がらない。
 Uninstallable=yes
 UninstallDisplayName={#MyAppName} {#AppVersion}
 Compression=lzma2/max
@@ -276,6 +283,13 @@ Source: "{#Repo}\docs\guide.md";  DestDir: "{app}\docs"; Flags: ignoreversion
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\IrodoriTtsYwk.Launcher.exe"
 
 [Run]
+; 完了画面のチェック＝**アプリ内更新（裁定 160・2026-09-24）の「再起動」の実装形**である。
+;   アプリ内の〔vX に更新する〕→ インストーラ起動 → アプリは自分で終了 → ウィザード完走 →
+;   ここのチェックでもう一度起きる。この 1 行が導線の**唯一の口**（RestartApplications=no と対）。
+;   Description は Inno の日本語 isl の {cm:LaunchProgram}＝「{#MyAppName} を実行する」＝
+;   版つきの表示名（… － RTX（CUDA）／… － Radeon（ROCm））がそのまま入る＝窓題と 1 字も違えない。
+;   ここに文言を直書きしない（訳文と版の名札を 2 箇所で綴らない）。
+;   skipifsilent＝無人導入（/SILENT）では起こさない・nowait＝ウィザードは待たずに閉じる。
 Filename: "{app}\IrodoriTtsYwk.Launcher.exe"; \
   Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; \
   Flags: nowait postinstall skipifsilent

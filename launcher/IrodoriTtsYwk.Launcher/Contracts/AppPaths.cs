@@ -225,6 +225,17 @@ public sealed class AppPaths
 
     public string LogDir => Path.Combine(DataDir, "logs");
 
+    /// <summary>
+    /// アプリ内更新で取ったインストーラの置き場（裁定 160・2026-09-24＝本体 yomiwakechan2 の
+    /// <c>%LOCALAPPDATA%\yomiwakechan2\updates\</c> と同じ位置）。
+    /// <para>
+    /// <b><see cref="EnsureDataDirectories"/> では作らない</b>＝更新を 1 度も押さない機体に
+    /// 空の枝を生やさない。作るのは <c>Services/Update/AppUpdateService</c> が取りにいく回だけで、
+    /// そのとき古い残骸をこの枝の中で掃除する。
+    /// </para>
+    /// </summary>
+    public string UpdatesDir => Path.Combine(DataDir, "updates");
+
     /// <summary>MIOpen の db（rocm 変種でだけ wrapper が作る。ランチャは表示にしか使わない）。</summary>
     public string MiopenDir => Path.Combine(DataDir, "miopen");
 
