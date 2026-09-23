@@ -222,15 +222,23 @@ public sealed class GpuMemoryLimitFirstRunTests
     }
 
     [Fact]
-    public void アダプタを数えていない呼び手では何も起きない()
+    public void アダプタを数えていない回はNVIDIAだけ総量に落ちる()
     {
-        // 既存の呼び手（2 引数）は 1 字も振る舞いが変わらない。
-        var settings = new LauncherSettings { Variant = RuntimeVariants.Cu130 };
+        // 2 引数の呼び手（アダプタを渡さない）＝控えが効くのは NVIDIA だけである。
+        var nvidia = new LauncherSettings { Variant = RuntimeVariants.Cu130 };
+        SettingsDefaults.ApplyGpu(nvidia, Nvidia(8 * Gib));
+        Assert.Equal(5, nvidia.GpuMemoryLimitGiB);
 
-        SettingsDefaults.ApplyGpu(settings, Nvidia(8 * Gib));
+        // AMD は torch の総量（専用＋共有）なので材料にしない＝0 のまま。
+        var amd = new LauncherSettings { Variant = RuntimeVariants.RocmGfx1151 };
+        SettingsDefaults.ApplyGpu(
+            amd,
+            new GpuInfo(
+                "GPU-amd-0", "AMD Radeon(TM) 8060S Graphics", 0, 107_000_000_000L,
+                null, "gfx1151", null, GpuSource.TorchProbe));
+        Assert.Equal(0, amd.GpuMemoryLimitGiB);
 
-        // NVIDIA は nvidia-smi の総量に落ちるので 5 が入る（控えは NVIDIA だけ）。
-        Assert.Equal(5, settings.GpuMemoryLimitGiB);
+        // GPU が無い回も 0（選んでいない＝材料が無い）。
         Assert.Equal(0, SettingsDefaults.GpuMemoryLimitFor(
             new LauncherSettings { Variant = RuntimeVariants.Cu130 }, null, null));
     }
