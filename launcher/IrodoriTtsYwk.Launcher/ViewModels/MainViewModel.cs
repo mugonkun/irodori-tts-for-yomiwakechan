@@ -51,6 +51,13 @@ public sealed class MainViewModel : ObservableObject
     private FirstRunViewModel? _firstRun;
 
     /// <summary>
+    /// OS のアダプタ一覧を数える口（裁定 160）＝<b>専用</b>メモリの出所である
+    /// （司令官の指示 2026-09-24＝共有メモリは判定の材料に使わない）。
+    /// 設定頁の「おすすめ」と、初期設定で敷く上限の両方がここを引く。
+    /// </summary>
+    private readonly Services.Gpu.IGpuAdapterInfoSource _gpuAdapters = new Services.Gpu.DxgiGpuAdapters();
+
+    /// <summary>
     /// 取得キャッシュを<b>実際に消したか</b>（1 回の起動で 1 度だけ「消す」）。
     /// <b>関門に断られた回は数えない</b>（是正・便 D（3）の 3 巡目）＝断られた理由を直して
     /// （実行系を組み直して焼き印を入れ直して）から撃ち直せば、その起動でも掃除は走る。
@@ -143,6 +150,9 @@ public sealed class MainViewModel : ObservableObject
             // 段 C で欄ごと消した設定（準備運転の段・使う声）の検分は、画面に出す先が無い＝
             // 手で書いた settings.json が読めない回の理由は記録へ落とす（是正・段 C の検分）。
             Log = line => Status.AppendLog(line),
+
+            // 「数え直す」でおすすめの上限を出すための口（裁定 160）＝専用メモリだけを数える。
+            AdapterSource = _gpuAdapters,
         };
 
         About = new AboutViewModel(paths);
@@ -663,7 +673,7 @@ public sealed class MainViewModel : ObservableObject
 
         if (result.Ok)
         {
-            PersistResolvedGpu(resolvedGpu);
+            await PersistResolvedGpuAsync(resolvedGpu).ConfigureAwait(true);
             AttachWrapper();
             await Voices.RefreshAsync().ConfigureAwait(true);
         }
@@ -762,8 +772,15 @@ public sealed class MainViewModel : ObservableObject
     /// <b>上書きはしない</b>＝既に UUID が入っている設定には触らない（利用者の選択が正本）。
     /// <b>書くのは起動が通った回だけ</b>＝断られた変種の GPU を焼かない。
     /// </para>
+    /// <para>
+    /// <b>初期設定の回はここで GPU メモリの上限のおすすめも敷く</b>（裁定 160＝司令官の指示
+    /// 2026-09-24）＝この手はウィザードの「起動の確認」の段から通るので、
+    /// <c>firstRunCompleted</c> が焼かれる<b>直前</b>である（＝はじめの準備の最中と判る）。
+    /// 条件と規則は <c>SettingsDefaults.GpuMemoryLimitFor</c>（純関数）に閉じてある＝
+    /// 既に値が入っている機体には触らない。<b>押す手は 1 つも増えない。</b>
+    /// </para>
     /// </summary>
-    private void PersistResolvedGpu(GpuInfo? gpu)
+    private async Task PersistResolvedGpuAsync(GpuInfo? gpu)
     {
         if (gpu is null
             || !RuntimeVariants.UsesGpu(_settings.Variant)
@@ -772,11 +789,27 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        Services.Settings.SettingsDefaults.ApplyGpu(_settings, gpu);
+        // DXGI は COM を叩く＝UI の糸で回さない（`OsGpuMemorySampler` と同じ作法）。
+        // 落ちても空が返るだけ＝おすすめが出ないだけである。
+        var adapters = await Task.Run(_gpuAdapters.Adapters).ConfigureAwait(true);
+
+        var before = _settings.GpuMemoryLimitGiB;
+        Services.Settings.SettingsDefaults.ApplyGpu(_settings, gpu, adapters);
         _store.Save(_settings);
         Status.ApplySettings(_settings);
         Settings.SyncFromLive();
         Status.AppendLog("この起動で使う GPU を設定に覚えました（" + gpu.Label + "）。");
+
+        if (_settings.GpuMemoryLimitGiB != before)
+        {
+            // 完了の画面に 1 文だけ足す（釦も段も増やさない）＋記録にも同じ 1 行を残す。
+            var line = string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                UiStrings.WizardGpuMemoryLimitAppliedFormat,
+                _settings.GpuMemoryLimitGiB);
+            _firstRun?.NoteGpuMemoryLimit(_settings.GpuMemoryLimitGiB);
+            Status.AppendLog(line);
+        }
     }
 
     /// <summary>

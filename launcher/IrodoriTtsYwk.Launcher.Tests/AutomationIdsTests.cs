@@ -310,6 +310,24 @@ public sealed class AutomationIdsTests
     }
 
     /// <summary>
+    /// <b>裁定 160 のおすすめ（2026-09-24）で新設した id</b>＝詳細 9 行目の<b>中</b>に足した 2 つ。
+    /// <para>
+    /// ⑴ おすすめの 1 行（専用メモリから決めた上限を告げる）⑵ その値を写しに入れる釦。
+    /// <b>行は増えない</b>（詳細は 9 行のまま）・<b>退役させた id は 1 つも無い。</b>
+    /// 両方とも <c>SettingsAdvancedExpander</c> の中なので、台本は <c>Open-YwkFold</c> を 1 手挟む。
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void 裁定160のおすすめで新設したidが揃っている()
+    {
+        var found = AllIds();
+        string[] added = ["SettingsGpuMemoryLimitAdviceText", "SettingsGpuMemoryLimitAdviceButton"];
+
+        var missing = added.Where(id => !found.Contains(id)).ToArray();
+        Assert.True(missing.Length == 0, "新設できていない AutomationId：" + string.Join("・", missing));
+    }
+
+    /// <summary>
     /// <b>裁定 160（アプリ内更新・2026-09-24）で新設した id</b>。
     /// <para>
     /// 3 つである＝〔このアプリについて〕の版の行の下に置いた<b>二段確認の釦</b>

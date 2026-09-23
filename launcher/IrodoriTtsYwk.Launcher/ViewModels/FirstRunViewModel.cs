@@ -123,6 +123,9 @@ public sealed class FirstRunViewModel : ObservableObject
     /// <summary>ドライバの検分（裁定 126 の B）。既定＝まだ何も見ていない。</summary>
     private DriverProbe _probe = DriverProbe.Unknown;
 
+    /// <summary>初期設定で敷いた GPU メモリの上限（GB・0＝敷いていない＝裁定 160）。</summary>
+    private int _gpuMemoryLimitGiB;
+
     /// <summary>利用者が変種を<b>自分で選んだ</b>か（真なら勧めで上書きしない）。</summary>
     private bool _variantChosen;
 
@@ -968,8 +971,42 @@ public sealed class FirstRunViewModel : ObservableObject
     /// <summary>Windows の許可の予告（<see cref="UacNoticeLine"/>）。</summary>
     public string UacNoticeText => UacNoticeLine;
 
-    /// <summary>完了の本文（<see cref="DoneLine"/>）。</summary>
-    public string DoneText => DoneLine;
+    /// <summary>完了の本文（<see cref="DoneLineWith"/>）。</summary>
+    public string DoneText => DoneLineWith(_gpuMemoryLimitGiB);
+
+    /// <summary>
+    /// 完了の本文＋<b>おすすめの上限を敷いた回だけ</b>の 1 文（<b>純関数</b>・裁定 160＝
+    /// 司令官の指示 2026-09-24「vram は初期設定と再スキャンで最適な占有メモリを提示していいかもね。」）。
+    /// <para>
+    /// 敷かなかった回（0）は<b>1 文字も足さない</b>＝上限が要らない板の利用者に、
+    /// 要らない話を読ませない（憲章 原則 7）。
+    /// </para>
+    /// </summary>
+    /// <param name="gpuMemoryLimitGiB">敷いた上限（GB・0＝敷いていない）。</param>
+    public static string DoneLineWith(int gpuMemoryLimitGiB) =>
+        gpuMemoryLimitGiB > 0
+            ? DoneLine + "\n" + string.Format(
+                CultureInfo.InvariantCulture,
+                UiStrings.WizardGpuMemoryLimitAppliedFormat,
+                gpuMemoryLimitGiB)
+            : DoneLine;
+
+    /// <summary>
+    /// <b>初期設定で GPU メモリの上限を敷いた</b>と報せる口（裁定 160）＝
+    /// <see cref="MainViewModel"/> が「起動の確認」の段で敷いた値を渡す
+    /// （規則は <c>SettingsDefaults.GpuMemoryLimitFor</c>＝この画面は数を持たない）。
+    /// <b>0 以下は何も起きない。</b>
+    /// </summary>
+    public void NoteGpuMemoryLimit(int gpuMemoryLimitGiB)
+    {
+        if (gpuMemoryLimitGiB <= 0 || _gpuMemoryLimitGiB == gpuMemoryLimitGiB)
+        {
+            return;
+        }
+
+        _gpuMemoryLimitGiB = gpuMemoryLimitGiB;
+        RaisePropertyChanged(nameof(DoneText));
+    }
 
     // ---- 失敗の 1 行（`v2-spec.md` §3 段 3 の W 群＝⑴ 何が起きたか ＋ ⑵ なぜか）----
     // ⑶ 次にやること は釦（`NextButtonText` が「もう一度」に変わる）が受け持つ。

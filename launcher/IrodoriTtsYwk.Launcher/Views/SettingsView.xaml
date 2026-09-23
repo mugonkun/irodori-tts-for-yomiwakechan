@@ -258,6 +258,22 @@
             <TextBlock Style="{StaticResource Note}"
                        AutomationProperties.AutomationId="SettingsGpuMemoryLimitNoteText"
                        Text="{Binding GpuMemoryLimitNote, Mode=OneWay}" />
+            <!--
+              おすすめ（裁定 160＝司令官の指示 2026-09-24「vram は初期設定と再スキャンで最適な
+              占有メモリを提示していいかもね。」）＝**9 行目の中**に置く（詳細は 9 行のまま）。
+              材料は選んでいる GPU の**専用**メモリだけである（共有は見ない＝同 2026-09-24）。
+              釦は**写しに入れるだけ**＝本物に届くのは下の〔適用〕である（IsDirty の約束は同じ）。
+              GPU を選んでいない・専用メモリが判らない・CPU で動かす回は 1 行も釦も出さない。
+            -->
+            <TextBlock Style="{StaticResource Note}"
+                       AutomationProperties.AutomationId="SettingsGpuMemoryLimitAdviceText"
+                       Visibility="{Binding GpuMemoryLimitAdviceVisible, Converter={StaticResource BoolToVis}}"
+                       Text="{Binding GpuMemoryLimitAdviceText, Mode=OneWay}" />
+            <Button HorizontalAlignment="Left" Padding="12,3" Margin="0,4,0,0"
+                    Content="{x:Static vm:UiStrings.SettingsGpuMemoryLimitAdviceButton}"
+                    AutomationProperties.AutomationId="SettingsGpuMemoryLimitAdviceButton"
+                    Visibility="{Binding GpuMemoryLimitAdviceVisible, Converter={StaticResource BoolToVis}}"
+                    Command="{Binding GpuMemoryLimitAdviceCommand}" />
 
             <!--
               7＝ファイルの場所（v2-copy.md §4 の 7 行目）。**場所は変えられません。**

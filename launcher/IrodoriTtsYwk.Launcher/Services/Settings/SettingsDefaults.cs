@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using IrodoriTtsYwk.Launcher.Contracts;
+using IrodoriTtsYwk.Launcher.Services.Gpu;
 
 namespace IrodoriTtsYwk.Launcher.Services.Settings;
 
@@ -19,6 +21,8 @@ namespace IrodoriTtsYwk.Launcher.Services.Settings;
 /// ＝wrapper の未設定時の解決と同じ規則なので、<c>null</c> のまま置く＝二重定義を作らない）。</item>
 /// <item><b><c>empty_cache_interval</c> の初期値は 0</b>（裁定 69）。</item>
 /// <item><b><c>rocm-*</c> では精度を保存しない</b>（bf16 固定・fp32 を載せると wrapper が exit 2＝裁定 5・36）。</item>
+/// <item><b>GPU メモリの上限は初期設定の回だけおすすめを敷く</b>（裁定 160・2026-09-24＝
+/// <see cref="GpuMemoryLimitFor"/>＝専用メモリだけを見る・利用者の値は上書きしない）。</item>
 /// </list>
 /// </para>
 /// </summary>
@@ -87,12 +91,55 @@ public static class SettingsDefaults
 
     /// <summary>
     /// 選んだ GPU を書き込む（同定は UUID＝裁定 34。名前は告知にしか使わない）。
+    /// <para>
+    /// <b>初期設定の回だけ、GPU メモリの上限のおすすめも一緒に敷く</b>（裁定 160＝司令官の指示
+    /// 2026-09-24）＝<see cref="GpuMemoryLimitFor"/> の条件に当たる回だけ値が入る
+    /// （<paramref name="adapters"/> を渡さない呼び手では何も起きない）。
+    /// </para>
     /// </summary>
-    public static LauncherSettings ApplyGpu(LauncherSettings settings, GpuInfo? gpu)
+    /// <param name="settings">直して返す設定。</param>
+    /// <param name="gpu">選んだ GPU（null＝選んでいない）。</param>
+    /// <param name="adapters">OS のアダプタ一覧（<c>DxgiGpuAdapters</c>・null＝数えていない）。</param>
+    public static LauncherSettings ApplyGpu(
+        LauncherSettings settings, GpuInfo? gpu, IReadOnlyList<GpuAdapterInfo>? adapters = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
         settings.GpuUuid = gpu?.Uuid;
         settings.GpuName = gpu?.Name;
+
+        var limit = GpuMemoryLimitFor(settings, gpu, adapters);
+        if (limit > 0)
+        {
+            settings.GpuMemoryLimitGiB = limit;
+        }
+
         return settings;
+    }
+
+    /// <summary>
+    /// <b>初期設定で敷く GPU メモリの上限</b>（GiB・<b>0＝敷かない</b>・<b>純関数</b>・裁定 160）。
+    /// <para>
+    /// 値が入るのは 3 つが揃った回だけである＝
+    /// <list type="number">
+    /// <item><see cref="LauncherSettings.FirstRunCompleted"/> が<b>偽</b>（＝はじめの準備の最中）</item>
+    /// <item>いまの <see cref="LauncherSettings.GpuMemoryLimitGiB"/> が <b>0</b>
+    /// （＝<b>利用者が入れた値には絶対に触らない</b>）</item>
+    /// <item><see cref="GpuMemoryLimitAdvice.Recommend"/> が 0 より大きい
+    /// （＝専用メモリが判っていて、上限が要る大きさだった）</item>
+    /// </list>
+    /// <b>押す手は 1 つも増えない</b>＝8 GB の板の機体は、ウィザードを通しただけで 5 GB に収まる。
+    /// </para>
+    /// </summary>
+    public static int GpuMemoryLimitFor(
+        LauncherSettings settings, GpuInfo? gpu, IReadOnlyList<GpuAdapterInfo>? adapters)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        if (settings.FirstRunCompleted || settings.GpuMemoryLimitGiB != 0)
+        {
+            return 0;
+        }
+
+        return GpuMemoryLimitAdvice.Recommend(
+            GpuMemoryLimitAdvice.DedicatedBytes(gpu, adapters), settings.Variant);
     }
 }

@@ -47,6 +47,9 @@ public sealed class SettingsViewModel : ObservableObject
     private string _cacheMessage = string.Empty;
     private readonly Services.Security.SmartAppControlState _smartAppControl;
 
+    /// <summary>OS のアダプタ一覧（1 度数えたら持つ＝名前と専用メモリは動かない・裁定 160）。</summary>
+    private IReadOnlyList<GpuAdapterInfo>? _adapters;
+
     /// <param name="smartAppControl">
     /// この機体の Smart App Control（<c>decisions.md</c> 140・v2.0.2）＝
     /// 読むのは <see cref="AppServices"/> の側で、ここは<b>渡された事実を 1 行にするだけ</b>。
@@ -82,6 +85,8 @@ public sealed class SettingsViewModel : ObservableObject
             Flavor, ReleaseFlavors.LedgerNames(paths.LedgerDir));
 
         RefreshGpusCommand = new AsyncRelayCommand(RefreshGpusAsync);
+        GpuMemoryLimitAdviceCommand = new RelayCommand(
+            UseRecommendedGpuMemoryLimit, () => GpuMemoryLimitAdviceVisible && !GpuMemoryLimitIsRecommended);
         ApplyCommand = new RelayCommand(Apply, () => IsDirty);
         RevertCommand = new RelayCommand(Revert, () => IsDirty);
         ClearCacheCommand = new RelayCommand(ClearCache, () => CacheBytes > 0);
@@ -187,6 +192,9 @@ public sealed class SettingsViewModel : ObservableObject
                 Touch();
                 UpdateDriverText();
             }
+
+            // 選んだ板が替われば専用メモリも替わる＝おすすめを引き直す（裁定 160）。
+            RaiseGpuMemoryLimitAdvice();
         }
     }
 
@@ -222,6 +230,9 @@ public sealed class SettingsViewModel : ObservableObject
             RaisePropertyChanged(nameof(PrecisionNote));
             RaisePropertyChanged(nameof(PrecomputeNote));
             RaisePropertyChanged(nameof(ReadyTimeoutNote));
+
+            // CPU で動かす回はおすすめを出さない（上限そのものが env に載らない）＝裁定 160。
+            RaiseGpuMemoryLimitAdvice();
             Touch();
             UpdateDriverText();
         }
@@ -425,6 +436,7 @@ public sealed class SettingsViewModel : ObservableObject
             _draft.GpuMemoryLimitGiB = value;
             RaisePropertyChanged();
             RaisePropertyChanged(nameof(GpuMemoryLimitNote));
+            RaiseGpuMemoryLimitAdvice();
             Touch();
         }
     }
@@ -433,6 +445,55 @@ public sealed class SettingsViewModel : ObservableObject
     public string GpuMemoryLimitNote => _draft.GpuMemoryLimitGiB <= 0
         ? UiStrings.SettingsGpuMemoryLimitNoteOff
         : string.Format(CultureInfo.InvariantCulture, UiStrings.SettingsGpuMemoryLimitNoteOnFormat, _draft.GpuMemoryLimitGiB);
+
+    // ---- 9 行目のおすすめ（裁定 160＝司令官の指示 2026-09-24） --------------------
+
+    /// <summary>
+    /// OS のアダプタ一覧を数える口（実機は <c>DxgiGpuAdapters</c>＝<see cref="MainViewModel"/> が差す。
+    /// <b>差されていなければおすすめは出ない</b>＝試験は偽物を差す）。
+    /// <para>
+    /// <b>専用メモリしか見ない</b>（司令官の指示 2026-09-24＝「共有メモリは判定の材料に使わないでね。」）＝
+    /// <c>GpuInfo.TotalMemoryBytes</c> は AMD 機では共有ぶんが混ざるので、この口が正本である。
+    /// </para>
+    /// </summary>
+    public Services.Gpu.IGpuAdapterInfoSource? AdapterSource { get; set; }
+
+    /// <summary>〔おすすめの値にする〕＝<b>写しに入れるだけ</b>（本物に届くのは〔適用〕である）。</summary>
+    public RelayCommand GpuMemoryLimitAdviceCommand { get; }
+
+    /// <summary>選んでいる GPU の<b>専用</b>メモリ（判らなければ null）。</summary>
+    private long? DedicatedBytes =>
+        Services.Gpu.GpuMemoryLimitAdvice.DedicatedBytes(_selectedGpu, _adapters);
+
+    /// <summary>おすすめの上限（GiB・0＝要らない）。</summary>
+    public int GpuMemoryLimitRecommendation =>
+        Services.Gpu.GpuMemoryLimitAdvice.Recommend(DedicatedBytes, _draft.Variant);
+
+    /// <summary>
+    /// おすすめの 1 行と釦を出すか（GPU を選んでいない・専用メモリが判らない・CPU で動かす＝出さない）。
+    /// </summary>
+    public bool GpuMemoryLimitAdviceVisible => GpuMemoryLimitAdviceText.Length > 0;
+
+    /// <summary>おすすめの 1 行（出さないときは空＝欄ごと隠れる）。</summary>
+    public string GpuMemoryLimitAdviceText =>
+        Services.Gpu.GpuMemoryLimitAdvice.Line(DedicatedBytes, _draft.Variant, _draft.GpuMemoryLimitGiB)
+        ?? string.Empty;
+
+    /// <summary>いまの写しの値が既におすすめか（＝釦は押せない）。</summary>
+    public bool GpuMemoryLimitIsRecommended => _draft.GpuMemoryLimitGiB == GpuMemoryLimitRecommendation;
+
+    /// <summary>おすすめの値を写しに入れる（<see cref="IsDirty"/> は立つ＝〔適用〕で初めて本物へ）。</summary>
+    public void UseRecommendedGpuMemoryLimit() => GpuMemoryLimitGiB = GpuMemoryLimitRecommendation;
+
+    /// <summary>おすすめの 1 行・釦の可否を引き直す（GPU・動かし方・上限のどれかが動いた回）。</summary>
+    private void RaiseGpuMemoryLimitAdvice()
+    {
+        RaisePropertyChanged(nameof(GpuMemoryLimitRecommendation));
+        RaisePropertyChanged(nameof(GpuMemoryLimitAdviceVisible));
+        RaisePropertyChanged(nameof(GpuMemoryLimitAdviceText));
+        RaisePropertyChanged(nameof(GpuMemoryLimitIsRecommended));
+        GpuMemoryLimitAdviceCommand.RaiseCanExecuteChanged();
+    }
 
     /// <summary>GPU メモリ欄の常時表示（裁定 67 ⑶）。</summary>
     public bool ShowMemoryPanel
@@ -652,11 +713,33 @@ public sealed class SettingsViewModel : ObservableObject
                     : result.Gpus.Count.ToString(CultureInfo.InvariantCulture) + " 台見つかりました。");
 
             UpdateDriverText();
+
+            // **おすすめは数え直しのたびに出す**（裁定 160＝司令官の指示 2026-09-24）。
+            await LoadAdaptersAsync().ConfigureAwait(true);
+            RaiseGpuMemoryLimitAdvice();
         }
         catch (OperationCanceledException)
         {
             GpuMessage = UiStrings.SettingsGpuTimedOut;
         }
+    }
+
+    /// <summary>
+    /// OS のアダプタ一覧を<b>1 度だけ</b>数える（裁定 160）。
+    /// <para>
+    /// <b>UI の糸では回さない</b>＝DXGI は COM を叩く（<c>OsGpuMemorySampler</c> が見張りの糸へ
+    /// 逃がしているのと同じ作法）。名前と専用メモリは動かないので、数えたら持ち続ける。
+    /// <b>投げない</b>＝口が無い機体・落ちた機体は空のまま＝おすすめが出ないだけである。
+    /// </para>
+    /// </summary>
+    private async Task LoadAdaptersAsync()
+    {
+        if (_adapters is not null || AdapterSource is not { } source)
+        {
+            return;
+        }
+
+        _adapters = await Task.Run(source.Adapters).ConfigureAwait(true);
     }
 
     /// <summary>
@@ -829,6 +912,7 @@ public sealed class SettingsViewModel : ObservableObject
         RaisePropertyChanged(nameof(EmptyCacheNote));
         RaisePropertyChanged(nameof(GpuMemoryLimitGiB));
         RaisePropertyChanged(nameof(GpuMemoryLimitNote));
+        RaiseGpuMemoryLimitAdvice();
         RaisePropertyChanged(nameof(ShowMemoryPanel));
         RaisePropertyChanged(nameof(AutoStartServer));
         RaisePropertyChanged(nameof(DifferentialUpdate));

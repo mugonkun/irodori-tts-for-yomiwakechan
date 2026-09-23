@@ -352,6 +352,22 @@ public static class UiStrings
     /// <summary>詳細 9 行目の範囲外（〔適用〕が断る 1 行）。</summary>
     public const string SettingsGpuMemoryLimitRange = "GPU メモリの上限は 0（制限しない）か、4〜1024 の整数（GB）で入れてください。3 以下では読み上げの準備ができません。";
 
+    /// <summary>
+    /// 詳細 9 行目のおすすめ（裁定 160＝司令官の指示 2026-09-24「再スキャンで最適な占有メモリを提示」）。
+    /// <c>{0}</c>＝選んでいる GPU の専用メモリ（GB）・<c>{1}</c>＝おすすめの上限（GB）。
+    /// </summary>
+    public const string SettingsGpuMemoryLimitAdviceFormat = "この GPU（{0} GB）のおすすめは {1} GB です。";
+
+    /// <summary>同・いまの値が既におすすめと同じとき（釦は押せない）。</summary>
+    public const string SettingsGpuMemoryLimitAdviceSameFormat =
+        "この GPU（{0} GB）のおすすめは {1} GB です。いまはその値になっています。";
+
+    /// <summary>同・上限が要らない GPU のとき（<c>{0}</c>＝専用メモリ GB）。</summary>
+    public const string SettingsGpuMemoryLimitAdviceNoneFormat = "この GPU（{0} GB）では上限は要りません（0 のまま）。";
+
+    /// <summary>同・おすすめの値を写しに入れる釦（押しても〔適用〕までは本物に届かない）。</summary>
+    public const string SettingsGpuMemoryLimitAdviceButton = "おすすめの値にする";
+
     /// <summary>その註（切ると何が起きるかを 1 行で言う）。</summary>
     public const string SettingsDifferentialUpdateNote =
         "切ると、新しい版に上げるたびに一式を丸ごとダウンロードし直します。";
@@ -430,6 +446,15 @@ public static class UiStrings
 
     /// <summary>その窓の題。</summary>
     public const string WizardCloseCaption = "はじめの準備";
+
+    /// <summary>
+    /// 完了の本文に 1 文だけ足すおすすめの報せ（裁定 160＝司令官の指示 2026-09-24
+    /// 「vram は初期設定と再スキャンで最適な占有メモリを提示していいかもね。」）。
+    /// <c>{0}</c>＝入れた上限（GB）。<b>上限を入れなかった回は 1 文字も足さない。</b>
+    /// </summary>
+    public const string WizardGpuMemoryLimitAppliedFormat =
+        "GPU メモリの上限はおすすめの {0} GB にしました（設定 › "
+        + AdvancedHeader + "で変えられます）。";
 
     // ===================== このアプリについて（AboutView.xaml）=====================
 
