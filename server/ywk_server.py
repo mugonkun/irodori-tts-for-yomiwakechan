@@ -71,7 +71,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-YWK_VERSION = "2.0.6"
+YWK_VERSION = "2.0.7"
 UPSTREAM_IRODORI_TTS = "8224daf"
 UPSTREAM_SERVER = "841fb7c"
 
@@ -323,9 +323,58 @@ def _warn_if_rocm_torch_is_untagged(torch: Any) -> str | None:
     return line
 
 
+def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, str]:
+    """Stop torch from emptying its own cache behind our back (decisions.md 160).
+
+    PyTorch's MIOpen convolution path calls ``emptyCache()`` after every
+    *first-seen* convolution shape (``aten/src/ATen/native/miopen/Conv_miopen.cpp``,
+    ``findAlgorithm``; gated only by ``_cudnn_get_conv_benchmark_empty_cache()``,
+    which defaults to True and is **not** tied to ``cudnn.benchmark``).  Every
+    new output length is a new shape for the decoder and for the watermark, so a
+    serving process drops its whole idle pool many times an hour.  On Windows
+    ROCm the runtime then keeps those freed blocks in a per-process cache that
+    only serves a request of exactly the same size, and the OS-side footprint
+    (the launcher's meter) climbs to 13-15 GiB -- the growth ``docs/radeon.md``
+    §7-7 and decisions.md 110 recorded without a cause.  Measured 2026-09-24 on
+    gfx1151 through ``torch.cuda.memory_stats``: ``num_device_free`` rises only
+    on shots with a new length, ``num_alloc_retries`` stays 0.
+
+    On CUDA the same call sits behind ``cudnn.benchmark=True`` (``Conv_v8.cpp``),
+    which the upstream never turns on, so the flag is a no-op there.  It is set
+    on both so the rule is one sentence: *the wrapper never lets torch empty its
+    cache implicitly*.  Explicit releases stay where they were,
+    ``IRODORI_EMPTY_CACHE_INTERVAL`` (設定 › 詳細).
+
+    With this flag off plus the launcher's ``GPU_RESOURCE_CACHE_SIZE=0`` and
+    ``expandable_segments`` (``ServerEnvironment.Build``), the OS-side footprint
+    on this machine sits at 4.25-4.69 GiB over 24 shots including a 23.5 s
+    output, and per-shot latency is unchanged (0.85 / 1.76 / 3.96 s for 3.6 /
+    11.5 / 23.5 s of audio against 0.83 / 1.77 / 4.0 s shipped in v2.0.6).
+
+    Runs after ``resolve_devices_and_precision`` (torch is imported by then) and
+    before the upstream import (nothing has touched the allocator yet).  CPU-only
+    runs skip it.  The setter is private API, so it is looked up with ``getattr``:
+    a torch without it keeps the old behaviour and says so in the banner.
+    """
+    if not any(str(device).startswith("cuda") for device in effective.values()):
+        return {}
+    import torch  # noqa: PLC0415 -- already imported by resolve_devices_and_precision
+
+    setter = getattr(getattr(torch, "_C", None), "_cudnn_set_conv_benchmark_empty_cache", None)
+    if setter is None:
+        return {"conv_empty_cache": "unavailable"}
+    try:
+        setter(False)
+    except Exception as exc:  # noqa: BLE001 -- a tuning flag must never stop the server
+        sys.stderr.write(f"ywk_server: could not turn off conv_benchmark_empty_cache: {exc}\n")
+        return {"conv_empty_cache": "error"}
+    return {"conv_empty_cache": "off"}
+
+
 apply_env_defaults()
 VARIANT_ENV = apply_variant_defaults()
 EFFECTIVE_DEVICES = resolve_devices_and_precision()
+ALLOCATOR_FLAGS = apply_allocator_defaults(EFFECTIVE_DEVICES)
 
 # --------------------------------------------------------------------------
 # 2. upstream import (settings freeze here)
@@ -3630,6 +3679,16 @@ def banner() -> str:
         # ends up in the launcher's log window.
         db = Path(VARIANT_ENV["miopen_db"])
         line += f" miopen={db.parent.name}/{db.name}"
+    # decisions.md 160: the three allocator settings, so a log window says which
+    # of them this process actually got (the env two come from the launcher).
+    if "conv_empty_cache" in ALLOCATOR_FLAGS:
+        line += f" conv_empty_cache={ALLOCATOR_FLAGS['conv_empty_cache']}"
+    alloc_conf = os.environ.get("PYTORCH_HIP_ALLOC_CONF") or os.environ.get("PYTORCH_CUDA_ALLOC_CONF")
+    if alloc_conf:
+        line += f" alloc_conf={alloc_conf}"
+    cache_size = os.environ.get("GPU_RESOURCE_CACHE_SIZE")
+    if cache_size is not None:
+        line += f" gpu_resource_cache={cache_size}"
     return line
 
 

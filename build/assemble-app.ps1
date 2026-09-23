@@ -16,8 +16,8 @@
         voices/voices.json            <- {"<default>": {"no_ref": true}} (decisions.md 16)
         voices/voices.ywk.json        <- empty distributor-side speaker table (convoy D fills it)
         voices/presets.json           <- convoy P's preset ledger (the launcher reads it)
-        voices/presets/*.wav          <- the 12 shipped reference voices (decisions.md 88 (5),
-                                         裁定 118 -- the 12th is the commander's own recording)
+        voices/presets/*.wav          <- the 1 shipped reference voice (裁定 160, 2026-09-24:
+                                         only ext_hostclub_champagne.wav; the other 11 rows are status withdrawn)
 
     licenses/first-run-notices.md IS copied (decisions.md 46). What stays out of the
     distributable is the third-party bytes (decisions.md 8), not the notice about them: the

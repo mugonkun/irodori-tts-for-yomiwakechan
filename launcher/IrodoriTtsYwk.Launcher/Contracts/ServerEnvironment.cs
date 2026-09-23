@@ -18,7 +18,8 @@ namespace IrodoriTtsYwk.Launcher.Contracts;
 /// <b>載せる物</b>＝⑴ 場所（<c>YWK_DATA_DIR</c>・<c>HF_HOME</c>・<c>IRODORI_VOICES_DIR</c>・
 /// <c>IRODORI_VOICE_ALIASES_FILE</c>）⑵ 変種と device（<c>YWK_VARIANT</c>・
 /// <c>IRODORI_MODEL_DEVICE</c>／<c>IRODORI_CODEC_DEVICE</c>＝<b>2 本に同時に載る</b>＝受け入れ条件 D-2）
-/// ⑶ 上級者設定（精度・<c>empty_cache_interval</c>）⑷ 暖機・事前計算 ⑸ Python の作法。
+/// ⑶ 上級者設定（精度・<c>empty_cache_interval</c>）⑷ 暖機・事前計算 ⑸ Python の作法
+/// ⑹ torch の allocator と ROCm ランタイムの溜め置き（裁定 160）。
 /// </para>
 /// <para>
 /// <b>device は要求 JSON には載らない</b>（契約 ⑹）＝1 プロセス 1 デバイス。ここで決めた物が
@@ -69,6 +70,24 @@ public static class ServerEnvironment
 
     /// <summary><c>2</c>＝FAST＝find-db に無ければ即時モード（探索しない）。</summary>
     public const string MiopenFindModeFast = "2";
+
+    /// <summary>torch の caching allocator の設定（ROCm 版の torch が読む名・裁定 160）。</summary>
+    public const string HipAllocConf = "PYTORCH_HIP_ALLOC_CONF";
+
+    /// <summary>torch の caching allocator の設定（CUDA 版の torch が読む名・裁定 160）。</summary>
+    public const string CudaAllocConf = "PYTORCH_CUDA_ALLOC_CONF";
+
+    /// <summary>
+    /// <c>expandable_segments:True</c>＝塊を切り直して使い回す allocator。出力の長さごとに違う大きさの塊を
+    /// 抱え込んで <c>reserved</c> が太り続けるのを止める（裁定 160＝本機で 7.1 GiB → 4.3 GiB・所要は不変）。
+    /// </summary>
+    public const string AllocConfExpandableSegments = "expandable_segments:True";
+
+    /// <summary>ROCm ランタイム（amdhip64）が解放済みの塊を溜め置く上限（MB）。Radeon 版だけ（裁定 160）。</summary>
+    public const string GpuResourceCacheSize = "GPU_RESOURCE_CACHE_SIZE";
+
+    /// <summary><c>0</c>＝溜め置かない＝hipFree した分はその場で OS へ返る。</summary>
+    public const string GpuResourceCacheSizeOff = "0";
 
     /// <summary><see cref="CudaDeviceOrder"/> に載せる値。</summary>
     public const string PciBusIdOrder = "PCI_BUS_ID";
@@ -152,6 +171,25 @@ public static class ServerEnvironment
         if (RuntimeVariants.IsRocm(variant))
         {
             env[MiopenFindMode] = MiopenFindModeFast;
+        }
+
+        // GPU を使う変種は torch の allocator を expandable_segments にする（裁定 160・司令官の指示 2026-09-24）。
+        // 既定の allocator は出力の長さごとに違う大きさの塊を抱え込み、8 時間級の配信で reserved が太り続ける
+        // （RTX 8 GB で 99 %・本機の Radeon で 7.1 GiB）。expandable_segments は塊を切り直して使い回すので
+        // 最大使用量＋0.4 GiB 前後で頭打ちになる（本機の実測＝4.3 GiB・所要は不変）。読む名が ROCm と CUDA で
+        // 違うので変種ごとに 1 本だけ載せる。CPU 変種には要らない。
+        if (RuntimeVariants.IsRocm(variant))
+        {
+            env[HipAllocConf] = AllocConfExpandableSegments;
+
+            // Radeon（ROCm）だけ＝Windows の ROCm ランタイムは hipFree された塊をプロセス内に溜め置き、同じ大きさの
+            // 要求にしか使い回さない（上限 ≈10 GiB・本機の実測）。torch が塊を手放すたびに OS 側の占有は増える一方
+            // になる（裁定 110 で「原因不明」だった 13〜15 GiB の伸び）。0 で溜め置きを止める。
+            env[GpuResourceCacheSize] = GpuResourceCacheSizeOff;
+        }
+        else if (RuntimeVariants.UsesGpu(variant))
+        {
+            env[CudaAllocConf] = AllocConfExpandableSegments;
         }
 
         // 精度＝既定は device 連動（裁定 7）に任せて<b>載せない</b>。

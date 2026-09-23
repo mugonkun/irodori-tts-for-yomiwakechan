@@ -68,8 +68,8 @@
         },
         "status": {
           "type": "string",
-          "enum": ["done", "pending", "skipped"],
-          "description": "done＝一次と二次が揃った／pending＝一次 wav 待ち（VOICEROID2 は別席 G3）／skipped＝decisions 27 で今回は飛ばす（CeVIO AI 弦巻マキ 英）。"
+          "enum": ["done", "pending", "skipped", "withdrawn"],
+          "description": "done＝一次と二次が揃った／pending＝一次 wav 待ち（VOICEROID2 は別席 G3）／skipped＝decisions 27 で今回は飛ばす（CeVIO AI 弦巻マキ 英）／withdrawn＝裁定 160（2026-09-24）で配布物から外した（行と生成の記録は残す・wav は同梱しない・ランチャは読まない）。"
         },
 
         "primary": {

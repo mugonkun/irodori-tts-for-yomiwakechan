@@ -2,7 +2,7 @@
 ; 設計＝docs/design/ben-e-installer.md §1・§2・§5・§6-3。裁定＝decisions.md 89・90・91。
 ; 是正＝同 §11-8（敵対検分の medium 6 件・low 4 件・2026-09-05・是正席 opus）。
 ; 呼び方＝build/installer-build.ps1 が ISCC に /D を 7 本渡す。この檔に版・路・上流 pin を書き写さない。
-;   /DAppVersion=v2.0.6 /DAppVersionNumeric=2.0.6 /DFlavor=cuda|radeon
+;   /DAppVersion=v2.0.7 /DAppVersionNumeric=2.0.7 /DFlavor=cuda|radeon
 ;   /DSrcApp=<build/out/app> /DSrcExe=<build/out/launcher/win-x64> /DRepo=<リポの根> /DOutDir=<出力先>
 ; 檔の形＝UTF-8 BOM 付き・CRLF（.gitattributes:7 の *.iss text eol=crlf）。日本語はこの檔にだけ置く。
 
@@ -113,11 +113,13 @@
 #if !FileExists(SrcApp + "\voices\presets.json")
   #error voices/presets.json is missing (decisions.md 88 (5))
 #endif
-; ⑶ の門 4（**本体**）＝voices\presets\*.wav を ISPP の FindFirst/FindNext で数え、12 でなければ止める。
+; ⑶ の門 4（**本体**）＝voices\presets\*.wav を ISPP の FindFirst/FindNext で数え、1 でなければ止める。
 ; 11 の出所＝decisions.md 37 の逐語「自作の生成物・配布物の同梱資産（**11 本**・32 MB）」／
 ; 裁定 88 ⑸「配布樹にプリセット 11 檔＋presets.json が在る検査」＝**ここまでが歴史**。
 ; **12 の出所＝裁定 118**（2026-09-10・司令官が録音を直に渡した 1 名
-; `ext_hostclub_champagne.wav`＝台帳では engine "external"）＝いまの規則はこちら。
+; `ext_hostclub_champagne.wav`＝台帳では engine "external"）＝**ここまでも歴史**。
+; **1 の出所＝裁定 160**（2026-09-24・司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」）＝同梱するのは
+; `ext_hostclub_champagne.wav` の 1 本だけ。他の 11 名は台帳に status withdrawn で残し、wav は配布物から外した＝いまの規則はこちら。
 ; 設計書 §3-2 の門 A-2 と同じ玉を .iss 側にも 1 枚張る
 ; （門 A-2＝build/installer-build.ps1 は E-2 席の持ち場で現時点では未実装）。
 #define PresetWavCount 0
@@ -131,9 +133,9 @@
   #for {PresetFindResult = 1; PresetFindResult; PresetFindResult = FindNext(PresetFindHandle)} CountOnePresetWav
   #expr FindClose(PresetFindHandle)
 #endif
-#if PresetWavCount != 12
-  #pragma message "voices\presets\*.wav count = " + Str(PresetWavCount) + " (expected 12)"
-  #error voices/presets/*.wav is not 12 files (see the message line above for the count found)
+#if PresetWavCount != 1
+  #pragma message "voices\presets\*.wav count = " + Str(PresetWavCount) + " (expected 1)"
+  #error voices/presets/*.wav is not 1 file (see the message line above for the count found)
 #endif
 
 ; --- 以下は「保険」＝[Files] に名指しで書いてあるので ⑵ で ISCC が自分で止まる ----------------

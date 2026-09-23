@@ -84,46 +84,48 @@ EXTERNAL_ROWS = {
 }
 
 # decisions 17 の 12 名 ＋ 裁定 118 の 1 名（engine external）＝13 名。
+# 裁定 160（2026-09-24・司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」）＝同梱は external の 1 名だけ。
+# 他の 11 名は status withdrawn＝行と生成の記録は残し、wav は配布物から外す（ランチャは done 以外を読まない）。
 # status pending / skipped の行も最初から載せる。
 ROSTER = [
     # 裁定 108＝司令官の改名指示（2026-09-07）。display_name はそのまま話者 id になる（裁定 17）ので、
     # engine_speaker（VOICEVOX の話者名）は「もち子さん」のまま動かさない。
     {"id": "vv_mochiko_sexy", "display_name": "もち子さん（セクシー／あん子）", "engine": "voicevox",
      "engine_speaker": "もち子さん", "speaker_uuid": None,
-     "style": {"name": "セクシー／あん子", "id": 66}, "status": "done"},
+     "style": {"name": "セクシー／あん子", "id": 66}, "status": "withdrawn"},
     {"id": "vv_chibishikijii", "display_name": "ちび式じい", "engine": "voicevox",
      "engine_speaker": "ちび式じい", "speaker_uuid": None,
-     "style": {"name": "ノーマル", "id": 42}, "status": "done"},
+     "style": {"name": "ノーマル", "id": 42}, "status": "withdrawn"},
     {"id": "co_tsukuyomi", "display_name": "つくよみちゃん", "engine": "coeiroink",
      "engine_speaker": "つくよみちゃん", "speaker_uuid": "3c37646f-3881-5374-2a83-149267990abc",
-     "style": {"name": "れいせい", "id": 0}, "status": "done"},
+     "style": {"name": "れいせい", "id": 0}, "status": "withdrawn"},
     {"id": "co_kana_naisho", "display_name": "KANA（ないしょばなし）", "engine": "coeiroink",
      "engine_speaker": "KANA", "speaker_uuid": "297a5b91-f88a-6951-5841-f1e648b2e594",
-     "style": {"name": "ないしょばなし", "id": 33}, "status": "done"},
+     "style": {"name": "ないしょばなし", "id": 33}, "status": "withdrawn"},
     {"id": "co_mana_isshoukenmei", "display_name": "MANA（いっしょうけんめい）", "engine": "coeiroink",
      "engine_speaker": "MANA", "speaker_uuid": "292ea286-3d5f-f1cc-157c-66462a6a9d08",
-     "style": {"name": "いっしょうけんめい", "id": 7}, "status": "done"},
+     "style": {"name": "いっしょうけんめい", "id": 7}, "status": "withdrawn"},
     {"id": "co_ofutonp_kiza", "display_name": "おふとんP（きざ）", "engine": "coeiroink",
      "engine_speaker": "おふとんP", "speaker_uuid": "a60ebf6c-626a-7ce6-5d69-c92bf2a1a1d0",
-     "style": {"name": "きざ", "id": 23}, "status": "done"},
+     "style": {"name": "きざ", "id": 23}, "status": "withdrawn"},
     {"id": "co_ofutonp_normal_v2", "display_name": "おふとんP（のーまるv2）", "engine": "coeiroink",
      "engine_speaker": "おふとんP", "speaker_uuid": "a60ebf6c-626a-7ce6-5d69-c92bf2a1a1d0",
-     "style": {"name": "のーまるv2", "id": 2}, "status": "done"},
+     "style": {"name": "のーまるv2", "id": 2}, "status": "withdrawn"},
     # VOICEROID2 の 4 名（2026-09-05・G3 席が一次 wav を生成して done になった）。
     # engine_speaker は実機の Vr2SaveTool.exe dump が返した標準プリセット名と逐語一致。
     # style.id は C:\Program Files (x86)\AHS\VOICEROID2\Voice\ に実在するボイス檔の名。
     {"id": "vr2_akane_west", "display_name": "琴葉茜（関西弁）", "engine": "voiceroid2",
      "engine_speaker": "琴葉 茜", "speaker_uuid": None,
-     "style": {"name": "関西弁", "id": "akane_west_emo_44"}, "status": "done"},
+     "style": {"name": "関西弁", "id": "akane_west_emo_44"}, "status": "withdrawn"},
     {"id": "vr2_yoshida", "display_name": "吉田くん", "engine": "voiceroid2",
      "engine_speaker": "鷹の爪 吉田くん(v1)", "speaker_uuid": None,
-     "style": {"name": "ノーマル", "id": "yoshidakun_44"}, "status": "done"},
+     "style": {"name": "ノーマル", "id": "yoshidakun_44"}, "status": "withdrawn"},
     {"id": "vr2_tsukuyomi_ai", "display_name": "月読アイ", "engine": "voiceroid2",
      "engine_speaker": "月読アイ(v1)", "speaker_uuid": None,
-     "style": {"name": "ノーマル", "id": "ai_44"}, "status": "done"},
+     "style": {"name": "ノーマル", "id": "ai_44"}, "status": "withdrawn"},
     {"id": "vr2_tsukuyomi_shota", "display_name": "月読ショウタ", "engine": "voiceroid2",
      "engine_speaker": "月読ショウタ(v1)", "speaker_uuid": None,
-     "style": {"name": "ノーマル", "id": "shouta_44"}, "status": "done"},
+     "style": {"name": "ノーマル", "id": "shouta_44"}, "status": "withdrawn"},
     # 裁定 118＝司令官が録音を直に渡した 1 名（2026-09-10）。engine は "external"＝一次 wav も
     # 席の二次生成も無い。表示名の丸括弧は**全角**に直した（裁定 108 の作法＝司令官は ASCII の
     # "(ホスクラ)" で書いたが、台帳の表示名はそのまま話者 id になる〔裁定 17〕ので他の 12 名に揃える）。
@@ -134,6 +136,11 @@ ROSTER = [
      "engine_speaker": "弦巻マキ 英", "speaker_uuid": None,
      "style": {"name": "英語", "id": None}, "status": "skipped"},
 ]
+
+WITHDRAWN_NOTE = (
+    "裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。"
+    "台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。"
+)
 
 PENDING_NOTE = {
     "cevio_ai": "【司令官提供待ち】decisions 27 により今回は飛ばした（弦巻マキ 英は日本語読みができない）。"
@@ -300,7 +307,8 @@ def main() -> int:
             continue
 
         if row["status"] != "done":
-            entry["rights_note"] = RIGHTS_NOTE + " ／ " + PENDING_NOTE.get(row["engine"], "")
+            note = WITHDRAWN_NOTE if row["status"] == "withdrawn" else PENDING_NOTE.get(row["engine"], "")
+            entry["rights_note"] = RIGHTS_NOTE + " ／ " + note
             presets.append(entry)
             continue
 

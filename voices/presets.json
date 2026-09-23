@@ -20,7 +20,8 @@
     "secondary.irodori.cfg_scale_speaker が無い行は上流既定 5.0 で撃った（2026-09-05）。在る行はその値で撃った（裁定 111＝co_kana_naisho・co_ofutonp_kiza・vr2_akane_west を 7.0 で撃ち直し）。ただしこの 3 名の ref_10s_file（10 s 参照版）は撃ち直していない＝cfg 5.0 の射のままなので、上の ref_variant の註に従って差し替えるなら先に `--cfg-scale-speaker 7.0 --text expressive_20s` で撃ち直すこと（cfg と本文の両方が是正前＝裁定 111・112）。",
     "secondary.text_id が expressive_20s の行は co_ofutonp_kiza の 1 行だけ＝本文を約 20 秒（90 字）に縮めて撃った（裁定 112 で co_kana_naisho・co_ofutonp_kiza・vr2_akane_west の 3 本を撃ち直したが、司令官の検分で合格したのは co_ofutonp_kiza だけ〔裁定 113〕で、残る 2 名は裁定 114 で calm_20s に差し替わった・cfg_scale_speaker 7.0 のまま）。expressive_30s の行は 146 字の本文のまま。",
     "secondary.text_id が calm_20s の行は、絵文字 1 つ・「！」なしの穏やかな本文（94 字）で撃った（裁定 113 の候補を司令官が聴いて 114 で採用＝co_kana_naisho・vr2_akane_west。cfg_scale_speaker 7.0 のまま）。plain_20s の候補は採用しなかった。",
-    "presets[].generated_at は「その行の二次を実際に撃った run」の時刻＝掃引で撃ち直した行は撃ち直した日が入る（裁定 111 の 3 行は 2026-09-09・ほかの 8 行は 2026-09-05）。doc の頭の generated_at はこの台帳を組み立てた時刻で、別物。"
+    "presets[].generated_at は「その行の二次を実際に撃った run」の時刻＝掃引で撃ち直した行は撃ち直した日が入る（裁定 111 の 3 行は 2026-09-09・ほかの 8 行は 2026-09-05）。doc の頭の generated_at はこの台帳を組み立てた時刻で、別物。",
+    "status withdrawn＝裁定 160（2026-09-24・司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」）。同梱の参照ボイスは engine external の ext_hostclub_champagne〔シャンパンコール（ホスクラ）〕の 1 名だけになった。他の 11 名は行と secondary の記録（md5・大きさ・本文）を残したまま wav を voices/presets/ から外した＝ランチャは status done 以外を読まない（PresetVoices.FromPresetsJson）ので一覧に出ず、既に入れてある利用者のデータ樹の写しには触らない（PresetSync は正本に居る行だけを相手にする）。"
   ],
   "presets": [
     {
@@ -33,8 +34,8 @@
         "name": "セクシー／あん子",
         "id": 66
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -137,8 +138,8 @@
         "name": "ノーマル",
         "id": 42
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -246,8 +247,8 @@
         "name": "れいせい",
         "id": 0
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -360,8 +361,8 @@
         "name": "ないしょばなし",
         "id": 33
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -470,8 +471,8 @@
         "name": "いっしょうけんめい",
         "id": 7
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -560,8 +561,8 @@
         "name": "きざ",
         "id": 23
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -670,8 +671,8 @@
         "name": "のーまるv2",
         "id": 2
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -784,8 +785,8 @@
         "name": "関西弁",
         "id": "akane_west_emo_44"
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -894,8 +895,8 @@
         "name": "ノーマル",
         "id": "yoshidakun_44"
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -984,8 +985,8 @@
         "name": "ノーマル",
         "id": "ai_44"
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,
@@ -1096,8 +1097,8 @@
         "name": "ノーマル",
         "id": "shouta_44"
       },
-      "status": "done",
-      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。",
+      "status": "withdrawn",
+      "rights_note": "decisions.md 18＝司令官（mugonkun）が 2026-09-04 に「本エンジンの生成ボイスは個人利用・商用・有償でも再配布可（元々そういう目的の商品）。本ソフトは無償配布なので問題なし」と確認した。ただしこれは司令官の確認であって、席が規約原文を取得して読んだ結果ではない（rights_source_fetched: false）。規約原文の所在・版・取得日は licenses/ の台帳に別途記す。 ／ 裁定 160（2026-09-24）＝司令官の指示「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」で配布物から外した。台帳の行と生成の記録は残し、二次 wav は voices/presets/ から削除した（同梱は ext_hostclub_champagne の 1 名だけ）。",
       "rights_confirmed_by": "司令官（mugonkun）",
       "rights_confirmed_at": "2026-09-04",
       "rights_source_fetched": false,

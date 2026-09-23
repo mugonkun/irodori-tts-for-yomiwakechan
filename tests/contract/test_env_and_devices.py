@@ -120,6 +120,25 @@ def test_auto_resolves_by_torch_availability(ywk, monkeypatch):
     assert os.environ["IRODORI_MODEL_PRECISION"] == ("bf16" if want == "cuda" else "fp32")
 
 
+def test_allocator_flag_turns_off_implicit_empty_cache(ywk):
+    # 裁定 160＝MIOpen の「初見の形状ごとの emptyCache」を止める。CUDA では元から届かない道なので no-op。
+    import torch
+
+    flags = ywk.apply_allocator_defaults({"model": "cuda:0", "codec": "cuda:0"})
+    setter = getattr(torch._C, "_cudnn_set_conv_benchmark_empty_cache", None)
+    if setter is None:
+        assert flags == {"conv_empty_cache": "unavailable"}
+        return
+    assert flags == {"conv_empty_cache": "off"}
+    getter = getattr(torch._C, "_cuda_get_conv_benchmark_empty_cache", None)
+    if getter is not None:
+        assert getter() is False
+
+
+def test_allocator_flag_is_skipped_on_cpu(ywk):
+    assert ywk.apply_allocator_defaults({"model": "cpu", "codec": "cpu"}) == {}
+
+
 def test_banner_names_the_pinned_upstream(ywk):
     line = ywk.banner()
     assert line.startswith("ywk_server ")

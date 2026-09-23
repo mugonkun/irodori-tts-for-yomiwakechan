@@ -99,6 +99,47 @@ public sealed class ServerEnvironmentBuildTests
         }
     }
 
+    [Theory]
+    [InlineData(RuntimeVariants.RocmGfx1151, ServerEnvironment.HipAllocConf, ServerEnvironment.CudaAllocConf)]
+    [InlineData(RuntimeVariants.Cu130, ServerEnvironment.CudaAllocConf, ServerEnvironment.HipAllocConf)]
+    [InlineData(RuntimeVariants.Cu126, ServerEnvironment.CudaAllocConf, ServerEnvironment.HipAllocConf)]
+    public void GPU変種はallocatorをexpandable_segmentsにし読む名は変種ごとに1本(string variant, string expectedKey, string absentKey)
+    {
+        // 裁定 160＝出力の長さごとに違う大きさの塊で reserved が太り続けるのを止める（RTX 8 GB で 99 %・8 時間級の配信）。
+        var env = ServerEnvironment.Build(Settings(variant), Paths(), gpuIndex: 0);
+
+        Assert.Equal(ServerEnvironment.AllocConfExpandableSegments, env[expectedKey]);
+        Assert.False(env.ContainsKey(absentKey));
+    }
+
+    [Fact]
+    public void CPU変種にはallocatorの設定を載せない()
+    {
+        var env = ServerEnvironment.Build(Settings(RuntimeVariants.Cpu), Paths(), gpuIndex: null);
+
+        Assert.False(env.ContainsKey(ServerEnvironment.HipAllocConf));
+        Assert.False(env.ContainsKey(ServerEnvironment.CudaAllocConf));
+        Assert.False(env.ContainsKey(ServerEnvironment.GpuResourceCacheSize));
+    }
+
+    [Theory]
+    [InlineData(RuntimeVariants.RocmGfx1151, true)]
+    [InlineData(RuntimeVariants.Cu130, false)]
+    [InlineData(RuntimeVariants.Cu126, false)]
+    [InlineData(RuntimeVariants.Cpu, false)]
+    public void ROCmランタイムの溜め置きはRadeon変種だけ止める(string variant, bool expected)
+    {
+        // 裁定 160＝Windows の ROCm ランタイムは hipFree された塊を同じ大きさの要求にしか使い回さない（上限 ≈10 GiB）。
+        // CUDA には無い仕組みなので載せない（MIOPEN_FIND_MODE と同じ作法）。
+        var env = ServerEnvironment.Build(Settings(variant), Paths(), gpuIndex: RuntimeVariants.IsCpu(variant) ? null : 0);
+
+        Assert.Equal(expected, env.ContainsKey(ServerEnvironment.GpuResourceCacheSize));
+        if (expected)
+        {
+            Assert.Equal("0", env[ServerEnvironment.GpuResourceCacheSize]);
+        }
+    }
+
     [Fact]
     public void CPU変種のdeviceはcpuになる()
     {

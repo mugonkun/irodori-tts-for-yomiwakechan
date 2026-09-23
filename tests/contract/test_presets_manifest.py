@@ -53,6 +53,13 @@ EXTERNAL_STYLE_NAME = "ホスクラ"
 EXTERNAL_MD5 = "149eddeca796616e916e2b83dc67f692"
 EXTERNAL_SIZE_BYTES = 787244
 
+#: 裁定 160（司令官の指示 2026-09-24「プリセットの参照ボイスは落とそう。ホスクラのみ残して。」）＝同梱は external の 1 名だけ。
+#: 他の 11 名は行を残して status withdrawn（wav は配布物から外す・ランチャは done 以外を読まない）。
+WITHDRAWN_IDS = frozenset({
+    "vv_mochiko_sexy", "vv_chibishikijii", "co_tsukuyomi", "co_kana_naisho", "co_mana_isshoukenmei",
+    "co_ofutonp_kiza", "co_ofutonp_normal_v2", "vr2_akane_west", "vr2_yoshida", "vr2_tsukuyomi_ai",
+    "vr2_tsukuyomi_shota",
+})
 #: 裁定 108 の 1 件。
 MOCHIKO_ID = "vv_mochiko_sexy"
 MOCHIKO_DISPLAY_NAME = "もち子さん（セクシー／あん子）"
@@ -204,6 +211,26 @@ def test_done_rows_have_their_secondary_wav_with_the_recorded_size(presets):
         wav = PRESET_WAVS / secondary["file"]
         assert wav.is_file(), f"{row['id']}: missing {wav}"
         assert wav.stat().st_size == secondary["size_bytes"], f"{row['id']}: size drifted"
+
+
+# ---------------------------------------------------------------- 裁定 160（同梱は 1 名だけ）
+def test_only_the_external_row_is_still_shipped(presets):
+    """配布物に入る参照ボイスは ext_hostclub_champagne の 1 本だけ（裁定 160）."""
+    done = sorted(row["id"] for row in presets if row["status"] == "done")
+    assert done == [EXTERNAL_ID]
+    withdrawn = {row["id"] for row in presets if row["status"] == "withdrawn"}
+    assert withdrawn == WITHDRAWN_IDS
+    shipped = sorted(p.name for p in PRESET_WAVS.glob("*.wav"))
+    assert shipped == [f"{EXTERNAL_ID}.wav"], "voices/presets/ に 1 本以外の wav が在る（installer の門 4 も 1 を数える）"
+
+
+def test_withdrawn_rows_keep_their_record_but_ship_no_wav(by_id):
+    """外した 11 名は行と生成の記録（md5・大きさ・本文）を残し、wav だけが無い."""
+    for preset_id in sorted(WITHDRAWN_IDS):
+        row = by_id[preset_id]
+        assert row["secondary"] is not None, f"{preset_id}: v2.0.6 まで配った記録が消えている"
+        assert not (PRESET_WAVS / row["secondary"]["file"]).exists(), f"{preset_id}: wav が配布樹に残っている"
+        assert "裁定 160" in row["rights_note"], f"{preset_id}: 外した理由が rights_note に無い"
 
 
 # ---------------------------------------------------------------- 裁定 118（engine external）

@@ -122,7 +122,7 @@ trap {
 # ywk_server.py; upstream\ is CRLF and stays CRLF). An editor that rewrites ywk_server.py as CRLF
 # adds one byte per line -- 3,651 B on a file this size -- and A-1 drifts for a reason that has
 # nothing to do with the distributable. Measured 2026-09-11 when exactly that happened.
-$ExpectedAppFiles = 109
+$ExpectedAppFiles = 98
 $ExpectedAppBytes = @([int64]34088381)
 
 # Gate A-7. Files named ONE BY ONE, because their absence produces the worst artefact this line can
@@ -458,7 +458,7 @@ if ($versionHits.Count -ne 1) {
         ' AppDisplayVersion tags (expected exactly 1 -- the version has one definition).')
 }
 $appVersion = $versionHits[0].Matches[0].Groups[1].Value
-# The trap: AppDisplayVersion is 'v2.0.6' (Directory.Build.props:33). [Setup] AppVersion= and
+# The trap: AppDisplayVersion is 'v2.0.7' (Directory.Build.props:33). [Setup] AppVersion= and
 # VersionInfoVersion= take digits only, so the .iss is handed BOTH forms as separate /D switches.
 $appVersionNumeric = $appVersion.TrimStart('v')
 Write-YwkLog -Message ('AppVersion = ' + $appVersion + ' / AppVersionNumeric = ' + $appVersionNumeric)

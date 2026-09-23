@@ -770,7 +770,8 @@ public static class PresetVoices
     /// <b>話者 id は <c>display_name</c></b>（裁定 17・契約 ⑷ 4-1＝一覧は
     /// <c>id</c> と <c>display_name</c> に同じ字を出す）＝日本語の名で一覧に出る。
     /// 檔は <c>secondary.file</c>（ASCII）で、実体は <c>voices/presets/</c> に居る。
-    /// <c>status</c> が <c>done</c> 以外の行（裁定 27 の CeVIO 弦巻マキ）と、二次 wav の無い行は飛ばす。
+    /// <c>status</c> が <c>done</c> 以外の行（裁定 27 の CeVIO 弦巻マキ・裁定 160 で配布物から外した
+    /// <c>withdrawn</c> の 11 名）と、二次 wav の無い行は飛ばす。
     /// </para>
     /// <para>
     /// 是正・2026-09-05＝以前はトップレベルの <c>voices</c>（オブジェクト）しか読まなかったので
