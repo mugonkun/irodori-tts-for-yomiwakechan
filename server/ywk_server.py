@@ -30,6 +30,12 @@ One file.  It imports the upstream FastAPI app unmodified and adds what the
   upstream handler, which is then called unchanged (§4-4, §4-5).
 * ``POST``/``PUT``/``DELETE /v1/audio/voices`` -- dropped.  The distribution owns
   ``voices/`` (contract ⑷ 4-3) and the port has no api_key.
+* ``POST /ywk/voices/import`` / ``GET /ywk/voices/import/{id}`` -- the 裁定 160
+  inbox: the 本体 hands over a reference voice as JSON (base64 audio), the wrapper
+  drops it in ``<voices_dir>/inbox`` and answers 202, and the **launcher** turns it
+  into a speaker.  JSON only, ``Origin``/``Referer`` refused, 32 MiB cap -- the
+  reasons the three upstream write ports were dropped all still hold, so this is
+  an inbox and not a registration (contract ␷4-5).
 * precision follows the device (§4-6), and a bad device string exits 2 before
   the six-to-eleven second model load instead of after it.
 * **port first** (decisions.md 105): ``IRODORI_PRELOAD`` is baked ``false`` and
@@ -55,6 +61,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import base64
+import binascii
 import concurrent.futures
 import hashlib
 import json
@@ -1934,6 +1942,10 @@ def ywk_status() -> dict[str, Any]:
             "count": len(voices),
             "dir": live.voices_dir.expanduser().name,
             "error": voices_error,
+            # 裁定 160＝本体から受けてまだ登録していない参照ボイスの件数
+            # （``queued``＋``registering``）。**欄を足すだけなので ``schema`` は上げない**
+            # （契約 ⑧）。ランチャは 2 秒ごとの標本でここを見て、正なら受け箱を処理する。
+            "inbox": inbox_pending_count(),
         },
         # 裁定 87 ⑴: the speaker ids come from the list built just above, so the
         # latents table is answered from the same reading of voices.json.
@@ -3691,6 +3703,479 @@ def precompute_on_start_enabled() -> bool:
     if raw is None or str(raw).strip() == "":
         return variant_is_rocm()
     return _truthy(raw)
+
+
+# --------------------------------------------------------------------------
+# 8-2. 本体から参照ボイスを受ける「受け箱」（裁定 160）
+#
+# 司令官の言葉（2026-09-24）＝「参照ボイスを本体から受け付ける口も新設できるかな。」
+#
+# **これは登録口ではない**。上流の書き込み 3 口（``POST``/``PUT``/``DELETE
+# /v1/audio/voices``）を外した理由は消えていない（契約 ⑷ 4-3・⑼ D-3）＝api_key が
+# 無いポートに multipart の登録口を開けると、利用者が開いているどのページからでも
+# 音声ファイルを書き込める（multipart/form-data は CORS の simple request＝preflight
+# 無しで届く）。だからこの口は次の 4 つで別物になっている：
+#
+# ⑴ **JSON だけ**（``Content-Type: application/json``）＝JSON の POST は simple
+#    request にならないので、ブラウザからは必ず preflight が要る。CORS のヘッダを
+#    1 つも返さないこの server では、その preflight が通らない。
+# ⑵ **``Origin``／``Referer`` を持つ要求は 403**＝ブラウザは cross-origin の POST に
+#    必ず ``Origin`` を付ける。本体（読み分けちゃん2）はデスクトップのアプリなので
+#    どちらも付けない。⑴ の裏を掻く道（将来 CORS を開ける・拡張機能）を先に塞ぐ。
+# ⑶ **受け箱に置くだけ**＝``voices.json``／``voices.ywk.json``／``refs\`` には
+#    1 行も書かない。所有者はランチャのままである（契約 ⑷ 4-3）。
+# ⑷ **32 MiB の上限**＝ポートを掴んだだけで利用者データを埋められないようにする。
+#
+# 置く物は 2 檔＝``voices\inbox\<id>.<ext>``（音声そのもの）と同名の ``.json``
+# （sidecar＝素性と state）。state を進めるのは**ランチャ**で、この server は
+# ``queued`` を書いて ``/ywk/status.voices.inbox`` に件数を載せるだけである。
+# --------------------------------------------------------------------------
+
+#: ``voices_dir`` の下に切る受け箱の名（``latents/``・``refs/`` の隣）。
+#: **上流の走査は ``voices_dir`` 直下 1 段だけ**なので、ここに置いた音声は
+#: 話者として一覧に増えない（``latents/`` と同じ理由＝契約 ⑷ 4-4）。
+INBOX_SUBDIR = "inbox"
+
+#: 復号後の音声の上限（バイト）。30 秒の wav は 3 MB 級なので 32 MiB は十分に広い。
+IMPORT_MAX_BYTES = 32 * 1024 * 1024
+
+#: 表示名の上限＝ランチャの ``VoiceNameValidator.MaxLength`` と**同じ 64**。
+#: 数え方も同じ＝**UTF-16 の符号単位**（C# の ``string.Length``）。
+IMPORT_NAME_MAX = 64
+
+#: caption の上限（字）。
+IMPORT_CAPTION_MAX = 200
+
+#: client の上限（字）。
+IMPORT_CLIENT_MAX = 64
+
+#: 受け付ける body の鍵（``/v1/audio/speech`` と同じ白名簿の規律＝契約 ⑶ 3-2）。
+IMPORT_FIELDS = frozenset({"display_name", "audio_base64", "format", "caption", "client"})
+
+#: 受け付ける形＝ランチャの ``VoiceIds.WavExtensions`` と**同じ 5 つ**
+#: （配布する実行系の soundfile が実際に読める形だけ）。
+IMPORT_FORMATS = ("wav", "mp3", "flac", "ogg", "opus")
+
+#: sidecar の ``state`` の全部。進めるのはランチャで、server は ``queued`` しか書かない。
+IMPORT_STATES = ("queued", "registering", "done", "failed")
+
+#: 受け箱の id の形（``os.urandom(12).hex()``＝小文字 16 進 24 字）。
+_IMPORT_ID = re.compile(r"\A[0-9a-f]{24}\Z")
+
+#: C# の ``char.IsControl`` と同じ集合＝Unicode の一般カテゴリ ``Cc``
+#: （U+0000〜U+001F と U+007F〜U+009F）。
+_CONTROL = re.compile(r"[\u0000-\u001f\u007f-\u009f]")
+
+#: 受け箱を読み書きする間の錠（件数の数え上げと書き込みが噛み合わないようにする）。
+_inbox_lock = threading.Lock()
+
+
+def inbox_dir() -> Path:
+    """``<voices_dir>/inbox``。"""
+    return _voices_root() / INBOX_SUBDIR
+
+
+def utf16_length(text: str) -> int:
+    """C# の ``string.Length`` と同じ数え方（**UTF-16 の符号単位**）。
+
+    Python の ``len()`` は符号位置を数えるので、絵文字のような追加面の字で
+    ランチャの検分と 1 字ずれる。名前の上限はランチャと**同じ規則**でなければ
+    「受け箱は通ったのにランチャが弾く」形の失敗を作るので、ここで揃える。
+    """
+    return len(text.encode("utf-16-le")) // 2
+
+
+def validate_voice_name(name: Any) -> str | None:
+    """ランチャの ``VoiceNameValidator.Validate`` を写した**純関数**（裁定 160）。
+
+    通れば ``None``、駄目なら理由 1 行。写した規則は 4 つで、
+    ``launcher/IrodoriTtsYwk.Launcher/ViewModels/VoiceNameValidator.cs`` と
+    **1 つずつ対応している**：
+
+    ⑴ 空（前後の空白を落として 0 字）
+    ⑵ 64 字超（UTF-16 の符号単位）
+    ⑶ 制御文字
+    ⑷ 参照なしを指す名（「デフォルト」と上流の別名 5 つ・大小無視）
+
+    5 つめの「既にある名」はここでは見ない＝**409** の別の態だからである
+    （契約 ⑷ 4-5）。ランチャ側は同じ 1 本の検分で 5 つとも見る。
+    """
+    if not isinstance(name, str):
+        return "display_name must be a string"
+    trimmed = name.strip()
+    if not trimmed:
+        return "display_name must not be empty"
+    if utf16_length(trimmed) > IMPORT_NAME_MAX:
+        return f"display_name must be at most {IMPORT_NAME_MAX} characters"
+    if _CONTROL.search(trimmed):
+        return "display_name must not contain control characters"
+    if trimmed == DEFAULT_VOICE_ID or trimmed.casefold() in {
+        alias.casefold() for alias in NO_REF_VOICE_IDS
+    }:
+        return f"display_name is reserved: {trimmed}"
+    return None
+
+
+def audio_magic_matches(data: bytes, fmt: str) -> bool:
+    """先頭の数バイトが ``format`` と合っているか（**純関数**）。
+
+    復号だけでは「base64 として正しい何か」しか判らない。受け箱は音声しか
+    受けないので、容れ物の印だけは見る（中身の完全な検分は soundfile の仕事で、
+    それはランチャが登録するときに走る）。
+    """
+    if fmt == "wav":
+        return data[:4] == b"RIFF"
+    if fmt == "mp3":
+        # ID3 タグ付き、または生のフレーム同期（11 ビットが全部 1）。
+        return data[:3] == b"ID3" or (
+            len(data) >= 2 and data[0] == 0xFF and (data[1] & 0xE0) == 0xE0
+        )
+    if fmt == "flac":
+        return data[:4] == b"fLaC"
+    if fmt in ("ogg", "opus"):
+        # opus は Ogg の容れ物に入っている（配布する libsndfile が読む形）。
+        return data[:4] == b"OggS"
+    return False
+
+
+def _inbox_sidecars() -> list[dict[str, Any]]:
+    """受け箱の sidecar を全部読む。**投げない**（状態の欄から呼ばれる）。"""
+    out: list[dict[str, Any]] = []
+    root = inbox_dir()
+    try:
+        names = sorted(path.name for path in root.glob("*.json"))
+    except OSError:
+        return out
+    for name in names:
+        record = _read_sidecar(root / name)
+        if record is not None:
+            out.append(record)
+    return out
+
+
+def _read_sidecar(path: Path) -> dict[str, Any] | None:
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def inbox_pending_count() -> int:
+    """``/ywk/status.voices.inbox``＝``queued``／``registering`` の件数。
+
+    ランチャは 2 秒ごとの標本でこの数を見て、0 より大きければ受け箱を処理する
+    （契約 ⑹）。**投げない**＝状態の route を道連れにしない。
+    """
+    try:
+        return sum(
+            1
+            for record in _inbox_sidecars()
+            if str(record.get("state") or "") in ("queued", "registering")
+        )
+    except Exception:  # noqa: BLE001 -- a status field must never fail
+        return 0
+
+
+def _queued_display_names() -> set[str]:
+    """まだ登録されていない受け箱の表示名（重複の判定に使う）。"""
+    names: set[str] = set()
+    for record in _inbox_sidecars():
+        if str(record.get("state") or "") in ("queued", "registering"):
+            name = record.get("display_name")
+            if isinstance(name, str) and name.strip():
+                names.add(name.strip())
+    return names
+
+
+def _existing_voice_ids() -> set[str]:
+    """いま話者として存在する名の全部（別名表＋配布版の台帳＋走査）。"""
+    ids: set[str] = set()
+    try:
+        ids.update(str(item["id"]) for item in _voice_list())
+    except Exception:  # noqa: BLE001 -- a broken ledger must not 500 this route
+        pass
+    try:
+        ids.update(_voice_meta().keys())
+    except Exception:  # noqa: BLE001 -- ditto
+        pass
+    return ids
+
+
+class YwkImportError(Exception):
+    """受け箱の 1 態（status_code を持つ＝400 以外も返すため）。"""
+
+    def __init__(
+        self, message: str, *, status_code: int, code: str, param: str | None = None
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.status_code = status_code
+        self.code = code
+        self.param = param
+
+
+def _check_import_shape(body: Any) -> dict[str, Any]:
+    """body の形を見る（白名簿・型・値域）。``YwkImportError`` を投げる。"""
+    if not isinstance(body, dict):
+        raise YwkImportError(
+            "request body must be a JSON object", status_code=400, code="ywk_invalid_body"
+        )
+    for key in body:
+        if key not in IMPORT_FIELDS:
+            raise YwkImportError(
+                f"unknown field: {key}", status_code=400, code="ywk_unknown_field", param=key
+            )
+
+    fmt = body.get("format")
+    if not isinstance(fmt, str):
+        raise YwkImportError(
+            "format must be a string", status_code=400, code="ywk_type_error", param="format"
+        )
+    fmt = fmt.strip().lower()
+    if fmt not in IMPORT_FORMATS:
+        raise YwkImportError(
+            f"format must be one of: {', '.join(IMPORT_FORMATS)}",
+            status_code=400,
+            code="ywk_invalid_enum",
+            param="format",
+        )
+
+    audio = body.get("audio_base64")
+    if not isinstance(audio, str) or not audio.strip():
+        raise YwkImportError(
+            "audio_base64 must be a non-empty string",
+            status_code=400,
+            code="ywk_type_error",
+            param="audio_base64",
+        )
+
+    caption = body.get("caption")
+    if caption is not None:
+        if not isinstance(caption, str):
+            raise YwkImportError(
+                "caption must be a string",
+                status_code=400,
+                code="ywk_type_error",
+                param="caption",
+            )
+        if len(caption) > IMPORT_CAPTION_MAX:
+            raise YwkImportError(
+                f"caption must be at most {IMPORT_CAPTION_MAX} characters",
+                status_code=400,
+                code="ywk_out_of_range",
+                param="caption",
+            )
+        caption = caption.strip() or None
+
+    client = body.get("client")
+    if client is not None:
+        if not isinstance(client, str):
+            raise YwkImportError(
+                "client must be a string", status_code=400, code="ywk_type_error", param="client"
+            )
+        if len(client) > IMPORT_CLIENT_MAX:
+            raise YwkImportError(
+                f"client must be at most {IMPORT_CLIENT_MAX} characters",
+                status_code=400,
+                code="ywk_out_of_range",
+                param="client",
+            )
+        client = client.strip() or None
+
+    name_error = validate_voice_name(body.get("display_name"))
+    if name_error is not None:
+        raise YwkImportError(
+            name_error, status_code=400, code="ywk_import_bad_name", param="display_name"
+        )
+
+    return {
+        "display_name": str(body["display_name"]).strip(),
+        "audio_base64": audio,
+        "format": fmt,
+        "caption": caption,
+        "client": client,
+    }
+
+
+def _decode_import_audio(encoded: str, fmt: str) -> bytes:
+    """base64 を解いて容れ物の印を見る（大きさは**解く前に**見る）。
+
+    ``len(base64) * 3 // 4`` が上限を超えていれば、32 MiB を超える文字列を
+    そのままメモリに展開せずに 413 を返せる。
+    """
+    compact = "".join(encoded.split())
+    if len(compact) // 4 * 3 > IMPORT_MAX_BYTES:
+        raise YwkImportError(
+            f"audio must be at most {IMPORT_MAX_BYTES} bytes",
+            status_code=413,
+            code="ywk_import_too_large",
+            param="audio_base64",
+        )
+    try:
+        data = base64.b64decode(compact, validate=True)
+    except (ValueError, binascii.Error):
+        raise YwkImportError(
+            "audio_base64 is not valid base64",
+            status_code=400,
+            code="ywk_import_bad_audio",
+            param="audio_base64",
+        ) from None
+    if len(data) > IMPORT_MAX_BYTES:
+        raise YwkImportError(
+            f"audio must be at most {IMPORT_MAX_BYTES} bytes",
+            status_code=413,
+            code="ywk_import_too_large",
+            param="audio_base64",
+        )
+    if not audio_magic_matches(data, fmt):
+        raise YwkImportError(
+            f"audio does not look like {fmt}",
+            status_code=400,
+            code="ywk_import_bad_audio",
+            param="audio_base64",
+        )
+    return data
+
+
+def _write_atomic(path: Path, payload: bytes) -> None:
+    """temp → ``os.replace``（潜在の sidecar と同じ作法＝半端な檔を残さない）。"""
+    temp = path.with_name(path.name + ".tmp")
+    with temp.open("wb") as handle:
+        handle.write(payload)
+    os.replace(temp, path)
+
+
+@app.post("/ywk/voices/import")
+async def ywk_import_voice(request: Request):  # noqa: ANN201
+    """本体から参照ボイスを受けて**受け箱に置く**（契約 ⑷ 4-5・裁定 160）。
+
+    202 を返した時点で在るのは受け箱の 2 檔だけで、話者はまだ増えていない。
+    増やすのはランチャ（所有者＝契約 ⑷ 4-3）で、本体は
+    ``GET /ywk/voices/import/{id}`` が ``done`` になるのを待ってから
+    ``GET /ywk/voices`` を読み直す。
+    """
+    # ⑴ ブラウザ避け＝**いちばん先に見る**（何も書かずに断る）。
+    for header in ("origin", "referer"):
+        if (request.headers.get(header) or "").strip():
+            return ywk_error(
+                "this port does not accept browser-originated writes",
+                status_code=403,
+                code="ywk_browser_origin",
+            )
+
+    # ⑵ JSON だけ＝multipart は口ごと無い（登録口を外した理由がそのまま効く）。
+    content_type = (request.headers.get("content-type") or "").split(";")[0].strip().lower()
+    if content_type != "application/json":
+        return ywk_error(
+            'send Content-Type: application/json (multipart is not accepted)',
+            status_code=415,
+            code="ywk_import_json_only",
+        )
+
+    raw = await request.body()
+    try:
+        body = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return ywk_error(f"request body is not valid JSON: {exc}", code="ywk_invalid_body")
+
+    try:
+        fields = _check_import_shape(body)
+    except YwkImportError as exc:
+        return ywk_error(
+            exc.message, status_code=exc.status_code, code=exc.code, param=exc.param
+        )
+
+    name = fields["display_name"]
+    with _inbox_lock:
+        if name in _existing_voice_ids() or name in _queued_display_names():
+            return ywk_error(
+                f"voice already exists: {name}",
+                status_code=409,
+                code="ywk_voice_exists",
+                param="display_name",
+            )
+
+        try:
+            data = _decode_import_audio(fields["audio_base64"], fields["format"])
+        except YwkImportError as exc:
+            return ywk_error(
+                exc.message, status_code=exc.status_code, code=exc.code, param=exc.param
+            )
+
+        import_id = os.urandom(12).hex()
+        received_at = datetime.now(timezone.utc).isoformat(timespec="seconds").replace(
+            "+00:00", "Z"
+        )
+        record = {
+            "id": import_id,
+            "display_name": name,
+            "caption": fields["caption"],
+            "format": fields["format"],
+            "client": fields["client"],
+            "received_at": received_at,
+            "state": "queued",
+            "error": None,
+            "bytes": len(data),
+        }
+        root = inbox_dir()
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+            # **音声を先・sidecar を後**＝sidecar が在れば音声も在る、が常に成り立つ。
+            _write_atomic(root / f"{import_id}.{fields['format']}", data)
+            _write_atomic(
+                root / f"{import_id}.json",
+                json.dumps(record, ensure_ascii=False, indent=2).encode("utf-8"),
+            )
+        except OSError as exc:
+            return ywk_error(
+                f"could not store the reference audio: {type(exc).__name__}: {exc}",
+                status_code=500,
+                code="ywk_server_error",
+            )
+
+    logger.info(
+        "voice import queued id=%s bytes=%d format=%s client=%s",
+        import_id,
+        len(data),
+        fields["format"],
+        fields["client"] or "-",
+    )
+    return JSONResponse(
+        status_code=202,
+        content={"id": import_id, "state": "queued", "display_name": name},
+    )
+
+
+@app.get("/ywk/voices/import/{import_id}")
+def ywk_import_status(import_id: str):  # noqa: ANN201
+    """受け箱の 1 件の今（契約 ⑷ 4-5）。``state`` を進めるのはランチャである。"""
+    if not _IMPORT_ID.match(import_id or ""):
+        return ywk_error(
+            f"unknown import id: {import_id}",
+            status_code=404,
+            code="ywk_import_unknown",
+        )
+    record = _read_sidecar(inbox_dir() / f"{import_id}.json")
+    if record is None:
+        return ywk_error(
+            f"unknown import id: {import_id}",
+            status_code=404,
+            code="ywk_import_unknown",
+        )
+    state = str(record.get("state") or "")
+    if state not in IMPORT_STATES:
+        # 読めない state は「失敗」と読む＝本体を永久に待たせない。
+        state = "failed"
+    error = record.get("error")
+    return {
+        "id": import_id,
+        "state": state,
+        "display_name": str(record.get("display_name") or ""),
+        "error": error if isinstance(error, str) and error else None,
+        "received_at": record.get("received_at"),
+    }
 
 
 # --------------------------------------------------------------------------

@@ -39,6 +39,13 @@ public sealed class VoicesViewModel : ObservableObject
 
     private readonly IVoiceStore? _store;
     private readonly IVoicesJsonWriter? _writer;
+
+    /// <summary>
+    /// ほかのアプリから受け取った参照ボイスの受け箱（裁定 160）。<b>無ければ無いものとして動く</b>
+    /// （欄も釦も増えない＝口は 2 秒ごとの標本 1 本だけである）。
+    /// </summary>
+    private readonly IVoiceInbox? _inbox;
+
     private readonly IAudioPlayer _player;
     private readonly Func<IWrapperClient?> _wrapper;
     private readonly AppPaths _paths;
@@ -64,13 +71,24 @@ public sealed class VoicesViewModel : ObservableObject
     /// <summary>自動の出し直しが 409 以外で落ちた回数（<see cref="MaxAutoRetries"/> で諦める）。</summary>
     private int _precomputeRetryFailures;
 
+    /// <param name="store">話者台帳（無ければ一覧は出るが足せない）。</param>
+    /// <param name="writer">上流が読む別名表の書き手。</param>
+    /// <param name="player">試聴の手。</param>
+    /// <param name="wrapper">走っている個体を叩く口（止まっていれば null）。</param>
+    /// <param name="paths">場所。</param>
+    /// <param name="settings">いまの設定。</param>
+    /// <param name="inbox">
+    /// ほかのアプリから受け取った参照ボイスの受け箱（裁定 160）。
+    /// <b>差さなくても画面は動く</b>＝xUnit から素で叩ける。
+    /// </param>
     public VoicesViewModel(
         IVoiceStore? store,
         IVoicesJsonWriter? writer,
         IAudioPlayer player,
         Func<IWrapperClient?> wrapper,
         AppPaths paths,
-        LauncherSettings settings)
+        LauncherSettings settings,
+        IVoiceInbox? inbox = null)
     {
         ArgumentNullException.ThrowIfNull(player);
         ArgumentNullException.ThrowIfNull(wrapper);
@@ -79,6 +97,7 @@ public sealed class VoicesViewModel : ObservableObject
 
         _store = store;
         _writer = writer;
+        _inbox = inbox;
         _player = player;
         _wrapper = wrapper;
         _paths = paths;
@@ -113,6 +132,17 @@ public sealed class VoicesViewModel : ObservableObject
     /// </para>
     /// </summary>
     public Action? SettingsChanged { get; set; }
+
+    /// <summary>
+    /// 記録に 1 行落とす手（裁定 160＝受け取った声の結末）。差されていなければ落とさない
+    /// （<see cref="SettingsViewModel.Log"/> と同じ継ぎ目＝xUnit から素で叩ける）。
+    /// </summary>
+    public Action<string>? Log { get; set; }
+
+    /// <summary>
+    /// いま追加の手が走っているか（<b>画面の「声を追加する」と受け箱が分け合う 1 つの錠</b>）。
+    /// </summary>
+    public bool IsBusy => _busy;
 
     /// <summary>一覧（「デフォルト」が先頭に常在＝受け入れ条件 D-3）。</summary>
     public ObservableCollection<VoiceRow> Rows { get; } = [];
@@ -261,6 +291,141 @@ public sealed class VoicesViewModel : ObservableObject
 
         _precomputeRetrying = true;
         _ = RetryPendingPrecomputeAsync();
+    }
+
+    /// <summary>
+    /// <c>/ywk/status.voices</c> を受ける（裁定 160）＝<b>ほかのアプリから受け取った声を片付ける</b>。
+    /// <para>
+    /// 利用者は何も押していない。本体（読み分けちゃん2）などのアプリが参照ボイスを渡すと、
+    /// それは受け箱に積まれるだけで話者にはならない（<c>voices/</c> の持ち主はこのアプリのまま＝
+    /// 契約 ⑷ 4-3）。2 秒ごとの標本の <c>inbox</c> が正なら、ここが片付ける。
+    /// </para>
+    /// <para>
+    /// <b>新しい問い合わせは 1 本も足さない</b>＝見張りが既に採っている標本を配るだけである
+    /// （low 3＝窓は HTTP を持たない）。<b>欄が無い個体では何も起きない</b>（<c>Pending</c> が 0）。
+    /// </para>
+    /// </summary>
+    /// <param name="voices"><c>/ywk/status.voices</c>（止まっている・口が無ければ null）。</param>
+    public void ApplyInbox(StatusVoices? voices)
+    {
+        if (_inbox is null || _busy || (voices?.Pending ?? 0) <= 0)
+        {
+            return;
+        }
+
+        _ = ProcessInboxAsync();
+    }
+
+    /// <summary>
+    /// 受け箱を頭から片付ける（<b>1 件ずつ</b>・戻り＝話者になった件数）。
+    /// <para>
+    /// <b>錠は <see cref="AddVoiceAsync"/> と同じ 1 つ</b>（<c>_busy</c>）＝画面から声を足している
+    /// 最中に割り込まないし、自分自身とも重ならない。檔を触る仕事は別の糸へ逃がし、
+    /// 画面へ配るのは戻ってきてからである。
+    /// </para>
+    /// <para>
+    /// <b>順は 4 手</b>＝⑴ 受け箱を片付ける ⑵ 一覧を読み直す ⑶ 増えた声を下ごしらえする
+    /// （設定が焼く側なら＝<see cref="AddVoiceAsync"/> と同じ）⑷ 結末を 1 件 1 行で告げる。
+    /// ⑷ を最後に置くのは、⑵⑶ が失敗したときの 1 行で上書きされないようにするためである。
+    /// </para>
+    /// </summary>
+    public async Task<int> ProcessInboxAsync()
+    {
+        if (_inbox is null || _busy)
+        {
+            return 0;
+        }
+
+        IReadOnlyList<VoiceInboxResult> results;
+        _busy = true;
+        try
+        {
+            results = await Task.Run(_inbox.ProcessAll).ConfigureAwait(true);
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        if (results.Count == 0)
+        {
+            return 0;
+        }
+
+        await RefreshAsync().ConfigureAwait(true);
+
+        var added = results.Where(static r => r.Ok)
+            .Select(static r => r.DisplayName)
+            .ToArray();
+
+        // 裁定 65＝Radeon 版は足すたびに下ごしらえする。口が無ければ黙って飛ばす。
+        if (added.Length > 0 && _settings.EffectivePrecomputeOnStart())
+        {
+            await PrecomputeAsync(added).ConfigureAwait(true);
+        }
+
+        foreach (var result in results)
+        {
+            var line = IntakeLine(result);
+            Log?.Invoke(line);
+            Message = line;
+        }
+
+        return added.Length;
+    }
+
+    /// <summary>
+    /// 渡してきたアプリの呼び名（<b>純関数</b>）。
+    /// <para>
+    /// 名乗りは相手が入れてくる文字列なので、<b>そのまま画面には出さない</b>＝
+    /// ⑴ 本体（読み分けちゃん2）の名乗りは日本語の呼び名に直し
+    /// ⑵ 制御文字を含む・空・長すぎる名乗りは「ほかのアプリ」と呼ぶ
+    /// ⑶ それ以外は名乗りをそのまま出す（自分のアプリの名が出たほうが親切である）。
+    /// </para>
+    /// </summary>
+    public static string IntakeAppName(string? client)
+    {
+        var trimmed = client?.Trim();
+        if (string.IsNullOrEmpty(trimmed) || trimmed.Length > IntakeAppNameMax)
+        {
+            return UiStrings.VoiceIntakeAppUnknown;
+        }
+
+        if (string.Equals(trimmed, VoiceInbox.HontaiClientId, StringComparison.OrdinalIgnoreCase))
+        {
+            return UiStrings.VoiceIntakeHontaiName;
+        }
+
+        foreach (var c in trimmed)
+        {
+            if (char.IsControl(c))
+            {
+                return UiStrings.VoiceIntakeAppUnknown;
+            }
+        }
+
+        return trimmed;
+    }
+
+    /// <summary>画面に出す名乗りの上限（wrapper 側の上限と同じ＝契約 ⑷ 4-5）。</summary>
+    public const int IntakeAppNameMax = 64;
+
+    /// <summary>
+    /// 受け箱 1 件の結末の 1 行（<b>純関数</b>）。綴りは <see cref="UiStrings"/> に置く。
+    /// </summary>
+    public static string IntakeLine(VoiceInboxResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        var app = IntakeAppName(result.Client);
+        var name = string.IsNullOrWhiteSpace(result.DisplayName)
+            ? UiStrings.VoiceIntakeAppUnknown
+            : result.DisplayName.Trim();
+
+        return result.Ok
+            ? app + UiStrings.VoiceIntakeReceivedHead + name + UiStrings.VoiceIntakeReceivedTail
+            : app + UiStrings.VoiceIntakeReceivedHead + name + UiStrings.VoiceIntakeFailedHead
+                + (result.Error ?? UiStrings.VoiceIntakeUnknownReason)
+                + UiStrings.VoiceIntakeFailedTail;
     }
 
     /// <summary>自動で出し直す上限（これを超えたら手で押してもらう＝標本ごとに叩き続けない）。</summary>

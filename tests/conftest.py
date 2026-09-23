@@ -221,6 +221,18 @@ def reset_precompute() -> None:
         shutil.rmtree(latents, ignore_errors=True)
 
 
+def reset_inbox() -> None:
+    """Empty ``voices/inbox`` (裁定 160).
+
+    ``write_voices`` only unlinks the *files* directly under ``voices/``, so a
+    sidecar left by one test would keep answering ``status.voices.inbox`` and
+    the duplicate check while the next one runs.
+    """
+    inbox = VOICES / ywk_server.INBOX_SUBDIR
+    if inbox.is_dir():
+        shutil.rmtree(inbox, ignore_errors=True)
+
+
 @pytest.fixture(autouse=True)
 def baseline() -> Any:
     """Reset settings, voices and the fake runtime before every test."""
@@ -236,6 +248,7 @@ def baseline() -> Any:
     ywk_server.reset_runtime_loader()
     reset_warmup()
     reset_precompute()
+    reset_inbox()
     os.environ.pop("YWK_PRECOMPUTE_ON_START", None)
     write_voices(aliases={DEFAULT_VOICE: {"no_ref": True}})
     fake = FakeRuntime()
@@ -244,6 +257,7 @@ def baseline() -> Any:
     ywk_server.reset_runtime_loader()
     reset_warmup()
     reset_precompute()
+    reset_inbox()
 
 
 @pytest.fixture()

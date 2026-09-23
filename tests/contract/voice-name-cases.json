@@ -1,0 +1,34 @@
+{
+  "note": "裁定 160＝話者の名付けの規則の逐語。この 1 枚を Python（server/ywk_server.py の validate_voice_name）と C#（launcher/.../VoiceNameValidator.Validate）の両方が読み、同じ判定になることを釘付けする。valid=false の側だけが理由 1 行を返す。",
+  "sources": [
+    "server/ywk_server.py: validate_voice_name",
+    "launcher/IrodoriTtsYwk.Launcher/ViewModels/VoiceNameValidator.cs: Validate"
+  ],
+  "max_length_utf16": 64,
+  "cases": [
+    { "name": "ずんだもん", "valid": true, "why": "普通の日本語名" },
+    { "name": "琴葉茜（関西弁）", "valid": true, "why": "括弧つきの同梱名と同じ形" },
+    { "name": "  ずんだもん  ", "valid": true, "why": "前後の空白は落としてから見る" },
+    { "name": "a/b\\c:d", "valid": true, "why": "檔名の制約は掛からない（檔名は sha256 から作る）" },
+    { "name": "Ｎｏｎｅ", "valid": true, "why": "全角は参照なしの別名ではない" },
+    { "name": "🎤ボイス", "valid": true, "why": "追加面の字も通る" },
+    { "name": "", "valid": false, "why": "空" },
+    { "name": "   ", "valid": false, "why": "空白だけ＝落とすと空" },
+    { "name": "デフォルト", "valid": false, "why": "参照なしの予約名（裁定 16・契約 ⑷ 4-2）" },
+    { "name": "none", "valid": false, "why": "上流の参照なしの別名" },
+    { "name": "NONE", "valid": false, "why": "別名の判定は大小を区別しない" },
+    { "name": "no_ref", "valid": false, "why": "同上" },
+    { "name": "no-ref", "valid": false, "why": "同上" },
+    { "name": "null", "valid": false, "why": "同上" },
+    { "name": "text-only", "valid": false, "why": "同上" },
+    { "name": "  none  ", "valid": false, "why": "落としてから別名を見る" },
+    { "name": "a\u0007b", "valid": false, "why": "制御文字（BEL）" },
+    { "name": "a\tb", "valid": false, "why": "制御文字（TAB）＝中に在れば落ちない" },
+    { "name": "a\u007fb", "valid": false, "why": "制御文字（DEL）" },
+    { "name": "a\u0085b", "valid": false, "why": "制御文字（NEL・C1）" },
+    { "name": "ああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ", "valid": true, "why": "ちょうど 64（UTF-16 の符号単位）" },
+    { "name": "あああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ", "valid": false, "why": "65＝上限超" },
+    { "name": "🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤", "valid": true, "why": "絵文字 32 個＝UTF-16 で 64" },
+    { "name": "🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤🎤", "valid": false, "why": "絵文字 33 個＝UTF-16 で 66＝**符号位置で数えると通ってしまう境目**" }
+  ]
+}

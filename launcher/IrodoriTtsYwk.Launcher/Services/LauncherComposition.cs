@@ -74,6 +74,22 @@ public static class LauncherComposition
         AppServices.VoiceStore = store;
         AppServices.VoicesJsonWriter = new VoicesJsonWriter();
 
+        // 裁定 160＝ほかのアプリから受け取った参照ボイスの受け箱。**起動のたびに古い記録を捨てる**
+        // （済んだ 1 件の sidecar は「いつ何を受け取ったか」の控えなので、すぐには消さない）。
+        var inbox = new VoiceInbox(paths, store, AppServices.VoicesJsonWriter);
+        AppServices.VoiceInbox = inbox;
+        try
+        {
+            inbox.Sweep(VoiceInbox.KeepFinished, DateTimeOffset.Now);
+        }
+        catch (System.IO.IOException)
+        {
+            // 掴まれている＝次の起動で捨てる
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+
         // 初回だけ＝プリセットを利用者データへ写して台帳を作る（配布樹は読むだけ）。
         // 失敗しても起動は止めない（話者 0 名でも「デフォルト」で合成できる＝裁定 45）。
         try
