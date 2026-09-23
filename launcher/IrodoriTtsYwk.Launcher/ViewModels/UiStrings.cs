@@ -1003,6 +1003,43 @@ public static class UiStrings
     public const string VoicesLatentDetachTimedOut =
         "この声の下ごしらえを片づける手が、時間内に終わりませんでした。";
 
+    // ============ ほかのアプリから受け取った声（裁定 160・v2.0.7）============
+    //
+    // 本体（読み分けちゃん2）などのアプリが渡してきた参照ボイスを、このアプリが
+    // 話者にする（契約 ⑷ 4-5）。利用者は何も押していないので、**起きたことを 1 行で告げる**。
+
+    /// <summary>渡してきたアプリの名が判らない・名乗りが読めないときの呼び方。</summary>
+    public const string VoiceIntakeAppUnknown = "ほかのアプリ";
+
+    /// <summary>
+    /// 本体の呼び名（名乗りは <c>VoiceInbox.HontaiClientId</c> で、画面にはこちらを出す）。
+    /// </summary>
+    public const string VoiceIntakeHontaiName = "読み分けちゃん2";
+
+    /// <summary>受け取れた 1 行の前半（アプリの名の後ろに継ぐ）。</summary>
+    public const string VoiceIntakeReceivedHead = " から声「";
+
+    /// <summary>同・後半。</summary>
+    public const string VoiceIntakeReceivedTail = "」を受け取りました。";
+
+    /// <summary>受け取れなかった 1 行の後半（理由 1 行を挟む）。</summary>
+    public const string VoiceIntakeFailedHead = "」を受け取れませんでした（";
+
+    /// <summary>同・閉じ。</summary>
+    public const string VoiceIntakeFailedTail = "）。";
+
+    /// <summary>音声ファイルが見当たらなかった回の理由 1 行。</summary>
+    public const string VoiceIntakeNoAudio = "音声ファイルが見当たりませんでした。";
+
+    /// <summary>理由が 1 字も読めなかったときの理由 1 行。</summary>
+    public const string VoiceIntakeUnknownReason = "理由が分かりませんでした。";
+
+    /// <summary>
+    /// キャプションの前置きの閉じ（前に渡してきたアプリの名が入る＝
+    /// 「［読み分けちゃん2 から］」）。<b>どのアプリから来たかを台帳に残すのはここだけ</b>。
+    /// </summary>
+    public const string VoiceIntakeNoteTail = " から］";
+
     // ===================== 〔報告用のログを保存〕（`v2-copy.md` §8）=====================
 
     /// <summary>まとめ終わった 1 行（後ろに檔の路を継ぐ）。</summary>

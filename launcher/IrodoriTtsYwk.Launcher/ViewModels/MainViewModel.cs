@@ -132,7 +132,13 @@ public sealed class MainViewModel : ObservableObject
             player,
             static () => AppServices.Wrapper,
             paths,
-            settings);
+            settings,
+            AppServices.VoiceInbox)
+        {
+            // 裁定 160＝ほかのアプリから受け取った声の結末は**記録にも残す**
+            // （利用者は何も押していないので、後から「いつ何が増えたか」を辿れるようにする）。
+            Log = line => Status.AppendLog(line),
+        };
 
         Try = new TryViewModel(static () => AppServices.Wrapper, player, settings);
 
@@ -840,6 +846,10 @@ public sealed class MainViewModel : ObservableObject
         // 走行中で断られた焼きを、口が空いたところで出し直す（統合席 §19）。
         // 標本は見張り 1 本の物をそのまま配るだけ＝窓は HTTP を持たない（low 3）。
         Voices.ApplyPrecompute(status?.Precompute);
+
+        // 本体などのアプリから受け取った参照ボイスを話者にする（裁定 160・契約 ⑷ 4-5）。
+        // **同じ 2 秒の標本を配るだけ**＝新しい問い合わせは 1 本も足さない。
+        Voices.ApplyInbox(status?.Voices);
 
         // 本体が読み上げに使っている間は〔しゃべらせる〕を譲る（決裁 130 Q4）。
         // **同じ 2 秒の標本を配るだけ**＝新しい問い合わせは 1 本も足さない。

@@ -114,6 +114,12 @@ public static class AppServices
     /// <summary>上流が読む別名表の書き手（UI 席が差す）。</summary>
     public static IVoicesJsonWriter? VoicesJsonWriter { get; set; }
 
+    /// <summary>
+    /// ほかのアプリから受け取った参照ボイスの受け箱（裁定 160・UI 席が差す）。
+    /// 差さっていなければ受け箱は片付かない＝画面は今までどおり動く。
+    /// </summary>
+    public static Services.Voices.IVoiceInbox? VoiceInbox { get; set; }
+
     /// <summary>設定を書き戻す（原子的）。</summary>
     public static void SaveSettings() => SettingsStore.Save(Settings);
 
@@ -134,5 +140,6 @@ public static class AppServices
         DriverCheck = new DriverRequirement();
         VoiceStore = null;
         VoicesJsonWriter = null;
+        VoiceInbox = null;
     }
 }

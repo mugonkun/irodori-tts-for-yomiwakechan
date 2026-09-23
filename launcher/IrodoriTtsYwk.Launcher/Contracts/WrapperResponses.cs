@@ -117,6 +117,20 @@ public sealed record StatusVoices
     [JsonPropertyName("dir")] public string? Dir { get; init; }
 
     [JsonPropertyName("error")] public string? Error { get; init; }
+
+    /// <summary>
+    /// ほかのアプリから受け取って<b>まだ話者にしていない</b>参照ボイスの数
+    /// （契約 ⑹・裁定 160＝v2.0.7 で足した欄）。
+    /// <para>
+    /// <b>欄が無ければ null</b>＝古い wrapper。読み方は <see cref="Pending"/> で、
+    /// <b>0 と読む</b>（欄の無い個体を「待っている物がある」と読まない）。
+    /// ランチャは 2 秒ごとの標本でここを見て、正なら受け箱を片付ける（口は増やさない）。
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("inbox")] public int? Inbox { get; init; }
+
+    /// <summary>同上を安全に読む（欄が無い・負の数は 0）。</summary>
+    public int Pending => Inbox is int count && count > 0 ? count : 0;
 }
 
 /// <summary>
