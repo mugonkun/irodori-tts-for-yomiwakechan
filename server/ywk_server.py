@@ -381,7 +381,17 @@ def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, Any]:
     frees idle cached blocks before it would fail.  A shot that genuinely needs
     more than the limit fails with the upstream's OOM error (contract ⑶ 3-3),
     which is what the settings note warns about.  The limit is echoed as
-    ``/ywk/status.memory.limit`` (bytes) so the launcher can draw it.
+    ``/ywk/status.memory.limit`` (bytes) for clients and diagnostics (the
+    launcher's meter does not draw it).
+
+    ⑶ 検分の是正 (2026-09-24): the RTX build pins torch 2.10, whose Windows
+    build refuses ``expandable_segments`` (``PYTORCH_C10_DRIVER_API_SUPPORTED`` is
+    defined only off Windows; torch 2.13 added a ROCm>=7 branch, which is why the
+    Radeon build can use it).  The launcher therefore gives CUDA
+    ``garbage_collection_threshold:0.6`` instead, and this function sets
+    ``set_per_process_memory_fraction(1.0)`` on CUDA when no limit is configured
+    so that the collector is active at all (torch runs it only with a fraction set).
+    Unmeasured on an RTX machine as of v2.0.7.
 
     Runs after ``resolve_devices_and_precision`` (torch is imported by then) and
     before the upstream import (nothing has touched the allocator yet).  CPU-only
@@ -405,10 +415,9 @@ def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, Any]:
             flags["conv_empty_cache"] = "error"
 
     limit = _gpu_memory_limit_bytes()
-    if limit is None:
-        return flags
     if not torch.cuda.is_available():
-        flags["gpu_memory_limit"] = "unavailable"
+        if limit is not None:
+            flags["gpu_memory_limit"] = "unavailable"
         return flags
     indices: list[int] = []
     for device in effective.values():
@@ -419,15 +428,26 @@ def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, Any]:
         if index not in indices:
             indices.append(index)
     try:
+        if limit is None:
+            # 検分の是正 (裁定 160): the CUDA build (torch 2.10 on Windows) cannot use
+            # expandable_segments, so the launcher hands it garbage_collection_threshold
+            # instead -- which torch honours only once a fraction is set.  1.0 = no cap,
+            # it merely switches the collector on.  ROCm keeps expandable segments and
+            # needs nothing here.
+            if getattr(torch.version, "cuda", None):
+                for index in indices:
+                    torch.cuda.set_per_process_memory_fraction(1.0, index)
+                flags["allocator_gc"] = "on"
+            return flags
         for index in indices:
             total = int(torch.cuda.get_device_properties(index).total_memory)
             fraction = min(1.0, limit / total) if total > 0 else 1.0
             torch.cuda.set_per_process_memory_fraction(fraction, index)
         flags["gpu_memory_limit"] = "on"
         flags["gpu_memory_limit_bytes"] = int(limit)
-    except Exception as exc:  # noqa: BLE001 -- ditto: report, do not stop
-        sys.stderr.write(f"ywk_server: could not apply YWK_GPU_MEMORY_LIMIT_MIB: {exc}\n")
-        flags["gpu_memory_limit"] = "error"
+    except Exception as exc:  # noqa: BLE001 -- report, do not stop
+        sys.stderr.write(f"ywk_server: could not apply the allocator settings: {exc}\n")
+        flags["gpu_memory_limit" if limit is not None else "allocator_gc"] = "error"
     return flags
 
 apply_env_defaults()
@@ -1783,7 +1803,8 @@ def memory_snapshot(device: Any = None, voice_ids: Any = None) -> dict[str, Any]
     is already carrying -- passed in rather than re-read so this costs a few
     ``stat`` calls, not a second pass over ``voices.json``.
 
-    On CPU or with no model in, the six numeric fields stay ``null`` and only
+    On CPU or with no model in, the seven numeric fields stay ``null`` (six
+    measurements, plus ``limit`` which is null whenever no limit is configured) and only
     ``latents`` is answered: the baked ``.pt`` files exist regardless of what is
     loaded, and the launcher shows their size even before the server is ready.
     """
@@ -1799,6 +1820,11 @@ def memory_snapshot(device: Any = None, voice_ids: Any = None) -> dict[str, Any]
     if device is not None:
         snapshot["device"] = str(device)
     if device is not None and getattr(device, "type", None) == "cuda":
+        # 裁定 160＝設定「GPU メモリの上限」（無ければ null）。allocator の実測ではなく起動時に写した上限
+        # そのもの＝本体や診断の道具が読む欄（ランチャの帯には出さない）。torch を触らないので try の外
+        # ＝測定の 1 つが投げても「制限なし」に化けない（検分の是正）。
+        limit = ALLOCATOR_FLAGS.get("gpu_memory_limit_bytes")
+        snapshot["limit"] = int(limit) if isinstance(limit, int) and limit > 0 else None
         try:
             import torch  # noqa: PLC0415
 
@@ -1814,10 +1840,6 @@ def memory_snapshot(device: Any = None, voice_ids: Any = None) -> dict[str, Any]
             snapshot["gpu_total"] = int(total)
             snapshot["gpu_free"] = int(free)
             snapshot["gpu_used"] = int(total) - int(free)
-            # 裁定 160＝設定「GPU メモリの上限」（無ければ null）。allocator 側の値ではなく
-            # 起動時に写した上限そのもの＝ランチャが帯に線を引くための数。
-            limit = ALLOCATOR_FLAGS.get("gpu_memory_limit_bytes")
-            snapshot["limit"] = int(limit) if isinstance(limit, int) and limit > 0 else None
         except Exception as exc:  # noqa: BLE001 -- ditto
             reasons.append(_one_line(exc))
 
@@ -3747,12 +3769,15 @@ def banner() -> str:
     # of them this process actually got (the env two come from the launcher).
     if "conv_empty_cache" in ALLOCATOR_FLAGS:
         line += f" conv_empty_cache={ALLOCATOR_FLAGS['conv_empty_cache']}"
-    alloc_conf = os.environ.get("PYTORCH_HIP_ALLOC_CONF") or os.environ.get("PYTORCH_CUDA_ALLOC_CONF")
+    # torch reads the CUDA name first, then the HIP name (検分の是正): show what torch will read.
+    alloc_conf = os.environ.get("PYTORCH_CUDA_ALLOC_CONF") or os.environ.get("PYTORCH_HIP_ALLOC_CONF")
     if alloc_conf:
         line += f" alloc_conf={alloc_conf}"
     cache_size = os.environ.get("GPU_RESOURCE_CACHE_SIZE")
     if cache_size is not None:
         line += f" gpu_resource_cache={cache_size}"
+    if ALLOCATOR_FLAGS.get("allocator_gc"):
+        line += f" allocator_gc={ALLOCATOR_FLAGS['allocator_gc']}"
     if "gpu_memory_limit" in ALLOCATOR_FLAGS:
         state = ALLOCATOR_FLAGS["gpu_memory_limit"]
         limit_bytes = ALLOCATOR_FLAGS.get("gpu_memory_limit_bytes")

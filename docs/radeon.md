@@ -421,8 +421,15 @@ wrapper の env が効いていることの証明）。
   4 GiB で本機の実測 OS 側 4.1〜4.6 GiB・23.5 s 出力も通る（最大使用 3.85 GiB）。**3 GiB では読み込み自体が失敗する**
   （暖機のピーク 3.09 GiB＝`runtime load failed: OutOfMemoryError … 3.00 GiB allowed`）＝設定の下限は 4（1〜3 は 4 に上げる・〔適用〕は断る）。
 - **RTX（CUDA）**は cuDNN v8 経路が `cudnn.benchmark=True` のときしか `emptyCache()` を呼ばず、CUDA は解放分をすぐ OS へ返すので
-  ⑵ の形は出ない。出るのは torch の断片化による 7 GiB 前後までの緩やかな伸び（利用者の報告「8 時間級の配信で 8 GB の 99 %」と整合）＝
-  ⑶ が効く見込み。**RTX 機では未計測**。
+  ⑵ の形は出ない。出るのは torch の断片化による 7 GiB 前後までの緩やかな伸び（利用者の報告「8 時間級の配信で 8 GB の 99 %」と整合）。
+  **検分の是正（2026-09-24）＝RTX 版が pin する torch 2.10 は Windows で `expandable_segments` を受け付けない**
+  （`PYTORCH_C10_DRIVER_API_SUPPORTED` が非 Windows 限定＝警告 1 行を出して無視・torch 2.13 が ROCm≥7 の枝を足したので Radeon だけ使える）。
+  そこで CUDA 変種は `garbage_collection_threshold:0.6`（GPU メモリの 6 割を超えたら使っていない塊を手放す）を両方の名
+  （`PYTORCH_CUDA_ALLOC_CONF`／`PYTORCH_HIP_ALLOC_CONF`）に載せ、wrapper が `set_per_process_memory_fraction(1.0)` で
+  収集を有効にする（torch は fraction が入っているときだけ収集する）。**RTX 機では未計測**＝リリース文に明記。
+- **導入済みの v2.0.7 で再確認**（2026-09-24・本機・司令官の許可で v2.0.6 の個体を落として無人導入し、ランチャから起こした個体 pid 49104 に API で 12 射×2 周）＝
+  暖機直後 **4,246 MiB** → 1 周目（初めての 16.9 s／24.2 s 出力を含む）で **4,714 MiB** → 2 周目は **+0**（torch `reserved` 4,290 MiB で固定）。
+  所要（2 周目）＝0.89／1.88／2.53／4.00 s（4.0／12.3／16.9／24.2 s 出力・話者 シャンパンコール（ホスクラ））。banner＝`conv_empty_cache=off alloc_conf=expandable_segments:True gpu_resource_cache=0`。
 - 生データと台本＝席の scratchpad（`ab_report.txt`・`vram_probe.py`・`ab_run.py`・`hip_alloc_test.py`・`hip_ceiling.py`・`retry_probe.py`）。
 
 ### 7-8 参照潜在キャッシュを焼いた後の実射（`decisions.md` 65・便 C（2）・2026-09-05 04:00〜04:08）

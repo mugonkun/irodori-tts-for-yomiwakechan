@@ -37,6 +37,13 @@ public partial class MainWindow : Window
     /// <summary>アプリ内更新の口（裁定 160）＝HttpClient を抱えるので閉じるときに捨てる。</summary>
     private readonly Services.Update.AppUpdateService _updater;
 
+    /// <summary>
+    /// 更新のために閉じる途中か（裁定 160・検分の是正）＝⑴ 読み上げ中の確認を飛ばす（利用者はもう
+    /// 「更新する」に同意している）⑵ setup は <see cref="App.PendingSetupPath"/> に置き、<b>閉じ終えて錠を返してから</b>
+    /// App.OnExit が起こす＝Inno の AppMutex の「実行中です」窓を出さない。
+    /// </summary>
+    private bool _closingForUpdate;
+
     private ReleaseFlavor _flavor = ReleaseFlavor.Cuda;
     private bool _firstRunShown;
 
@@ -119,14 +126,29 @@ public partial class MainWindow : Window
         // Dispatcher で窓のスレッドへ渡す（跨ぐ marshal は View の仕事）。
         _updater = new Services.Update.AppUpdateService(
             AppVersion.Display,
-            _flavor,
+            // 版は AppPaths が 3 段で解いた物（App.xaml.cs の錠と同じ）＝DetectFrom は「台帳が読めない」と
+            // 「CUDA」を区別できない（ReleaseFlavor.cs の註）ので、どの setup を取るかの鍵には使わない。
+            paths.Flavor,
             paths.UpdatesDir,
+            // 起こすのは App.OnExit（錠を返した後）＝ここでは置き場を覚えるだけ。
+            launchInstaller: path =>
+            {
+                App.PendingSetupPath = path;
+                return true;
+            },
             log: line => Dispatcher.BeginInvoke(() =>
             {
                 _model.AppendLog(line);
                 RefreshLogButton();
             }));
-        _model.About.AttachUpdater(_updater, Close, () => _model.Status.HostBusy);
+        _model.About.AttachUpdater(
+            _updater,
+            () =>
+            {
+                _closingForUpdate = true;
+                Close();
+            },
+            () => _model.Status.HostBusy);
 
         RefreshLogButton();
 
@@ -174,7 +196,8 @@ public partial class MainWindow : Window
         ArgumentNullException.ThrowIfNull(e);
 
         // 確かめは**片づけより先**（片づけたあとで取り消すと、窓は生きているのに標本が届かない）。
-        if (_model.Status.HostBusy
+        if (!_closingForUpdate
+            && _model.Status.HostBusy
             && MessageBox.Show(
                 this,
                 UiStrings.ExitWhileHostBusy,

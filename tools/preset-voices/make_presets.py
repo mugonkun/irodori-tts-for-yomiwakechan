@@ -237,6 +237,14 @@ def main() -> int:
 
     presets: list[dict] = []
     copied = 0
+    # 裁定 160（検分の是正）＝外した 11 名（status withdrawn）の記録（primary・secondary・generated_at）は
+    # いまの台帳から持ち越す＝組み直しても記録が消えない（wav は配布物に無いので測り直せない）。
+    previous: dict[str, dict] = {}
+    if out.is_file():
+        try:
+            previous = {p["id"]: p for p in json.loads(out.read_text(encoding="utf-8")).get("presets", [])}
+        except (OSError, ValueError, KeyError, TypeError):
+            previous = {}
     for row in ROSTER:
         vid = row["id"]
         entry = dict(row)
@@ -309,6 +317,10 @@ def main() -> int:
         if row["status"] != "done":
             note = WITHDRAWN_NOTE if row["status"] == "withdrawn" else PENDING_NOTE.get(row["engine"], "")
             entry["rights_note"] = RIGHTS_NOTE + " ／ " + note
+            if row["status"] == "withdrawn" and vid in previous:
+                for key in ("primary", "secondary", "generated_at", "rights_confirmed_at", "rights_confirmed_by", "rights_source_fetched"):
+                    if key in previous[vid]:
+                        entry[key] = previous[vid][key]
             presets.append(entry)
             continue
 

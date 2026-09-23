@@ -78,7 +78,7 @@ public interface IAppUpdateGateway
 /// </para>
 /// <para>
 /// <b>上限は 2 つ</b>＝長さ <see cref="MaxInstallerBytes"/>（既定 200 MB）と
-/// 見切り <see cref="InstallerTimeout"/>（既定 300 秒）。どちらも <c>init</c> で差し替えられる
+/// 見切り <see cref="InstallerTimeout"/>（既定 900 秒）。どちらも <c>init</c> で差し替えられる
 /// ＝試験は小さな値で同じ道を通す。取得の継ぎ目は <see cref="HttpMessageHandler"/> で、
 /// 起動の継ぎ目は <c>launchInstaller</c>（実プロセスを起こさずに撃てる）。
 /// </para>
@@ -98,7 +98,7 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
     /// <summary>配布情報の受け入れ上限（JSON 数 KB 想定の桁違い防衛）。</summary>
     public const int MaxManifestBytes = 1 * 1024 * 1024;
 
-    /// <summary>インストーラの受け入れ上限の既定（200 MB。現行の setup は 3 MB 級）。</summary>
+    /// <summary>インストーラの受け入れ上限の既定（200 MB。現行の setup は 58 MB 級）。</summary>
     public const long DefaultMaxInstallerBytes = 200L * 1024 * 1024;
 
     /// <summary>取ったインストーラの置き場の名（データの家の直下）。</summary>
@@ -156,8 +156,8 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
     /// <summary>配布情報の見切り（既定 15 秒＝数 KB の JSON）。</summary>
     public TimeSpan ManifestTimeout { get; init; } = TimeSpan.FromSeconds(15);
 
-    /// <summary>インストーラの見切り（既定 300 秒）。</summary>
-    public TimeSpan InstallerTimeout { get; init; } = TimeSpan.FromSeconds(300);
+    /// <summary>インストーラの見切り（既定 900 秒）。</summary>
+    public TimeSpan InstallerTimeout { get; init; } = TimeSpan.FromSeconds(900);
 
     /// <summary>インストーラの長さの上限（既定 <see cref="DefaultMaxInstallerBytes"/>）。</summary>
     public long MaxInstallerBytes { get; init; } = DefaultMaxInstallerBytes;
@@ -204,7 +204,15 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
             if (!manifest.InstallerUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
                 return new AppUpdateResult(
-                    AppUpdateResultKind.VerifyFailed, manifest.Version, Detail: "取得先が https ではありません");
+                    AppUpdateResultKind.VerifyFailed, manifest.Version, Detail: ViewModels.UiStrings.AboutUpdateDetailNotHttps);
+            }
+
+            // 裁定 160（検分の是正）＝取得先の檔名が自分の版で終わっていない manifest は掴まない
+            // （別の版の setup を「…-cuda.exe」の名で置いて起こす事故を止める）。
+            if (!InstallerUrlMatchesFlavor(manifest.InstallerUrl, _flavor))
+            {
+                return new AppUpdateResult(
+                    AppUpdateResultKind.VerifyFailed, manifest.Version, Detail: ViewModels.UiStrings.AboutUpdateDetailWrongFlavor);
             }
 
             // ⑷ 取得 → sha256 検分 → 保存。
@@ -231,7 +239,7 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
                 return new AppUpdateResult(AppUpdateResultKind.LaunchFailed, manifest.Version, Detail: path);
             }
 
-            Log("更新: インストーラを起こしました（" + manifest.Version + "）");
+            Log("更新: インストーラを用意しました（" + manifest.Version + "）＝アプリを閉じてから開きます");
             return new AppUpdateResult(AppUpdateResultKind.LaunchedInstaller, manifest.Version);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -266,7 +274,7 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
         if (bytes is null)
         {
             return (null, new AppUpdateResult(
-                AppUpdateResultKind.CheckFailed, Detail: "更新の情報を取りにいけませんでした"));
+                AppUpdateResultKind.CheckFailed, Detail: ViewModels.UiStrings.AboutUpdateDetailManifestFetchFailed));
         }
 
         var (manifest, error) = AppDistributionContract.ParseManifest(
@@ -275,13 +283,13 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
         {
             Log("更新: 配布の情報を読めません（" + error + "）");
             return (null, new AppUpdateResult(
-                AppUpdateResultKind.CheckFailed, Detail: "更新の情報を読めませんでした"));
+                AppUpdateResultKind.CheckFailed, Detail: ViewModels.UiStrings.AboutUpdateDetailManifestUnreadable));
         }
 
         if (!string.Equals(manifest.Name, AppDistributionContract.AppName, StringComparison.Ordinal))
         {
             return (null, new AppUpdateResult(
-                AppUpdateResultKind.VerifyFailed, Detail: "更新の情報が別のアプリのものです"));
+                AppUpdateResultKind.VerifyFailed, Detail: ViewModels.UiStrings.AboutUpdateDetailOtherApp));
         }
 
         return (manifest, null);
@@ -342,7 +350,7 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
         {
             Log("更新: 置き場を用意できませんでした（" + ex.GetType().Name + "）");
             return (null, new AppUpdateResult(
-                AppUpdateResultKind.CheckFailed, manifest.Version, Detail: "置き場を用意できませんでした"));
+                AppUpdateResultKind.CheckFailed, manifest.Version, Detail: ViewModels.UiStrings.AboutUpdateDetailNoFolder));
         }
 
         try
@@ -412,7 +420,7 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
                 SafeDelete(part);
                 return (null, new AppUpdateResult(
                     AppUpdateResultKind.VerifyFailed, manifest.Version,
-                    Detail: "ダウンロードしたファイルの中身が配布元のものと違います"));
+                    Detail: ViewModels.UiStrings.AboutUpdateDetailHashMismatch));
             }
 
             File.Move(part, path, overwrite: true);
@@ -429,16 +437,31 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
     }
 
     private static AppUpdateResult Fetching(AppDistributionManifest manifest) => new(
-        AppUpdateResultKind.CheckFailed, manifest.Version, Detail: "更新ファイルを取りにいけませんでした");
+        AppUpdateResultKind.CheckFailed, manifest.Version, Detail: ViewModels.UiStrings.AboutUpdateDetailInstallerFetchFailed);
 
     private static AppUpdateResult TooLarge(AppDistributionManifest manifest) => new(
-        AppUpdateResultKind.CheckFailed, manifest.Version, Detail: "更新ファイルが大きすぎます");
+        AppUpdateResultKind.CheckFailed, manifest.Version, Detail: ViewModels.UiStrings.AboutUpdateDetailTooLarge);
 
     /// <summary>想定外も窓にしない＝静かな不成立の一行へ畳む。</summary>
     private AppUpdateResult Unexpected(Exception ex)
     {
         Log("更新: 更新の手が落ちました（" + ex.GetType().Name + ": " + ex.Message + "）");
-        return new AppUpdateResult(AppUpdateResultKind.CheckFailed, Detail: "更新の手が落ちました");
+        return new AppUpdateResult(AppUpdateResultKind.CheckFailed, Detail: ViewModels.UiStrings.AboutUpdateDetailUnexpected);
+    }
+
+    /// <summary>
+    /// 取得先の檔名が自分の版（<c>-cuda.exe</c>／<c>-radeon.exe</c>）で終わるか（裁定 160・検分の是正）。
+    /// 公開の台本（build/make-app-manifest.ps1）が必ずこの綴りで書くので、外れた URL は別の版か手違いである。
+    /// </summary>
+    public static bool InstallerUrlMatchesFlavor(string? url, ReleaseFlavor flavor)
+    {
+        if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        var name = uri.Segments.Length > 0 ? uri.Segments[^1] : string.Empty;
+        return name.EndsWith("-" + AppDistributionContract.FlavorKey(flavor) + ".exe", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

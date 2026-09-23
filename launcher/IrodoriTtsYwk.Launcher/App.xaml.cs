@@ -110,6 +110,12 @@ public partial class App : Application
         _window.Show();
     }
 
+    /// <summary>
+    /// アプリ内更新で検分の通った setup の置き場（裁定 160・検分の是正）。主窓が置き、<see cref="OnExit"/> が
+    /// <b>子を畳んで錠を返した後</b>に起こす＝Inno の AppMutex 検査に生きた錠を見せない。null＝何も起こさない。
+    /// </summary>
+    public static string? PendingSetupPath { get; set; }
+
     protected override void OnExit(ExitEventArgs e)
     {
         _shuttingDown = true;
@@ -132,6 +138,22 @@ public partial class App : Application
 
         _singleInstance?.ReleaseMutex();
         _singleInstance?.Dispose();
+
+        // 裁定 160（検分の是正）＝アプリ内更新の setup は錠を返してから起こす。起こせなくても告げる面はもう無い
+        // （利用者は updates\ の檔を手で開ける＝状態の 1 行がその旨を先に告げている）。
+        var pendingSetup = PendingSetupPath;
+        if (!string.IsNullOrWhiteSpace(pendingSetup))
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(pendingSetup) { UseShellExecute = true });
+            }
+            catch (System.Exception)
+            {
+                // 終了の最中＝記録も窓も無い。
+            }
+        }
 
         base.OnExit(e);
     }

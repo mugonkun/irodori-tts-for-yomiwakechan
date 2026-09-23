@@ -598,7 +598,7 @@
 | `gpu_total` | **wrapper の torch／HIP から見た値**（裁定 110＝下の註） | `torch.cuda.mem_get_info`（**ROCm も同じ口**） |
 | `gpu_free` | 同上（空き） | 同上 |
 | `gpu_used` | `gpu_total − gpu_free`。〔**裁定 110（2026-09-08）で読み替え**＝**「カード全体（他プロセス込み）」ではない**。Windows の ROCm では**自プロセス相当**で、他プロセスを含まない〕 | 同上 |
-| `limit` | **このプロセスに許した GPU メモリの上限**（ランチャの設定「GPU メモリの上限」・裁定 160・v2.0.7）。制限していなければ **`null`**（0 ではない）。allocator の実測ではなく起動時に写した上限そのもの | `YWK_GPU_MEMORY_LIMIT_MIB` → `torch.cuda.set_per_process_memory_fraction` |
+| `limit` | **このプロセスに許した GPU メモリの上限**（ランチャの設定「GPU メモリの上限」・裁定 160・v2.0.7）。制限していなければ **`null`**（0 ではない）。allocator の実測ではなく起動時に写した上限そのもの。本体や診断の道具が読むための欄（ランチャの帯には出さない） | `YWK_GPU_MEMORY_LIMIT_MIB` → `torch.cuda.set_per_process_memory_fraction` |
 | `latents` | 焼いてある話者の `latents/<stem>.pt` の**実サイズ**を**話者 id で引いた表** | `stat` |
 | `latents_total` | `latents` の合計 | 同上 |
 | `sampled_at` | 測った時刻（ISO 8601・UTC・`…Z`） | — |

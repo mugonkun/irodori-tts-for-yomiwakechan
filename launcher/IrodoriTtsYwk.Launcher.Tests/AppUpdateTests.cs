@@ -55,6 +55,18 @@ public sealed class AppUpdateTests : IDisposable
 
     // ------------------------------------------------------------------ 配布情報の解釈
 
+    [Theory]
+    [InlineData("https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.8/irodori-tts-ywk-setup-v2.0.8-cuda.exe", ReleaseFlavor.Cuda, true)]
+    [InlineData("https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.8/irodori-tts-ywk-setup-v2.0.8-radeon.exe", ReleaseFlavor.Cuda, false)]
+    [InlineData("https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.8/irodori-tts-ywk-setup-v2.0.8-radeon.exe", ReleaseFlavor.Radeon, true)]
+    [InlineData("https://example.invalid/setup.exe", ReleaseFlavor.Radeon, false)]
+    [InlineData("not a url", ReleaseFlavor.Cuda, false)]
+    public void 取得先の檔名が自分の版で終わらなければ掴まない(string url, ReleaseFlavor flavor, bool expected)
+    {
+        // 裁定 160（検分の是正）＝別の版の setup を自分の版の名で置いて起こす事故を止める。
+        Assert.Equal(expected, AppUpdateService.InstallerUrlMatchesFlavor(url, flavor));
+    }
+
     [Fact]
     public void 正しい配布情報は版とインストーラの欄を返す()
     {

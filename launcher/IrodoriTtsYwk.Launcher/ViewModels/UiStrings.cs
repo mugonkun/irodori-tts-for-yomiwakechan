@@ -513,8 +513,20 @@ public static class UiStrings
 
     /// <summary>インストーラーを起こした＝このアプリは閉じる。</summary>
     public const string AboutUpdateLaunched =
-        "インストーラーを開きました。このアプリはいったん終了します。"
+        "このアプリをいったん終了してから、インストーラーを開きます。"
         + "インストールが終わったら、最後の画面のチェックでもう一度開けます。";
+
+    /// <summary>更新の失敗の中身（裁定 160・検分の是正＝Services/Update の文をここへ寄せた＝隠す語の網に入れる）。</summary>
+    public const string AboutUpdateDetailNotHttps = "取得先が https ではありません";
+    public const string AboutUpdateDetailWrongFlavor = "取得先がこの版（RTX（CUDA）／Radeon（ROCm））の物ではありません";
+    public const string AboutUpdateDetailManifestFetchFailed = "更新の情報を取りにいけませんでした";
+    public const string AboutUpdateDetailManifestUnreadable = "更新の情報を読めませんでした";
+    public const string AboutUpdateDetailOtherApp = "更新の情報が別のアプリのものです";
+    public const string AboutUpdateDetailNoFolder = "置き場を用意できませんでした";
+    public const string AboutUpdateDetailHashMismatch = "ダウンロードしたファイルの中身が配布元のものと違います";
+    public const string AboutUpdateDetailInstallerFetchFailed = "更新ファイルを取りにいけませんでした";
+    public const string AboutUpdateDetailTooLarge = "更新ファイルが大きすぎます";
+    public const string AboutUpdateDetailUnexpected = "更新の手が落ちました";
 
     /// <summary>インストーラーを起こせなかった（在り処を出して手動の道を残す）。</summary>
     public const string AboutUpdateLaunchFailedPrefix =

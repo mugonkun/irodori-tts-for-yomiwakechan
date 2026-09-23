@@ -100,35 +100,38 @@ public sealed class ServerEnvironmentBuildTests
     }
 
     [Theory]
-    [InlineData(RuntimeVariants.RocmGfx1151, ServerEnvironment.HipAllocConf, ServerEnvironment.CudaAllocConf)]
-    [InlineData(RuntimeVariants.Cu130, ServerEnvironment.CudaAllocConf, ServerEnvironment.HipAllocConf)]
-    [InlineData(RuntimeVariants.Cu126, ServerEnvironment.CudaAllocConf, ServerEnvironment.HipAllocConf)]
-    public void GPU変種はallocatorをexpandable_segmentsにし読む名は変種ごとに1本(string variant, string expectedKey, string absentKey)
+    [InlineData(RuntimeVariants.RocmGfx1151, ServerEnvironment.AllocConfExpandableSegments)]
+    [InlineData(RuntimeVariants.Cu130, ServerEnvironment.AllocConfCudaDefault)]
+    [InlineData(RuntimeVariants.Cu126, ServerEnvironment.AllocConfCudaDefault)]
+    public void GPU変種はallocatorの設定を両方の名に同じ値で載せる(string variant, string expected)
     {
-        // 裁定 160＝出力の長さごとに違う大きさの塊で reserved が太り続けるのを止める（RTX 8 GB で 99 %・8 時間級の配信）。
+        // 裁定 160（検分の是正）＝torch は CUDA → HIP の順に最初に在る名を読むので両方に載せる。Radeon（torch 2.13）は
+        // expandable_segments、RTX（torch 2.10）は Windows で受け付けないので garbage_collection_threshold:0.6。
         var env = ServerEnvironment.Build(Settings(variant), Paths(), gpuIndex: 0);
 
-        Assert.Equal(ServerEnvironment.AllocConfExpandableSegments, env[expectedKey]);
-        Assert.False(env.ContainsKey(absentKey));
+        Assert.Equal(expected, env[ServerEnvironment.CudaAllocConf]);
+        Assert.Equal(expected, env[ServerEnvironment.HipAllocConf]);
     }
 
     [Theory]
-    [InlineData(RuntimeVariants.RocmGfx1151, ServerEnvironment.HipAllocConf)]
-    [InlineData(RuntimeVariants.Cu130, ServerEnvironment.CudaAllocConf)]
-    [InlineData(RuntimeVariants.Cu126, ServerEnvironment.CudaAllocConf)]
-    public void GPUメモリの上限はMiBで渡しallocatorにgarbage_collectionを足す(string variant, string allocKey)
+    [InlineData(RuntimeVariants.RocmGfx1151, "expandable_segments:True", "expandable_segments:True,garbage_collection_threshold:0.8")]
+    [InlineData(RuntimeVariants.Cu130, "garbage_collection_threshold:0.6", "garbage_collection_threshold:0.8")]
+    [InlineData(RuntimeVariants.Cu126, "garbage_collection_threshold:0.6", "garbage_collection_threshold:0.8")]
+    public void GPUメモリの上限はMiBで渡しallocatorの閾値を上限比に上げる(string variant, string offConf, string onConf)
     {
-        // 裁定 160＝設定 gpuMemoryLimitGiB（0＝制限しない）。0 なら何も載せず、allocator の設定も素のまま。
+        // 裁定 160＝設定 gpuMemoryLimitGiB（0＝制限しない）。0 なら上限の env は無く、allocator は変種の既定のまま。
         var settings = Settings(variant);
         Assert.Equal(0, settings.GpuMemoryLimitGiB);
         var off = ServerEnvironment.Build(settings, Paths(), gpuIndex: 0);
         Assert.False(off.ContainsKey(ServerEnvironment.GpuMemoryLimitMib));
-        Assert.Equal(ServerEnvironment.AllocConfExpandableSegments, off[allocKey]);
+        Assert.Equal(offConf, off[ServerEnvironment.CudaAllocConf]);
+        Assert.Equal(offConf, off[ServerEnvironment.HipAllocConf]);
 
         settings.GpuMemoryLimitGiB = 6;
         var on = ServerEnvironment.Build(settings, Paths(), gpuIndex: 0);
         Assert.Equal("6144", on[ServerEnvironment.GpuMemoryLimitMib]);
-        Assert.Equal("expandable_segments:True,garbage_collection_threshold:0.8", on[allocKey]);
+        Assert.Equal(onConf, on[ServerEnvironment.CudaAllocConf]);
+        Assert.Equal(onConf, on[ServerEnvironment.HipAllocConf]);
     }
 
     [Fact]

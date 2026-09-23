@@ -827,6 +827,8 @@ public sealed class SettingsViewModel : ObservableObject
         RaisePropertyChanged(nameof(PrecomputeNote));
         RaisePropertyChanged(nameof(EmptyCacheInterval));
         RaisePropertyChanged(nameof(EmptyCacheNote));
+        RaisePropertyChanged(nameof(GpuMemoryLimitGiB));
+        RaisePropertyChanged(nameof(GpuMemoryLimitNote));
         RaisePropertyChanged(nameof(ShowMemoryPanel));
         RaisePropertyChanged(nameof(AutoStartServer));
         RaisePropertyChanged(nameof(DifferentialUpdate));

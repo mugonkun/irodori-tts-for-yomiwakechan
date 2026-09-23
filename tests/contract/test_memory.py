@@ -127,7 +127,7 @@ def test_memory_limit_echoes_the_applied_bytes(client, baseline, monkeypatch):
 
 
 def test_memory_is_null_on_cpu(client, baseline):
-    """device が cpu のとき数値 6 欄は null（0 ではない）＝「測っていない」の意。"""
+    """device が cpu のとき数値 7 欄は null（0 ではない）＝測定の 6 欄は「測っていない」、limit は「上限が無い」の意。"""
     memory = memory_of(client)
     assert memory["device"] == "cpu"
     for key in NUMERIC_KEYS:

@@ -288,22 +288,22 @@ public sealed class AutomationIdsTests
     /// <b>退役させた id は 1 つも無い。</b>
     /// </para>
     /// </summary>
+    [Fact]
+    public void 段Fで新設したidが揃っている()
+    {
+        var found = AllIds();
+        string[] added = ["SettingsDifferentialUpdateCheck"];
+
+        var missing = added.Where(id => !found.Contains(id)).ToArray();
+        Assert.True(missing.Length == 0, "新設できていない AutomationId：" + string.Join("・", missing));
+    }
+
     /// <summary>裁定 160（2026-09-24）＝詳細 9 行目「GPU メモリの上限」の 2 つ。</summary>
     [Fact]
     public void 裁定160の設定9行目で新設したidが揃っている()
     {
         var found = AllIds();
         string[] added = ["SettingsGpuMemoryLimitBox", "SettingsGpuMemoryLimitNoteText"];
-
-        var missing = added.Where(id => !found.Contains(id)).ToArray();
-        Assert.True(missing.Length == 0, "新設できていない AutomationId：" + string.Join("・", missing));
-    }
-
-    [Fact]
-    public void 段Fで新設したidが揃っている()
-    {
-        var found = AllIds();
-        string[] added = ["SettingsDifferentialUpdateCheck"];
 
         var missing = added.Where(id => !found.Contains(id)).ToArray();
         Assert.True(missing.Length == 0, "新設できていない AutomationId：" + string.Join("・", missing));

@@ -83,6 +83,13 @@ public static class ServerEnvironment
     /// </summary>
     public const string AllocConfExpandableSegments = "expandable_segments:True";
 
+    /// <summary>
+    /// RTX（CUDA・torch 2.10）の既定＝<c>garbage_collection_threshold:0.6</c>＝GPU メモリの 6 割を超えたら使っていない塊を
+    /// 手放す（wrapper が <c>set_per_process_memory_fraction(1.0)</c> で有効にする）。Windows の torch 2.10 は
+    /// expandable_segments を受け付けない（裁定 160・検分の是正）ので、断片化の伸びはこちらで頭打ちにする。
+    /// </summary>
+    public const string AllocConfCudaDefault = "garbage_collection_threshold:0.6";
+
     /// <summary>ROCm ランタイム（amdhip64）が解放済みの塊を溜め置く上限（MB）。Radeon 版だけ（裁定 160）。</summary>
     public const string GpuResourceCacheSize = "GPU_RESOURCE_CACHE_SIZE";
 
@@ -182,33 +189,37 @@ public static class ServerEnvironment
             env[MiopenFindMode] = MiopenFindModeFast;
         }
 
-        // GPU を使う変種は torch の allocator を expandable_segments にする（裁定 160・司令官の指示 2026-09-24）。
-        // 既定の allocator は出力の長さごとに違う大きさの塊を抱え込み、8 時間級の配信で reserved が太り続ける
-        // （RTX 8 GB で 99 %・本機の Radeon で 7.1 GiB）。expandable_segments は塊を切り直して使い回すので
-        // 最大使用量＋0.4 GiB 前後で頭打ちになる（本機の実測＝4.3 GiB・所要は不変）。読む名が ROCm と CUDA で
-        // 違うので変種ごとに 1 本だけ載せる。CPU 変種には要らない。
-        if (RuntimeVariants.IsRocm(variant))
+        // torch の caching allocator の設定（裁定 160・司令官の指示 2026-09-24・検分の是正）。
+        // ⑴ torch は PYTORCH_CUDA_ALLOC_CONF → PYTORCH_HIP_ALLOC_CONF → PYTORCH_ALLOC_CONF の順に**最初に在る名**を読むので、
+        //    両方に同じ値を載せる（片方だけだと、親の環境から継いだ CUDA の名が Radeon で勝つ）。
+        // ⑵ Radeon（ROCm・torch 2.13）＝expandable_segments:True＝塊を切り直して使い回す＝出力の長さごとに違う大きさの
+        //    塊で reserved が太り続けるのを止める（本機の実測＝7.1 GiB → 4.3 GiB・所要不変）。
+        // ⑶ RTX（CUDA・torch 2.10）＝Windows では expandable_segments を受け付けない（PYTORCH_C10_DRIVER_API_SUPPORTED が
+        //    非 Windows 限定＝警告 1 行を出して無視する）ので載せない。代わりに garbage_collection_threshold:0.6＝
+        //    GPU メモリの 6 割を超えたら使っていない塊を手放す（wrapper が set_per_process_memory_fraction(1.0) で有効化）。
+        //    8 GB で 8 時間級の配信の「99 %」を頭打ちにする見込み＝RTX 機では未計測。CPU 変種には要らない。
+        // ⑷ 上限（gpuMemoryLimitGiB・0＝制限しない）が在れば MiB で渡し、閾値を 0.8（上限比）に上げる。
+        if (RuntimeVariants.UsesGpu(variant))
         {
-            env[HipAllocConf] = AllocConfExpandableSegments;
+            var allocConf = RuntimeVariants.IsRocm(variant) ? AllocConfExpandableSegments : AllocConfCudaDefault;
+            if (settings.GpuMemoryLimitGiB > 0)
+            {
+                env[GpuMemoryLimitMib] = (settings.GpuMemoryLimitGiB * 1024L).ToString(CultureInfo.InvariantCulture);
+                allocConf = RuntimeVariants.IsRocm(variant)
+                    ? AllocConfExpandableSegments + "," + AllocConfGarbageCollection
+                    : AllocConfGarbageCollection;
+            }
 
-            // Radeon（ROCm）だけ＝Windows の ROCm ランタイムは hipFree された塊をプロセス内に溜め置き、同じ大きさの
-            // 要求にしか使い回さない（上限 ≈10 GiB・本機の実測）。torch が塊を手放すたびに OS 側の占有は増える一方
-            // になる（裁定 110 で「原因不明」だった 13〜15 GiB の伸び）。0 で溜め置きを止める。
-            env[GpuResourceCacheSize] = GpuResourceCacheSizeOff;
-        }
-        else if (RuntimeVariants.UsesGpu(variant))
-        {
-            env[CudaAllocConf] = AllocConfExpandableSegments;
-        }
+            env[CudaAllocConf] = allocConf;
+            env[HipAllocConf] = allocConf;
 
-        // GPU メモリの上限（裁定 160・設定 gpuMemoryLimitGiB・0＝制限しない）＝MiB で渡し、wrapper が
-        // set_per_process_memory_fraction に写す。allocator には garbage_collection_threshold も足す＝
-        // 上限に当たって失敗する前に、使っていない塊を手放して痩せる。CPU 変種には要らない。
-        if (RuntimeVariants.UsesGpu(variant) && settings.GpuMemoryLimitGiB > 0)
-        {
-            env[GpuMemoryLimitMib] = (settings.GpuMemoryLimitGiB * 1024L).ToString(CultureInfo.InvariantCulture);
-            var allocKey = RuntimeVariants.IsRocm(variant) ? HipAllocConf : CudaAllocConf;
-            env[allocKey] = env[allocKey] + "," + AllocConfGarbageCollection;
+            if (RuntimeVariants.IsRocm(variant))
+            {
+                // Radeon（ROCm）だけ＝Windows の ROCm ランタイムは hipFree された塊をプロセス内に溜め置き、同じ大きさの
+                // 要求にしか使い回さない（上限 ≈10 GiB・本機の実測）。torch が塊を手放すたびに OS 側の占有は増える一方
+                // になる（裁定 110 で「原因不明」だった 13〜15 GiB の伸び）。0 で溜め置きを止める。
+                env[GpuResourceCacheSize] = GpuResourceCacheSizeOff;
+            }
         }
 
         // 精度＝既定は device 連動（裁定 7）に任せて<b>載せない</b>。

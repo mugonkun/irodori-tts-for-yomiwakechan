@@ -123,7 +123,8 @@ trap {
 # adds one byte per line -- 3,651 B on a file this size -- and A-1 drifts for a reason that has
 # nothing to do with the distributable. Measured 2026-09-11 when exactly that happened.
 $ExpectedAppFiles = 98
-$ExpectedAppBytes = @([int64]34088381)
+# 裁定 160 (2026-09-24): 11 preset wavs (28,739,044 B) left the tree; measured 5,362,257 B at v2.0.7 after the review fixes (98 files).
+$ExpectedAppBytes = @([int64]5362257)
 
 # Gate A-7. Files named ONE BY ONE, because their absence produces the worst artefact this line can
 # make: a setup that installs, exits 0 and then does not work. Nothing else in gate A sees them --
@@ -155,7 +156,9 @@ $RequiredAppFiles = @(
 # voices/presets.json -- so the current rule is 12; the 11 above is the quoted history, not the
 # figure. The .iss counts them at compile time too (installer/irodori-tts-ywk.iss, the ISPP
 # FindFirst/FindNext gate) -- this is the second sheet of a two-sheet net, on purpose.
-$ExpectedPresetWavs = 12
+# 裁定 160 (2026-09-24): the commander withdrew 11 of the 12 -- only ext_hostclub_champagne.wav ships;
+# the other rows stay in voices/presets.json as status "withdrawn". The rule is now 1.
+$ExpectedPresetWavs = 1
 
 # Gate A-4. A WHITELIST, not the $forbidden blacklist of release-build.ps1:187-191: that list bans
 # '*.wav' and 'voices.json', and the distributable carries both LEGITIMATELY (the 12 preset wavs are
@@ -194,9 +197,12 @@ $SizeExemptExeName = 'IrodoriTtsYwk.Launcher.exe'
 # floor, so B-2 stopped both setups. +/-5 % of that mean (75,483,090 B) is 71,708,936-79,257,245 B;
 # the band below (68.0-76.0 MiB) is that band rounded to whole MiB. The old band was 77.0-85.0 MiB
 # (80,740,352-89,128,960 B) and is kept here only as history.
-$SetupMinBytes = [int64]71303168   # 68.0 MiB
-$SetupMaxBytes = [int64]79691776   # 76.0 MiB
-$SetupBandLabel = '68.0-76.0 MiB'
+# 裁定 160 (2026-09-24, v2.0.7): 11 preset wavs left the tree, so the setup shrank from 75.5 MB to
+# 57,996,513 / 57,997,995 B (55.31 MiB, measured on the first v2.0.7 build). Band = that figure +-4 MiB,
+# rounded to whole MiB; the old band (68.0-76.0 MiB) is history.
+$SetupMinBytes = [int64]53477376   # 51.0 MiB
+$SetupMaxBytes = [int64]61865984   # 59.0 MiB
+$SetupBandLabel = '51.0-59.0 MiB'
 
 # Ledgers. The .iss names them one by one per flavour (it cannot use a wildcard: a rocm ledger in a
 # CUDA install makes ReleaseFlavor.cs:32-34 report "Radeon" and cu130/cu126 vanish from the UI).
