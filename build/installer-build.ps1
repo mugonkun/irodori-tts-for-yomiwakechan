@@ -123,8 +123,8 @@ trap {
 # adds one byte per line -- 3,651 B on a file this size -- and A-1 drifts for a reason that has
 # nothing to do with the distributable. Measured 2026-09-11 when exactly that happened.
 $ExpectedAppFiles = 98
-# 裁定 160 (2026-09-24): 11 preset wavs (28,739,044 B) left the tree; measured 5,386,507 B at v2.0.7 with the voice intake merged (98 files).
-$ExpectedAppBytes = @([int64]5386507)
+# 裁定 160 (2026-09-24): 11 preset wavs (28,739,044 B) left the tree; measured 5,389,166 B at v2.0.7 final (executor bound, 98 files).
+$ExpectedAppBytes = @([int64]5389166)
 
 # Gate A-7. Files named ONE BY ONE, because their absence produces the worst artefact this line can
 # make: a setup that installs, exits 0 and then does not work. Nothing else in gate A sees them --

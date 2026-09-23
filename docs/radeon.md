@@ -430,7 +430,13 @@ wrapper の env が効いていることの証明）。
 - **導入済みの v2.0.7 で再確認**（2026-09-24・本機・司令官の許可で v2.0.6 の個体を落として無人導入し、ランチャから起こした個体 pid 49104 に API で 12 射×2 周）＝
   暖機直後 **4,246 MiB** → 1 周目（初めての 16.9 s／24.2 s 出力を含む）で **4,714 MiB** → 2 周目は **+0**（torch `reserved` 4,290 MiB で固定）。
   所要（2 周目）＝0.89／1.88／2.53／4.00 s（4.0／12.3／16.9／24.2 s 出力・話者 シャンパンコール（ホスクラ））。banner＝`conv_empty_cache=off alloc_conf=expandable_segments:True gpu_resource_cache=0`。
-- 生データと台本＝席の scratchpad（`ab_report.txt`・`vram_probe.py`・`ab_run.py`・`hip_alloc_test.py`・`hip_ceiling.py`・`retry_probe.py`）。
+- **残り火（検分の是正 2・2026-09-24・RTX 席の 240 射ソークが見つけた）**＝`allocated` が出力の長さを繰り返しても
+  RTX で +0.8 MiB/射（+8／+9 MiB の階段・240 射で +193 MiB）、本機で +76 MiB の階段。正体＝上流の `run_in_executor(None, …)` が
+  使う asyncio の既定 pool（最大 min(32, cpu+4) 本）の**スレッドごとに torch が BLAS の handle と作業領域を 1 つ持つ**
+  （hipBLASLt 76 MiB／cuBLAS ≈8 MiB・caching allocator から取って返さない）＝Python から見える tensor の合計より
+  `allocated` がちょうど 76 MiB 多い（`/ywk/debug/tensors` の差分で確認）。是正＝wrapper が lifespan で既定 pool を
+  **2 本**に絞る（`bounded_executor`・`YWK_EXECUTOR_WORKERS` 1〜8）＝上限は 2×76 MiB。
+- 生データと台本＝席の scratchpad（`ab_report.txt`・`vram_probe.py`・`ab_run.py`・`hip_alloc_test.py`・`hip_ceiling.py`・`retry_probe.py`・`leak_hunt.py`）。
 
 ### 7-8 参照潜在キャッシュを焼いた後の実射（`decisions.md` 65・便 C（2）・2026-09-05 04:00〜04:08）
 

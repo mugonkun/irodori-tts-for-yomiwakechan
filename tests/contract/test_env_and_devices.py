@@ -166,6 +166,23 @@ def test_gpu_memory_limit_is_applied_or_reported_unavailable(ywk, monkeypatch):
     torch.cuda.set_per_process_memory_fraction(1.0, 0)  # leave the process as we found it
 
 
+def test_executor_workers_default_and_clamp(ywk, monkeypatch):
+    # 裁定 160・検分の是正 2＝上流の既定 pool を絞る（スレッドごとの BLAS 作業領域の積み上がりを止める）。
+    monkeypatch.delenv("YWK_EXECUTOR_WORKERS", raising=False)
+    assert ywk.executor_workers() == 2
+    monkeypatch.setenv("YWK_EXECUTOR_WORKERS", "0")
+    assert ywk.executor_workers() == 1
+    monkeypatch.setenv("YWK_EXECUTOR_WORKERS", "99")
+    assert ywk.executor_workers() == 8
+    monkeypatch.setenv("YWK_EXECUTOR_WORKERS", "abc")
+    assert ywk.executor_workers() == 2
+    executor = ywk.bounded_executor()
+    try:
+        assert executor._max_workers == 2  # noqa: SLF001 -- the only observable
+    finally:
+        executor.shutdown(wait=False)
+
+
 def test_allocator_flag_is_skipped_on_cpu(ywk):
     assert ywk.apply_allocator_defaults({"model": "cpu", "codec": "cpu"}) == {}
 

@@ -351,6 +351,47 @@ def _gpu_memory_limit_bytes() -> int | None:
     return mib * 1024 * 1024
 
 
+#: How many threads the upstream's ``run_in_executor(None, …)`` may use (裁定 160・検分の是正 2).
+EXECUTOR_WORKERS_ENV = "YWK_EXECUTOR_WORKERS"
+DEFAULT_EXECUTOR_WORKERS = 2
+
+
+def executor_workers() -> int:
+    """``YWK_EXECUTOR_WORKERS`` clamped to 1..8; unset or unreadable → 2."""
+    raw = str(os.environ.get(EXECUTOR_WORKERS_ENV, "") or "").strip()
+    try:
+        value = int(raw) if raw else DEFAULT_EXECUTOR_WORKERS
+    except ValueError:
+        value = DEFAULT_EXECUTOR_WORKERS
+    return max(1, min(8, value))
+
+
+def bounded_executor() -> concurrent.futures.ThreadPoolExecutor:
+    """The executor the server loop hands to the upstream's synthesis (裁定 160・検分の是正 2).
+
+    The upstream runs every synthesis through ``loop.run_in_executor(None, …)``
+    (app.py:471), i.e. asyncio's *default* ``ThreadPoolExecutor`` whose pool grows
+    to ``min(32, cpu_count + 4)`` threads.  torch keeps **one BLAS handle per
+    thread**, and each handle owns a workspace taken from the caching allocator
+    and never returned: **76 MiB on ROCm (hipBLASLt)**, about **8 MiB on CUDA
+    (cuBLAS)**.  Every new pool thread that touches the GPU therefore adds one
+    workspace to ``memory_allocated`` for the life of the process.  Measured
+    2026-09-24: on this machine ``allocated`` climbed 1,930 → 2,158 MiB in +76 MiB
+    steps and sat exactly 76 MiB above the bytes visible from Python; on the RTX
+    3090 seat a 240-shot soak crept +193 MiB in +8/+9 MiB steps with the output
+    lengths repeating (so it was not a per-length cache).  Worst case with the
+    default pool on a 32-thread Radeon machine is 32 × 76 MiB ≈ 2.4 GiB.
+
+    Two workers are enough: the upstream serialises synthesis on its own
+    semaphore (``max_concurrent_synthesis`` = 1), and the warmup / precompute /
+    loader threads are the wrapper's own, not pool threads.  ``YWK_EXECUTOR_WORKERS``
+    (1..8) is the escape hatch; there is no launcher setting for it.
+    """
+    return concurrent.futures.ThreadPoolExecutor(
+        max_workers=executor_workers(), thread_name_prefix="ywk-executor"
+    )
+
+
 def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, Any]:
     """Stop torch from emptying its own cache behind our back, and apply the
     optional GPU memory limit (decisions.md 160).
@@ -453,6 +494,8 @@ def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, Any]:
             torch.cuda.set_per_process_memory_fraction(fraction, index)
         flags["gpu_memory_limit"] = "on"
         flags["gpu_memory_limit_bytes"] = int(limit)
+        if getattr(torch.version, "cuda", None):
+            flags["allocator_gc"] = "on"  # the 0.8 threshold is active once the fraction is set (RTX 席の指摘)
     except Exception as exc:  # noqa: BLE001 -- report, do not stop
         sys.stderr.write(f"ywk_server: could not apply the allocator settings: {exc}\n")
         flags["gpu_memory_limit" if limit is not None else "allocator_gc"] = "error"
@@ -1656,6 +1699,9 @@ if _upstream_lifespan is not None:
             # reason.  Both are started by the loader, so the handle has to be
             # in place before the loader is.
             _warmup_loop = asyncio.get_running_loop()
+            # 裁定 160・検分の是正 2＝上流の run_in_executor(None, …) が使う既定の pool を 2 本に絞る
+            # （スレッドごとの BLAS 作業領域＝ROCm 76 MiB／CUDA 8 MiB が積み上がるのを止める＝bounded_executor）。
+            _warmup_loop.set_default_executor(bounded_executor())
             reset_runtime_loader()
             start_runtime_loader()
             try:
