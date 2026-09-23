@@ -156,6 +156,17 @@ public sealed class JsonSettingsStore : ISettingsStore
             settings.EmptyCacheInterval = 0;
         }
 
+        // 裁定 160＝GPU メモリの上限は 0（制限しない）か 4〜1024 GiB の整数。負・1024 超は「制限しない」に戻し、
+        // 1〜3 は 4 に上げる（3 GiB では読み込み自体が失敗する＝暖機のピーク 3.09 GiB・本機の実測）。
+        if (settings.GpuMemoryLimitGiB is < 0 or > 1024)
+        {
+            settings.GpuMemoryLimitGiB = 0;
+        }
+        else if (settings.GpuMemoryLimitGiB is > 0 and < LauncherSettings.MinGpuMemoryLimitGiB)
+        {
+            settings.GpuMemoryLimitGiB = LauncherSettings.MinGpuMemoryLimitGiB;
+        }
+
         if (settings.UiScale is < 0.5 or > 3.0 || double.IsNaN(settings.UiScale))
         {
             settings.UiScale = 1.0;

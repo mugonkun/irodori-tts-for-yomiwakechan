@@ -135,6 +135,35 @@ def test_allocator_flag_turns_off_implicit_empty_cache(ywk):
         assert getter() is False
 
 
+def test_gpu_memory_limit_env_is_parsed_in_mib(ywk, monkeypatch):
+    # 裁定 160＝YWK_GPU_MEMORY_LIMIT_MIB（0・空・非数＝制限しない）。
+    monkeypatch.delenv("YWK_GPU_MEMORY_LIMIT_MIB", raising=False)
+    assert ywk._gpu_memory_limit_bytes() is None
+    monkeypatch.setenv("YWK_GPU_MEMORY_LIMIT_MIB", "0")
+    assert ywk._gpu_memory_limit_bytes() is None
+    monkeypatch.setenv("YWK_GPU_MEMORY_LIMIT_MIB", "abc")
+    assert ywk._gpu_memory_limit_bytes() is None
+    monkeypatch.setenv("YWK_GPU_MEMORY_LIMIT_MIB", "6144")
+    assert ywk._gpu_memory_limit_bytes() == 6 * 1024**3
+
+
+def test_gpu_memory_limit_is_applied_or_reported_unavailable(ywk, monkeypatch):
+    # 裁定 160＝GPU が在れば set_per_process_memory_fraction に写り、無ければ「unavailable」と名乗るだけ。
+    import torch
+
+    monkeypatch.setenv("YWK_GPU_MEMORY_LIMIT_MIB", "1024")
+    flags = ywk.apply_allocator_defaults({"model": "cuda:0", "codec": "cuda:0"})
+    if not torch.cuda.is_available():
+        assert flags["gpu_memory_limit"] == "unavailable"
+        assert "gpu_memory_limit_bytes" not in flags
+        return
+    assert flags["gpu_memory_limit"] == "on"
+    assert flags["gpu_memory_limit_bytes"] == 1024**3
+    total = int(torch.cuda.get_device_properties(0).total_memory)
+    assert abs(torch.cuda.get_per_process_memory_fraction(0) - min(1.0, 1024**3 / total)) < 1e-6
+    torch.cuda.set_per_process_memory_fraction(1.0, 0)  # leave the process as we found it
+
+
 def test_allocator_flag_is_skipped_on_cpu(ywk):
     assert ywk.apply_allocator_defaults({"model": "cpu", "codec": "cpu"}) == {}
 

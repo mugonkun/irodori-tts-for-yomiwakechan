@@ -34,7 +34,7 @@ from conftest import DEFAULT_VOICE, JA_FILE_VOICE, JA_VOICE, VOICES, write_voice
 
 import ywk_server
 
-#: 裁定 87 ⑴ の逐語（この並びで・この 10 欄）.
+#: 裁定 87 ⑴ の逐語（この並びで）＋裁定 160 の ``limit``（``gpu_used`` の次）＝11 欄.
 MEMORY_KEYS = [
     "device",
     "allocated",
@@ -43,6 +43,7 @@ MEMORY_KEYS = [
     "gpu_total",
     "gpu_free",
     "gpu_used",
+    "limit",
     "latents",
     "latents_total",
     "sampled_at",
@@ -106,9 +107,23 @@ def bake(voice_id: str, size: int) -> Path:
 
 
 def test_memory_carries_the_ten_fields_of_the_ruling(client):
-    """裁定 87 ⑴ の逐語＝10 欄。健全なときは ``error`` を足さない。"""
+    """裁定 87 ⑴ の逐語＝10 欄＋裁定 160 の ``limit``＝11 欄。健全なときは ``error`` を足さない。"""
     memory = memory_of(client)
     assert list(memory) == MEMORY_KEYS
+
+
+def test_memory_limit_is_null_without_a_setting(client, baseline, monkeypatch):
+    # 裁定 160＝設定「GPU メモリの上限」が無ければ GPU でも null（0 ではない＝「制限しない」を数で偽らない）。
+    fake_gpu(monkeypatch, baseline)
+    monkeypatch.delitem(ywk_server.ALLOCATOR_FLAGS, "gpu_memory_limit_bytes", raising=False)
+    assert memory_of(client)["limit"] is None
+
+
+def test_memory_limit_echoes_the_applied_bytes(client, baseline, monkeypatch):
+    # 裁定 160＝wrapper が起動時に写した上限そのもの（バイト）を返す＝ランチャが帯に線を引く数。CPU では欄ごと null。
+    fake_gpu(monkeypatch, baseline)
+    monkeypatch.setitem(ywk_server.ALLOCATOR_FLAGS, "gpu_memory_limit_bytes", 6 * 1024**3)
+    assert memory_of(client)["limit"] == 6 * 1024**3
 
 
 def test_memory_is_null_on_cpu(client, baseline):

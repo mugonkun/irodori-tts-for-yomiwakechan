@@ -323,10 +323,31 @@ def _warn_if_rocm_torch_is_untagged(torch: Any) -> str | None:
     return line
 
 
-def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, str]:
-    """Stop torch from emptying its own cache behind our back (decisions.md 160).
+def _gpu_memory_limit_bytes() -> int | None:
+    """``YWK_GPU_MEMORY_LIMIT_MIB`` (the launcher's 設定「GPU メモリの上限」, 裁定 160) in bytes.
 
-    PyTorch's MIOpen convolution path calls ``emptyCache()`` after every
+    Unset, empty or ``0`` means *no limit*.  Anything that is not a positive
+    integer is reported once on stderr and treated as *no limit* -- a typo in a
+    hand-edited settings.json must not stop the server.
+    """
+    raw = str(os.environ.get("YWK_GPU_MEMORY_LIMIT_MIB", "") or "").strip()
+    if not raw:
+        return None
+    try:
+        mib = int(raw)
+    except ValueError:
+        sys.stderr.write(f"ywk_server: YWK_GPU_MEMORY_LIMIT_MIB={raw!r} is not an integer; no limit applied\n")
+        return None
+    if mib <= 0:
+        return None
+    return mib * 1024 * 1024
+
+
+def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, Any]:
+    """Stop torch from emptying its own cache behind our back, and apply the
+    optional GPU memory limit (decisions.md 160).
+
+    ⑴ PyTorch's MIOpen convolution path calls ``emptyCache()`` after every
     *first-seen* convolution shape (``aten/src/ATen/native/miopen/Conv_miopen.cpp``,
     ``findAlgorithm``; gated only by ``_cudnn_get_conv_benchmark_empty_cache()``,
     which defaults to True and is **not** tied to ``cudnn.benchmark``).  Every
@@ -351,25 +372,63 @@ def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, str]:
     output, and per-shot latency is unchanged (0.85 / 1.76 / 3.96 s for 3.6 /
     11.5 / 23.5 s of audio against 0.83 / 1.77 / 4.0 s shipped in v2.0.6).
 
+    ⑵ ``YWK_GPU_MEMORY_LIMIT_MIB`` (the launcher's 設定「GPU メモリの上限」・0 or
+    unset = no limit) becomes ``torch.cuda.set_per_process_memory_fraction`` on
+    every cuda device in ``effective`` -- the fraction is limit / that device's
+    ``total_memory``, capped at 1.0.  The launcher pairs it with
+    ``garbage_collection_threshold:0.8`` in the allocator config, which torch
+    honours only once a fraction is set: above 80 % of the limit the allocator
+    frees idle cached blocks before it would fail.  A shot that genuinely needs
+    more than the limit fails with the upstream's OOM error (contract ⑶ 3-3),
+    which is what the settings note warns about.  The limit is echoed as
+    ``/ywk/status.memory.limit`` (bytes) so the launcher can draw it.
+
     Runs after ``resolve_devices_and_precision`` (torch is imported by then) and
     before the upstream import (nothing has touched the allocator yet).  CPU-only
-    runs skip it.  The setter is private API, so it is looked up with ``getattr``:
-    a torch without it keeps the old behaviour and says so in the banner.
+    runs skip everything.  The private setter is looked up with ``getattr``: a
+    torch without it keeps the old behaviour and says so in the banner.
     """
     if not any(str(device).startswith("cuda") for device in effective.values()):
         return {}
     import torch  # noqa: PLC0415 -- already imported by resolve_devices_and_precision
 
+    flags: dict[str, Any] = {}
     setter = getattr(getattr(torch, "_C", None), "_cudnn_set_conv_benchmark_empty_cache", None)
     if setter is None:
-        return {"conv_empty_cache": "unavailable"}
-    try:
-        setter(False)
-    except Exception as exc:  # noqa: BLE001 -- a tuning flag must never stop the server
-        sys.stderr.write(f"ywk_server: could not turn off conv_benchmark_empty_cache: {exc}\n")
-        return {"conv_empty_cache": "error"}
-    return {"conv_empty_cache": "off"}
+        flags["conv_empty_cache"] = "unavailable"
+    else:
+        try:
+            setter(False)
+            flags["conv_empty_cache"] = "off"
+        except Exception as exc:  # noqa: BLE001 -- a tuning flag must never stop the server
+            sys.stderr.write(f"ywk_server: could not turn off conv_benchmark_empty_cache: {exc}\n")
+            flags["conv_empty_cache"] = "error"
 
+    limit = _gpu_memory_limit_bytes()
+    if limit is None:
+        return flags
+    if not torch.cuda.is_available():
+        flags["gpu_memory_limit"] = "unavailable"
+        return flags
+    indices: list[int] = []
+    for device in effective.values():
+        name = str(device)
+        if not name.startswith("cuda"):
+            continue
+        index = int(name.split(":", 1)[1]) if ":" in name else torch.cuda.current_device()
+        if index not in indices:
+            indices.append(index)
+    try:
+        for index in indices:
+            total = int(torch.cuda.get_device_properties(index).total_memory)
+            fraction = min(1.0, limit / total) if total > 0 else 1.0
+            torch.cuda.set_per_process_memory_fraction(fraction, index)
+        flags["gpu_memory_limit"] = "on"
+        flags["gpu_memory_limit_bytes"] = int(limit)
+    except Exception as exc:  # noqa: BLE001 -- ditto: report, do not stop
+        sys.stderr.write(f"ywk_server: could not apply YWK_GPU_MEMORY_LIMIT_MIB: {exc}\n")
+        flags["gpu_memory_limit"] = "error"
+    return flags
 
 apply_env_defaults()
 VARIANT_ENV = apply_variant_defaults()
@@ -1675,6 +1734,7 @@ _MEMORY_EMPTY: dict[str, Any] = {
     "gpu_total": None,
     "gpu_free": None,
     "gpu_used": None,
+    "limit": None,
     "latents": {},
     "latents_total": 0,
 }
@@ -1754,6 +1814,10 @@ def memory_snapshot(device: Any = None, voice_ids: Any = None) -> dict[str, Any]
             snapshot["gpu_total"] = int(total)
             snapshot["gpu_free"] = int(free)
             snapshot["gpu_used"] = int(total) - int(free)
+            # 裁定 160＝設定「GPU メモリの上限」（無ければ null）。allocator 側の値ではなく
+            # 起動時に写した上限そのもの＝ランチャが帯に線を引くための数。
+            limit = ALLOCATOR_FLAGS.get("gpu_memory_limit_bytes")
+            snapshot["limit"] = int(limit) if isinstance(limit, int) and limit > 0 else None
         except Exception as exc:  # noqa: BLE001 -- ditto
             reasons.append(_one_line(exc))
 
@@ -3689,6 +3753,11 @@ def banner() -> str:
     cache_size = os.environ.get("GPU_RESOURCE_CACHE_SIZE")
     if cache_size is not None:
         line += f" gpu_resource_cache={cache_size}"
+    if "gpu_memory_limit" in ALLOCATOR_FLAGS:
+        state = ALLOCATOR_FLAGS["gpu_memory_limit"]
+        limit_bytes = ALLOCATOR_FLAGS.get("gpu_memory_limit_bytes")
+        shown = f"{limit_bytes / 2**30:.1f}GiB" if isinstance(limit_bytes, int) else state
+        line += f" gpu_memory_limit={shown}"
     return line
 
 

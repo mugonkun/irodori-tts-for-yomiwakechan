@@ -408,8 +408,31 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     public string EmptyCacheNote => _draft.EmptyCacheInterval == 0
-        ? "0＝解放しません（既定）。GPU メモリの使用量は 1 セッションで単調に増えます。"
+        ? "0＝合成のたびには解放しません（既定）。GPU メモリに上限を決めたいときは「GPU メモリの上限」を使います。"
         : "この回数ごとに GPU のキャッシュを解放します（合成のたびに少し遅くなります）。";
+
+    /// <summary>GPU メモリの上限（GiB・0＝制限しない・裁定 160＝詳細の 9 行目）。</summary>
+    public int GpuMemoryLimitGiB
+    {
+        get => _draft.GpuMemoryLimitGiB;
+        set
+        {
+            if (_draft.GpuMemoryLimitGiB == value)
+            {
+                return;
+            }
+
+            _draft.GpuMemoryLimitGiB = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(GpuMemoryLimitNote));
+            Touch();
+        }
+    }
+
+    /// <summary>9 行目の註＝0 なら「制限しません」、それ以外は量と代金（長い文が失敗しうる）を告げる。</summary>
+    public string GpuMemoryLimitNote => _draft.GpuMemoryLimitGiB <= 0
+        ? UiStrings.SettingsGpuMemoryLimitNoteOff
+        : string.Format(CultureInfo.InvariantCulture, UiStrings.SettingsGpuMemoryLimitNoteOnFormat, _draft.GpuMemoryLimitGiB);
 
     /// <summary>GPU メモリ欄の常時表示（裁定 67 ⑶）。</summary>
     public bool ShowMemoryPanel
@@ -672,6 +695,14 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
+        // 裁定 160＝GPU メモリの上限は 0（制限しない）か 4〜1024 GiB の整数（JsonSettingsStore.Sanitize と同じ窓）。
+        if (_draft.GpuMemoryLimitGiB is < 0 or > 1024
+            || _draft.GpuMemoryLimitGiB is > 0 and < LauncherSettings.MinGpuMemoryLimitGiB)
+        {
+            Message = UiStrings.SettingsGpuMemoryLimitRange;
+            return;
+        }
+
         if (!VariantChoices.Contains(_draft.Variant, StringComparer.Ordinal))
         {
             Message = UiStrings.SettingsVariantUnsupported;
@@ -843,6 +874,7 @@ public sealed class SettingsViewModel : ObservableObject
         to.WarmupText = from.WarmupText;
         to.PrecomputeOnStart = from.PrecomputeOnStart;
         to.EmptyCacheInterval = from.EmptyCacheInterval;
+        to.GpuMemoryLimitGiB = from.GpuMemoryLimitGiB;
         to.UiScale = from.UiScale;
         to.ReadyTimeoutSeconds = from.ReadyTimeoutSeconds;
         to.AutoStartServer = from.AutoStartServer;

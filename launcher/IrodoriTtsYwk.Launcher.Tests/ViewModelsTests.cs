@@ -1310,6 +1310,43 @@ public sealed class SettingsViewModelTests : IDisposable
     }
 
     [Fact]
+    public void GPUメモリの上限は写しに載り適用で本物へ届く()
+    {
+        // 裁定 160＝0＝制限しない（既定）。〔適用〕で settings.json へ。註は 0 と上限ありで文が変わる。
+        var live = new LauncherSettings { GpuMemoryLimitGiB = 0 };
+        var vm = Create(live, out var store);
+
+        Assert.Contains("0＝制限しません", vm.GpuMemoryLimitNote, StringComparison.Ordinal);
+        vm.GpuMemoryLimitGiB = 6;
+        Assert.True(vm.IsDirty);
+        Assert.Contains("6 GB", vm.GpuMemoryLimitNote, StringComparison.Ordinal);
+        vm.Apply();
+
+        Assert.Equal(6, live.GpuMemoryLimitGiB);
+        Assert.Equal(6, store.Load().GpuMemoryLimitGiB);
+    }
+
+    [Fact]
+    public void GPUメモリの上限の範囲外は適用で断る()
+    {
+        var live = new LauncherSettings { GpuMemoryLimitGiB = 0 };
+        var vm = Create(live, out _);
+
+        vm.GpuMemoryLimitGiB = 5000;
+        vm.Apply();
+
+        Assert.Equal(UiStrings.SettingsGpuMemoryLimitRange, vm.Message);
+        Assert.Equal(0, live.GpuMemoryLimitGiB);
+
+        // 3 GiB では読み込み自体が失敗する（本機の実測）＝1〜3 も断る。
+        vm.GpuMemoryLimitGiB = 3;
+        vm.Apply();
+
+        Assert.Equal(UiStrings.SettingsGpuMemoryLimitRange, vm.Message);
+        Assert.Equal(0, live.GpuMemoryLimitGiB);
+    }
+
+    [Fact]
     public void 取り消しは写しを捨てる()
     {
         var live = new LauncherSettings { EmptyCacheInterval = 0 };

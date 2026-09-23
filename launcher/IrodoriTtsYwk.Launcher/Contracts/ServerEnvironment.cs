@@ -89,6 +89,15 @@ public static class ServerEnvironment
     /// <summary><c>0</c>＝溜め置かない＝hipFree した分はその場で OS へ返る。</summary>
     public const string GpuResourceCacheSizeOff = "0";
 
+    /// <summary>GPU メモリの上限（MiB）＝設定 <c>gpuMemoryLimitGiB</c>×1024。0 のときは載せない（裁定 160）。</summary>
+    public const string GpuMemoryLimitMib = "YWK_GPU_MEMORY_LIMIT_MIB";
+
+    /// <summary>
+    /// 上限があるときだけ allocator に足す＝上限の 8 割を超えたら使っていない塊を先に手放す
+    /// （torch は <c>set_per_process_memory_fraction</c> が入っているときだけこれを見る）。
+    /// </summary>
+    public const string AllocConfGarbageCollection = "garbage_collection_threshold:0.8";
+
     /// <summary><see cref="CudaDeviceOrder"/> に載せる値。</summary>
     public const string PciBusIdOrder = "PCI_BUS_ID";
 
@@ -190,6 +199,16 @@ public static class ServerEnvironment
         else if (RuntimeVariants.UsesGpu(variant))
         {
             env[CudaAllocConf] = AllocConfExpandableSegments;
+        }
+
+        // GPU メモリの上限（裁定 160・設定 gpuMemoryLimitGiB・0＝制限しない）＝MiB で渡し、wrapper が
+        // set_per_process_memory_fraction に写す。allocator には garbage_collection_threshold も足す＝
+        // 上限に当たって失敗する前に、使っていない塊を手放して痩せる。CPU 変種には要らない。
+        if (RuntimeVariants.UsesGpu(variant) && settings.GpuMemoryLimitGiB > 0)
+        {
+            env[GpuMemoryLimitMib] = (settings.GpuMemoryLimitGiB * 1024L).ToString(CultureInfo.InvariantCulture);
+            var allocKey = RuntimeVariants.IsRocm(variant) ? HipAllocConf : CudaAllocConf;
+            env[allocKey] = env[allocKey] + "," + AllocConfGarbageCollection;
         }
 
         // 精度＝既定は device 連動（裁定 7）に任せて<b>載せない</b>。

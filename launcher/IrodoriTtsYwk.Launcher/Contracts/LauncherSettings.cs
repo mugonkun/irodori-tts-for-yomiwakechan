@@ -85,6 +85,19 @@ public sealed class LauncherSettings
     [JsonPropertyName("emptyCacheInterval")]
     public int EmptyCacheInterval { get; set; }
 
+    /// <summary>
+    /// GPU メモリの上限（GiB・<b>0＝制限しない</b>＝既定・裁定 160・2026-09-24）。
+    /// wrapper が <c>YWK_GPU_MEMORY_LIMIT_MIB</c> から torch の <c>set_per_process_memory_fraction</c> に写し、
+    /// allocator には <c>garbage_collection_threshold</c> を足す＝この量を超えて取らず、超えそうなら
+    /// 使っていない塊を先に手放す。長い文はこの量を超えると失敗しうるので、8 GB 級の GPU で
+    /// 配信ソフトやゲームと同居させたい人だけが触る欄である（詳細の 9 行目）。
+    /// </summary>
+    [JsonPropertyName("gpuMemoryLimitGiB")]
+    public int GpuMemoryLimitGiB { get; set; }
+
+    /// <summary>上限を決めるときの最小値（GiB）。3 GiB では読み込み自体が失敗する（暖機のピーク 3.09 GiB・裁定 160）。</summary>
+    public const int MinGpuMemoryLimitGiB = 4;
+
     /// <summary>UI の拡大率。</summary>
     [JsonPropertyName("uiScale")]
     public double UiScale { get; set; } = 1.0;
@@ -342,6 +355,7 @@ public sealed class LauncherSettings
         WarmupText = WarmupText,
         PrecomputeOnStart = PrecomputeOnStart,
         EmptyCacheInterval = EmptyCacheInterval,
+        GpuMemoryLimitGiB = GpuMemoryLimitGiB,
         UiScale = UiScale,
         VoiceOrder = [.. VoiceOrder],
         ReadyTimeoutSeconds = ReadyTimeoutSeconds,

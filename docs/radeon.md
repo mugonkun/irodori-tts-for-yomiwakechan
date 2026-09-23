@@ -398,6 +398,33 @@ wrapper の env が効いていることの証明）。
   "セッション累積" では桁が違う**。研究段の 3.03 GB（`40` §1）は torch 側の射ごとのピークで、
   上の値とは**測っている物が違う**。両方を並べて読むこと。
 
+**〔v2.0.7・裁定 160（2026-09-24）＝原因と是正〕**＝上の「単調に増える」は**解けた**。
+
+- **原因は 2 段**（本機で実測・私設の 2 個体目を 18089 で起こして司令官の個体には触れずに採った）＝
+  ⑴ PyTorch 2.13 の MIOpen 畳み込み経路（`aten/src/ATen/native/miopen/Conv_miopen.cpp` の `findAlgorithm`）は
+  **初見の形状のたびに `emptyCache()` を呼ぶ**（`_cudnn_get_conv_benchmark_empty_cache()` の既定 True だけで守られ、
+  `cudnn.benchmark` とは無関係）。出力の長さは 1 フレーム 40 ms 刻みで新しい形状になり、サンプリングは確率的なので
+  同じ文でも踏む。`torch.cuda.memory_stats` の `num_device_free` は初見の長さの射だけで増え、`num_alloc_retries` は終始 0。
+  ⑵ Windows の ROCm ランタイム（`amdhip64_7.dll`・HIP 7.15）は **hipFree された塊をプロセス内に溜め置き、同じ大きさの
+  要求にしか使い回さない**（上限は本機で ≈10 GiB＝1 GiB×48 本を確保→全部解放しても OS 側は 10.2 GiB 残る）。
+  torch が塊を手放すたびに新しい大きさは OS から取るので、OS 側の占有は増える一方になる。
+  `IRODORI_EMPTY_CACHE_INTERVAL=10` は解放を増やすので**悪化させる**側＝`0` は原因ではなかった（§7-8 ⑶ の材料と整合）。
+- **数**（v2.0.6 の私設個体・24 射・23.5 s 出力を含む）＝暖機直後 **7.0 GiB** → 初めての 15 s／23 s 出力で **+2.0／+2.5 GiB**
+  → 13.8 GiB。同時刻の torch `reserved` は 2.2〜6.4 GiB。司令官の 30 時間走った個体は 14.57 GiB／`reserved` 2.98 GiB。
+- **是正（v2.0.7）**＝⑴ wrapper が起動時に `torch._C._cudnn_set_conv_benchmark_empty_cache(False)`（`apply_allocator_defaults`・
+  banner に `conv_empty_cache=off`）⑵ ランチャが rocm 変種に `GPU_RESOURCE_CACHE_SIZE=0`（溜め置きを止める＝hipFree は即 OS へ）
+  ⑶ GPU 変種すべてに `PYTORCH_{HIP,CUDA}_ALLOC_CONF=expandable_segments:True`（断片化で `reserved` が太るのを止める）。
+  **実測＝OS 側 4.25 → 4.69 GiB で平ら・所要は不変**（3.6／11.5／23.5 s 出力で 0.85／1.76／3.96 s＝v2.0.6 の 0.83／1.77／4.0 s）。
+  比較した他の組＝フラグだけ（7.5 GiB で平ら・断片化が残る）・`GPU_RESOURCE_CACHE_SIZE=0` だけ（2.7〜4.8 GiB を往復・長文で +0.3〜0.8 s）・
+  `torch.backends.miopen.immediate=True`（平らだが毎射 +0.5 s＝不採用）・発話ごとの解放 `interval=1`（待機 2.6 GiB・毎射 +0.1〜0.7 s＝既定にしない・設定は残す）。
+- **「GPU メモリの上限」**（設定 › 詳細の 9 行目・`YWK_GPU_MEMORY_LIMIT_MIB` → `set_per_process_memory_fraction`＋`garbage_collection_threshold:0.8`）＝
+  4 GiB で本機の実測 OS 側 4.1〜4.6 GiB・23.5 s 出力も通る（最大使用 3.85 GiB）。**3 GiB では読み込み自体が失敗する**
+  （暖機のピーク 3.09 GiB＝`runtime load failed: OutOfMemoryError … 3.00 GiB allowed`）＝設定の下限は 4（1〜3 は 4 に上げる・〔適用〕は断る）。
+- **RTX（CUDA）**は cuDNN v8 経路が `cudnn.benchmark=True` のときしか `emptyCache()` を呼ばず、CUDA は解放分をすぐ OS へ返すので
+  ⑵ の形は出ない。出るのは torch の断片化による 7 GiB 前後までの緩やかな伸び（利用者の報告「8 時間級の配信で 8 GB の 99 %」と整合）＝
+  ⑶ が効く見込み。**RTX 機では未計測**。
+- 生データと台本＝席の scratchpad（`ab_report.txt`・`vram_probe.py`・`ab_run.py`・`hip_alloc_test.py`・`hip_ceiling.py`・`retry_probe.py`）。
+
 ### 7-8 参照潜在キャッシュを焼いた後の実射（`decisions.md` 65・便 C（2）・2026-09-05 04:00〜04:08）
 
 > 台本＝`probe/rocm-latent-probe.ps1`＋`probe/rocm-warmup-probe.py`（`precompute`／`voices` の小口を追加）。

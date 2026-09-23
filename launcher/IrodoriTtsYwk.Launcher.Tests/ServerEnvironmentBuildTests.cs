@@ -112,6 +112,34 @@ public sealed class ServerEnvironmentBuildTests
         Assert.False(env.ContainsKey(absentKey));
     }
 
+    [Theory]
+    [InlineData(RuntimeVariants.RocmGfx1151, ServerEnvironment.HipAllocConf)]
+    [InlineData(RuntimeVariants.Cu130, ServerEnvironment.CudaAllocConf)]
+    [InlineData(RuntimeVariants.Cu126, ServerEnvironment.CudaAllocConf)]
+    public void GPUメモリの上限はMiBで渡しallocatorにgarbage_collectionを足す(string variant, string allocKey)
+    {
+        // 裁定 160＝設定 gpuMemoryLimitGiB（0＝制限しない）。0 なら何も載せず、allocator の設定も素のまま。
+        var settings = Settings(variant);
+        Assert.Equal(0, settings.GpuMemoryLimitGiB);
+        var off = ServerEnvironment.Build(settings, Paths(), gpuIndex: 0);
+        Assert.False(off.ContainsKey(ServerEnvironment.GpuMemoryLimitMib));
+        Assert.Equal(ServerEnvironment.AllocConfExpandableSegments, off[allocKey]);
+
+        settings.GpuMemoryLimitGiB = 6;
+        var on = ServerEnvironment.Build(settings, Paths(), gpuIndex: 0);
+        Assert.Equal("6144", on[ServerEnvironment.GpuMemoryLimitMib]);
+        Assert.Equal("expandable_segments:True,garbage_collection_threshold:0.8", on[allocKey]);
+    }
+
+    [Fact]
+    public void CPU変種にはGPUメモリの上限を載せない()
+    {
+        var settings = Settings(RuntimeVariants.Cpu);
+        settings.GpuMemoryLimitGiB = 6;
+        var env = ServerEnvironment.Build(settings, Paths(), gpuIndex: null);
+        Assert.False(env.ContainsKey(ServerEnvironment.GpuMemoryLimitMib));
+    }
+
     [Fact]
     public void CPU変種にはallocatorの設定を載せない()
     {

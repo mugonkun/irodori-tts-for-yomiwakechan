@@ -335,6 +335,23 @@ public static class UiStrings
     /// </summary>
     public const string SettingsDifferentialUpdate = "更新のとき、新しくなった分だけ取り直す";
 
+    /// <summary>詳細 9 行目＝GPU メモリの上限（裁定 160・2026-09-24）。</summary>
+    public const string SettingsGpuMemoryLimitLabel = "GPU メモリの上限";
+
+    /// <summary>詳細 9 行目の単位（欄の右）。</summary>
+    public const string SettingsGpuMemoryLimitUnit = "GB（0＝制限しない）";
+
+    /// <summary>詳細 9 行目の註（0 のとき）。</summary>
+    public const string SettingsGpuMemoryLimitNoteOff =
+        "0＝制限しません（既定）。GPU メモリが 8 GB で、配信ソフトやゲームと同時に使うときだけ数字を入れます（目安は 4〜5・最小は 4）。";
+
+    /// <summary>詳細 9 行目の註（上限ありのとき・{0}＝GB＝設定の GiB をそのまま出す）。</summary>
+    public const string SettingsGpuMemoryLimitNoteOnFormat =
+        "このアプリは GPU メモリを {0} GB までしか取りません。長い文（20 秒を超える読み上げ）はこの量を超えて失敗することがあります。次に読み上げの準備をしたときから効きます。";
+
+    /// <summary>詳細 9 行目の範囲外（〔適用〕が断る 1 行）。</summary>
+    public const string SettingsGpuMemoryLimitRange = "GPU メモリの上限は 0（制限しない）か、4〜1024 の整数（GB）で入れてください。3 以下では読み上げの準備ができません。";
+
     /// <summary>その註（切ると何が起きるかを 1 行で言う）。</summary>
     public const string SettingsDifferentialUpdateNote =
         "切ると、新しい版に上げるたびに一式を丸ごとダウンロードし直します。";

@@ -51,6 +51,7 @@ public sealed class SettingsRoundTripTests : IDisposable
             WarmupText = "暖機です。",
             PrecomputeOnStart = true,
             EmptyCacheInterval = 5,
+            GpuMemoryLimitGiB = 6,
             UiScale = 1.25,
             VoiceOrder = ["デフォルト", "つくよみちゃん"],
             ReadyTimeoutSeconds = 180,
@@ -82,6 +83,7 @@ public sealed class SettingsRoundTripTests : IDisposable
         Assert.Equal(written.WarmupText, read.WarmupText);
         Assert.True(read.PrecomputeOnStart);
         Assert.Equal(written.EmptyCacheInterval, read.EmptyCacheInterval);
+        Assert.Equal(written.GpuMemoryLimitGiB, read.GpuMemoryLimitGiB); // 裁定 160
         Assert.Equal(written.UiScale, read.UiScale);
         Assert.Equal(written.VoiceOrder, read.VoiceOrder);
         Assert.Equal(written.ReadyTimeoutSeconds, read.ReadyTimeoutSeconds);
@@ -154,6 +156,7 @@ public sealed class SettingsRoundTripTests : IDisposable
             UiScale = 99,
             LastTestNumSteps = -1,
             EmptyCacheInterval = -5,
+            GpuMemoryLimitGiB = -3,
             ReadyTimeoutSeconds = -1,
         });
 
@@ -162,6 +165,10 @@ public sealed class SettingsRoundTripTests : IDisposable
         Assert.Equal(1.0, settings.UiScale);
         Assert.Equal(40, settings.LastTestNumSteps);
         Assert.Equal(0, settings.EmptyCacheInterval);
+        Assert.Equal(0, settings.GpuMemoryLimitGiB); // 裁定 160＝範囲外は「制限しない」に戻す
+        Assert.Equal(LauncherSettings.MinGpuMemoryLimitGiB,
+            JsonSettingsStore.Sanitize(new LauncherSettings { GpuMemoryLimitGiB = 2 }).GpuMemoryLimitGiB); // 1〜3 は 4 に上げる
+        Assert.Equal(0, JsonSettingsStore.Sanitize(new LauncherSettings { GpuMemoryLimitGiB = 5000 }).GpuMemoryLimitGiB);
         Assert.Equal(0, settings.ReadyTimeoutSeconds);
     }
 
