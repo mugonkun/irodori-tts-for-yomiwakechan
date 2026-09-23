@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text.Json;
 using IrodoriTtsYwk.Launcher.Contracts;
 using IrodoriTtsYwk.Launcher.ViewModels;
@@ -117,6 +118,11 @@ public static class AppDistributionContract
             {
                 return (null, "version の欠落");
             }
+            // 検分の是正 3＝version と note は画面（釦の札・状態の 1 行）にそのまま出るので、形と長さを見る。
+            if (!IsVersionShape(version))
+            {
+                return (null, "version の綴りが版の形ではない");
+            }
 
             var key = FlavorKey(flavor);
             if (!root.TryGetProperty("installers", out var installers)
@@ -154,7 +160,7 @@ public static class AppDistributionContract
                     InstallerSizeBytes = ReadPositiveLong(installer, "sizeBytes"),
                     BuiltAt = ReadString(root, "builtAt"),
                     PageUrl = ReadString(root, "pageUrl"),
-                    Note = ReadString(root, "note"),
+                    Note = CleanNote(ReadString(root, "note")),
                 },
                 null);
         }
@@ -200,6 +206,28 @@ public static class AppDistributionContract
         return version == SchemaVersion
             ? null
             : "知らない schema の版数 v=" + version.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>版の綴り＝<c>v</c> 始まりの英数字・<c>.</c>・<c>-</c>・<c>+</c>、32 字以内（検分の是正 3）。</summary>
+    public static bool IsVersionShape(string? version) =>
+        !string.IsNullOrEmpty(version) && version.Length <= 32 && version[0] == 'v'
+        && version.Skip(1).All(static c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '+');
+
+    /// <summary>注記＝制御文字を落として 200 字まで（画面の 1 行に出る文・検分の是正 3）。空なら null。</summary>
+    public static string? CleanNote(string? note)
+    {
+        if (string.IsNullOrWhiteSpace(note))
+        {
+            return null;
+        }
+
+        var cleaned = new string(note.Where(static c => !char.IsControl(c)).ToArray()).Trim();
+        if (cleaned.Length == 0)
+        {
+            return null;
+        }
+
+        return cleaned.Length <= 200 ? cleaned : cleaned[..200];
     }
 
     private static string? ReadString(JsonElement element, string name)

@@ -422,7 +422,7 @@ public sealed class SettingsViewModel : ObservableObject
         ? "0＝合成のたびには解放しません（既定）。GPU メモリに上限を決めたいときは「GPU メモリの上限」を使います。"
         : "この回数ごとに GPU のキャッシュを解放します（合成のたびに少し遅くなります）。";
 
-    /// <summary>GPU メモリの上限（GiB・0＝制限しない・裁定 160＝詳細の 9 行目）。</summary>
+    /// <summary>GPU メモリの上限（GiB・0＝制限しない・裁定 160＝詳細の 7 行目）。</summary>
     public int GpuMemoryLimitGiB
     {
         get => _draft.GpuMemoryLimitGiB;

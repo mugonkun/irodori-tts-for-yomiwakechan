@@ -68,7 +68,7 @@
            "name":"…|null","uuid":"…|null","pci_bus_id":"…|null","hip":"…|null","gcn_arch":"…|null"},
  "torch":{"version":"2.13.0+rocm10.0.0","cuda":"…|null","hip":"…|null"},
  "voices":{"count":13,"dir":"<末尾 1 段のみ>","error":"…|null","inbox":0},
- "memory":{…§4-4…},
+ "memory":{…契約 ⑹ 6-1（v2.0.7 で `"limit":int|null` が末尾に増えた）…},
  "requests":{"in_flight":0},
  "warmup":{…§5-2…},
  "precompute":{…§5-3…}}
@@ -79,6 +79,10 @@
 受け箱を片付けるための欄で、**本体は読まなくてよい**（渡した 1 件の今は
 `GET /ywk/voices/import/{id}` で読む）。**欄が無い個体（v2.0.6 以前）は 0 と読む**。
 **欄の追加なので `schema` は 1 のまま**（契約 ⑻）。
+
+**`memory.limit` も v2.0.7 が足した欄である**（契約 ⑹ 6-1）＝配布版の設定「GPU メモリの上限」を wrapper が写した
+値（バイト）。**上限が無ければ `null`**（0 ではない）で、欄が無い個体（v2.0.6 以前）も「上限なし」と読む。
+**本体は読まなくてよい**（診断と道具のための欄）。`schema` は 1 のまま。
 
 **`requests` は段 D（v2.0）が足した欄である**（是正・段 G・medium 25＝便 F の申し送りが
 14 欄のまま止まっていた）＝`requests.in_flight` は**本物の `POST /v1/audio/speech` の走行数**で、

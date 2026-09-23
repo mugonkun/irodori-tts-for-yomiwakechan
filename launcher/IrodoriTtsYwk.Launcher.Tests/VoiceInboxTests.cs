@@ -122,6 +122,72 @@ public sealed class VoiceInboxTests : IDisposable
     // ---- 話者になる回 -------------------------------------------------------
 
     [Fact]
+    public void 起動時の拾い直しはregisteringをqueuedに戻す()
+    {
+        // 検分の是正 3＝registering は誰も拾わない終点だった（件数が永久に正のまま・2 秒ごとに空走）。
+        var store = NewStore();
+        var inbox = NewInbox(store);
+        var id = Drop("途中で落ちた声");
+        SetState(inbox, id, "registering");
+        Assert.Empty(inbox.ListQueued());
+
+        Assert.Equal(1, inbox.Reclaim());
+
+        Assert.Equal("queued", Sidecar(id)["state"].GetString());
+        Assert.True(Assert.Single(inbox.ProcessAll()).Ok);
+        Assert.Equal(0, inbox.Reclaim());
+    }
+
+    [Fact]
+    public void 音声の無いregisteringは拾い直しでfailedになる()
+    {
+        var store = NewStore();
+        var inbox = NewInbox(store);
+        var id = Drop("音声の消えた声");
+        SetState(inbox, id, "registering");
+        foreach (var file in Directory.GetFiles(inbox.InboxDir, id + ".*"))
+        {
+            if (!file.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                File.Delete(file);
+            }
+        }
+
+        Assert.Equal(1, inbox.Reclaim());
+
+        Assert.Equal("failed", Sidecar(id)["state"].GetString());
+        Assert.Equal(0, inbox.PendingCount());
+    }
+
+    [Fact]
+    public void sidecarの無い古い音声は掃除で消える()
+    {
+        // 検分の是正 3＝sidecar が書けなかった回の音声と半端な .tmp は、古ければ Sweep が拾う。
+        var store = NewStore();
+        var inbox = NewInbox(store);
+        Directory.CreateDirectory(inbox.InboxDir);
+        var orphan = Path.Combine(inbox.InboxDir, "0123456789abcdef01234567.wav");
+        File.WriteAllBytes(orphan, new byte[16]);
+        File.SetLastWriteTimeUtc(orphan, DateTime.UtcNow.AddDays(-30));
+        var fresh = Path.Combine(inbox.InboxDir, "fedcba9876543210fedcba98.tmp");
+        File.WriteAllBytes(fresh, new byte[16]);
+
+        var swept = inbox.Sweep(VoiceInbox.KeepFinished, DateTimeOffset.UtcNow);
+
+        Assert.Equal(1, swept);
+        Assert.False(File.Exists(orphan));
+        Assert.True(File.Exists(fresh));
+    }
+
+    private static void SetState(VoiceInbox inbox, string id, string state)
+    {
+        var path = Path.Combine(inbox.InboxDir, id + ".json");
+        var map = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(File.ReadAllText(path, Encoding.UTF8))!;
+        map["state"] = JsonSerializer.SerializeToElement(state);
+        File.WriteAllText(path, JsonSerializer.Serialize(map), Encoding.UTF8);
+    }
+
+    [Fact]
     public void 受け箱の1件が画面の追加と同じ路で話者になる()
     {
         var store = NewStore();
@@ -577,5 +643,7 @@ public sealed class VoiceInboxTests : IDisposable
         }
 
         public int Sweep(TimeSpan keep, DateTimeOffset now) => 0;
+
+        public int Reclaim() => 0;
     }
 }

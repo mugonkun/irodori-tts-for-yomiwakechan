@@ -162,7 +162,8 @@ def test_gpu_memory_limit_is_applied_or_reported_unavailable(ywk, monkeypatch):
     assert flags["gpu_memory_limit"] == "on"
     assert flags["gpu_memory_limit_bytes"] == 1024**3
     total = int(torch.cuda.get_device_properties(0).total_memory)
-    assert abs(torch.cuda.get_per_process_memory_fraction(0) - min(1.0, 1024**3 / total)) < 1e-6
+    assert abs(torch.cuda.get_per_process_memory_fraction(0) - min(0.99, 1024**3 / total)) < 1e-6  # 1.0 は torch では「上限なし」
+    assert flags["allocator_fraction"] == min(0.99, 1024**3 / total)
     torch.cuda.set_per_process_memory_fraction(1.0, 0)  # leave the process as we found it
 
 

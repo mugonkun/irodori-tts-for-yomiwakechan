@@ -85,7 +85,8 @@ public static class ServerEnvironment
 
     /// <summary>
     /// RTX（CUDA・torch 2.10）の既定＝<c>garbage_collection_threshold:0.6</c>＝GPU メモリの 6 割を超えたら使っていない塊を
-    /// 手放す（wrapper が <c>set_per_process_memory_fraction(1.0)</c> で有効にする）。Windows の torch 2.10 は
+    /// 手放す（wrapper が <c>set_per_process_memory_fraction(0.99)</c> で有効にする＝1.0 は torch では「上限なし」で
+    /// 収集が止まる〔検分の是正 3〕）。Windows の torch 2.10 は
     /// expandable_segments を受け付けない（裁定 160・検分の是正）ので、断片化の伸びはこちらで頭打ちにする。
     /// </summary>
     public const string AllocConfCudaDefault = "garbage_collection_threshold:0.6";
@@ -196,9 +197,11 @@ public static class ServerEnvironment
         //    塊で reserved が太り続けるのを止める（本機の実測＝7.1 GiB → 4.3 GiB・所要不変）。
         // ⑶ RTX（CUDA・torch 2.10）＝Windows では expandable_segments を受け付けない（PYTORCH_C10_DRIVER_API_SUPPORTED が
         //    非 Windows 限定＝警告 1 行を出して無視する）ので載せない。代わりに garbage_collection_threshold:0.6＝
-        //    GPU メモリの 6 割を超えたら使っていない塊を手放す（wrapper が set_per_process_memory_fraction(1.0) で有効化）。
+        //    GPU メモリの 6 割を超えたら使っていない塊を手放す（wrapper が set_per_process_memory_fraction(0.99) で有効化＝
+        //    1.0 は torch では「上限なし」で収集が止まる〔検分の是正 3〕）。
         //    8 GB で 8 時間級の配信の「99 %」を頭打ちにする見込み＝RTX 機では未計測。CPU 変種には要らない。
-        // ⑷ 上限（gpuMemoryLimitGiB・0＝制限しない）が在れば MiB で渡し、閾値を 0.8（上限比）に上げる。
+        // ⑷ 上限（gpuMemoryLimitGiB・0＝制限しない）が在れば MiB で渡し、閾値を 0.8（上限比）に上げる。閾値が効くのは
+        //    CUDA の道だけ＝ROCm の expandable segments は収集の対象外で、上限は塊の unmap と OOM で守られる。
         if (RuntimeVariants.UsesGpu(variant))
         {
             var allocConf = RuntimeVariants.IsRocm(variant) ? AllocConfExpandableSegments : AllocConfCudaDefault;

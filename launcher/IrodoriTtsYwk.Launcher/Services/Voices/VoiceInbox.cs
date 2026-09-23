@@ -51,6 +51,13 @@ public interface IVoiceInbox
     /// 済んだ記録（<c>done</c>／<c>failed</c>）のうち古い物を捨てる。戻り＝捨てた件数。
     /// </summary>
     int Sweep(TimeSpan keep, DateTimeOffset now);
+
+    /// <summary>
+    /// 前回の途中終い（<c>registering</c> のまま残った記録）を拾い直す＝起動時に 1 度だけ・<see cref="Sweep"/> より先。
+    /// 音声が残っていれば <c>queued</c> に戻して次の標本で登録し直し、無ければ <c>failed</c> にする
+    /// （検分の是正 3＝<c>registering</c> は誰も拾わない終点で、受け箱の件数が永久に正のままだった）。戻り＝拾った件数。
+    /// </summary>
+    int Reclaim();
 }
 
 /// <summary>受け箱の 1 件（sidecar の写し）。</summary>
@@ -242,7 +249,67 @@ public sealed class VoiceInbox : IVoiceInbox
             }
         }
 
+        // 検分の是正 3＝sidecar の無い音声（sidecar の書き込みに失敗した回・半端な .tmp）も古ければ捨てる。
+        if (Directory.Exists(InboxDir))
+        {
+            var known = new HashSet<string>(ReadAll().Select(static item => item.Id), StringComparer.Ordinal);
+            foreach (var path in Directory.EnumerateFiles(InboxDir))
+            {
+                var name = Path.GetFileName(path);
+                if (name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || known.Contains(name.Split('.')[0]))
+                {
+                    continue;
+                }
+
+                DateTimeOffset written;
+                try
+                {
+                    written = File.GetLastWriteTimeUtc(path);
+                }
+                catch (IOException)
+                {
+                    continue;
+                }
+
+                if (now - written < keep)
+                {
+                    continue;
+                }
+
+                if (TryDelete(path))
+                {
+                    swept++;
+                }
+            }
+        }
+
         return swept;
+    }
+
+    /// <inheritdoc/>
+    public int Reclaim()
+    {
+        var reclaimed = 0;
+        foreach (var item in ReadAll())
+        {
+            if (item.State != StateRegistering)
+            {
+                continue;
+            }
+
+            if (File.Exists(AudioPath(item)))
+            {
+                Advance(item, StateQueued, null);
+            }
+            else
+            {
+                Advance(item, StateFailed, UiStrings.VoiceIntakeNoAudio);
+            }
+
+            reclaimed++;
+        }
+
+        return reclaimed;
     }
 
     /// <summary>受け箱の音声の路（<c>&lt;inbox&gt;\&lt;id&gt;.&lt;拡張子&gt;</c>）。</summary>

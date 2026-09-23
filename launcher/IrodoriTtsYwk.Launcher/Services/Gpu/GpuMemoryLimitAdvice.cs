@@ -160,9 +160,12 @@ public static class GpuMemoryLimitAdvice
         var recommended = Recommend(dedicatedBytes, variant);
         if (recommended <= 0)
         {
+            // 検分の是正 3＝写しが 0 でないときは「0 のまま」ではなく「0 に戻せます」と言う（釦が生きている状態）。
             return string.Format(
                 CultureInfo.InvariantCulture,
-                ViewModels.UiStrings.SettingsGpuMemoryLimitAdviceNoneFormat,
+                currentGiB == 0
+                    ? ViewModels.UiStrings.SettingsGpuMemoryLimitAdviceNoneFormat
+                    : ViewModels.UiStrings.SettingsGpuMemoryLimitAdviceNoneResetFormat,
                 gigabytes);
         }
 

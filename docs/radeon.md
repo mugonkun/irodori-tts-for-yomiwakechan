@@ -425,8 +425,9 @@ wrapper の env が効いていることの証明）。
   **検分の是正（2026-09-24）＝RTX 版が pin する torch 2.10 は Windows で `expandable_segments` を受け付けない**
   （`PYTORCH_C10_DRIVER_API_SUPPORTED` が非 Windows 限定＝警告 1 行を出して無視・torch 2.13 が ROCm≥7 の枝を足したので Radeon だけ使える）。
   そこで CUDA 変種は `garbage_collection_threshold:0.6`（GPU メモリの 6 割を超えたら使っていない塊を手放す）を両方の名
-  （`PYTORCH_CUDA_ALLOC_CONF`／`PYTORCH_HIP_ALLOC_CONF`）に載せ、wrapper が `set_per_process_memory_fraction(1.0)` で
-  収集を有効にする（torch は fraction が入っているときだけ収集する）。**RTX 3090（24 GB）で実測**（裁定 160-2／160-3）＝主因の伸びは
+  （`PYTORCH_CUDA_ALLOC_CONF`／`PYTORCH_HIP_ALLOC_CONF`）に載せ、wrapper が `set_per_process_memory_fraction(0.99)` で
+  収集を有効にする（torch は fraction が入っているときだけ収集する。**最終検分の是正（裁定 160-4）＝1.0 ちょうどは上限を外す扱いで収集も止まる**
+  ので 0.99＝24 GB 板で −246 MiB・8 GB 板で −82 MiB の名目上の上限。上限ありのときは `min(0.99, 上限/全量)`）。**RTX 3090（24 GB）で実測**（裁定 160-2／160-3）＝主因の伸びは
   1 周目で止まり（reserved 8,256 MiB で頭打ち）、pool を 2 本に絞った後は 240 射で `allocated` ±0・OS 側 8,566 MiB 不動。8 GB 板は未計測。
 - **導入済みの v2.0.7 で再確認**（2026-09-24・本機・司令官の許可で v2.0.6 の個体を落として無人導入し、ランチャから起こした個体 pid 49104 に API で 12 射×2 周）＝
   暖機直後 **4,246 MiB** → 1 周目（初めての 16.9 s／24.2 s 出力を含む）で **4,714 MiB** → 2 周目は **+0**（torch `reserved` 4,290 MiB で固定）。

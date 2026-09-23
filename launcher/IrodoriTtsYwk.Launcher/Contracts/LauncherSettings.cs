@@ -90,7 +90,7 @@ public sealed class LauncherSettings
     /// wrapper が <c>YWK_GPU_MEMORY_LIMIT_MIB</c> から torch の <c>set_per_process_memory_fraction</c> に写し、
     /// allocator には <c>garbage_collection_threshold</c> を足す＝この量を超えて取らず、超えそうなら
     /// 使っていない塊を先に手放す。長い文はこの量を超えると失敗しうるので、8 GB 級の GPU で
-    /// 配信ソフトやゲームと同居させたい人だけが触る欄である（詳細の 9 行目）。
+    /// 配信ソフトやゲームと同居させたい人だけが触る欄である（詳細の 7 行目）。
     /// </summary>
     [JsonPropertyName("gpuMemoryLimitGiB")]
     public int GpuMemoryLimitGiB { get; set; }

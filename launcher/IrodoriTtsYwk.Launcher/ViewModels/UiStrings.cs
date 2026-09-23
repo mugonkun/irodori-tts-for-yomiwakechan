@@ -335,25 +335,25 @@ public static class UiStrings
     /// </summary>
     public const string SettingsDifferentialUpdate = "更新のとき、新しくなった分だけ取り直す";
 
-    /// <summary>詳細 9 行目＝GPU メモリの上限（裁定 160・2026-09-24）。</summary>
+    /// <summary>詳細 7 行目＝GPU メモリの上限（裁定 160・2026-09-24）。</summary>
     public const string SettingsGpuMemoryLimitLabel = "GPU メモリの上限";
 
-    /// <summary>詳細 9 行目の単位（欄の右）。</summary>
+    /// <summary>詳細 7 行目の単位（欄の右）。</summary>
     public const string SettingsGpuMemoryLimitUnit = "GB（0＝制限しない）";
 
-    /// <summary>詳細 9 行目の註（0 のとき）。</summary>
+    /// <summary>詳細 7 行目の註（0 のとき）。</summary>
     public const string SettingsGpuMemoryLimitNoteOff =
         "0＝制限しません（既定）。GPU メモリが 8 GB で、配信ソフトやゲームと同時に使うときだけ数字を入れます（目安は 4〜5・最小は 4）。";
 
-    /// <summary>詳細 9 行目の註（上限ありのとき・{0}＝GB＝設定の GiB をそのまま出す）。</summary>
+    /// <summary>詳細 7 行目の註（上限ありのとき・{0}＝GB＝設定の GiB をそのまま出す）。</summary>
     public const string SettingsGpuMemoryLimitNoteOnFormat =
         "このアプリは GPU メモリを {0} GB までしか取りません。長い文（20 秒を超える読み上げ）はこの量を超えて失敗することがあります。次に読み上げの準備をしたときから効きます。";
 
-    /// <summary>詳細 9 行目の範囲外（〔適用〕が断る 1 行）。</summary>
+    /// <summary>詳細 7 行目の範囲外（〔適用〕が断る 1 行）。</summary>
     public const string SettingsGpuMemoryLimitRange = "GPU メモリの上限は 0（制限しない）か、4〜1024 の整数（GB）で入れてください。3 以下では読み上げの準備ができません。";
 
     /// <summary>
-    /// 詳細 9 行目のおすすめ（裁定 160＝司令官の指示 2026-09-24「再スキャンで最適な占有メモリを提示」）。
+    /// 詳細 7 行目のおすすめ（裁定 160＝司令官の指示 2026-09-24「再スキャンで最適な占有メモリを提示」）。
     /// <c>{0}</c>＝選んでいる GPU の専用メモリ（GB）・<c>{1}</c>＝おすすめの上限（GB）。
     /// </summary>
     public const string SettingsGpuMemoryLimitAdviceFormat = "この GPU（{0} GB）のおすすめは {1} GB です。";
@@ -364,6 +364,9 @@ public static class UiStrings
 
     /// <summary>同・上限が要らない GPU のとき（<c>{0}</c>＝専用メモリ GB）。</summary>
     public const string SettingsGpuMemoryLimitAdviceNoneFormat = "この GPU（{0} GB）では上限は要りません（0 のまま）。";
+
+    /// <summary>おすすめが 0 なのに写しの値が 0 でないとき（〔おすすめの値にする〕で 0 に戻せる・検分の是正 3）。</summary>
+    public const string SettingsGpuMemoryLimitAdviceNoneResetFormat = "この GPU（{0} GB）では上限は要りません（0 に戻せます）。";
 
     /// <summary>同・おすすめの値を写しに入れる釦（押しても〔適用〕までは本物に届かない）。</summary>
     public const string SettingsGpuMemoryLimitAdviceButton = "おすすめの値にする";
@@ -392,7 +395,7 @@ public static class UiStrings
         "ダウンロードのときに使った一時ファイルだけを消します。"
         + "消しても、もう一度ダウンロードすることにはなりません。";
 
-    /// <summary>詳細 9 行目＝記録。</summary>
+    /// <summary>詳細 7 行目＝記録。</summary>
     public const string SettingsLogLabel = "記録";
 
     /// <summary>詳細 10 行目＝適用の前の 1 行。</summary>

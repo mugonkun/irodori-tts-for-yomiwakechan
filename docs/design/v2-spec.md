@@ -437,7 +437,7 @@
 | 3 | 声のファイルの場所（1 行＋「フォルダを開く」） | `SettingsVoicesDirText` |
 | 4 | ログを開く | `SettingsOpenLogButton`（**新設**・帯と同じ動き） |
 
-**「詳細（上級者向け）」の中**（新 id `SettingsAdvancedExpander`）＝**8 行**・1 画面・12 行以内（憲章 原則 7）。
+**「詳細（上級者向け）」の中**（新 id `SettingsAdvancedExpander`）＝**9 行**〔v2.0.7・裁定 160 で 7 行目「GPU メモリの上限」が入った〕・1 画面・12 行以内（憲章 原則 7）。
 **入らない物は、移さずに消す。**（原則 7 の物差しは「詳細」1 枚に掛かる＝設定の詳細も同じ錠で数える。
 `v2-copy.md` §4 と**同じ表**である。片方だけ直さないこと。）
 
@@ -461,8 +461,9 @@
 | 4 | **声の下ごしらえ** | 声を追加したときに、下ごしらえしておく（次から少し速くなります） | `SettingsPrecomputeCheck`・`SettingsPrecomputeNoteText` |
 | 5 | **読み上げの動作** | 〔いったん止める〕〔もう一度動かす〕〔はじめの準備をやり直す〕（**id は 1 字も替えない**＝`decisions.md` 130 Q2） | `MainStopButton`・`MainStartButton`・`MainFirstRunButton` |
 | 6 | **更新のとき、新しくなった分だけ取り直す** | チェック（既定 ON・§11） | `SettingsDifferentialUpdateCheck`（**新設**） |
-| 7 | **ファイルの場所** | データ／アプリ ＋〔フォルダを開く〕　※ **版ごとに別**（RTX（CUDA）＝`%LOCALAPPDATA%\irodori-tts-ywk-cuda\`／Radeon（ROCm）＝`…\irodori-tts-ywk-radeon\`＝`decisions.md` 133）。**場所は変えられません。** | `SettingsDataDirText`・`SettingsAppDirText`（`SettingsModelDirText`・`SettingsRuntimeRootText` は「データ」に畳む・id 据え置き） |
-| 8 | **一時ファイル** | 〔消す（◯ GB）〕 | `SettingsClearCacheButton`・`SettingsCacheMessageText` |
+| 7 | **GPU メモリの上限** | 数字（GB・0＝制限しない・4〜1024）＋おすすめの 1 行と〔おすすめの値にする〕（v2.0.7・裁定 160） | `SettingsGpuMemoryLimitBox`・`SettingsGpuMemoryLimitNoteText`・`SettingsGpuMemoryLimitAdviceText`・`SettingsGpuMemoryLimitAdviceButton` |
+| 8 | **ファイルの場所** | データ／アプリ ＋〔フォルダを開く〕　※ **版ごとに別**（RTX（CUDA）＝`%LOCALAPPDATA%\irodori-tts-ywk-cuda\`／Radeon（ROCm）＝`…\irodori-tts-ywk-radeon\`＝`decisions.md` 133）。**場所は変えられません。** | `SettingsDataDirText`・`SettingsAppDirText`（`SettingsModelDirText`・`SettingsRuntimeRootText` は「データ」に畳む・id 据え置き） |
+| 9 | **一時ファイル** | 〔消す（◯ GB）〕 | `SettingsClearCacheButton`・`SettingsCacheMessageText` |
 | ⑼ | **記録**（**畳みの外**＝行に数えない） | 〔ログを開く〕はふだんの設定の側／〔報告用のログを保存〕は〔このアプリについて〕 | `SettingsOpenLogButton`（**新設**・上の 4 つ目）・`AboutSaveLogButton` |
 | ⑽ | **変えた設定は、次にアプリを開いたときから効きます。**（**畳みの外**＝行に数えない） | 〔適用〕〔取り消し〕 | `SettingsApplyButton`・`SettingsRevertButton`・`SettingsMessageText` |
 

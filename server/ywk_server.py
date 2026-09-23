@@ -351,6 +351,13 @@ def _gpu_memory_limit_bytes() -> int | None:
     return mib * 1024 * 1024
 
 
+#: The fraction handed to ``torch.cuda.set_per_process_memory_fraction`` on CUDA when no limit
+#: is configured (裁定 160・検分の是正 3).  torch treats **exactly 1.0 as "no cap"** and clears
+#: ``allowed_memory_maximum`` -- and ``garbage_collect_cached_blocks`` is gated on that cap
+#: existing -- so 1.0 silently switched the collector OFF.  0.99 arms it and leaves 1 % of the
+#: card that torch will not take (WDDM oversubscription is slower than an OOM anyway).
+ALLOCATOR_FRACTION_NO_LIMIT = 0.99
+
 #: How many threads the upstream's ``run_in_executor(None, …)`` may use (裁定 160・検分の是正 2).
 EXECUTOR_WORKERS_ENV = "YWK_EXECUTOR_WORKERS"
 DEFAULT_EXECUTOR_WORKERS = 2
@@ -438,8 +445,9 @@ def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, Any]:
     defined only off Windows; torch 2.13 added a ROCm>=7 branch, which is why the
     Radeon build can use it).  The launcher therefore gives CUDA
     ``garbage_collection_threshold:0.6`` instead, and this function sets
-    ``set_per_process_memory_fraction(1.0)`` on CUDA when no limit is configured
-    so that the collector is active at all (torch runs it only with a fraction set).
+    ``set_per_process_memory_fraction(0.99)`` on CUDA when no limit is configured
+    so that the collector is active at all (torch runs it only with a cap set, and
+    exactly 1.0 means *no cap* -- the release review caught 1.0 disabling it).
     Unmeasured on an RTX machine as of v2.0.7.
 
     Runs after ``resolve_devices_and_precision`` (torch is imported by then) and
@@ -480,20 +488,24 @@ def apply_allocator_defaults(effective: dict[str, str]) -> dict[str, Any]:
         if limit is None:
             # 検分の是正 (裁定 160): the CUDA build (torch 2.10 on Windows) cannot use
             # expandable_segments, so the launcher hands it garbage_collection_threshold
-            # instead -- which torch honours only once a fraction is set.  1.0 = no cap,
-            # it merely switches the collector on.  ROCm keeps expandable segments and
-            # needs nothing here.
+            # instead -- which torch honours only once a cap is set.  NOT 1.0: torch
+            # reads exactly 1.0 as "no cap" and the collector stays off (検分の是正 3);
+            # 0.99 arms it.  ROCm keeps expandable segments and needs nothing here.
             if getattr(torch.version, "cuda", None):
                 for index in indices:
-                    torch.cuda.set_per_process_memory_fraction(1.0, index)
+                    torch.cuda.set_per_process_memory_fraction(ALLOCATOR_FRACTION_NO_LIMIT, index)
                 flags["allocator_gc"] = "on"
+                flags["allocator_fraction"] = ALLOCATOR_FRACTION_NO_LIMIT
             return flags
         for index in indices:
             total = int(torch.cuda.get_device_properties(index).total_memory)
-            fraction = min(1.0, limit / total) if total > 0 else 1.0
+            # never exactly 1.0 (see ALLOCATOR_FRACTION_NO_LIMIT): a limit at or above the card
+            # still arms the cap and the collector instead of silently clearing both.
+            fraction = min(ALLOCATOR_FRACTION_NO_LIMIT, limit / total) if total > 0 else ALLOCATOR_FRACTION_NO_LIMIT
             torch.cuda.set_per_process_memory_fraction(fraction, index)
         flags["gpu_memory_limit"] = "on"
         flags["gpu_memory_limit_bytes"] = int(limit)
+        flags["allocator_fraction"] = fraction
         if getattr(torch.version, "cuda", None):
             flags["allocator_gc"] = "on"  # the 0.8 threshold is active once the fraction is set (RTX 席の指摘)
     except Exception as exc:  # noqa: BLE001 -- report, do not stop
@@ -3784,6 +3796,9 @@ INBOX_SUBDIR = "inbox"
 
 #: 復号後の音声の上限（バイト）。30 秒の wav は 3 MB 級なので 32 MiB は十分に広い。
 IMPORT_MAX_BYTES = 32 * 1024 * 1024
+#: The largest request body the import route will read at all: the base64 of 32 MiB plus the
+#: JSON around it (検分の是正 3＝bigger bodies are refused on Content-Length before reading).
+IMPORT_MAX_BODY_BYTES = IMPORT_MAX_BYTES * 4 // 3 + 256 * 1024
 
 #: 表示名の上限＝ランチャの ``VoiceNameValidator.MaxLength`` と**同じ 64**。
 #: 数え方も同じ＝**UTF-16 の符号単位**（C# の ``string.Length``）。
@@ -4120,6 +4135,14 @@ async def ywk_import_voice(request: Request):  # noqa: ANN201
             code="ywk_import_json_only",
         )
 
+    # 検分の是正 3＝申告の大きさで先に断る（32 MiB の base64＋余白より大きい本文は読まずに 413）。
+    declared = (request.headers.get("content-length") or "").strip()
+    if declared.isdigit() and int(declared) > IMPORT_MAX_BODY_BYTES:
+        return ywk_error(
+            f"request body must be at most {IMPORT_MAX_BODY_BYTES} bytes",
+            status_code=413,
+            code="ywk_import_too_large",
+        )
     raw = await request.body()
     try:
         body = json.loads(raw.decode("utf-8"))
@@ -4175,6 +4198,11 @@ async def ywk_import_voice(request: Request):  # noqa: ANN201
                 json.dumps(record, ensure_ascii=False, indent=2).encode("utf-8"),
             )
         except OSError as exc:
+            # 検分の是正 3＝sidecar が書けなかった回は音声だけを残さない（Sweep は sidecar からしか辿れない）。
+            try:
+                (root / f"{import_id}.{fields['format']}").unlink(missing_ok=True)
+            except OSError:
+                pass
             return ywk_error(
                 f"could not store the reference audio: {type(exc).__name__}: {exc}",
                 status_code=500,
@@ -4309,6 +4337,9 @@ def banner() -> str:
         line += f" gpu_resource_cache={cache_size}"
     if ALLOCATOR_FLAGS.get("allocator_gc"):
         line += f" allocator_gc={ALLOCATOR_FLAGS['allocator_gc']}"
+        fraction = ALLOCATOR_FLAGS.get("allocator_fraction")
+        if isinstance(fraction, float):
+            line += f"@{fraction:.2f}"
     if "gpu_memory_limit" in ALLOCATOR_FLAGS:
         state = ALLOCATOR_FLAGS["gpu_memory_limit"]
         limit_bytes = ALLOCATOR_FLAGS.get("gpu_memory_limit_bytes")

@@ -80,6 +80,8 @@ public static class LauncherComposition
         AppServices.VoiceInbox = inbox;
         try
         {
+            // 検分の是正 3＝前回 registering のまま落ちた 1 件を拾い直してから、古い記録を捨てる。
+            inbox.Reclaim();
             inbox.Sweep(VoiceInbox.KeepFinished, DateTimeOffset.Now);
         }
         catch (System.IO.IOException)

@@ -10,9 +10,9 @@
     v2.0 段 C／A-5＝**上はふだんの設定 4 つだけ**（v2-spec.md §2-5・v2-copy.md §4）＝
     ⑴ 自動で読み上げできるようにする ⑵ よく使う声を先に準備しておく
     ⑶ 声のファイルの場所 ⑷ ログを開く。**それ以外は 詳細 か 削除**である。
-    詳細（SettingsAdvancedExpander・既定は閉）は **9 行**（段 F で 6 行目・裁定 160 で 9 行目が入った）＝
+    詳細（SettingsAdvancedExpander・既定は閉）は **9 行**（段 F で 6 行目・裁定 160 で 7 行目が入った）＝
     ⑴ 使うグラフィックス ⑵ 動かし方 ⑶ 音質と速さ ⑷ 声の下ごしらえ ⑸ 読み上げの動作
-    ⑹ 更新のとき、新しくなった分だけ取り直す ⑺ ファイルの場所 ⑻ 一時ファイル ⑼ GPU メモリの上限。
+    ⑹ 更新のとき、新しくなった分だけ取り直す ⑺ GPU メモリの上限 ⑻ ファイルの場所 ⑼ 一時ファイル。
     **上限 12 行**（憲章 原則 7）に収まっている。
     v2-copy.md §4 の 10 行との差は 2 つ＝⒜ 9 行目「記録」は
     ふだんの設定の側の SettingsOpenLogButton 1 つに寄せた ⒝ 10 行目「変えた設定は…」＋
@@ -241,11 +241,11 @@
                        Text="{x:Static vm:UiStrings.SettingsDifferentialUpdateNote}" />
 
             <!--
-              9＝GPU メモリの上限（裁定 160・2026-09-24）。0＝制限しない（既定）。
+              7＝GPU メモリの上限（裁定 160・2026-09-24）。0＝制限しない（既定）。
               8 GB 級の GPU で配信ソフトやゲームと同居させたい人のための 1 行＝wrapper が torch の allocator に
               「この量を超えて取らない・超えそうなら先に手放す」を写す（ServerEnvironment.GpuMemoryLimitMib）。
               長い文は失敗しうるので註で代金を告げる。詳細は 9 行（上限 12）になった。
-              置き場は 6 行目の直後＝どちらも「GPU メモリ」の話なので隣に置く（7・8 行目の番号は動かさない）。
+              置き場は 6 行目の直後＝どちらも「GPU メモリ」の話なので隣に置く（もとの 7・8 行目は 8・9 行目になる）。
             -->
             <TextBlock Text="{x:Static vm:UiStrings.SettingsGpuMemoryLimitLabel}" Style="{StaticResource Head}" />
             <StackPanel Orientation="Horizontal">

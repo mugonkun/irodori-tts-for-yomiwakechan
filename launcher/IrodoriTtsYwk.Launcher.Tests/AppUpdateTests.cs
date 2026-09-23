@@ -68,6 +68,28 @@ public sealed class AppUpdateTests : IDisposable
     }
 
     [Fact]
+    public void 版の綴りが版の形でない配布情報は不成立()
+    {
+        // 検分の是正 3＝version は釦の札に出る＝v 始まりの英数字と . - + だけ・32 字まで。
+        var (manifest, error) = AppDistributionContract.ParseManifest(ManifestJson("2.0.8 <b>x</b>", Zeros()), ReleaseFlavor.Cuda);
+        Assert.Null(manifest);
+        Assert.NotNull(error);
+        Assert.False(AppDistributionContract.IsVersionShape(new string('v', 40)));
+        Assert.True(AppDistributionContract.IsVersionShape("v2.0.8-rc1+build.7"));
+    }
+
+    [Fact]
+    public void 注記は制御文字を落として200字までにする()
+    {
+        var note = new string('あ', 300) + "\\n\\t末尾"; // JSON の逸脱＝復号すると改行とタブ
+        var (manifest, error) = AppDistributionContract.ParseManifest(ManifestJson(NewVersion, Zeros(), note: note), ReleaseFlavor.Cuda);
+        Assert.Null(error);
+        Assert.Equal(200, manifest!.Note!.Length);
+        Assert.DoesNotContain('\n', manifest.Note);
+        Assert.Null(AppDistributionContract.CleanNote(" \t\n "));
+    }
+
+    [Fact]
     public void 正しい配布情報は版とインストーラの欄を返す()
     {
         var (manifest, error) = AppDistributionContract.ParseManifest(
