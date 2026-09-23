@@ -184,10 +184,13 @@ await File.WriteAllBytesAsync("out.wav", await res.Content.ReadAsByteArrayAsync(
     <tr><td><code>GET /v1/audio/voices</code></td><td>声の一覧（OpenAI 互換の形）。「デフォルト」が必ず先頭にあります。</td></tr>
     <tr><td><code>GET /ywk/voices</code></td><td>同じ一覧に、表示名・件数・一覧が壊れているときの理由（<code>error</code>）を添えたもの。</td></tr>
     <tr><td><code>POST /v1/audio/speech</code></td><td><strong>読み上げ。</strong>本文と声を送ると wav が 1 本返ります。</td></tr>
+    <tr><td><code>POST /ywk/voices/import</code></td><td><strong>声を増やす</strong>（v2.0.7 から）。お手本の音声ファイルの中身と名前を送ると、このアプリがそれを声として登録します（下の「声」を参照）。</td></tr>
+    <tr><td><code>GET /ywk/voices/import/{id}</code></td><td>上で送った 1 件が登録できたか（<code>queued</code>／<code>registering</code>／<code>done</code>／<code>failed</code>）。</td></tr>
   </table>
   </div>
   <p class="aside"><code>/ywk/warmup</code> と <code>/ywk/voices/precompute</code> はアプリの内部が使う口です。呼ばないでください。
-    声の登録・削除の口（<code>POST/PUT/DELETE /v1/audio/voices</code>）は、この配布では閉じてあります（下の「声」を参照）。
+    もとの Irodori-TTS-Server の声の登録・削除の口（<code>POST/PUT/DELETE /v1/audio/voices</code>）は閉じてあります。
+    自分のアプリから声を増やしたいときは <code>POST /ywk/voices/import</code> を使ってください（下の「声」を参照）。
     <code>/docs</code>（Swagger UI）はもとの Irodori-TTS-Server のまま開けます。</p>
 
   <h2 id="rules">作法</h2>
@@ -272,11 +275,52 @@ await File.WriteAllBytesAsync("out.wav", await res.Content.ReadAsByteArrayAsync(
   <ul class="plain">
     <li>声の一覧は <code>GET /v1/audio/voices</code> か <code>GET /ywk/voices</code> で取ります。<strong>id がそのまま表示名</strong>で、日本語です（例：<code>琴葉茜（関西弁）</code>）。</li>
     <li><strong>「デフォルト」</strong>は参照音声なしの声で、必ず先頭にあります。<code>voice</code> を省いたときもこれになります。</li>
-    <li><strong>声の追加・削除は、このアプリの画面（「話者と参照ファイル」のタブ）で行います。</strong>API からの登録・削除の口は閉じてあります。
-      利用者の音声ファイルを扱う口を、鍵なしで開けておかないためです。</li>
+    <li><strong>声の追加・削除は、このアプリの画面（「話者と参照ファイル」のタブ）で行います。</strong>もとの Irodori-TTS-Server の登録・削除の口は閉じてあります。
+      利用者の音声ファイルを扱う口を、鍵なしで開けておかないためです。<strong>自分のアプリから声を増やしたいときは、下の <code>POST /ywk/voices/import</code> を使ってください。</strong></li>
     <li>同梱の声の名前は、版が上がると変わることがあります。<strong>名前を保存して固定せず、起動のたびに一覧を読み直して</strong>ください。無い名前を送ると <code>ywk_unknown_voice</code> で返ります。</li>
     <li>一覧の各行には <code>preset</code>（同梱の声か）・<code>no_ref</code>（参照なしか）が付きます。参照音声のパスは返しません。</li>
   </ul>
+
+  <h3 id="voices-import">自分のアプリから声を増やす（v2.0.7 から）</h3>
+  <p>お手本の音声（参照音声）を<strong>ファイルの中身ごと</strong>送ると、このアプリがそれを声として登録します。
+    パスではなく中身を送るので、<strong>別のパソコンで動いているこのアプリにも送れます</strong>。</p>
+<pre><code>POST /ywk/voices/import
+Content-Type: application/json
+
+{"display_name": "私の声",
+ "audio_base64": "&lt;音声ファイルの中身を base64 にしたもの&gt;",
+ "format": "wav",
+ "caption": "落ち着いて",
+ "client": "myapp"}</code></pre>
+  <p>受け取ると <strong>202</strong> で <code>{"id": "…", "state": "queued", "display_name": "…"}</code> が返ります。
+    <strong>この時点では、まだ声は増えていません。</strong><code>GET /ywk/voices/import/&lt;id&gt;</code> を 1〜2 秒おきに読み、
+    <code>state</code> が <code>done</code> になってから <code>GET /ywk/voices</code> を読み直してください。そこに <code>display_name</code> の声がいます。</p>
+<pre><code>{"id": "…", "state": "queued|registering|done|failed",
+ "display_name": "私の声", "error": null, "received_at": "2026-09-24T12:34:56Z"}</code></pre>
+  <ul class="plain">
+    <li><code>done</code> までは<strong>数秒</strong>です。Radeon（ROCm）では、声ごとの下ごしらえをするぶん<strong>もう数秒〜十数秒</strong>かかります。</li>
+    <li>このアプリを開いていない（または画面を閉じている）間は <code>queued</code> のまま止まります。<strong>自分の側でも期限を持って</strong>ください。</li>
+    <li><code>format</code> は <code>wav</code>・<code>mp3</code>・<code>flac</code>・<code>ogg</code>・<code>opus</code> のどれかです。中身と食い違うと 400 になります。</li>
+    <li><code>display_name</code> が<strong>そのまま声の名前</strong>（読み上げの <code>voice</code> に送る id）になります。64 字まで・日本語可。「デフォルト」など参照なしを指す名前は使えません。</li>
+    <li><code>caption</code>（演技指示の既定）と <code>client</code>（送った側の名乗り）は省けます。<code>client</code> は「どのアプリから来たか」として、このアプリの声の説明に残ります。</li>
+    <li><strong>失敗すると <code>state</code> が <code>failed</code> になり、<code>error</code> に理由が 1 行入ります。</strong>その場合は同じ名前で送り直せます。</li>
+    <li><strong>削除の口はありません。</strong>消すときはこのアプリの画面から消してください。</li>
+  </ul>
+  <div class="tbl">
+  <table>
+    <tr><th>番号</th><th><code>code</code></th><th>意味</th></tr>
+    <tr><td>415</td><td><code>ywk_import_json_only</code></td><td><code>Content-Type</code> が <code>application/json</code> ではない（multipart では受けません）</td></tr>
+    <tr><td>403</td><td><code>ywk_browser_origin</code></td><td><code>Origin</code> か <code>Referer</code> が付いている＝<strong>ウェブページからは送れません</strong></td></tr>
+    <tr><td>413</td><td><code>ywk_import_too_large</code></td><td>音声が 32 MiB を超えている</td></tr>
+    <tr><td>400</td><td><code>ywk_import_bad_audio</code></td><td>base64 が解けない・中身が <code>format</code> と違う</td></tr>
+    <tr><td>400</td><td><code>ywk_import_bad_name</code></td><td>名前が空・64 字超・制御文字・使えない名前</td></tr>
+    <tr><td>409</td><td><code>ywk_voice_exists</code></td><td>同じ名前の声が既にある（受け取って待っている分も含みます）</td></tr>
+    <tr><td>404</td><td><code>ywk_import_unknown</code></td><td><code>GET /ywk/voices/import/&lt;id&gt;</code> の id が無い</td></tr>
+  </table>
+  </div>
+  <p class="aside">この口は<strong>受け取るだけ</strong>で、声の一覧を書き換えるのはこのアプリ自身です。だから JSON でしか受けず、
+    <code>Origin</code>／<code>Referer</code> の付いた要求を断り、32 MiB で止めます。利用者の音声ファイルを扱う面を、
+    鍵なしでウェブページから触れる形にしないためです。</p>
 
   <h2 id="terms">利用条件</h2>
   <p>この読み上げで作った音声は、Aratako 氏の <a href="https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small">Irodori-TTS-v4.1-Small</a> の利用条件に従います。

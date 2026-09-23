@@ -180,6 +180,7 @@
   | 配布版の前段検査（3-2） | `ywk_unknown_field`・`ywk_out_of_range`・`ywk_type_error`・`ywk_invalid_enum`・`ywk_literal_top_level`・`ywk_voice_and_no_ref`・`ywk_voice_and_reference`・`ywk_unsupported_response_format`・`ywk_invalid_body`・`ywk_validation_error` |
   | 暖機の口（⑺ 7-2・**本体は叩かない**） | `ywk_warmup_running`（409）・`ywk_warmup_unknown_id`（404） |
   | 事前計算の口（⑺ 7-3・**本体は叩かない**） | `ywk_precompute_running`（409・`DELETE /ywk/voices/{id}/latent` も走行中は同じ）・`ywk_precompute_unknown_id`（404）・`ywk_unknown_voice`（400・`ids` に知らない名／**404**・`DELETE /ywk/voices/{id}/latent` の知らない話者） |
+  | 本体から参照ボイスを渡す口（⑷ 4-5・**本体はここだけ新しい**） | `ywk_import_json_only`（415）・`ywk_browser_origin`（403）・`ywk_import_too_large`（413）・`ywk_import_bad_audio`（400）・`ywk_import_bad_name`（400）・`ywk_voice_exists`（409）・`ywk_import_unknown`（404） |
   | 上記以外の 4xx／5xx | `ywk_upstream_error`／`ywk_server_error`（404 は `ywk_not_found`・405 は `ywk_method_not_allowed`） |
 
 - **エラー body に絶対パスを 1 件も出さない**。上流は⒜未知 voice の 400 で `voices` ディレクトリの
@@ -320,6 +321,7 @@
   （`decisions.md` 31）では**登録口が開いていること自体が利用者機に残る唯一の書き込み面**
   だから（multipart/form-data は CORS の simple request＝preflight なしで届く）。
   読みの `GET /v1/audio/voices/{id}`（檔名・大きさ・更新時刻だけ）は残す。
+- **v2.0.7 で建てた `POST /ywk/voices/import`（4-5）はこの穴を開け直さない**（裁定 160）。外した 3 口との違いは 4 つ＝⑴ **JSON だけ**（multipart は 415）＝JSON の POST はsimple request にならず preflight が要り、この server は CORS のヘッダを 1 つも返さない（multipart は preflight 無しで届くから危なかった）⑵ **`Origin`／`Referer` を持つ要求は 403**＝ブラウザは cross-origin の POST に必ず `Origin` を付け、デスクトップのアプリはどちらも付けない（⑴ の裏を掻く道を先に塞ぐ）⑶ **復号後 32 MiB の上限**＝ポートを掴んだだけで利用者データを埋められない ⑷ **登録ではなく受け箱**＝wrapper は `voices/inbox/` に 2 檔置くだけで、`voices.json`・`voices.ywk.json`・`refs/` には 1 行も書かない。**話者を増やすのはランチャ**で、名前の検分もランチャがもう 1 度やる＝**この節の所有者は 1 つも動いていない**。
 - **話者を消すときは 4 つを消す**（Radeon 版で潜在を焼いた後・裁定 65）。wrapper が書いた alias 欄は
   **wav より長生きする**＝`resolve()` は別名を走査より先に読む（`voices.py:80-88`）ので、
   `voices/` の wav を消しても `voices.json` の `{"ref_latent":"latents/…"}` が残る限り
@@ -393,6 +395,97 @@
 `sidecarを失っても走査のwavから焼き直せる`／`sidecarを失っても台帳のwavから焼き直せる`／
 `チェックポイントも鍵のうち`／`schema1のsidecarは1度だけ焼き直す`／
 `潜在を外すとaliasがwavへ戻る`／`潜在を外してもランチャの欄は残る`。
+
+### 4-5 本体から参照ボイスを渡す口（v2.0.7・裁定 160）
+
+**司令官の言葉（2026-09-24）＝「あと、参照ボイスを本体から受け付ける口も新設できるかな。」**
+実体を渡すか路を渡すかの問いには「参照ボイスは、実体を受け取るかどうしようかね、本体とは別の PC で
+稼働する事も考えてはいる」＝**バイト列を受ける**に確定した（路を渡す形は同じ機の上でしか効かない）。
+
+4-4 までの本体は**一覧から名前で選ぶ**ことしかできない（4-3）。この口はそこに 1 手だけ足す＝
+本体が参照音声そのものを渡すと、**配布版が話者を 1 名増やす**。**登録口ではなく受け箱である**
+（安全である理由の 4 つは 4-3 の末尾の項）。
+
+#### 渡す（`POST /ywk/voices/import`）
+
+```http
+POST /ywk/voices/import
+Content-Type: application/json
+```
+
+```json
+{"display_name":"<話者 id・日本語可・64 字まで>",
+ "audio_base64":"<参照音声のバイト列を base64 にしたもの>",
+ "format":"wav|mp3|flac|ogg|opus",
+ "caption":"<省略可・200 字まで＝キャプション既定>",
+ "client":"<省略可・64 字まで＝渡した側の名乗り>"}
+```
+
+**受けたら 202**（`200` でも `201` でもない＝**まだ話者は増えていない**）：
+
+```json
+{"id":"<小文字 16 進 24 字>","state":"queued","display_name":"<前後の空白を落とした名>"}
+```
+
+- **白名簿**＝上の 5 鍵だけ（3-2 と同じ規律）。外の鍵は `ywk_unknown_field` の 400。
+- **`display_name` がそのまま話者 id になる**（4-1＝id と表示名は同じ物）。名付けの規則は
+  **ランチャの `VoiceNameValidator` と同じ 1 枚の逐語**（`tests/contract/voice-name-cases.json`）から
+  Python と C# の両席が引く＝空・**64 字超**・制御文字・参照なしの予約名（「デフォルト」と上流の別名 5 つ）が
+  落ちる。**数え方は UTF-16 の符号単位**（C# の `string.Length` と揃える＝追加面の字で 1 字ずれない）。
+- **`format` は中身と突合する**＝先頭のバイトが名乗りと合わなければ 400。中身の完全な検分は
+  ランチャが登録するときに走る（soundfile）。
+- **`caption`／`client` は素性の控え**で、ランチャがキャプションの前置き（`［<client> から］`）として
+  台帳に残す。`VoiceEntry` に「どのアプリから来たか」の欄を足すと台帳の形が変わるので、そうはしない。
+
+#### 追う（`GET /ywk/voices/import/{id}`）
+
+```json
+{"id":"…","state":"queued|registering|done|failed",
+ "display_name":"…","error":"<理由 1 行>|null","received_at":"<ISO 8601・UTC・末尾 Z>"}
+```
+
+- **`state` を進めるのはランチャ**である。wrapper は `queued` を書くだけで、以後この口は
+  受け箱の sidecar を読んで答える。**読めない `state` は `failed` と読む**＝本体を永久に待たせない。
+- **`error` は理由 1 行**＝絶対パスは入らない（3-3 と同じ規則）。
+
+#### 順（本体アダプタの 3 手）
+
+1. `POST /ywk/voices/import` → **202**。この時点で在るのは受け箱の 2 檔
+   （`voices/inbox/<id>.<拡張子>` と同名 `.json`）だけである。
+2. `GET /ywk/voices/import/{id}` を **1〜2 秒おき**に読む → `done`（または `failed`＋理由 1 行）。
+3. `done` を見てから **`GET /ywk/voices`（または `/v1/audio/voices`）を読み直す**
+   ＝そこに `display_name` の話者が居る。
+
+- **`done` までの見込み＝数秒**。ランチャが 2 秒ごとの標本（下の `voices.inbox`）で受け箱を見つけ、
+  画面の〔声を追加する〕と**同じ路**（`refs/` へ写す→`voices.ywk.json`→`voices.json`）で足す。
+  **Radeon 版は続けて潜在を焼く**（4-4）ので**もう数秒〜十数秒**伸びる。
+- **ランチャが動いていなければ `queued` のまま**である（wrapper だけでは話者にならない）。
+  本体は**自分の側でも期限を持ち**、切れたら `failed` と同じ扱いに落としてよい。
+- **失敗した受け箱の音声は消える**（sidecar は記録として残る）＝**同じ名で撃ち直せる**。
+  済んだ sidecar はランチャが起動時に 7 日で掃除する。
+- **削除の口は建てない**＝消すのは画面からだけ（4-3 の所有者はそのまま）。
+
+#### 態（3-3 の表の該当分）
+
+| 態 | `code` | いつ |
+|---|---|---|
+| **415** | `ywk_import_json_only` | `Content-Type` が `application/json` でない（multipart・form も同じ） |
+| **403** | `ywk_browser_origin` | `Origin` か `Referer` が付いている＝**いちばん先に見て、何も書かずに断る** |
+| **413** | `ywk_import_too_large` | 音声が 32 MiB 超（**base64 の長さで解く前にも見る**＝大きな文字列を展開しない） |
+| **400** | `ywk_import_bad_audio` | base64 が解けない／先頭のバイトが `format` と合わない |
+| **400** | `ywk_import_bad_name` | 名付けの規則に外れる（空・64 字超・制御文字・予約名） |
+| **400** | `ywk_unknown_field`・`ywk_type_error`・`ywk_invalid_enum`・`ywk_out_of_range`・`ywk_invalid_body` | 白名簿の外の鍵・型違い・知らない `format`・`caption`／`client` の長さ・JSON が壊れている |
+| **409** | `ywk_voice_exists` | 同じ名の話者が**既に居る**／**受け箱で待っている**（`queued`／`registering`） |
+| **404** | `ywk_import_unknown` | `GET /ywk/voices/import/{id}` の id が受け箱に無い（**形が違う id も同じ**＝路を組み立てさせない） |
+
+題目（4-5）＝`受け取ると202で2檔が置かれる`／`受け取っても話者台帳には1行も書かない`／
+`状態の口に件数が載る`／`受け取った直後の状態はqueued`／`受ける形は5つ`／
+`ブラウザ由来の要求は403で何も書かない`／`multipartは415`／`未知の欄は400`／
+`解けないbase64は400`／`形と中身が合わなければ400`／`大きすぎれば413`／`解く前に大きさを見る`／
+`名付けの規則はランチャと同じ`／`通らない名は400`／`既にいる話者と同じ名は409`／
+`受け箱で待っている名と同じなら409`／`決着のついた受け箱は重複にしない`／
+`ランチャが進めた状態がそのまま見える`／`読めない状態は失敗と読む`／`知らないidは404`／
+`路を遡るidは口に届かない`／`エラーの本文に絶対パスが0件`。
 
 題目＝`norefのfalseは参照ではない`／`一覧の先頭にデフォルトが常在する`／`voicesjsonが無くてもデフォルトで合成200`／
 `voicesjsonが壊れても500ではなく1件と理由`／`一覧にnoneが0件`／`noneの別名は正規化されて200`／
@@ -526,7 +619,7 @@
   **fp32×GPU 不在は黙って CPU に落ちて 200 を返す**（2 文字・10 steps で 267 秒＝340 倍の実測）。
   配布版は `cuda` 指定で `torch.cuda.is_available()` が偽なら**起動前に理由 1 行で exit 2** にする。
 - **絶対パスは出さない**（`voices.dir` は末尾 1 段だけ）。
-- 上の逐語に**足した欄が 7 つある**（**欄を足すのは `schema` を上げない**＝⑻）：
+- 上の逐語に**足した欄が 8 つある**（**欄を足すのは `schema` を上げない**＝⑻）：
   - **`pid`**（`int`）＝**この応答を返した個体の pid**（便 D（2）の是正で追加）。
     要る理由＝**既にそのポートを握っている個体が居れば、同じ形で答えてくる**。
     〔**裁定 105（ポート先行）で窓は縮んだが閉じていない**＝1 巡目の理由は「`preload=true`
@@ -538,6 +631,13 @@
     GPU メモリを出さず、`Ready` にも上げない）。**欄が無ければ突合しない**＝古い個体・上流の
     素の Server を「別人」と読まない。パスでも秘密でもない（OS のタスク一覧と同じ数）。
   - `voices.error`（`string|null`）＝`voices.json` が読めないときの理由 1 行（⑷ の「0 件＋理由」の相方）。
+  - **`voices.inbox`**（`int`）＝**ほかのアプリから受け取って、まだ話者にしていない参照ボイスの件数**
+    （`queued`＋`registering`＝⑷ 4-5・裁定 160）。配布版のランチャは 2 秒ごとの標本でこの数を見て、
+    正なら受け箱を片付ける（**口は増やさない**＝新しい問い合わせを 1 本も足さない）。
+    **本体は読まなくてよい**＝渡した 1 件の今は `GET /ywk/voices/import/{id}` で読む。
+    **欄が無い個体（v2.0.6 以前）は 0 と読む**＝欄の無い個体を「待っている物がある」と読まない。
+    `count` の後ろではなく **`error` の後ろに足す**＝既存の並びを動かさない。
+    **欄を足すだけなので `schema` は上げない**（⑻）。
   - **`variant`**（`string`）＝ランチャが起こしたビルドの名前。既定 **`"cuda"`**（`decisions.md` 4）・
     CPU 版は `"cpu"`・Radeon 版は `"rocm-gfx1151"`（`decisions.md` 5＝**arch を名乗る**。
     確認済みは gfx1151 だけで、他 gfx は未検証）。env `YWK_VARIANT` の値をそのまま返す。
@@ -827,7 +927,7 @@
 
 ---
 
-## ⑼ 本体アダプタ側の差分 D-1〜D-9
+## ⑼ 本体アダプタ側の差分 D-1〜D-10
 
 > `research/report/irodori-native-handoff-2026-09-04.md` §5 の表から**原文で写した**（原文＝調査便の
 > 断定であり、本書の推奨ではない）。**18088 にする以上、D-9 は必ず要る。**
@@ -843,9 +943,10 @@
 | D-7 | GPU 欄なし・精度 2 env のみ | 配布版が GPU を管掌すれば差分ゼロ（元栓の env 注入も不要） | 報告 §4-2・§10-2 と整合 |
 | D-8 | `/health` 200 だけで発見 | `voices.json` 破損（一覧だけ 500）を検知できない | 発見段のエラー処理に 1 態増える |
 | D-9 | 接続先は `IrodoriConstants.cs:35` の固定値（8088）で `App.xaml.cs:131` は baseUrl を渡していない | 決定 16 で 8088 以外にするなら本体 1 件の改修（`36` C-4 は 8088 既定を互換の下限に置く） | G-2「本体無改造」が成り立つのは 8088 のときだけ |
+| D-10 | 参照ボイスは配布版の画面でしか足せない（本体は一覧から名前で選ぶだけ＝D-3・D-6） | **v2.0.7 で本体から渡せる口が建った**＝`POST /ywk/voices/import`（⑷ 4-5・裁定 160）に参照音声のバイト列を base64 で渡すと、配布版が話者を 1 名増やす。**登録口ではなく受け箱**（JSON だけ・`Origin`／`Referer` は 403・32 MiB の上限）で、所有者は配布版のまま（4-3） | 本体アダプタに**新しい 1 手**＝渡して 202 を受け、`GET /ywk/voices/import/{id}` が `done` になってから一覧を読み直す。**実体（バイト列）を渡す**ので本体と別の PC で動いていてもよい。**渡さないなら改修は要らない**＝既存の口は 1 つも変わっていない |
 
 **本書の読み替え**（原文の記号 ④⑦・決定 16 は調査便のもの）：④＝`/params`（⑸）、⑦＝話者 N 件（⑷）、
-決定 16＝`decisions.md` 2（**18088 に確定**）。**D-8 は配布版で消える**＝配布版の
+決定 16＝`decisions.md` 2（**18088 に確定**）。**D-10 は調査便の表に無い**＝v2.0.7 で新しく建った口（⑷ 4-5）なので、配布版の側から足した行である。**D-8 は配布版で消える**＝配布版の
 `GET /v1/audio/voices` は台帳が壊れても 500 を返さず「0 件＋理由」を返す（⑷）。
 
 ---

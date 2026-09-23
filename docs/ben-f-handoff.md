@@ -67,12 +67,18 @@
            "precision":"bf16|fp32",
            "name":"…|null","uuid":"…|null","pci_bus_id":"…|null","hip":"…|null","gcn_arch":"…|null"},
  "torch":{"version":"2.13.0+rocm10.0.0","cuda":"…|null","hip":"…|null"},
- "voices":{"count":13,"dir":"<末尾 1 段のみ>","error":"…|null"},
+ "voices":{"count":13,"dir":"<末尾 1 段のみ>","error":"…|null","inbox":0},
  "memory":{…§4-4…},
  "requests":{"in_flight":0},
  "warmup":{…§5-2…},
  "precompute":{…§5-3…}}
 ```
+
+**`voices.inbox` は v2.0.7 が足した欄である**（§3-7）＝**ほかのアプリから受け取って、まだ話者に
+していない参照ボイスの件数**（`queued`＋`registering`）。配布版のランチャが 2 秒ごとの標本で見て
+受け箱を片付けるための欄で、**本体は読まなくてよい**（渡した 1 件の今は
+`GET /ywk/voices/import/{id}` で読む）。**欄が無い個体（v2.0.6 以前）は 0 と読む**。
+**欄の追加なので `schema` は 1 のまま**（契約 ⑻）。
 
 **`requests` は段 D（v2.0）が足した欄である**（是正・段 G・medium 25＝便 F の申し送りが
 14 欄のまま止まっていた）＝`requests.in_flight` は**本物の `POST /v1/audio/speech` の走行数**で、
@@ -372,6 +378,66 @@ range_source, note, required, default, default_source, nullable, exposed_to_ywk}
   台帳の 13 行目（弦巻マキ英語）は司令官提供待ちで同梱されない（`decisions.md` 27・`status: skipped`）。
   裁定 118 の 1 名だけは**エンジン由来ではない**（司令官が渡した録音そのもの＝台帳の `engine` が
   `"external"`）が、本体から見た形は他の 11 名と 1 つも変わらない（`preset: true` の 1 行）。
+
+### 3-7 本体から参照ボイスを渡す口（v2.0.7・正典＝`docs/contract.md` ⑷ 4-5）
+
+**本体が参照音声そのもの（バイト列）を渡すと、配布版が話者を 1 名増やす。**
+§3-6 の所有者は 1 つも動いていない＝wrapper は**受け箱に置くだけ**で、`voices.json`・
+`voices.ywk.json`・`refs/` を書くのは配布版のランチャのままである。
+**実体を渡す**ので、本体と配布版が**別の PC** で動いていても効く。
+
+**⑴ 渡す**
+
+```http
+POST /ywk/voices/import
+Content-Type: application/json
+```
+
+```json
+{"display_name":"<話者 id・日本語可・64 字まで>",
+ "audio_base64":"<参照音声のバイト列を base64 にしたもの>",
+ "format":"wav|mp3|flac|ogg|opus",
+ "caption":"<省略可・200 字まで>",
+ "client":"<省略可・64 字まで＝本体の名乗り＝`yomiwakechan2`>"}
+```
+
+**202**（`200` でも `201` でもない＝**まだ話者は増えていない**）：
+
+```json
+{"id":"<小文字 16 進 24 字>","state":"queued","display_name":"<前後の空白を落とした名>"}
+```
+
+**⑵ 追う**
+
+```json
+GET /ywk/voices/import/{id}
+{"id":"…","state":"queued|registering|done|failed",
+ "display_name":"…","error":"<理由 1 行>|null","received_at":"<ISO 8601・UTC・末尾 Z>"}
+```
+
+**⑶ 読み直す**＝`done` を見てから `GET /ywk/voices`（§3-2）を読むと、そこに話者が居る。
+
+| 態 | `code` | いつ |
+|---|---|---|
+| **415** | `ywk_import_json_only` | `Content-Type` が `application/json` でない（**multipart では受けない**） |
+| **403** | `ywk_browser_origin` | `Origin` か `Referer` が付いている（本体はデスクトップのアプリなので付かない） |
+| **413** | `ywk_import_too_large` | 音声が 32 MiB 超 |
+| **400** | `ywk_import_bad_audio` | base64 が解けない／先頭のバイトが `format` と合わない |
+| **400** | `ywk_import_bad_name` | 空・64 字超（**UTF-16 の符号単位**）・制御文字・参照なしの予約名 |
+| **400** | `ywk_unknown_field` ほか | 白名簿は上の 5 鍵だけ（§4-3 と同じ規律） |
+| **409** | `ywk_voice_exists` | 同じ名の話者が既に居る／受け箱で待っている |
+| **404** | `ywk_import_unknown` | `{id}` が受け箱に無い（形が違う id も同じ） |
+
+**本体席が踏みやすい 4 つ**：
+
+- **202 は「登録した」ではない**＝`done` を見るまで `GET /ywk/voices` に出ない。
+  見込みは**数秒**で、**Radeon（ROCm）版は潜在を焼くぶん数秒〜十数秒**伸びる（§3-5）。
+- **配布版のランチャが動いていなければ `queued` のまま**である（wrapper だけでは話者にならない）。
+  **本体側でも期限を持ち**、切れたら `failed` と同じ扱いに落とすこと。
+- **`display_name` がそのまま `voice` に送る id** になる（§3-1＝id と表示名は同じ物）。
+  名付けの規則は配布版のランチャと**同じ 1 枚の逐語**（`tests/contract/voice-name-cases.json`）を
+  両席が読んでいるので、本体側で写すならその 1 枚から写すこと。
+- **削除の口は無い**＝消すのは配布版の画面からだけである（§3-6）。
 
 ---
 
@@ -857,7 +923,7 @@ class FakeRuntimeManager:
 
 ---
 
-## §11 本体側の差分 D-1〜D-9 の現在地（`docs/contract.md` ⑼ を配布版の実装で更新）
+## §11 本体側の差分 D-1〜D-10 の現在地（`docs/contract.md` ⑼ を配布版の実装で更新）
 
 | # | 現行 | 配布版が建った後 |
 |---|---|---|
@@ -870,6 +936,7 @@ class FakeRuntimeManager:
 | D-7 | GPU 欄なし・精度 2 env のみ | **差分ゼロ**（配布版が GPU を管掌・元栓の env 注入も不要） |
 | D-8 | `/health` 200 だけで発見・`voices.json` 破損を検知できない | **消える**＝配布版の一覧は台帳が壊れても 500 を返さず「1 件（デフォルト）＋理由」を返す |
 | D-9 | 接続先は `IrodoriConstants.cs:35` の固定値（8088）・`App.xaml.cs:131` は baseUrl を渡していない | **必ず要る改修**＝18088 に確定（`decisions.md` 2・32） |
+| D-10 | 参照ボイスは配布版の画面でしか足せない（本体は名前で選ぶだけ） | **v2.0.7 で渡せるようになった**＝`POST /ywk/voices/import`（§3-7）。**登録口ではなく受け箱**で所有者は配布版のまま。**渡さないなら改修は要らない** |
 
 ---
 
