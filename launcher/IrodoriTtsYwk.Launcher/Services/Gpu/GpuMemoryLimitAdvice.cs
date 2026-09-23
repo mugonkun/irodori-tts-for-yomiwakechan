@@ -122,7 +122,8 @@ public static class GpuMemoryLimitAdvice
         }
 
         var gib = dedicatedBytes.Value / (double)GibiByte;
-        if (gib >= NoLimitFromGiB)
+        // 20 GB 級の板は DXGI が 19.98 GiB 前後を名乗る（合流席の是正 2026-09-24）＝表示と同じ四捨五入した GB で見る。
+        if (Math.Round(gib, MidpointRounding.AwayFromZero) >= NoLimitFromGiB)
         {
             return 0;
         }
