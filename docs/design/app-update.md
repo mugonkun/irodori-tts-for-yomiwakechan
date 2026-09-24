@@ -25,7 +25,8 @@
 
 二押し目＝**配布情報の再取得 → 再照合 → インストーラ取得 → sha256 検分 → 置く → アプリを閉じる（子を畳み錠を返す）→ 起こす →
 このアプリは既存の終了の入口 1 本を通って畳む**。
-インストールが終われば、ウィザードの完了画面のチェック（`[Run]` の postinstall）でもう一度起きる。
+インストールが終われば、`[Run]` の起こし直しでもう一度起きる（v2.0.9・裁定 164＝setup は `/SILENT /SUPPRESSMSGBOXES /NORESTART /YWKRELAUNCH=1` で
+起こすので押す所が無く、`[Run]` は `Check: WantRelaunch`＝対話なら完了画面のチェック・無人なら `/YWKRELAUNCH=1` の札が在るときだけ）。
 
 **失敗はすべて 1 行の状態文**である＝窓（MessageBox）も例外も利用者に出さない。
 
@@ -87,7 +88,7 @@
 | ④ | インストーラを取る | **200 MB・900 秒**（申告の Content-Length でも、申告しない相手の実バイトでも切る） |
 | ⑤ | sha256 の検分 | 不一致＝**置かずに消して起こさない**（嘘の成功を返さない） |
 | ⑥ | 置く | `<データの家>\updates\`（**取りにいく前に同じ枝を掃除**＝版違いを溜めない） |
-| ⑦ | 起こす | `Process.Start(UseShellExecute=true)`＝per-user なので昇格しない |
+| ⑦ | 起こす | `Process.Start(setup, AppUpdateService.InstallerArguments)`（`UseShellExecute=true`＝per-user なので昇格しない）＝引数は `/SILENT /SUPPRESSMSGBOXES /NORESTART /YWKRELAUNCH=1`（v2.0.9・裁定 164） |
 | ⑧ | 畳む | **既存の終了の入口 1 本**＝主窓の Closing → `App.OnExit` → 子をツリー kill |
 
 - **契機は手動の釦だけ**＝起動時も定期も確認しない（この製品は「はじめの準備のときだけ外に出る」と
@@ -113,7 +114,7 @@
 | `launcher/…/Views/AboutView.xaml` | 釦・1 行・薄字の註（id＝`AboutUpdateButton`／`AboutUpdateStatusText`／`AboutUpdateNoteText`） |
 | `launcher/…/Views/MainWindow.xaml.cs` | **配線はここ 1 箇所**＝版・置き場・終わらせる手・読み上げ中の判定を差す |
 | `launcher/…/Contracts/AppPaths.cs` | `UpdatesDir`（`<データの家>\updates`・**`EnsureDataDirectories` では作らない**） |
-| `installer/irodori-tts-ywk.iss` | `RestartApplications=no`（既に在った）＋`[Run]` の postinstall＝**再起動の導線** |
+| `installer/irodori-tts-ywk.iss` | `RestartApplications=no`（既に在った）＋`[Run]` の postinstall＝**再起動の導線**（v2.0.9＝`Check: WantRelaunch`・無人でも `/YWKRELAUNCH=1` なら起こす） |
 | `build/make-app-manifest.ps1` | `site/app.json` を実物から書く（§5） |
 | `site/app.json` | 配布 manifest の正本 |
 

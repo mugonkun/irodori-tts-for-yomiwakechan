@@ -2,7 +2,7 @@
 ; 設計＝docs/design/ben-e-installer.md §1・§2・§5・§6-3。裁定＝decisions.md 89・90・91。
 ; 是正＝同 §11-8（敵対検分の medium 6 件・low 4 件・2026-09-05・是正席 opus）。
 ; 呼び方＝build/installer-build.ps1 が ISCC に /D を 7 本渡す。この檔に版・路・上流 pin を書き写さない。
-;   /DAppVersion=v2.0.8 /DAppVersionNumeric=2.0.8 /DFlavor=cuda|radeon
+;   /DAppVersion=v2.0.9 /DAppVersionNumeric=2.0.9 /DFlavor=cuda|radeon
 ;   /DSrcApp=<build/out/app> /DSrcExe=<build/out/launcher/win-x64> /DRepo=<リポの根> /DOutDir=<出力先>
 ; 檔の形＝UTF-8 BOM 付き・CRLF（.gitattributes:7 の *.iss text eol=crlf）。日本語はこの檔にだけ置く。
 
@@ -289,10 +289,13 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\IrodoriTtsYwk.Launcher.exe
 ;   Description は Inno の日本語 isl の {cm:LaunchProgram}＝「{#MyAppName} を実行する」＝
 ;   版つきの表示名（… － RTX（CUDA）／… － Radeon（ROCm））がそのまま入る＝窓題と 1 字も違えない。
 ;   ここに文言を直書きしない（訳文と版の名札を 2 箇所で綴らない）。
-;   skipifsilent＝無人導入（/SILENT）では起こさない・nowait＝ウィザードは待たずに閉じる。
+;   裁定 164（v2.0.9）＝skipifsilent を外し Check: WantRelaunch に＝対話なら完了画面のチェックのまま・無人なら
+;   /YWKRELAUNCH=1 の札が在るときだけ起こす。アプリ内更新は App.OnExit が /SILENT … /YWKRELAUNCH=1 で
+;   起こすので押す所が無く、終われば自動で起き直る。管理者の無人導入（札なし）は今までどおり静か。
+;   nowait＝ウィザードは待たずに閉じる。
 Filename: "{app}\IrodoriTtsYwk.Launcher.exe"; \
   Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; \
-  Flags: nowait postinstall skipifsilent
+  Flags: nowait postinstall; Check: WantRelaunch
 
 [UninstallDelete]
 ; {app} を filesandordirs で丸ごと消す形は採らない（CHM 逐語の「DON'T DO THIS!」）。
@@ -373,6 +376,13 @@ const
 
 var
   SpaceNotified: Boolean;
+
+function WantRelaunch(): Boolean;
+begin
+  { 裁定 164＝[Run] の起こし直し＝対話なら完了画面のチェック（postinstall）に任せる。無人（/SILENT・/VERYSILENT）は
+    アプリ内更新が付ける /YWKRELAUNCH=1 の札が在るときだけ＝管理者の無人導入は静かなまま。 }
+  Result := (not WizardSilent) or (ExpandConstant('{param:YWKRELAUNCH|0}') = '1');
+end;
 
 function DataDir(): String;
 begin

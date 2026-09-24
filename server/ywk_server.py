@@ -79,7 +79,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-YWK_VERSION = "2.0.8"
+YWK_VERSION = "2.0.9"
 UPSTREAM_IRODORI_TTS = "8224daf"
 UPSTREAM_SERVER = "841fb7c"
 

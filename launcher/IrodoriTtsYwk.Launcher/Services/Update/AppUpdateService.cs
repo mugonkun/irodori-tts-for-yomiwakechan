@@ -521,9 +521,18 @@ public sealed class AppUpdateService : IAppUpdateGateway, IDisposable
     /// </summary>
     private static bool LaunchInstallerProcess(string path)
     {
-        using var process = Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        using var process = Process.Start(new ProcessStartInfo(path, InstallerArguments) { UseShellExecute = true });
         return process is not null;
     }
+
+    /// <summary>
+    /// アプリ内更新で setup に渡す引数（裁定 164＝RTX 席の実機所見 163-4「開いたインストーラは対話式で 2 押し待ち」）。
+    /// <c>/SILENT</c>＝押す所の無い進み具合の小窓だけ（<c>/VERYSILENT</c> にはしない＝利用者に何かが進んでいると見せる）・
+    /// <c>/SUPPRESSMSGBOXES</c>・<c>/NORESTART</c>・<c>/YWKRELAUNCH=1</c>＝.iss の <c>[Run]</c> がこの札を見て、
+    /// 無人でもランチャを起こし直す（管理者の無人導入＝札なし＝は静かなまま）。<see cref="App.OnExit"/> と
+    /// ここの既定の起動が同じ 1 本を使う。
+    /// </summary>
+    public const string InstallerArguments = "/SILENT /SUPPRESSMSGBOXES /NORESTART /YWKRELAUNCH=1";
 
     private void Log(string line) => _log?.Invoke(line);
 }

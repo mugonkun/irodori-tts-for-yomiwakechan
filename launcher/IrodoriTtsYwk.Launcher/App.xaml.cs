@@ -146,8 +146,12 @@ public partial class App : Application
         {
             try
             {
+                // 裁定 164＝無人の引数で起こす（進み具合の小窓だけ・押す所なし・終われば setup がこのアプリを起こし直す）。
                 System.Diagnostics.Process.Start(
-                    new System.Diagnostics.ProcessStartInfo(pendingSetup) { UseShellExecute = true });
+                    new System.Diagnostics.ProcessStartInfo(pendingSetup, Services.Update.AppUpdateService.InstallerArguments)
+                    {
+                        UseShellExecute = true,
+                    });
             }
             catch (System.Exception)
             {

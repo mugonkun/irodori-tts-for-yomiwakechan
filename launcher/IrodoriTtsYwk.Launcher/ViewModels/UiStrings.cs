@@ -518,8 +518,8 @@ public static class UiStrings
 
     /// <summary>新しい版がある（後半＝次の一押しが何をするかを言い切る）。</summary>
     public const string AboutUpdateAvailableSuffix =
-        " があります。もう一度押すと、ダウンロードしてインストーラーを開きます"
-        + "（そのときこのアプリはいったん終了します）。";
+        " があります。もう一度押すと、ダウンロードして新しい版に入れ替えます"
+        + "（このアプリはいったん閉じ、入れ替えが終わると自動でもう一度開きます）。";
 
     /// <summary>配布元が添えた一行（表示のみ）の前。</summary>
     public const string AboutUpdateNotePrefix = "（お知らせ: ";
@@ -541,8 +541,8 @@ public static class UiStrings
 
     /// <summary>インストーラーを起こした＝このアプリは閉じる。</summary>
     public const string AboutUpdateLaunched =
-        "このアプリをいったん終了してから、インストーラーを開きます。"
-        + "インストールが終わったら、最後の画面のチェックでもう一度開けます。";
+        "このアプリをいったん閉じて、新しい版に入れ替えます。"
+        + "進み具合の小さな窓が出て、終わると自動でもう一度開きます。";
 
     /// <summary>更新の失敗の中身（裁定 160・検分の是正＝Services/Update の文をここへ寄せた＝隠す語の網に入れる）。</summary>
     public const string AboutUpdateDetailNotHttps = "取得先が https ではありません";
