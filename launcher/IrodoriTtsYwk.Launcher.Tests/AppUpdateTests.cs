@@ -33,8 +33,8 @@ namespace IrodoriTtsYwk.Launcher.Tests;
 /// </summary>
 public sealed class AppUpdateTests : IDisposable
 {
-    private const string CurrentVersion = "v2.0.7";
-    private const string NewVersion = "v2.0.8";
+    private const string CurrentVersion = "v2.0.8";
+    private const string NewVersion = "v2.0.9";
     private const string ManifestUrl = "https://dist.test/app.json";
     private const string InstallerUrl = "https://dist.test/setup-cuda.exe";
     private const string RadeonInstallerUrl = "https://dist.test/setup-radeon.exe";
@@ -56,9 +56,9 @@ public sealed class AppUpdateTests : IDisposable
     // ------------------------------------------------------------------ 配布情報の解釈
 
     [Theory]
-    [InlineData("https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.8/irodori-tts-ywk-setup-v2.0.8-cuda.exe", ReleaseFlavor.Cuda, true)]
-    [InlineData("https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.8/irodori-tts-ywk-setup-v2.0.8-radeon.exe", ReleaseFlavor.Cuda, false)]
-    [InlineData("https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.8/irodori-tts-ywk-setup-v2.0.8-radeon.exe", ReleaseFlavor.Radeon, true)]
+    [InlineData("https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.9/irodori-tts-ywk-setup-v2.0.9-cuda.exe", ReleaseFlavor.Cuda, true)]
+    [InlineData("https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.9/irodori-tts-ywk-setup-v2.0.9-radeon.exe", ReleaseFlavor.Cuda, false)]
+    [InlineData("https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.9/irodori-tts-ywk-setup-v2.0.9-radeon.exe", ReleaseFlavor.Radeon, true)]
     [InlineData("https://example.invalid/setup.exe", ReleaseFlavor.Radeon, false)]
     [InlineData("not a url", ReleaseFlavor.Cuda, false)]
     public void 取得先の檔名が自分の版で終わらなければ掴まない(string url, ReleaseFlavor flavor, bool expected)
@@ -75,7 +75,7 @@ public sealed class AppUpdateTests : IDisposable
         Assert.Null(manifest);
         Assert.NotNull(error);
         Assert.False(AppDistributionContract.IsVersionShape(new string('v', 40)));
-        Assert.True(AppDistributionContract.IsVersionShape("v2.0.8-rc1+build.7"));
+        Assert.True(AppDistributionContract.IsVersionShape("v2.0.9-rc1+build.7"));
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public sealed class AppUpdateTests : IDisposable
     public void 自分の版の欄が無い配布情報は不成立()
     {
         const string json = """
-            { "v": 1, "name": "irodori-tts-ywk", "version": "v2.0.8",
+            { "v": 1, "name": "irodori-tts-ywk", "version": "v2.0.9",
               "installers": { "radeon": { "url": "https://dist.test/setup-radeon.exe",
                                           "sha256": "0000000000000000000000000000000000000000000000000000000000000000" } } }
             """;
@@ -228,7 +228,7 @@ public sealed class AppUpdateTests : IDisposable
         Assert.Equal(NewVersion, result.NewVersion);
         Assert.False(File.Exists(stale));
 
-        var expected = Path.Combine(UpdatesDir, "irodori-tts-ywk-setup-v2.0.8-cuda.exe");
+        var expected = Path.Combine(UpdatesDir, "irodori-tts-ywk-setup-v2.0.9-cuda.exe");
         Assert.Equal([expected], _launched);
         Assert.Equal(body, File.ReadAllBytes(expected));
         Assert.Equal([expected], Directory.GetFiles(UpdatesDir));
@@ -318,13 +318,13 @@ public sealed class AppUpdateTests : IDisposable
     [Fact]
     public async Task 承諾した版と配布が食い違えば適用しない()
     {
-        SetManifest("v2.0.9", Zeros());
+        SetManifest("v2.0.10", Zeros()); // 承諾した NewVersion より 1 つ先の版が配布されている
         using var service = NewService();
 
         var result = await service.ApplyAsync(NewVersion);
 
         Assert.Equal(AppUpdateResultKind.UpdateAvailable, result.Kind);
-        Assert.Equal("v2.0.9", result.NewVersion);
+        Assert.Equal("v2.0.10", result.NewVersion);
         Assert.Empty(_launched);
         Assert.Equal([ManifestUrl], _handler.Requested);
     }
@@ -354,16 +354,16 @@ public sealed class AppUpdateTests : IDisposable
         var result = await service.ApplyAsync(NewVersion);
 
         Assert.Equal(AppUpdateResultKind.LaunchFailed, result.Kind);
-        Assert.Equal(Path.Combine(UpdatesDir, "irodori-tts-ywk-setup-v2.0.8-cuda.exe"), result.Detail);
+        Assert.Equal(Path.Combine(UpdatesDir, "irodori-tts-ywk-setup-v2.0.9-cuda.exe"), result.Detail);
         Assert.True(File.Exists(result.Detail));
     }
 
     [Fact]
     public void 檔名に使えない字は版から落とす()
     {
-        var name = AppUpdateService.InstallerFileName("v2.0.8/beta", ReleaseFlavor.Radeon);
+        var name = AppUpdateService.InstallerFileName("v2.0.9/beta", ReleaseFlavor.Radeon);
 
-        Assert.Equal("irodori-tts-ywk-setup-v2.0.8-beta-radeon.exe", name);
+        Assert.Equal("irodori-tts-ywk-setup-v2.0.9-beta-radeon.exe", name);
     }
 
     // ------------------------------------------------------------------ 画面（二段確認）

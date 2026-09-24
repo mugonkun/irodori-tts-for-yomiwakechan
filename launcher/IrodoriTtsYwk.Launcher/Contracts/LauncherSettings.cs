@@ -95,8 +95,12 @@ public sealed class LauncherSettings
     [JsonPropertyName("gpuMemoryLimitGiB")]
     public int GpuMemoryLimitGiB { get; set; }
 
-    /// <summary>上限を決めるときの最小値（GiB）。3 GiB では読み込み自体が失敗する（暖機のピーク 3.09 GiB・裁定 160）。</summary>
-    public const int MinGpuMemoryLimitGiB = 4;
+    /// <summary>
+    /// 上限を決めるときの最小値（GiB）＝<b>5</b>（v2.0.8・裁定 163＝司令官の指示 2026-09-24「両方とも下限を5GBにしようか。」）。
+    /// 4 GiB では参照つきの長い読み上げが落ちる（8 時間ソークで生きている確保の峰 4,123 MiB・裁定 162）・
+    /// 3 GiB では読み込み自体が失敗する（暖機のピーク 3.09 GiB・裁定 160）。
+    /// </summary>
+    public const int MinGpuMemoryLimitGiB = 5;
 
     /// <summary>UI の拡大率。</summary>
     [JsonPropertyName("uiScale")]

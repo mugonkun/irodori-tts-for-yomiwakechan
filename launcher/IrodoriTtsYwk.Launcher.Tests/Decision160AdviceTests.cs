@@ -112,8 +112,8 @@ public sealed class GpuMemoryLimitAdviceTests
         Assert.Null(GpuMemoryLimitAdvice.DedicatedBytes(null, [Adapter("NVIDIA GeForce RTX 4060", 8 * Gib)]));
 
     [Theory]
-    [InlineData(4, 4)]     // 2.6 → 下限の 4 まで上げる（3 以下は読み込みが落ちる）
-    [InlineData(6, 4)]     // 3.9 → 4
+    [InlineData(4, 5)]     // 2.6 → 下限の 5 まで上げる（裁定 163＝4 では参照つきの長文が落ちる）
+    [InlineData(6, 5)]     // 3.9 → 5
     [InlineData(8, 5)]     // 5.2 → 5
     [InlineData(10, 6)]    // 6.5 → 6
     [InlineData(12, 7)]    // 7.8 → 7

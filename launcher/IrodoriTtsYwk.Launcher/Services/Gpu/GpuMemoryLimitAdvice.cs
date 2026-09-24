@@ -35,13 +35,14 @@ namespace IrodoriTtsYwk.Launcher.Services.Gpu;
 /// メモリを本体と分け合う APU には上限が要らない（このアプリ自身が v2.0.7 で 4.7 GiB 前後に
 /// 収まるため＝リリース文 v2.0.7）。</item>
 /// <item>それ以外＝<b>専用メモリの <see cref="Share"/>（65 %）を切り捨て</b>、
-/// <see cref="LauncherSettings.MinGpuMemoryLimitGiB"/>（4）〜<see cref="MaxGiB"/> に丸める。
-/// 例＝6 GB→4・8 GB→5・10 GB→6・12 GB→7・16 GB→10。</item>
+/// <see cref="LauncherSettings.MinGpuMemoryLimitGiB"/>（5・v2.0.8）〜<see cref="MaxGiB"/> に丸める。
+/// 例＝6 GB→5・8 GB→5・10 GB→6・12 GB→7・16 GB→10。</item>
 /// </list>
 /// </para>
 /// <para>
 /// <b>数の根拠</b>（裁定 160 の実測）＝模型そのものは 1.9 GiB 前後を握り、24 秒の読み上げで
-/// 3.85 GiB まで伸びる。3 GiB では読み込みの山（3.09 GiB）で落ちるので<b>下限は 4</b>。
+/// 3.85 GiB まで伸び、参照つきの 26 秒では<b>4,123 MiB</b>（裁定 162 の 8 時間ソーク）。3 GiB では読み込みの山（3.09 GiB）で落ち、
+/// 4 GiB でも参照つきの長い読み上げが落ちるので<b>下限は 5</b>（v2.0.8・裁定 163）。
 /// 8 GB の板で 65 % に置くと 35 % 前後が配信ソフトとゲームに残る＝8 GB の利用者が
 /// 「8 時間の配信で 99 % まで埋まる」と報せてきた形（v2.0.7 以前）を作らない。
 /// </para>

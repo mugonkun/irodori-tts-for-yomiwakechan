@@ -778,7 +778,7 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
 
-        // 裁定 160＝GPU メモリの上限は 0（制限しない）か 4〜1024 GiB の整数（JsonSettingsStore.Sanitize と同じ窓）。
+        // 裁定 160／163＝GPU メモリの上限は 0（制限しない）か 5〜1024 GiB の整数（JsonSettingsStore.Sanitize と同じ窓）。
         if (_draft.GpuMemoryLimitGiB is < 0 or > 1024
             || _draft.GpuMemoryLimitGiB is > 0 and < LauncherSettings.MinGpuMemoryLimitGiB)
         {

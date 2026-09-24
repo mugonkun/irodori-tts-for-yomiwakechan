@@ -156,8 +156,9 @@ public sealed class JsonSettingsStore : ISettingsStore
             settings.EmptyCacheInterval = 0;
         }
 
-        // 裁定 160＝GPU メモリの上限は 0（制限しない）か 4〜1024 GiB の整数。負・1024 超は「制限しない」に戻し、
-        // 1〜3 は 4 に上げる（3 GiB では読み込み自体が失敗する＝暖機のピーク 3.09 GiB・本機の実測）。
+        // 裁定 160／163＝GPU メモリの上限は 0（制限しない）か 5〜1024 GiB の整数。負・1024 超は「制限しない」に戻し、
+        // 1〜4 は 5 に上げる（4 GiB では参照つきの長い読み上げが落ちる＝8 時間ソークの生きている確保の峰 4,123 MiB・裁定 162／
+        // 3 GiB では読み込み自体が失敗する＝暖機のピーク 3.09 GiB・裁定 160）。
         if (settings.GpuMemoryLimitGiB is < 0 or > 1024)
         {
             settings.GpuMemoryLimitGiB = 0;

@@ -343,14 +343,14 @@ public static class UiStrings
 
     /// <summary>詳細 7 行目の註（0 のとき）。</summary>
     public const string SettingsGpuMemoryLimitNoteOff =
-        "0＝制限しません（既定）。GPU メモリが 8 GB で、配信ソフトやゲームと同時に使うときだけ数字を入れます（目安は 4〜5・最小は 4）。";
+        "0＝制限しません（既定）。GPU メモリが 8 GB で、配信ソフトやゲームと同時に使うときだけ数字を入れます（目安は 5・最小は 5）。";
 
     /// <summary>詳細 7 行目の註（上限ありのとき・{0}＝GB＝設定の GiB をそのまま出す）。</summary>
     public const string SettingsGpuMemoryLimitNoteOnFormat =
         "このアプリは GPU メモリを {0} GB までしか取りません。長い文（20 秒を超える読み上げ）はこの量を超えて失敗することがあります。次に読み上げの準備をしたときから効きます。";
 
     /// <summary>詳細 7 行目の範囲外（〔適用〕が断る 1 行）。</summary>
-    public const string SettingsGpuMemoryLimitRange = "GPU メモリの上限は 0（制限しない）か、4〜1024 の整数（GB）で入れてください。3 以下では読み上げの準備ができません。";
+    public const string SettingsGpuMemoryLimitRange = "GPU メモリの上限は 0（制限しない）か、5〜1024 の整数（GB）で入れてください。4 以下では長い文の読み上げが失敗します。";
 
     /// <summary>
     /// 詳細 7 行目のおすすめ（裁定 160＝司令官の指示 2026-09-24「再スキャンで最適な占有メモリを提示」）。

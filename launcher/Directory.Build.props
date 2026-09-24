@@ -30,7 +30,7 @@
     2.0.7 は server/ywk_server.py の YWK_VERSION と揃えてある（/ywk/status.version と同じ数字）。
   -->
   <PropertyGroup>
-    <AppDisplayVersion>v2.0.7</AppDisplayVersion>
+    <AppDisplayVersion>v2.0.8</AppDisplayVersion>
     <Version>$(AppDisplayVersion.TrimStart('v'))</Version>
     <InformationalVersion>$(AppDisplayVersion)</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>

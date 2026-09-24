@@ -1338,8 +1338,8 @@ public sealed class SettingsViewModelTests : IDisposable
         Assert.Equal(UiStrings.SettingsGpuMemoryLimitRange, vm.Message);
         Assert.Equal(0, live.GpuMemoryLimitGiB);
 
-        // 3 GiB では読み込み自体が失敗する（本機の実測）＝1〜3 も断る。
-        vm.GpuMemoryLimitGiB = 3;
+        // 4 GiB では参照つきの長い読み上げが落ちる（裁定 162 の 8 時間ソーク）＝1〜4 も断る（裁定 163）。
+        vm.GpuMemoryLimitGiB = 4;
         vm.Apply();
 
         Assert.Equal(UiStrings.SettingsGpuMemoryLimitRange, vm.Message);

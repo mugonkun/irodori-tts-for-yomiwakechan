@@ -167,7 +167,8 @@ public sealed class SettingsRoundTripTests : IDisposable
         Assert.Equal(0, settings.EmptyCacheInterval);
         Assert.Equal(0, settings.GpuMemoryLimitGiB); // 裁定 160＝範囲外は「制限しない」に戻す
         Assert.Equal(LauncherSettings.MinGpuMemoryLimitGiB,
-            JsonSettingsStore.Sanitize(new LauncherSettings { GpuMemoryLimitGiB = 2 }).GpuMemoryLimitGiB); // 1〜3 は 4 に上げる
+            JsonSettingsStore.Sanitize(new LauncherSettings { GpuMemoryLimitGiB = 2 }).GpuMemoryLimitGiB); // 1〜4 は 5 に上げる（裁定 163）
+        Assert.Equal(5, JsonSettingsStore.Sanitize(new LauncherSettings { GpuMemoryLimitGiB = 4 }).GpuMemoryLimitGiB); // v2.0.7 の 4 も 5 へ
         Assert.Equal(0, JsonSettingsStore.Sanitize(new LauncherSettings { GpuMemoryLimitGiB = 5000 }).GpuMemoryLimitGiB);
         Assert.Equal(0, settings.ReadyTimeoutSeconds);
     }
