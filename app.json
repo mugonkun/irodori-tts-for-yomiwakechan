@@ -1,20 +1,20 @@
 {
   "v": 1,
   "name": "irodori-tts-ywk",
-  "version": "v2.0.9",
-  "builtAt": "2026-09-24T13:56:31Z",
+  "version": "v2.0.11",
+  "builtAt": "2026-10-12T08:54:01Z",
   "pageUrl": "https://mugonkun.github.io/irodori-tts-for-yomiwakechan/",
-  "note": null,
+  "note": "v2.0.11: emoji handling (unsupported emoji removed, silence when nothing to read) and the app-side dictionary tab",
   "installers": {
     "cuda": {
-      "url": "https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.9/irodori-tts-ywk-setup-v2.0.9-cuda.exe",
-      "sha256": "fa130a9e0e0263dacc7eff8fbe252053a6bda96d15d90b9850d3a6b8b7e184ac",
-      "sizeBytes": 58010851
+      "url": "https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.11/irodori-tts-ywk-setup-v2.0.11-cuda.exe",
+      "sha256": "83256fd986075aab18b04bcd4403e5c4092479614903896c481484b32ec7bd27",
+      "sizeBytes": 58023191
     },
     "radeon": {
-      "url": "https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.9/irodori-tts-ywk-setup-v2.0.9-radeon.exe",
-      "sha256": "48d6205e85fe3e21dc696ffc2e6d06a1e0bf5175c9cdb352ca8511dfdef3c7ca",
-      "sizeBytes": 58012285
+      "url": "https://github.com/mugonkun/irodori-tts-for-yomiwakechan/releases/download/v2.0.11/irodori-tts-ywk-setup-v2.0.11-radeon.exe",
+      "sha256": "4660771d7138a2e33594b8579e8afe8d6edeeb727943b0ac63fee3d8123a9507",
+      "sizeBytes": 58024676
     }
   }
 }
