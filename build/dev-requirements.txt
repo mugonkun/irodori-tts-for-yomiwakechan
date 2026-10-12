@@ -36,6 +36,11 @@ safetensors>=0.7.0
 pyyaml>=6.0
 tqdm>=4.67.3
 
+# --- runtime import of server/ywk_emoji.py (decisions.md 165) ---
+# transformers' own dependency, so every runtime ledger already carries it;
+# pinned here only because this fallback venv does not install transformers.
+regex==2026.9.3
+
 # --- test tools ---
 httpx>=0.27.0
 pytest>=8.0.0

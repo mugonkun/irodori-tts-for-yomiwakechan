@@ -195,6 +195,10 @@
         <TabItem Header="{x:Static vm:UiStrings.TabVoices}" AutomationProperties.AutomationId="TabVoices">
           <views:VoicesView DataContext="{Binding Voices}" />
         </TabItem>
+        <!-- 辞書（新設・decisions.md 166）＝文字 → 読み の対応表。束縛先は Dictionary。 -->
+        <TabItem Header="{x:Static vm:UiStrings.TabDictionary}" AutomationProperties.AutomationId="TabDictionary">
+          <views:DictionaryView DataContext="{Binding Dictionary}" />
+        </TabItem>
         <TabItem x:Name="SettingsTab" Header="{x:Static vm:UiStrings.TabSettings}" AutomationProperties.AutomationId="TabSettings">
           <views:SettingsView x:Name="SettingsPage" DataContext="{Binding Settings}" />
         </TabItem>

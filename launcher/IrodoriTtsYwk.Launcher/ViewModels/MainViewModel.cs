@@ -149,6 +149,13 @@ public sealed class MainViewModel : ObservableObject
 
         Try = new TryViewModel(static () => AppServices.Wrapper, player, settings);
 
+        // 辞書（decisions.md 166）＝<データ樹>\dictionary.json の唯一の書き手。読み手は wrapper。
+        Dictionary = new DictionaryViewModel(
+            new JsonDictionaryStore(System.IO.Path.Combine(paths.DataDir, JsonDictionaryStore.FileName)))
+        {
+            Log = line => Status.AppendLog(line),
+        };
+
         Settings = new SettingsViewModel(
             settings, store, paths, AppServices.GpuEnumerator, AppServices.DriverCheck,
             AppServices.SmartAppControl)
@@ -238,6 +245,9 @@ public sealed class MainViewModel : ObservableObject
     public VoicesViewModel Voices { get; }
 
     public TryViewModel Try { get; }
+
+    /// <summary>辞書（decisions.md 166）。</summary>
+    public DictionaryViewModel Dictionary { get; }
 
     public SettingsViewModel Settings { get; }
 

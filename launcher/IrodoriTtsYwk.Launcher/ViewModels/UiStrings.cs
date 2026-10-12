@@ -274,6 +274,50 @@ public static class UiStrings
     /// <summary>詳細の中＝同梱を戻す（旧「同梱のプリセットを入れ直す」）。</summary>
     public const string VoicesRestorePresetsButton = "最初から入っている声を入れ直す";
 
+    // ===================== 辞書（DictionaryView.xaml・decisions.md 166）=====================
+
+    /// <summary>タブの札。</summary>
+    public const string TabDictionary = "辞書";
+
+    public const string DictionaryNote =
+        "ここに登録した文字は、読み上げる前にその読みへ置き換わります。上から順に効きます。"
+        + "読み分けちゃん2 の辞書で置き換えた後の文に掛かります。";
+
+    public const string DictionaryExample =
+        "例：「🎉」→「ぱちぱち」、「www」→「わら」、「GPU」→「じーぴーゆー」。"
+        + "Irodori-TTS が対応している絵文字（😆 😭 ⏸️ など）は、登録しなくてもそのまま効きます。";
+
+    public const string DictionaryFromColumn = "文字";
+
+    public const string DictionaryToColumn = "読み";
+
+    public const string DictionaryAddHeader = "登録する";
+
+    public const string DictionaryFromLabel = "① 置き換える文字（絵文字や単語）";
+
+    public const string DictionaryToLabel = "② 読み（空のままだと、その文字は読まれません）";
+
+    public const string DictionaryAddButton = "登録する";
+
+    public const string DictionarySelectedHeader = "選んでいる行";
+
+    public const string DictionaryRemoveButton = "削除";
+
+    public const string DictionaryUpButton = "上へ";
+
+    public const string DictionaryDownButton = "下へ";
+
+    public const string DictionaryCountNone = "まだ登録はありません。";
+
+    /// <summary>{0}＝件数。</summary>
+    public const string DictionaryCountFormat = "登録 {0} 件（上から順に効きます）";
+
+    public const string DictionarySaved = "保存しました。次の読み上げから効きます。";
+
+    public const string DictionarySaveFailed = "保存できませんでした：";
+
+    public const string DictionaryLoadFailed = "辞書のファイルが読めなかったので、空の状態から始めます：";
+
     // ===================== 設定（SettingsView.xaml）=====================
 
     /// <summary>ふだんの設定 ⑴（旧「ランチャの起動と同時にサーバを起こす」）。</summary>

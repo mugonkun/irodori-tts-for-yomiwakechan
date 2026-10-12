@@ -122,9 +122,11 @@ trap {
 # ywk_server.py; upstream\ is CRLF and stays CRLF). An editor that rewrites ywk_server.py as CRLF
 # adds one byte per line -- 3,651 B on a file this size -- and A-1 drifts for a reason that has
 # nothing to do with the distributable. Measured 2026-09-11 when exactly that happened.
-$ExpectedAppFiles = 98
+# 裁定 165/166 (2026-10-12): server\ywk_emoji.py and server\ywk_dictionary.py joined the tree (98 -> 100 files,
+# 5,391,358 -> 5,421,255 B, measured at the v2.0.11 build). Moved on purpose.
+$ExpectedAppFiles = 100
 # 裁定 160 (2026-09-24): 11 preset wavs (28,739,044 B) left the tree; measured 5,389,166 B at v2.0.7 final (executor bound, 98 files).
-$ExpectedAppBytes = @([int64]5391358)
+$ExpectedAppBytes = @([int64]5421255)
 
 # Gate A-7. Files named ONE BY ONE, because their absence produces the worst artefact this line can
 # make: a setup that installs, exits 0 and then does not work. Nothing else in gate A sees them --

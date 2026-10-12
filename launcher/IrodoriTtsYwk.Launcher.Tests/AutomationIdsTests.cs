@@ -220,6 +220,26 @@ public sealed class AutomationIdsTests
     }
 
     /// <summary>
+    /// <b>辞書便（v2.0.11・<c>decisions.md</c> 166）で新設した id</b>＝タブ 1 枚と辞書の画面。
+    /// <b>退役・改名は 1 つも無い</b>（足しただけ）。
+    /// </summary>
+    [Fact]
+    public void 辞書便で新設したidが揃っている()
+    {
+        var found = AllIds();
+        string[] added =
+        [
+            "TabDictionary", "DictionaryView", "DictionaryNoteText", "DictionaryExampleText",
+            "DictionaryGrid", "DictionaryCountText", "DictionaryFromBox", "DictionaryToBox",
+            "DictionaryAddButton", "DictionaryRemoveButton", "DictionaryUpButton", "DictionaryDownButton",
+            "DictionaryMessageText",
+        ];
+
+        var missing = added.Where(id => !found.Contains(id)).ToArray();
+        Assert.True(missing.Length == 0, "新設できていない AutomationId：" + string.Join("・", missing));
+    }
+
+    /// <summary>
     /// <b>段 B（はじめの準備）で新設した id</b>（`v2-spec.md` §3・`v2-plan.md` 段 B）。
     /// <para>
     /// <b>退役させた id は 1 つも無い</b>＝選ぶ段は消えたが、<c>FirstRunVariantCombo</c> ほか 6 つは
@@ -438,8 +458,8 @@ public sealed class AutomationIdsTests
 
         Assert.Equal(
             [
-                "AboutView.xaml", "FirstRunWizard.xaml", "LogView.xaml", "MainWindow.xaml", "SettingsView.xaml",
-                "StatusView.xaml", "TryView.xaml", "VoicesView.xaml",
+                "AboutView.xaml", "DictionaryView.xaml", "FirstRunWizard.xaml", "LogView.xaml", "MainWindow.xaml",
+                "SettingsView.xaml", "StatusView.xaml", "TryView.xaml", "VoicesView.xaml",
             ],
             names);
     }

@@ -219,6 +219,11 @@ await File.WriteAllBytesAsync("out.wav", await res.Content.ReadAsByteArrayAsync(
     <li><code>speed</code>（0.25〜4.0）と <code>irodori.duration_scale</code> は<strong>どちらか一方</strong>だけ送ってください（両方送ると掛け合わさります）。</li>
     <li><code>irodori.seconds</code> を指定すると、長い本文の自動分割が切れて、出力がその秒数ちょうどに引き伸ばされます。ふつうは送らないでください。</li>
     <li>返る wav のヘッダには <code>X-Irodori-Seed</code>（使われた乱数の種）が付きます。同じ音を再現したいときは <code>irodori.seed</code> に入れて送り直してください。</li>
+    <li><strong>絵文字</strong>＝Irodori-TTS が対応している 45 種（モデルの配布ページの <code>EMOJI_ANNOTATIONS.md</code>）はそのまま効きます（綴りの揺れ＝肌の色や VS16 の有無は正しい形に直します）。
+      <strong>それ以外の絵文字は取り除いてから読み上げます</strong>（取り除いた数は応答ヘッダ <code>X-Ywk-Emoji-Removed</code>）。取り除いた結果、読む文字が残らなければ、
+      <strong>400 ではなく 200 の無音の wav</strong>（PCM 16 bit・モノラル・<code>X-Ywk-Silent: 1</code>）が返ります。空白だけの本文は今までどおり 400 です。</li>
+    <li><strong>辞書</strong>＝このアプリの「辞書」タブに登録した「文字 → 読み」は、絵文字の扱いより前に本文へ掛かります（上から順・すべての一致を置き換え）。
+      読み分けちゃん2 のような呼び出し側が自分の辞書を持っていても構いません（呼び出し側の辞書 → このアプリの辞書 → 絵文字の順）。</li>
   </ul>
 
   <h3>3. 間違いは 400 で止まる</h3>

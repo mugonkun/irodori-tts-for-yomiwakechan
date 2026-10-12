@@ -65,6 +65,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import ywk_emoji
+
 SCHEMA = 1
 ENGINE = "irodori-ywk"
 
@@ -813,7 +815,11 @@ REQUEST_PARAMS: tuple[dict[str, Any], ...] = (
         "key": "input",
         "type": "string",
         "label": "本文",
-        "description": "読み上げる本文。空白だけは 400。",
+        "description": (
+            "読み上げる本文。対応する絵文字（45 種）はそのまま通し、それ以外の絵文字は"
+            "取り除く（字数はそのぶん詰まる）。取り除いて読む字が残らなければ無音の wav を"
+            " 200 で返す。空白だけは 400。"
+        ),
         "min_length": 1,
         "max_length": 4096,
         "range_source": "上流 app.py:90（Field(min_length=1, max_length=4096)）",
@@ -1032,6 +1038,14 @@ def build_rules() -> dict[str, Any]:
         "default_voice": DEFAULT_VOICE_ID,
         "exposed_to_ywk": sorted(EXPOSED_TO_YWK | EXPOSED_REQUEST_KEYS),
         "error_code_prefix": "ywk_",
+        # decisions.md 165: what the wrapper does to emoji in ``input``.  The
+        # 本体 does not read this today; it is here so the list the wrapper
+        # passes through is visible without opening the model repo.
+        "emoji": {
+            "passthrough": list(ywk_emoji.SUPPORTED_EMOJIS),
+            "others": "removed",
+            "nothing_to_pronounce": "silent_wav_200",
+        },
     }
 
 

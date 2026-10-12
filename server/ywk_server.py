@@ -75,11 +75,12 @@ import threading
 import time
 import uuid
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-YWK_VERSION = "2.0.9"
+YWK_VERSION = "2.0.11"
 UPSTREAM_IRODORI_TTS = "8224daf"
 UPSTREAM_SERVER = "841fb7c"
 
@@ -522,7 +523,7 @@ ALLOCATOR_FLAGS = apply_allocator_defaults(EFFECTIVE_DEVICES)
 # 2. upstream import (settings freeze here)
 # --------------------------------------------------------------------------
 
-from fastapi import Request  # noqa: E402
+from fastapi import HTTPException, Request  # noqa: E402
 from fastapi.exceptions import RequestValidationError  # noqa: E402
 from fastapi.responses import JSONResponse, Response, StreamingResponse  # noqa: E402
 from fastapi.routing import APIRoute  # noqa: E402
@@ -535,6 +536,13 @@ from irodori_openai_tts import app as upstream  # noqa: E402
 #: look for exactly the files that scan would have turned into a speaker.
 from irodori_openai_tts.voices import VOICE_EXTENSIONS  # noqa: E402
 
+#: The upstream's own text normalizer (``irodori_tts/text_normalization.py``),
+#: used for one question only: "would this chunk be empty by the time the
+#: runtime sees it?" (decisions.md 165 Q2).  Read, never changed.
+from irodori_tts.text_normalization import normalize_text as _upstream_normalize_text  # noqa: E402
+
+import ywk_dictionary  # noqa: E402
+import ywk_emoji  # noqa: E402
 import ywk_params  # noqa: E402
 from ywk_params import (  # noqa: E402
     DEFAULT_VOICE_ID,
@@ -1354,6 +1362,212 @@ async def _hold_until_drained(inner: Any, tracker: Any) -> Any:
         tracker.release()
 
 
+# --------------------------------------------------------------------------
+# 5b. Emoji in the input (decisions.md 165・survey research/report/emoji-survey-2026-10-12.md)
+# --------------------------------------------------------------------------
+
+#: Length of the silence returned for an input with nothing left to say.
+#: One sample would satisfy the 本体 (PCM16 with ``data`` > 0 is all its volume
+#: multiplier asks for -- ``IrodoriYwkVolumeScaler.cs``); a tenth of a second
+#: keeps NAudio and the launcher's 試し撃ち comfortably inside "a wav".
+SILENT_SECONDS = 0.1
+
+#: What the shipped codec produces -- every real answer in the launcher log is
+#: ``(bytes - 44) / 2 / seconds == 48000`` -- used while the runtime is not
+#: loaded (the silence never triggers a load, 裁定 165 Q16).
+SILENT_SAMPLE_RATE = 48000
+
+
+def _dictionary_file() -> Path:
+    """``<data>/dictionary.json`` -- the launcher writes it (decisions.md 166)."""
+    return _data_dir() / ywk_dictionary.FILE_NAME
+
+
+@dataclass
+class PreparedInput:
+    """The outcome of :func:`prepare_speech_input` for one request."""
+
+    payload: Any
+    filtered: ywk_emoji.FilterResult | None
+    chars_before: int
+    chars_after: int
+    dropped_chunks: int = 0
+    silent: bool = False
+    stream_as_sse: bool = False
+    seed: int | None = None
+    #: decisions.md 166: matches the app's own dictionary replaced, and the
+    #: length the text had after that step (the emoji step counts from there).
+    dictionary_hits: int = 0
+    chars_worded: int = 0
+
+    @property
+    def changed(self) -> bool:
+        return bool(
+            (self.filtered is not None and self.filtered.changed)
+            or self.dropped_chunks
+            or self.silent
+        )
+
+    @property
+    def removed_count(self) -> int:
+        return 0 if self.filtered is None else len(self.filtered.removed)
+
+    def describe(self) -> str:
+        return ywk_emoji.describe(
+            self.filtered,
+            chars_before=self.chars_worded if self.dictionary_hits else self.chars_before,
+            chars_after=self.chars_after,
+            dropped_chunks=self.dropped_chunks,
+            silent=self.silent,
+        )
+
+    def describe_dictionary(self) -> str:
+        return f"hits={self.dictionary_hits} chars={self.chars_before}->{self.chars_worded}"
+
+
+def prepare_speech_input(payload: Any) -> PreparedInput:
+    """Rewrite ``payload.input`` per decisions.md 165 and say what to do next.
+
+    ⑴ The 45 supported emoji pass (spelled canonically); every other emoji and
+    every orphaned emoji part is removed; the few the upstream would turn into
+    text anyway are turned into text here (``ywk_emoji``).
+    ⑵ The checks the upstream runs *before* it reads the text are run here, in
+    its order and with its messages -- model, ``stream_format``, voice, option
+    values, chunking options -- so an emoji-only request still gets the 400 it
+    always got (``ywk_unknown_voice`` for a vanished speaker, …) and the
+    silence below never hides one.
+    ⑶ Then the question the 本体 cannot be asked: is there anything left to
+    pronounce?  Chunk by chunk, exactly as the upstream will split it, each
+    piece is passed through the upstream's own ``normalize_text``; a piece with
+    no letter or digit is dropped (``「🎉」`` → ``「」`` → nothing; ``！`` alone
+    still synthesises seconds of *something* on this checkpoint).  Nothing
+    left means **silence, 200** (``silent``) -- never the upstream's 400, which
+    the 本体 would show as 「本体側の不具合」 (contract 3-3).
+
+    The one input that still reaches the upstream's 400 ``ywk_empty_input`` is
+    whitespace as .NET defines it (the 本体 never sends it; Q18).
+
+    Raises the upstream's own ``HTTPException`` for the 400s in ⑵.
+    """
+    text = payload.input
+    if not isinstance(text, str) or ywk_emoji.is_dotnet_whitespace_only(text):
+        length = len(text) if isinstance(text, str) else 0
+        return PreparedInput(payload=payload, filtered=None, chars_before=length, chars_after=length)
+
+    # decisions.md 166: the app's own dictionary first (a reading the user
+    # gave an unsupported emoji survives the removal below).
+    worded, hits = ywk_dictionary.apply(text, ywk_dictionary.load_table(_dictionary_file()))
+    filtered = ywk_emoji.filter_text(worded)
+    new_text = ywk_emoji.clip_graphemes(filtered.text, ywk_emoji.INPUT_MAX_CHARS)
+    has_text = bool(new_text.strip())
+
+    # ``input`` is ``min_length=1`` upstream and ``_validate_speech_payload``
+    # rejects whitespace; the probe carries a placeholder when the rewrite
+    # emptied the text so that the *other* checks still run on the real body.
+    probe = payload.model_copy(update={"input": new_text if has_text else "x"})
+    upstream._validate_speech_payload(probe)
+    stream_as_sse = upstream._stream_format_is_sse(payload.stream_format)
+    voice = upstream._resolve_voice(payload)
+    try:
+        sampling_request = upstream._build_sampling_request(probe, voice)
+        upstream._validate_sampling_request(sampling_request)
+        chunks = upstream._speech_chunks(probe, sampling_request) if has_text else []
+    except (ValueError, TypeError) as exc:  # the upstream's own wrap (app.py:339-342)
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    kept = [
+        chunk
+        for chunk in chunks
+        if ywk_emoji.is_pronounceable(_upstream_normalize_text(chunk).strip())
+    ]
+    dropped = len(chunks) - len(kept)
+    if not kept:
+        return PreparedInput(
+            payload=payload,
+            filtered=filtered,
+            chars_before=len(text),
+            chars_after=0,
+            dropped_chunks=dropped,
+            silent=True,
+            stream_as_sse=stream_as_sse,
+            seed=sampling_request.seed,
+            dictionary_hits=hits,
+            chars_worded=len(worded),
+        )
+
+    out_text = "".join(kept) if dropped else new_text
+    out_payload = payload if out_text == text else payload.model_copy(update={"input": out_text})
+    return PreparedInput(
+        payload=out_payload,
+        filtered=filtered,
+        chars_before=len(text),
+        chars_after=len(out_text),
+        dropped_chunks=dropped,
+        stream_as_sse=stream_as_sse,
+        seed=sampling_request.seed,
+        dictionary_hits=hits,
+        chars_worded=len(worded),
+    )
+
+
+def _silent_sample_rate() -> int:
+    """The codec's rate when the runtime is loaded, else the shipped 48000."""
+    codec = getattr(_live_runtime(), "codec", None)
+    rate = getattr(codec, "sample_rate", None)
+    try:
+        return int(rate) if rate else SILENT_SAMPLE_RATE
+    except (TypeError, ValueError):
+        return SILENT_SAMPLE_RATE
+
+
+def _silent_speech_response(prepared: PreparedInput) -> Any:
+    """200 with nothing in it: the shape the 本体 plays without a word.
+
+    Non-SSE: a PCM16 mono wav with the upstream's three headers
+    (``app.py:381-387``).  SSE: one ``audio_chunk`` frame carrying that wav and
+    an empty ``text``, then ``done`` -- the frames of contract 3-5, so a client
+    that waits for ``done`` is not left hanging.
+    """
+    audio = ywk_emoji.silent_wav(_silent_sample_rate(), SILENT_SECONDS)
+    seed = 0 if prepared.seed is None else int(prepared.seed)
+    media_type = upstream.CONTENT_TYPES["wav"]
+    if prepared.stream_as_sse:
+        frames = [
+            upstream._sse_event(
+                "audio_chunk",
+                {
+                    "index": 0,
+                    "text": "",
+                    "format": "wav",
+                    "media_type": media_type,
+                    "audio_base64": base64.b64encode(audio).decode("ascii"),
+                    "seed": seed,
+                    "total_to_decode": 0.0,
+                },
+            ),
+            upstream._sse_event("done", {"chunks": 1}),
+        ]
+
+        async def events() -> Any:
+            for frame in frames:
+                yield frame
+
+        return StreamingResponse(
+            events(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "X-Ywk-Silent": "1"},
+        )
+    headers = {
+        "Content-Disposition": 'attachment; filename="speech.wav"',
+        "X-Irodori-Seed": str(seed),
+        "X-Irodori-Total-To-Decode": "0.000000",
+        "X-Ywk-Silent": "1",
+    }
+    if prepared.removed_count:
+        headers["X-Ywk-Emoji-Removed"] = str(prepared.removed_count)
+    return Response(content=audio, media_type=media_type, headers=headers)
+
+
 async def _create_speech(request: Request):  # noqa: ANN202
     global _runtime_error
 
@@ -1378,6 +1592,19 @@ async def _create_speech(request: Request):  # noqa: ANN202
         )
     except TypeError as exc:
         return ywk_error(f"request body is invalid: {exc}", code="ywk_invalid_body")
+
+    # decisions.md 165: emoji.  The 45 the checkpoint was trained on pass
+    # (canonically spelled), every other emoji is removed, and an input left
+    # with nothing to pronounce is answered with silence, not a 400.  The one
+    # log line never carries body text (emoji, counts and code points only).
+    prepared = prepare_speech_input(payload)
+    if prepared.dictionary_hits:
+        logger.info("dictionary applied: %s", prepared.describe_dictionary())
+    if prepared.changed:
+        logger.info("emoji filtered: %s", prepared.describe())
+    if prepared.silent:
+        return _silent_speech_response(prepared)
+    payload = prepared.payload
 
     try:
         response = await _upstream_create_speech(payload)
@@ -1406,6 +1633,10 @@ async def _create_speech(request: Request):  # noqa: ANN202
     if upstream.runtime_manager.is_loaded:
         _runtime_error = None
         note_device_once()
+    if prepared.removed_count:
+        # Optional, nobody has to read it: the launcher's 試し撃ち and the
+        # contract tests can see that something was dropped without the log.
+        response.headers["X-Ywk-Emoji-Removed"] = str(prepared.removed_count)
     return _scrub_sse(response)
 
 
@@ -2005,6 +2236,9 @@ def ywk_status() -> dict[str, Any]:
             # （契約 ⑧）。ランチャは 2 秒ごとの標本でここを見て、正なら受け箱を処理する。
             "inbox": inbox_pending_count(),
         },
+        # decisions.md 166: the app's own reading dictionary (<data>/dictionary.json).
+        # Count and one error line only; adding the field keeps ``schema`` (契約 ⑻).
+        "dictionary": ywk_dictionary.status_snapshot(_dictionary_file()),
         # 裁定 87 ⑴: the speaker ids come from the list built just above, so the
         # latents table is answered from the same reading of voices.json.
         "memory": memory_snapshot(device_obj, [item["id"] for item in voices]),

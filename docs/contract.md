@@ -136,6 +136,26 @@
   **明示 `null` が env 既定に勝って `None` を運ぶ**（＝参照のラウドネス正規化が黙って切れて音が変わる）。
   配布版はこの 3 欄の明示 `null` を**欄ごと削って**から上流に渡す＝`/params.rules.null_means_unset`
   が 44 欄すべてで真になる（削る欄は `rules.null_normalized_by_wrapper` に載る）。
+- **`input` の絵文字は配布版が扱う（v2.0.10・`decisions.md` 165）**＝モデル同梱の
+  `EMOJI_ANNOTATIONS.md`（rev `2b28324d`）にある**対応絵文字 45 種はそのまま通す**（綴りの揺れ＝VS16 の有無・
+  肌色修飾子・VS15・tag 文字は正本の綴りへ寄せる。`😮💨` のような ZWJ 欠けは補わない＝`😮` だけ残る）。
+  **それ以外の絵文字列**（基底＋修飾子・ZWJ 連結・旗・tag 旗を 1 単位）と**孤立した部品**（肌色・ZWJ・
+  VS15／VS16・囲み U+20E3・tag）は**取り除き、字数はそのぶん詰まる**。文字扱いもされる絵文字（© ▶ ⚠ ❤ ☺ …）も
+  取り除く。上流の `normalize_text` が字に直す 22 点（‼ ⁉ ™ ℹ Ⓜ ㊗ ㊙ 🈁 🈂 🈚 🈯 🈲〜🈺 🉐 🉑）と `♥`→`♡` は
+  配布版が先に字へ畳む（＝読みは今までどおり）。`❗❕`→`!`・`❓❔`→`?`・キーキャップ `1️⃣`→`1`。
+  **取り除いて読む字（文字・数字・対応絵文字）が残らなければ、上流を呼ばず 200 の無音 wav を返す**（3-3）＝
+  `「🎉」` のように上流の正規化で空になる形や、`！` `。` だけが残る形も同じ（上流が 80 字ごとに切る塊の
+  単位でも同じ扱い＝空になる塊だけ落とす）。`caption` は対象外。要求 JSON の形・`error.code` の表・期限・
+  本体の分岐は変わらない（本体の改修は不要）。任意の応答ヘッダ＝`X-Ywk-Emoji-Removed`（取り除いた数）・
+  `X-Ywk-Silent: 1`（無音を返した印）＝本体は読まなくてよい。取り除いた物はランチャのログに 1 行
+  （`emoji filtered: removed=🎉x3 … chars=12->8`＝本文は書かない）。調査＝`research/report/emoji-survey-2026-10-12.md`。
+- **配布版の辞書（v2.0.11・`decisions.md` 166）**＝`<データ樹>\dictionary.json`（ランチャの「辞書」タブが書く・
+  `{"schema":1,"entries":[{"from":"🎉","to":"ぱちぱち"}]}`）の対応表を、**絵文字の扱いより前に** `input` へ掛ける
+  （上から順・Ordinal・部分一致・すべての一致・`from` が空の行は無視・`to` が空なら読まない＝本体の辞書と同じ作法。
+  正規表現・繰り返し圧縮・アクセントは無い）。順序＝**本体の辞書 → 配布版の辞書 → 絵文字**。`caption` には掛けない。
+  檔が無ければ空・壊れていれば空（`/ywk/status.dictionary.error` に 1 行）＝読み上げは止めない。要求ごとに檔の
+  大きさと更新時刻を見るので、書き換えは次の要求から効く。ログ＝置き換えた要求にだけ 1 行
+  `dictionary applied: hits=N chars=A->B`（From・To・本文は書かない）。本体はこの辞書を叩かない（HTTP の口は無い）。
 
 ### 3-2 検査（配布版が足す＝上流には無い）
 
@@ -151,6 +171,12 @@
 **上流は⑴〜⑶を黙って通す**（`extra="allow"`・範囲検査ゼロ・`num_steps:-5` も `cfg_scale_text:999`
 も 200＝`research/lab/notes/37` S-1／S-5／S-6）。**綴り違いが「無音の別の音」になる沈黙**は、
 この 5 検査で塞がる。
+
+**書き換え（400 にしない・v2.0.10）**＝上の検査を通った後、`input` の絵文字を 3-1 の規則で書き換える
+（対応 45 種は正本の綴りへ・それ以外の絵文字と孤立部品は取り除く・上流が字にする物は字へ）。書き換えで
+字数が 4096 を超える縁（`⏸`×4096 → VS16 を補って 8192）は書記素の境で 4096 に切る。読む字が残らなければ
+上流を呼ばず 200 の無音（3-3）。**上流が本文より前に掛ける検査（`model`・`stream_format`・話者・欄の値・
+分割の欄）は無音の前にも同じ順で通す**＝消えた話者＋絵文字だけの要求は従来どおり 400 `ywk_unknown_voice`。
 
 ### 3-3 エラー 5 態と body の形
 
@@ -174,7 +200,8 @@
   | 未知の話者（`Unknown voice=`） | `ywk_unknown_voice` ← **D-5 はこれで文言依存を捨てられる** |
   | `voice` 省略（`No voice was provided`）＝**ランチャが `IRODORI_DEFAULT_VOICE` を空にした場合のみ**（3-1） | `ywk_missing_voice` |
   | `model` 違い | `ywk_unknown_model` |
-  | `input` が空白のみ | `ywk_empty_input` |
+  | `input` が空白のみ（.NET の `IsNullOrWhiteSpace` が真の形＝本体は送らない） | `ywk_empty_input` |
+  | `input` の絵文字を取り除いて読む字が残らない・上流の正規化で空になる（`「🎉」`・`▼🎉`・`！` だけ）＝3-1 | **400 ではない＝200 の無音 wav**（PCM16・mono・48 kHz・`X-Ywk-Silent: 1`・`code` 無し。v2.0.9 までは `ywk_empty_input`／`ywk_upstream_error` の 400 だった） |
   | 話者 id に許されない文字（上流の登録 API の検査に被せる札＝配布版は登録の 3 口を外しているので本体には届かないはず。網羅表に載せるのは `default` 分岐に落とさないため・裁定 104） | `ywk_invalid_voice_id` |
   | 読込中・読込失敗（503） | `ywk_runtime_unavailable` |
   | 配布版の前段検査（3-2） | `ywk_unknown_field`・`ywk_out_of_range`・`ywk_type_error`・`ywk_invalid_enum`・`ywk_literal_top_level`・`ywk_voice_and_no_ref`・`ywk_voice_and_reference`・`ywk_unsupported_response_format`・`ywk_invalid_body`・`ywk_validation_error` |
@@ -220,7 +247,7 @@
 
   | `event:` | `data:` の欄（**上流の実名**） |
   |---|---|
-  | `audio_chunk` | `index`（0 起点）・`text`（そのチャンクの本文）・`format`（`wav`）・`media_type`（`audio/wav`）・`audio_base64`・`seed`・`total_to_decode`（`app.py:734-744`） |
+  | `audio_chunk` | `index`（0 起点）・`text`（そのチャンクの本文＝**絵文字を書き換えた後の本文**〔3-1〕・無音のときは `""`）・`format`（`wav`）・`media_type`（`audio/wav`）・`audio_base64`・`seed`・`total_to_decode`（`app.py:734-744`） |
   | `done` | `chunks`（送り終えたチャンク数・`app.py:769`） |
   | `error` | `error.message`・`error.type`・`error.param`・`error.code`（`_sse_error_event`＝`app.py:792-810`＝非ストリームの 3-3 と同じ 4 欄） |
 
@@ -233,6 +260,9 @@
   （503 相当）＝`app.py:745-762`・`812-815`。**この枠の `code` だけは `ywk_` 接頭辞にならない**
   （3-3 の middleware は 4xx/5xx の body を書き換えるもので、200 の中身には触らない）。
 - **`error` 枠が出たらそこで終わり**＝上流は `return` する（`done` は来ない）。
+- **読む字が残らない本文（3-1）は SSE でも 200**＝無音の wav を載せた `audio_chunk` 1 枠（`index` 0・`text` `""`・
+  `seed` は指定値か 0・`total_to_decode` 0）のあと `done`（`chunks` 1）＝`done` を待つ客が止まらない。
+  応答ヘッダに `X-Ywk-Silent: 1`。
 - **`error` 枠にも絶対パスを出さない**＝配布版は SSE の本体を 1 枠ずつ見て、`event: error` の枠だけ
   絶対パスを `<path>` に置換する（`audio_base64` を含む枠には触らない＝base64 を壊さない）。
   上流の枠は非ストリームと同じ `str(exc)` を載せるので、これが無いと 3-3 の「絶対パス 0 件」が
@@ -243,7 +273,10 @@
 
 題目＝`未知欄は400で拒む`／`Literal3欄はトップレベルにあれば400`／`範囲外は400`／
 `voiceとno_refの同時指定は400`／`voiceと参照5欄の同時指定は400`／`エラーbodyに絶対パスが0件`／
-`上流由来の400にもcodeが載る`／`response_formatはwavのみ`／`3欄の明示nullは未指定として畳まれる`／`SSEのerror枠に絶対パスが0件`／`stream_formatはsse以外400`。
+`上流由来の400にもcodeが載る`／`response_formatはwavのみ`／`3欄の明示nullは未指定として畳まれる`／`SSEのerror枠に絶対パスが0件`／`stream_formatはsse以外400`／
+`対応絵文字45種はそのまま届く`／`非対応絵文字は取り除かれて字数が詰まる`／`綴りの揺れは正本へ寄る`／`辞書が残した部品は掃除される`／
+`読む字が残らなければ200の無音で上流を呼ばない`／`無音の前にも上流の400は同じ順で出る`／`未読込でも無音は即答`／`SSEの無音は無音1枠とdone`／
+`ログ1行に本文は入らない`／`/paramsが45種を名乗る`（`tests/contract/test_emoji.py`・元表 `emoji-cases.json`）。
 
 ---
 
@@ -596,8 +629,11 @@ Content-Type: application/json
 > あって、応答本文にこの文字が入るわけではない。`…` は省略の印である。
 
 ```json
-{"engine":"irodori-ywk","version":"<配布版の版>","upstream":{"irodori_tts":"8224daf","server":"841fb7c"},"host":"127.0.0.1","port":18088,"runtime":{"loaded":bool,"loading":bool,"error":str|null},"device":{"configured":"cuda:0","actual":"cuda:0"|null,"name":"NVIDIA GeForce RTX 3090"|null,"uuid":"…"|null,"pci_bus_id":"…"|null,"precision":"bf16"},"torch":{"version":"2.10.0+cu130","cuda":"13.0","hip":null},"voices":{"count":13,"dir":"<絶対パスは出さない・末尾 1 段のみ>"},"warmup":{"state":"idle|running|done","shots":0}}
+{"engine":"irodori-ywk","version":"<配布版の版>","upstream":{"irodori_tts":"8224daf","server":"841fb7c"},"host":"127.0.0.1","port":18088,"runtime":{"loaded":bool,"loading":bool,"error":str|null},"device":{"configured":"cuda:0","actual":"cuda:0"|null,"name":"NVIDIA GeForce RTX 3090"|null,"uuid":"…"|null,"pci_bus_id":"…"|null,"precision":"bf16"},"torch":{"version":"2.10.0+cu130","cuda":"13.0","hip":null},"voices":{"count":13,"dir":"<絶対パスは出さない・末尾 1 段のみ>"},"dictionary":{"file":"dictionary.json","entries":2,"error":null},"warmup":{"state":"idle|running|done","shots":0}}
 ```
+
+- **`dictionary`（v2.0.11・`decisions.md` 166）**＝配布版の辞書（⑶ 3-1）の件数と、檔が読めないときの理由 1 行
+  （`error`・絶対パスは出さない）。**欄を足すだけなので `schema` は上げない**（⑻）。本体は読まなくてよい。
 
 - **`device.actual` はモデル読込後に実測した値**（`next(model.parameters()).device`・
   `torch.cuda.get_device_properties(idx).uuid`）＝**設定値の echo ではない**。**未読込なら `null`**。
@@ -921,6 +957,11 @@ Content-Type: application/json
   新旧どちらの組み合わせでも壊れない（`decisions.md` 130 Q4）。
 - **配布版のランチャが `settings.json` に焼く 2 つの表（HTTP の口ではない・本体は読まない・裁定 91・95・97）**＝`runtimeLedgers`（鍵＝変種名・値＝展開に使った台帳 `ledger/runtime-<変種>.json` の sha256・小文字 hex 64 字）と `installedAppVersions`（鍵＝変種名・値＝`v2.0.7` の形）。組んだ変種の欄だけが焼かれる（組んでいない変種の欄は無い）。起動時にいまの変種の欄が配布樹の台帳と食い違えば状態帯に「実行系を組み直す」1 手が出る。`schema` は動かない。
 - **同・v2.0.1 で足した 1 欄（HTTP の口ではない・本体は読まない・決裁 135 ⑵）**＝`variantChosenByUser`（真＝いまの `variant` は**利用者が選んだ**物・偽＝アプリが勧めて決めた物・**欄が無い**＝古い `settings.json`＝判らない）。ウィザードが勧めで上書きしてよいかを決めるのに使う（`launcher/README.md` §7-7）。**欄を足すだけなので `schema` は動かない**。
+- **v2.0.10 の絵文字の扱い（⑶ 3-1）も `schema` を上げない**（`decisions.md` 165）＝欄も JSON の形も `error.code` の表も
+  本体の分岐も不変。増えるのは任意の応答ヘッダ 2 つ（`X-Ywk-Emoji-Removed`・`X-Ywk-Silent`）と `/params.rules.emoji`
+  （足すだけ）。変わるのは**答えの中身**＝非対応絵文字が音にならない・読む字の無い本文が 400 でなく 200 の無音になる。
+- **v2.0.11 の配布版の辞書（⑶ 3-1・⑹ `dictionary`）も `schema` を上げない**（`decisions.md` 166）＝HTTP の口は増えない・
+  `/ywk/status` に欄が 1 つ増えるだけ。変わるのは答えの中身（辞書で置き換えた本文が読まれる）。
 - **上流の pin**＝`/ywk/status.upstream` に `irodori_tts`・`server` の短い commit を載せる。
   上流を上げるときは、`/params` と上流 openapi の突合ログ（⑸）に差分が出るので、それを見て本書を直す。
 - **配布版の版**＝`/ywk/status.version`。

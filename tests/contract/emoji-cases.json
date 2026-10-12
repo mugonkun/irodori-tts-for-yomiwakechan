@@ -1,0 +1,4311 @@
+{
+ "made_from": "scratchpad seatC/cases.json (2026-10-12・emoji-test 17.0 の全列と手書きの文例から独立に組んだ期待値)",
+ "policy": "decisions.md 165＝45 種は正本の綴りへ・他の絵文字と孤立部品は削除・上流が字にする 23 点は字へ・❗❕→! ❓❔→?・キーキャップは基底の字",
+ "supported_45": [
+  "👂",
+  "😮‍💨",
+  "⏸️",
+  "🤭",
+  "🥵",
+  "📢",
+  "😏",
+  "🥺",
+  "🌬️",
+  "😮",
+  "👅",
+  "💋",
+  "🫶",
+  "😭",
+  "😱",
+  "😪",
+  "😴",
+  "⏩",
+  "📞",
+  "🐢",
+  "🥤",
+  "🤧",
+  "😒",
+  "😰",
+  "😆",
+  "💥",
+  "😠",
+  "😲",
+  "🥱",
+  "😖",
+  "😟",
+  "🫣",
+  "🙄",
+  "😊",
+  "😎",
+  "👌",
+  "🙏",
+  "🥴",
+  "🎵",
+  "🤐",
+  "😌",
+  "🤔",
+  "💪",
+  "👃",
+  "📖"
+ ],
+ "upstream_fold_23": {
+  "‼": "!!",
+  "⁉": "!?",
+  "™": "TM",
+  "ℹ": "i",
+  "Ⓜ": "M",
+  "㊗": "祝",
+  "㊙": "秘",
+  "🈁": "ココ",
+  "🈂": "サ",
+  "🈚": "無",
+  "🈯": "指",
+  "🈲": "禁",
+  "🈳": "空",
+  "🈴": "合",
+  "🈵": "満",
+  "🈶": "有",
+  "🈷": "月",
+  "🈸": "申",
+  "🈹": "割",
+  "🈺": "営",
+  "🉐": "得",
+  "🉑": "可",
+  "♥": "♡"
+ },
+ "count": 652,
+ "cases": [
+  {
+   "id": "pass_canonical-0001",
+   "category": "pass_canonical",
+   "input": "👂",
+   "expected": "👂"
+  },
+  {
+   "id": "pass_canonical-0002",
+   "category": "pass_canonical",
+   "input": "あ👂い",
+   "expected": "あ👂い"
+  },
+  {
+   "id": "pass_canonical-0003",
+   "category": "pass_canonical",
+   "input": "👂👂👂",
+   "expected": "👂👂👂",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0001",
+   "category": "normalize_variant",
+   "input": "👂︎",
+   "expected": "👂"
+  },
+  {
+   "id": "normalize_variant-0013",
+   "category": "normalize_variant",
+   "input": "👂🏼",
+   "expected": "👂"
+  },
+  {
+   "id": "pass_canonical-0004",
+   "category": "pass_canonical",
+   "input": "😮‍💨",
+   "expected": "😮‍💨"
+  },
+  {
+   "id": "pass_canonical-0005",
+   "category": "pass_canonical",
+   "input": "あ😮‍💨い",
+   "expected": "あ😮‍💨い"
+  },
+  {
+   "id": "pass_canonical-0006",
+   "category": "pass_canonical",
+   "input": "😮‍💨😮‍💨😮‍💨",
+   "expected": "😮‍💨😮‍💨😮‍💨",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0025",
+   "category": "normalize_variant",
+   "input": "😮‍💨🏻",
+   "expected": "😮‍💨"
+  },
+  {
+   "id": "normalize_variant-0037",
+   "category": "normalize_variant",
+   "input": "😮️‍💨︎",
+   "expected": "😮‍💨"
+  },
+  {
+   "id": "normalize_variant-0049",
+   "category": "normalize_variant",
+   "input": "😮🏻‍💨🏻",
+   "expected": "😮‍💨"
+  },
+  {
+   "id": "pass_canonical-0007",
+   "category": "pass_canonical",
+   "input": "⏸️",
+   "expected": "⏸️"
+  },
+  {
+   "id": "pass_canonical-0008",
+   "category": "pass_canonical",
+   "input": "あ⏸️い",
+   "expected": "あ⏸️い"
+  },
+  {
+   "id": "pass_canonical-0009",
+   "category": "pass_canonical",
+   "input": "⏸️⏸️⏸️",
+   "expected": "⏸️⏸️⏸️",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0061",
+   "category": "normalize_variant",
+   "input": "⏸🏻️",
+   "expected": "⏸️"
+  },
+  {
+   "id": "pass_canonical-0010",
+   "category": "pass_canonical",
+   "input": "🤭",
+   "expected": "🤭"
+  },
+  {
+   "id": "pass_canonical-0011",
+   "category": "pass_canonical",
+   "input": "あ🤭い",
+   "expected": "あ🤭い"
+  },
+  {
+   "id": "pass_canonical-0012",
+   "category": "pass_canonical",
+   "input": "🤭🤭🤭",
+   "expected": "🤭🤭🤭",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0073",
+   "category": "normalize_variant",
+   "input": "🤭︎️",
+   "expected": "🤭"
+  },
+  {
+   "id": "normalize_variant-0085",
+   "category": "normalize_variant",
+   "input": "🤭🏽",
+   "expected": "🤭"
+  },
+  {
+   "id": "pass_canonical-0013",
+   "category": "pass_canonical",
+   "input": "🥵",
+   "expected": "🥵"
+  },
+  {
+   "id": "pass_canonical-0014",
+   "category": "pass_canonical",
+   "input": "あ🥵い",
+   "expected": "あ🥵い"
+  },
+  {
+   "id": "pass_canonical-0015",
+   "category": "pass_canonical",
+   "input": "🥵🥵🥵",
+   "expected": "🥵🥵🥵",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0097",
+   "category": "normalize_variant",
+   "input": "🥵️🏻",
+   "expected": "🥵"
+  },
+  {
+   "id": "normalize_variant-0109",
+   "category": "normalize_variant",
+   "input": "🥵🏿",
+   "expected": "🥵"
+  },
+  {
+   "id": "pass_canonical-0016",
+   "category": "pass_canonical",
+   "input": "📢",
+   "expected": "📢"
+  },
+  {
+   "id": "pass_canonical-0017",
+   "category": "pass_canonical",
+   "input": "あ📢い",
+   "expected": "あ📢い"
+  },
+  {
+   "id": "pass_canonical-0018",
+   "category": "pass_canonical",
+   "input": "📢📢📢",
+   "expected": "📢📢📢",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0121",
+   "category": "normalize_variant",
+   "input": "📢🏻️",
+   "expected": "📢"
+  },
+  {
+   "id": "pass_canonical-0019",
+   "category": "pass_canonical",
+   "input": "😏",
+   "expected": "😏"
+  },
+  {
+   "id": "pass_canonical-0020",
+   "category": "pass_canonical",
+   "input": "あ😏い",
+   "expected": "あ😏い"
+  },
+  {
+   "id": "pass_canonical-0021",
+   "category": "pass_canonical",
+   "input": "😏😏😏",
+   "expected": "😏😏😏",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0133",
+   "category": "normalize_variant",
+   "input": "😏︎️",
+   "expected": "😏"
+  },
+  {
+   "id": "normalize_variant-0145",
+   "category": "normalize_variant",
+   "input": "😏🏽",
+   "expected": "😏"
+  },
+  {
+   "id": "pass_canonical-0022",
+   "category": "pass_canonical",
+   "input": "🥺",
+   "expected": "🥺"
+  },
+  {
+   "id": "pass_canonical-0023",
+   "category": "pass_canonical",
+   "input": "あ🥺い",
+   "expected": "あ🥺い"
+  },
+  {
+   "id": "pass_canonical-0024",
+   "category": "pass_canonical",
+   "input": "🥺🥺🥺",
+   "expected": "🥺🥺🥺",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0157",
+   "category": "normalize_variant",
+   "input": "🥺️🏻",
+   "expected": "🥺"
+  },
+  {
+   "id": "normalize_variant-0169",
+   "category": "normalize_variant",
+   "input": "🥺🏿",
+   "expected": "🥺"
+  },
+  {
+   "id": "pass_canonical-0025",
+   "category": "pass_canonical",
+   "input": "🌬️",
+   "expected": "🌬️"
+  },
+  {
+   "id": "pass_canonical-0026",
+   "category": "pass_canonical",
+   "input": "あ🌬️い",
+   "expected": "あ🌬️い"
+  },
+  {
+   "id": "pass_canonical-0027",
+   "category": "pass_canonical",
+   "input": "🌬️🌬️🌬️",
+   "expected": "🌬️🌬️🌬️",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0181",
+   "category": "normalize_variant",
+   "input": "🌬🏻️",
+   "expected": "🌬️"
+  },
+  {
+   "id": "pass_canonical-0028",
+   "category": "pass_canonical",
+   "input": "😮",
+   "expected": "😮"
+  },
+  {
+   "id": "pass_canonical-0029",
+   "category": "pass_canonical",
+   "input": "あ😮い",
+   "expected": "あ😮い"
+  },
+  {
+   "id": "pass_canonical-0030",
+   "category": "pass_canonical",
+   "input": "😮😮😮",
+   "expected": "😮😮😮",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0193",
+   "category": "normalize_variant",
+   "input": "😮︎️",
+   "expected": "😮"
+  },
+  {
+   "id": "normalize_variant-0205",
+   "category": "normalize_variant",
+   "input": "😮🏽",
+   "expected": "😮"
+  },
+  {
+   "id": "pass_canonical-0031",
+   "category": "pass_canonical",
+   "input": "👅",
+   "expected": "👅"
+  },
+  {
+   "id": "pass_canonical-0032",
+   "category": "pass_canonical",
+   "input": "あ👅い",
+   "expected": "あ👅い"
+  },
+  {
+   "id": "pass_canonical-0033",
+   "category": "pass_canonical",
+   "input": "👅👅👅",
+   "expected": "👅👅👅",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0217",
+   "category": "normalize_variant",
+   "input": "👅️🏻",
+   "expected": "👅"
+  },
+  {
+   "id": "normalize_variant-0229",
+   "category": "normalize_variant",
+   "input": "👅🏿",
+   "expected": "👅"
+  },
+  {
+   "id": "pass_canonical-0034",
+   "category": "pass_canonical",
+   "input": "💋",
+   "expected": "💋"
+  },
+  {
+   "id": "pass_canonical-0035",
+   "category": "pass_canonical",
+   "input": "あ💋い",
+   "expected": "あ💋い"
+  },
+  {
+   "id": "pass_canonical-0036",
+   "category": "pass_canonical",
+   "input": "💋💋💋",
+   "expected": "💋💋💋",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0241",
+   "category": "normalize_variant",
+   "input": "💋🏻️",
+   "expected": "💋"
+  },
+  {
+   "id": "pass_canonical-0037",
+   "category": "pass_canonical",
+   "input": "🫶",
+   "expected": "🫶"
+  },
+  {
+   "id": "pass_canonical-0038",
+   "category": "pass_canonical",
+   "input": "あ🫶い",
+   "expected": "あ🫶い"
+  },
+  {
+   "id": "pass_canonical-0039",
+   "category": "pass_canonical",
+   "input": "🫶🫶🫶",
+   "expected": "🫶🫶🫶",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0253",
+   "category": "normalize_variant",
+   "input": "🫶︎️",
+   "expected": "🫶"
+  },
+  {
+   "id": "normalize_variant-0265",
+   "category": "normalize_variant",
+   "input": "🫶🏽",
+   "expected": "🫶"
+  },
+  {
+   "id": "pass_canonical-0040",
+   "category": "pass_canonical",
+   "input": "😭",
+   "expected": "😭"
+  },
+  {
+   "id": "pass_canonical-0041",
+   "category": "pass_canonical",
+   "input": "あ😭い",
+   "expected": "あ😭い"
+  },
+  {
+   "id": "pass_canonical-0042",
+   "category": "pass_canonical",
+   "input": "😭😭😭",
+   "expected": "😭😭😭",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0277",
+   "category": "normalize_variant",
+   "input": "😭️🏻",
+   "expected": "😭"
+  },
+  {
+   "id": "normalize_variant-0289",
+   "category": "normalize_variant",
+   "input": "😭🏿",
+   "expected": "😭"
+  },
+  {
+   "id": "pass_canonical-0043",
+   "category": "pass_canonical",
+   "input": "😱",
+   "expected": "😱"
+  },
+  {
+   "id": "pass_canonical-0044",
+   "category": "pass_canonical",
+   "input": "あ😱い",
+   "expected": "あ😱い"
+  },
+  {
+   "id": "pass_canonical-0045",
+   "category": "pass_canonical",
+   "input": "😱😱😱",
+   "expected": "😱😱😱",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0301",
+   "category": "normalize_variant",
+   "input": "😱🏻️",
+   "expected": "😱"
+  },
+  {
+   "id": "pass_canonical-0046",
+   "category": "pass_canonical",
+   "input": "😪",
+   "expected": "😪"
+  },
+  {
+   "id": "pass_canonical-0047",
+   "category": "pass_canonical",
+   "input": "あ😪い",
+   "expected": "あ😪い"
+  },
+  {
+   "id": "pass_canonical-0048",
+   "category": "pass_canonical",
+   "input": "😪😪😪",
+   "expected": "😪😪😪",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0313",
+   "category": "normalize_variant",
+   "input": "😪︎️",
+   "expected": "😪"
+  },
+  {
+   "id": "normalize_variant-0325",
+   "category": "normalize_variant",
+   "input": "😪🏽",
+   "expected": "😪"
+  },
+  {
+   "id": "pass_canonical-0049",
+   "category": "pass_canonical",
+   "input": "😴",
+   "expected": "😴"
+  },
+  {
+   "id": "pass_canonical-0050",
+   "category": "pass_canonical",
+   "input": "あ😴い",
+   "expected": "あ😴い"
+  },
+  {
+   "id": "pass_canonical-0051",
+   "category": "pass_canonical",
+   "input": "😴😴😴",
+   "expected": "😴😴😴",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0337",
+   "category": "normalize_variant",
+   "input": "😴️🏻",
+   "expected": "😴"
+  },
+  {
+   "id": "normalize_variant-0349",
+   "category": "normalize_variant",
+   "input": "😴🏿",
+   "expected": "😴"
+  },
+  {
+   "id": "pass_canonical-0052",
+   "category": "pass_canonical",
+   "input": "⏩",
+   "expected": "⏩"
+  },
+  {
+   "id": "pass_canonical-0053",
+   "category": "pass_canonical",
+   "input": "あ⏩い",
+   "expected": "あ⏩い"
+  },
+  {
+   "id": "pass_canonical-0054",
+   "category": "pass_canonical",
+   "input": "⏩⏩⏩",
+   "expected": "⏩⏩⏩",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0361",
+   "category": "normalize_variant",
+   "input": "⏩🏻️",
+   "expected": "⏩"
+  },
+  {
+   "id": "pass_canonical-0055",
+   "category": "pass_canonical",
+   "input": "📞",
+   "expected": "📞"
+  },
+  {
+   "id": "pass_canonical-0056",
+   "category": "pass_canonical",
+   "input": "あ📞い",
+   "expected": "あ📞い"
+  },
+  {
+   "id": "pass_canonical-0057",
+   "category": "pass_canonical",
+   "input": "📞📞📞",
+   "expected": "📞📞📞",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0373",
+   "category": "normalize_variant",
+   "input": "📞︎️",
+   "expected": "📞"
+  },
+  {
+   "id": "normalize_variant-0385",
+   "category": "normalize_variant",
+   "input": "📞🏽",
+   "expected": "📞"
+  },
+  {
+   "id": "pass_canonical-0058",
+   "category": "pass_canonical",
+   "input": "🐢",
+   "expected": "🐢"
+  },
+  {
+   "id": "pass_canonical-0059",
+   "category": "pass_canonical",
+   "input": "あ🐢い",
+   "expected": "あ🐢い"
+  },
+  {
+   "id": "pass_canonical-0060",
+   "category": "pass_canonical",
+   "input": "🐢🐢🐢",
+   "expected": "🐢🐢🐢",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0397",
+   "category": "normalize_variant",
+   "input": "🐢️🏻",
+   "expected": "🐢"
+  },
+  {
+   "id": "normalize_variant-0409",
+   "category": "normalize_variant",
+   "input": "🐢🏿",
+   "expected": "🐢"
+  },
+  {
+   "id": "pass_canonical-0061",
+   "category": "pass_canonical",
+   "input": "🥤",
+   "expected": "🥤"
+  },
+  {
+   "id": "pass_canonical-0062",
+   "category": "pass_canonical",
+   "input": "あ🥤い",
+   "expected": "あ🥤い"
+  },
+  {
+   "id": "pass_canonical-0063",
+   "category": "pass_canonical",
+   "input": "🥤🥤🥤",
+   "expected": "🥤🥤🥤",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0421",
+   "category": "normalize_variant",
+   "input": "🥤🏻️",
+   "expected": "🥤"
+  },
+  {
+   "id": "pass_canonical-0064",
+   "category": "pass_canonical",
+   "input": "🤧",
+   "expected": "🤧"
+  },
+  {
+   "id": "pass_canonical-0065",
+   "category": "pass_canonical",
+   "input": "あ🤧い",
+   "expected": "あ🤧い"
+  },
+  {
+   "id": "pass_canonical-0066",
+   "category": "pass_canonical",
+   "input": "🤧🤧🤧",
+   "expected": "🤧🤧🤧",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0433",
+   "category": "normalize_variant",
+   "input": "🤧︎️",
+   "expected": "🤧"
+  },
+  {
+   "id": "normalize_variant-0445",
+   "category": "normalize_variant",
+   "input": "🤧🏽",
+   "expected": "🤧"
+  },
+  {
+   "id": "pass_canonical-0067",
+   "category": "pass_canonical",
+   "input": "😒",
+   "expected": "😒"
+  },
+  {
+   "id": "pass_canonical-0068",
+   "category": "pass_canonical",
+   "input": "あ😒い",
+   "expected": "あ😒い"
+  },
+  {
+   "id": "pass_canonical-0069",
+   "category": "pass_canonical",
+   "input": "😒😒😒",
+   "expected": "😒😒😒",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0457",
+   "category": "normalize_variant",
+   "input": "😒️🏻",
+   "expected": "😒"
+  },
+  {
+   "id": "normalize_variant-0469",
+   "category": "normalize_variant",
+   "input": "😒🏿",
+   "expected": "😒"
+  },
+  {
+   "id": "pass_canonical-0070",
+   "category": "pass_canonical",
+   "input": "😰",
+   "expected": "😰"
+  },
+  {
+   "id": "pass_canonical-0071",
+   "category": "pass_canonical",
+   "input": "あ😰い",
+   "expected": "あ😰い"
+  },
+  {
+   "id": "pass_canonical-0072",
+   "category": "pass_canonical",
+   "input": "😰😰😰",
+   "expected": "😰😰😰",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0481",
+   "category": "normalize_variant",
+   "input": "😰🏻️",
+   "expected": "😰"
+  },
+  {
+   "id": "pass_canonical-0073",
+   "category": "pass_canonical",
+   "input": "😆",
+   "expected": "😆"
+  },
+  {
+   "id": "pass_canonical-0074",
+   "category": "pass_canonical",
+   "input": "あ😆い",
+   "expected": "あ😆い"
+  },
+  {
+   "id": "pass_canonical-0075",
+   "category": "pass_canonical",
+   "input": "😆😆😆",
+   "expected": "😆😆😆",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0493",
+   "category": "normalize_variant",
+   "input": "😆︎️",
+   "expected": "😆"
+  },
+  {
+   "id": "normalize_variant-0505",
+   "category": "normalize_variant",
+   "input": "😆🏽",
+   "expected": "😆"
+  },
+  {
+   "id": "pass_canonical-0076",
+   "category": "pass_canonical",
+   "input": "💥",
+   "expected": "💥"
+  },
+  {
+   "id": "pass_canonical-0077",
+   "category": "pass_canonical",
+   "input": "あ💥い",
+   "expected": "あ💥い"
+  },
+  {
+   "id": "pass_canonical-0078",
+   "category": "pass_canonical",
+   "input": "💥💥💥",
+   "expected": "💥💥💥",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0517",
+   "category": "normalize_variant",
+   "input": "💥️🏻",
+   "expected": "💥"
+  },
+  {
+   "id": "normalize_variant-0529",
+   "category": "normalize_variant",
+   "input": "💥🏿",
+   "expected": "💥"
+  },
+  {
+   "id": "pass_canonical-0079",
+   "category": "pass_canonical",
+   "input": "😠",
+   "expected": "😠"
+  },
+  {
+   "id": "pass_canonical-0080",
+   "category": "pass_canonical",
+   "input": "あ😠い",
+   "expected": "あ😠い"
+  },
+  {
+   "id": "pass_canonical-0081",
+   "category": "pass_canonical",
+   "input": "😠😠😠",
+   "expected": "😠😠😠",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0541",
+   "category": "normalize_variant",
+   "input": "😠🏻️",
+   "expected": "😠"
+  },
+  {
+   "id": "pass_canonical-0082",
+   "category": "pass_canonical",
+   "input": "😲",
+   "expected": "😲"
+  },
+  {
+   "id": "pass_canonical-0083",
+   "category": "pass_canonical",
+   "input": "あ😲い",
+   "expected": "あ😲い"
+  },
+  {
+   "id": "pass_canonical-0084",
+   "category": "pass_canonical",
+   "input": "😲😲😲",
+   "expected": "😲😲😲",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0553",
+   "category": "normalize_variant",
+   "input": "😲︎️",
+   "expected": "😲"
+  },
+  {
+   "id": "normalize_variant-0565",
+   "category": "normalize_variant",
+   "input": "😲🏽",
+   "expected": "😲"
+  },
+  {
+   "id": "pass_canonical-0085",
+   "category": "pass_canonical",
+   "input": "🥱",
+   "expected": "🥱"
+  },
+  {
+   "id": "pass_canonical-0086",
+   "category": "pass_canonical",
+   "input": "あ🥱い",
+   "expected": "あ🥱い"
+  },
+  {
+   "id": "pass_canonical-0087",
+   "category": "pass_canonical",
+   "input": "🥱🥱🥱",
+   "expected": "🥱🥱🥱",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0577",
+   "category": "normalize_variant",
+   "input": "🥱️🏻",
+   "expected": "🥱"
+  },
+  {
+   "id": "normalize_variant-0589",
+   "category": "normalize_variant",
+   "input": "🥱🏿",
+   "expected": "🥱"
+  },
+  {
+   "id": "pass_canonical-0088",
+   "category": "pass_canonical",
+   "input": "😖",
+   "expected": "😖"
+  },
+  {
+   "id": "pass_canonical-0089",
+   "category": "pass_canonical",
+   "input": "あ😖い",
+   "expected": "あ😖い"
+  },
+  {
+   "id": "pass_canonical-0090",
+   "category": "pass_canonical",
+   "input": "😖😖😖",
+   "expected": "😖😖😖",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0601",
+   "category": "normalize_variant",
+   "input": "😖🏻️",
+   "expected": "😖"
+  },
+  {
+   "id": "pass_canonical-0091",
+   "category": "pass_canonical",
+   "input": "😟",
+   "expected": "😟"
+  },
+  {
+   "id": "pass_canonical-0092",
+   "category": "pass_canonical",
+   "input": "あ😟い",
+   "expected": "あ😟い"
+  },
+  {
+   "id": "pass_canonical-0093",
+   "category": "pass_canonical",
+   "input": "😟😟😟",
+   "expected": "😟😟😟",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0613",
+   "category": "normalize_variant",
+   "input": "😟︎️",
+   "expected": "😟"
+  },
+  {
+   "id": "normalize_variant-0625",
+   "category": "normalize_variant",
+   "input": "😟🏽",
+   "expected": "😟"
+  },
+  {
+   "id": "pass_canonical-0094",
+   "category": "pass_canonical",
+   "input": "🫣",
+   "expected": "🫣"
+  },
+  {
+   "id": "pass_canonical-0095",
+   "category": "pass_canonical",
+   "input": "あ🫣い",
+   "expected": "あ🫣い"
+  },
+  {
+   "id": "pass_canonical-0096",
+   "category": "pass_canonical",
+   "input": "🫣🫣🫣",
+   "expected": "🫣🫣🫣",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0637",
+   "category": "normalize_variant",
+   "input": "🫣️🏻",
+   "expected": "🫣"
+  },
+  {
+   "id": "normalize_variant-0649",
+   "category": "normalize_variant",
+   "input": "🫣🏿",
+   "expected": "🫣"
+  },
+  {
+   "id": "pass_canonical-0097",
+   "category": "pass_canonical",
+   "input": "🙄",
+   "expected": "🙄"
+  },
+  {
+   "id": "pass_canonical-0098",
+   "category": "pass_canonical",
+   "input": "あ🙄い",
+   "expected": "あ🙄い"
+  },
+  {
+   "id": "pass_canonical-0099",
+   "category": "pass_canonical",
+   "input": "🙄🙄🙄",
+   "expected": "🙄🙄🙄",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0661",
+   "category": "normalize_variant",
+   "input": "🙄🏻️",
+   "expected": "🙄"
+  },
+  {
+   "id": "pass_canonical-0100",
+   "category": "pass_canonical",
+   "input": "😊",
+   "expected": "😊"
+  },
+  {
+   "id": "pass_canonical-0101",
+   "category": "pass_canonical",
+   "input": "あ😊い",
+   "expected": "あ😊い"
+  },
+  {
+   "id": "pass_canonical-0102",
+   "category": "pass_canonical",
+   "input": "😊😊😊",
+   "expected": "😊😊😊",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0673",
+   "category": "normalize_variant",
+   "input": "😊︎️",
+   "expected": "😊"
+  },
+  {
+   "id": "normalize_variant-0685",
+   "category": "normalize_variant",
+   "input": "😊🏽",
+   "expected": "😊"
+  },
+  {
+   "id": "pass_canonical-0103",
+   "category": "pass_canonical",
+   "input": "😎",
+   "expected": "😎"
+  },
+  {
+   "id": "pass_canonical-0104",
+   "category": "pass_canonical",
+   "input": "あ😎い",
+   "expected": "あ😎い"
+  },
+  {
+   "id": "pass_canonical-0105",
+   "category": "pass_canonical",
+   "input": "😎😎😎",
+   "expected": "😎😎😎",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0697",
+   "category": "normalize_variant",
+   "input": "😎️🏻",
+   "expected": "😎"
+  },
+  {
+   "id": "normalize_variant-0709",
+   "category": "normalize_variant",
+   "input": "😎🏿",
+   "expected": "😎"
+  },
+  {
+   "id": "pass_canonical-0106",
+   "category": "pass_canonical",
+   "input": "👌",
+   "expected": "👌"
+  },
+  {
+   "id": "pass_canonical-0107",
+   "category": "pass_canonical",
+   "input": "あ👌い",
+   "expected": "あ👌い"
+  },
+  {
+   "id": "pass_canonical-0108",
+   "category": "pass_canonical",
+   "input": "👌👌👌",
+   "expected": "👌👌👌",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0721",
+   "category": "normalize_variant",
+   "input": "👌🏻️",
+   "expected": "👌"
+  },
+  {
+   "id": "pass_canonical-0109",
+   "category": "pass_canonical",
+   "input": "🙏",
+   "expected": "🙏"
+  },
+  {
+   "id": "pass_canonical-0110",
+   "category": "pass_canonical",
+   "input": "あ🙏い",
+   "expected": "あ🙏い"
+  },
+  {
+   "id": "pass_canonical-0111",
+   "category": "pass_canonical",
+   "input": "🙏🙏🙏",
+   "expected": "🙏🙏🙏",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0733",
+   "category": "normalize_variant",
+   "input": "🙏︎️",
+   "expected": "🙏"
+  },
+  {
+   "id": "normalize_variant-0745",
+   "category": "normalize_variant",
+   "input": "🙏🏽",
+   "expected": "🙏"
+  },
+  {
+   "id": "pass_canonical-0112",
+   "category": "pass_canonical",
+   "input": "🥴",
+   "expected": "🥴"
+  },
+  {
+   "id": "pass_canonical-0113",
+   "category": "pass_canonical",
+   "input": "あ🥴い",
+   "expected": "あ🥴い"
+  },
+  {
+   "id": "pass_canonical-0114",
+   "category": "pass_canonical",
+   "input": "🥴🥴🥴",
+   "expected": "🥴🥴🥴",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0757",
+   "category": "normalize_variant",
+   "input": "🥴️🏻",
+   "expected": "🥴"
+  },
+  {
+   "id": "normalize_variant-0769",
+   "category": "normalize_variant",
+   "input": "🥴🏿",
+   "expected": "🥴"
+  },
+  {
+   "id": "pass_canonical-0115",
+   "category": "pass_canonical",
+   "input": "🎵",
+   "expected": "🎵"
+  },
+  {
+   "id": "pass_canonical-0116",
+   "category": "pass_canonical",
+   "input": "あ🎵い",
+   "expected": "あ🎵い"
+  },
+  {
+   "id": "pass_canonical-0117",
+   "category": "pass_canonical",
+   "input": "🎵🎵🎵",
+   "expected": "🎵🎵🎵",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0781",
+   "category": "normalize_variant",
+   "input": "🎵🏻️",
+   "expected": "🎵"
+  },
+  {
+   "id": "pass_canonical-0118",
+   "category": "pass_canonical",
+   "input": "🤐",
+   "expected": "🤐"
+  },
+  {
+   "id": "pass_canonical-0119",
+   "category": "pass_canonical",
+   "input": "あ🤐い",
+   "expected": "あ🤐い"
+  },
+  {
+   "id": "pass_canonical-0120",
+   "category": "pass_canonical",
+   "input": "🤐🤐🤐",
+   "expected": "🤐🤐🤐",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0793",
+   "category": "normalize_variant",
+   "input": "🤐︎️",
+   "expected": "🤐"
+  },
+  {
+   "id": "normalize_variant-0805",
+   "category": "normalize_variant",
+   "input": "🤐🏽",
+   "expected": "🤐"
+  },
+  {
+   "id": "pass_canonical-0121",
+   "category": "pass_canonical",
+   "input": "😌",
+   "expected": "😌"
+  },
+  {
+   "id": "pass_canonical-0122",
+   "category": "pass_canonical",
+   "input": "あ😌い",
+   "expected": "あ😌い"
+  },
+  {
+   "id": "pass_canonical-0123",
+   "category": "pass_canonical",
+   "input": "😌😌😌",
+   "expected": "😌😌😌",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0817",
+   "category": "normalize_variant",
+   "input": "😌️🏻",
+   "expected": "😌"
+  },
+  {
+   "id": "normalize_variant-0829",
+   "category": "normalize_variant",
+   "input": "😌🏿",
+   "expected": "😌"
+  },
+  {
+   "id": "pass_canonical-0124",
+   "category": "pass_canonical",
+   "input": "🤔",
+   "expected": "🤔"
+  },
+  {
+   "id": "pass_canonical-0125",
+   "category": "pass_canonical",
+   "input": "あ🤔い",
+   "expected": "あ🤔い"
+  },
+  {
+   "id": "pass_canonical-0126",
+   "category": "pass_canonical",
+   "input": "🤔🤔🤔",
+   "expected": "🤔🤔🤔",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0841",
+   "category": "normalize_variant",
+   "input": "🤔🏻️",
+   "expected": "🤔"
+  },
+  {
+   "id": "pass_canonical-0127",
+   "category": "pass_canonical",
+   "input": "💪",
+   "expected": "💪"
+  },
+  {
+   "id": "pass_canonical-0128",
+   "category": "pass_canonical",
+   "input": "あ💪い",
+   "expected": "あ💪い"
+  },
+  {
+   "id": "pass_canonical-0129",
+   "category": "pass_canonical",
+   "input": "💪💪💪",
+   "expected": "💪💪💪",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0853",
+   "category": "normalize_variant",
+   "input": "💪︎️",
+   "expected": "💪"
+  },
+  {
+   "id": "normalize_variant-0865",
+   "category": "normalize_variant",
+   "input": "💪🏽",
+   "expected": "💪"
+  },
+  {
+   "id": "pass_canonical-0130",
+   "category": "pass_canonical",
+   "input": "👃",
+   "expected": "👃"
+  },
+  {
+   "id": "pass_canonical-0131",
+   "category": "pass_canonical",
+   "input": "あ👃い",
+   "expected": "あ👃い"
+  },
+  {
+   "id": "pass_canonical-0132",
+   "category": "pass_canonical",
+   "input": "👃👃👃",
+   "expected": "👃👃👃",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0877",
+   "category": "normalize_variant",
+   "input": "👃️🏻",
+   "expected": "👃"
+  },
+  {
+   "id": "normalize_variant-0889",
+   "category": "normalize_variant",
+   "input": "👃🏿",
+   "expected": "👃"
+  },
+  {
+   "id": "pass_canonical-0133",
+   "category": "pass_canonical",
+   "input": "📖",
+   "expected": "📖"
+  },
+  {
+   "id": "pass_canonical-0134",
+   "category": "pass_canonical",
+   "input": "あ📖い",
+   "expected": "あ📖い"
+  },
+  {
+   "id": "pass_canonical-0135",
+   "category": "pass_canonical",
+   "input": "📖📖📖",
+   "expected": "📖📖📖",
+   "note": "重ねると強まる＝連続はそのまま"
+  },
+  {
+   "id": "normalize_variant-0901",
+   "category": "normalize_variant",
+   "input": "📖🏻️",
+   "expected": "📖"
+  },
+  {
+   "id": "zwj_partial-0001",
+   "category": "zwj_partial",
+   "input": "😮💨",
+   "expected": "😮",
+   "note": "ZWJ 無しの 😮💨＝😮 と 💨（💨 は非対応）＝補完しない（既定）"
+  },
+  {
+   "id": "zwj_partial-0002",
+   "category": "zwj_partial",
+   "input": "😮 💨",
+   "expected": "😮 ",
+   "note": "間に空白"
+  },
+  {
+   "id": "zwj_partial-0003",
+   "category": "zwj_partial",
+   "input": "💨😮",
+   "expected": "😮"
+  },
+  {
+   "id": "zwj_partial-0004",
+   "category": "zwj_partial",
+   "input": "😮💨💨",
+   "expected": "😮"
+  },
+  {
+   "id": "zwj_partial-0005",
+   "category": "zwj_partial",
+   "input": "😮‍💨‍🔥",
+   "expected": "",
+   "note": "45 種を含む非 RGI の ZWJ 連結は丸ごと削る"
+  },
+  {
+   "id": "zwj_partial-0006",
+   "category": "zwj_partial",
+   "input": "👩‍❤️‍💋‍👨",
+   "expected": "",
+   "note": "💋 を部品に含む RGI（kiss）＝1 字の別絵文字＝削る"
+  },
+  {
+   "id": "delete_cluster-0001",
+   "category": "delete_cluster",
+   "input": "😀",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup face-smiling: 😀 E1.0 grinning face"
+  },
+  {
+   "id": "delete_cluster-0005",
+   "category": "delete_cluster",
+   "input": "🤨",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup face-neutral-skeptical: 🤨 E5.0 face with raised eyebrow"
+  },
+  {
+   "id": "delete_cluster-0009",
+   "category": "delete_cluster",
+   "input": "🤓",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup face-glasses: 🤓 E1.0 nerd face"
+  },
+  {
+   "id": "delete_cluster-0013",
+   "category": "delete_cluster",
+   "input": "😺",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup cat-face: 😺 E0.6 grinning cat"
+  },
+  {
+   "id": "delete_cluster-0017",
+   "category": "delete_cluster",
+   "input": "👋",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup hand-fingers-open: 👋 E0.6 waving hand"
+  },
+  {
+   "id": "delete_cluster-0021",
+   "category": "delete_cluster",
+   "input": "👏",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup hands: 👏 E0.6 clapping hands"
+  },
+  {
+   "id": "delete_cluster-0025",
+   "category": "delete_cluster",
+   "input": "🙍",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup person-gesture: 🙍 E0.6 person frowning"
+  },
+  {
+   "id": "delete_cluster-0029",
+   "category": "delete_cluster",
+   "input": "🤺",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup person-sport: 🤺 E3.0 person fencing"
+  },
+  {
+   "id": "delete_cluster-0033",
+   "category": "delete_cluster",
+   "input": "🐵",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup animal-mammal: 🐵 E0.6 monkey face"
+  },
+  {
+   "id": "delete_cluster-0037",
+   "category": "delete_cluster",
+   "input": "🐳",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup animal-marine: 🐳 E0.6 spouting whale"
+  },
+  {
+   "id": "delete_cluster-0041",
+   "category": "delete_cluster",
+   "input": "🍇",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup food-fruit: 🍇 E0.6 grapes"
+  },
+  {
+   "id": "delete_cluster-0045",
+   "category": "delete_cluster",
+   "input": "🍦",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup food-sweet: 🍦 E0.6 soft ice cream"
+  },
+  {
+   "id": "delete_cluster-0049",
+   "category": "delete_cluster",
+   "input": "🏔️",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup place-geographic: 🏔️ E0.7 snow-capped mountain"
+  },
+  {
+   "id": "delete_cluster-0053",
+   "category": "delete_cluster",
+   "input": "🚂",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup transport-ground: 🚂 E1.0 locomotive"
+  },
+  {
+   "id": "delete_cluster-0057",
+   "category": "delete_cluster",
+   "input": "⌛",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup time: ⌛ E0.6 hourglass done"
+  },
+  {
+   "id": "delete_cluster-0061",
+   "category": "delete_cluster",
+   "input": "⚽",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup sport: ⚽ E0.6 soccer ball"
+  },
+  {
+   "id": "delete_cluster-0065",
+   "category": "delete_cluster",
+   "input": "🔇",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup sound: 🔇 E1.0 muted speaker"
+  },
+  {
+   "id": "delete_cluster-0069",
+   "category": "delete_cluster",
+   "input": "🔋",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup computer: 🔋 E0.6 battery"
+  },
+  {
+   "id": "delete_cluster-0073",
+   "category": "delete_cluster",
+   "input": "✉️",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup mail: ✉️ E0.6 envelope"
+  },
+  {
+   "id": "delete_cluster-0077",
+   "category": "delete_cluster",
+   "input": "🔨",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup tool: 🔨 E0.6 hammer"
+  },
+  {
+   "id": "delete_cluster-0081",
+   "category": "delete_cluster",
+   "input": "🚬",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup other-object: 🚬 E0.6 cigarette"
+  },
+  {
+   "id": "delete_cluster-0085",
+   "category": "delete_cluster",
+   "input": "🛐",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup religion: 🛐 E1.0 place of worship"
+  },
+  {
+   "id": "delete_cluster-0089",
+   "category": "delete_cluster",
+   "input": "✖️",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup math: ✖️ E0.6 multiply"
+  },
+  {
+   "id": "nfkc_fold-0001",
+   "category": "nfkc_fold",
+   "input": "‼️",
+   "expected": "!!",
+   "note": "emoji-test 17.0 subgroup punctuation: ‼️ E0.6 double exclamation mark"
+  },
+  {
+   "id": "delete_cluster-0093",
+   "category": "delete_cluster",
+   "input": "🔠",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup alphanum: 🔠 E0.6 input latin uppercase"
+  },
+  {
+   "id": "delete_cluster-0097",
+   "category": "delete_cluster",
+   "input": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+   "expected": "",
+   "note": "emoji-test 17.0 subgroup subdivision-flag: 🏴󠁧󠁢󠁥󠁮󠁧󠁿 E5.0 flag: England"
+  },
+  {
+   "id": "delete_cluster-0101",
+   "category": "delete_cluster",
+   "input": "👁️‍🗨",
+   "expected": "",
+   "note": "emoji-test 17.0 minimally-qualified: 👁️‍🗨 E2.0 eye in speech bubble"
+  },
+  {
+   "id": "delete_cluster-0105",
+   "category": "delete_cluster",
+   "input": "🧔🏽‍♂",
+   "expected": "",
+   "note": "emoji-test 17.0 minimally-qualified: 🧔🏽‍♂ E13.1 man: medium skin tone, beard"
+  },
+  {
+   "id": "delete_cluster-0109",
+   "category": "delete_cluster",
+   "input": "🧔🏻‍♀",
+   "expected": "",
+   "note": "emoji-test 17.0 minimally-qualified: 🧔🏻‍♀ E13.1 woman: light skin tone, beard"
+  },
+  {
+   "id": "orphan_or_component-0001",
+   "category": "orphan_or_component",
+   "input": "🏻",
+   "expected": "",
+   "note": "emoji-test 17.0 component: 🏻 E1.0 light skin tone"
+  },
+  {
+   "id": "orphan_or_component-0002",
+   "category": "orphan_or_component",
+   "input": "🏼",
+   "expected": "",
+   "note": "emoji-test 17.0 component: 🏼 E1.0 medium-light skin tone"
+  },
+  {
+   "id": "orphan_or_component-0003",
+   "category": "orphan_or_component",
+   "input": "🏽",
+   "expected": "",
+   "note": "emoji-test 17.0 component: 🏽 E1.0 medium skin tone"
+  },
+  {
+   "id": "orphan_or_component-0004",
+   "category": "orphan_or_component",
+   "input": "🏾",
+   "expected": "",
+   "note": "emoji-test 17.0 component: 🏾 E1.0 medium-dark skin tone"
+  },
+  {
+   "id": "orphan_or_component-0005",
+   "category": "orphan_or_component",
+   "input": "🏿",
+   "expected": "",
+   "note": "emoji-test 17.0 component: 🏿 E1.0 dark skin tone"
+  },
+  {
+   "id": "orphan_or_component-0006",
+   "category": "orphan_or_component",
+   "input": "🦰",
+   "expected": "",
+   "note": "emoji-test 17.0 component: 🦰 E11.0 red hair"
+  },
+  {
+   "id": "orphan_or_component-0007",
+   "category": "orphan_or_component",
+   "input": "🦱",
+   "expected": "",
+   "note": "emoji-test 17.0 component: 🦱 E11.0 curly hair"
+  },
+  {
+   "id": "orphan_or_component-0008",
+   "category": "orphan_or_component",
+   "input": "🦳",
+   "expected": "",
+   "note": "emoji-test 17.0 component: 🦳 E11.0 white hair"
+  },
+  {
+   "id": "orphan_or_component-0009",
+   "category": "orphan_or_component",
+   "input": "🦲",
+   "expected": "",
+   "note": "emoji-test 17.0 component: 🦲 E11.0 bald"
+  },
+  {
+   "id": "delete_undisclosed11-0001",
+   "category": "delete_undisclosed11",
+   "input": "⏱️",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0002",
+   "category": "delete_undisclosed11",
+   "input": "🍭",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0003",
+   "category": "delete_undisclosed11",
+   "input": "🎛️",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0004",
+   "category": "delete_undisclosed11",
+   "input": "🎭",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0005",
+   "category": "delete_undisclosed11",
+   "input": "🐱",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0006",
+   "category": "delete_undisclosed11",
+   "input": "👏",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0007",
+   "category": "delete_undisclosed11",
+   "input": "💦",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0008",
+   "category": "delete_undisclosed11",
+   "input": "📄",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0009",
+   "category": "delete_undisclosed11",
+   "input": "📣",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0010",
+   "category": "delete_undisclosed11",
+   "input": "🤢",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_undisclosed11-0011",
+   "category": "delete_undisclosed11",
+   "input": "🥹",
+   "expected": "",
+   "note": "上流 duration.py の 56 種にだけ在る 11 種＝Q1 ⓐ（45 のみ素通し）なら削る"
+  },
+  {
+   "id": "delete_cluster-0113",
+   "category": "delete_cluster",
+   "input": "🔥",
+   "expected": ""
+  },
+  {
+   "id": "delete_cluster-0117",
+   "category": "delete_cluster",
+   "input": "☺️",
+   "expected": ""
+  },
+  {
+   "id": "delete_cluster-0121",
+   "category": "delete_cluster",
+   "input": "🙇",
+   "expected": ""
+  },
+  {
+   "id": "delete_cluster-0125",
+   "category": "delete_cluster",
+   "input": "🫡",
+   "expected": ""
+  },
+  {
+   "id": "delete_cluster-0129",
+   "category": "delete_cluster",
+   "input": "🎊",
+   "expected": ""
+  },
+  {
+   "id": "delete_cluster-0133",
+   "category": "delete_cluster",
+   "input": "👨‍👩‍👧‍👦",
+   "expected": ""
+  },
+  {
+   "id": "delete_cluster-0137",
+   "category": "delete_cluster",
+   "input": "1️⃣",
+   "expected": "1"
+  },
+  {
+   "id": "delete_cluster-0141",
+   "category": "delete_cluster",
+   "input": "👍🏻",
+   "expected": ""
+  },
+  {
+   "id": "delete_cluster-0145",
+   "category": "delete_cluster",
+   "input": "🫯",
+   "expected": ""
+  },
+  {
+   "id": "delete_cluster-0149",
+   "category": "delete_cluster",
+   "input": "❕",
+   "expected": "!",
+   "note": "Emoji_Presentation の感嘆・疑問＝既定は削る（!/? への畳みは裁定候補）"
+  },
+  {
+   "id": "delete_cluster-0153",
+   "category": "delete_cluster",
+   "input": "❌",
+   "expected": ""
+  },
+  {
+   "id": "delete_future_emoji-0001",
+   "category": "delete_future_emoji",
+   "input": "🫫",
+   "expected": "",
+   "note": "Emoji 18.0: 🫫 E18.0 cracking face"
+  },
+  {
+   "id": "delete_future_emoji-0002",
+   "category": "delete_future_emoji",
+   "input": "🫹",
+   "expected": "",
+   "note": "Emoji 18.0: 🫹 E18.0 leftwards thumb sign"
+  },
+  {
+   "id": "delete_future_emoji-0003",
+   "category": "delete_future_emoji",
+   "input": "🫹🏻",
+   "expected": "",
+   "note": "Emoji 18.0: 🫹🏻 E18.0 leftwards thumb sign: light skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0004",
+   "category": "delete_future_emoji",
+   "input": "🫹🏼",
+   "expected": "",
+   "note": "Emoji 18.0: 🫹🏼 E18.0 leftwards thumb sign: medium-light skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0005",
+   "category": "delete_future_emoji",
+   "input": "🫹🏽",
+   "expected": "",
+   "note": "Emoji 18.0: 🫹🏽 E18.0 leftwards thumb sign: medium skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0006",
+   "category": "delete_future_emoji",
+   "input": "🫹🏾",
+   "expected": "",
+   "note": "Emoji 18.0: 🫹🏾 E18.0 leftwards thumb sign: medium-dark skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0007",
+   "category": "delete_future_emoji",
+   "input": "🫹🏿",
+   "expected": "",
+   "note": "Emoji 18.0: 🫹🏿 E18.0 leftwards thumb sign: dark skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0008",
+   "category": "delete_future_emoji",
+   "input": "🫺",
+   "expected": "",
+   "note": "Emoji 18.0: 🫺 E18.0 rightwards thumb sign"
+  },
+  {
+   "id": "delete_future_emoji-0009",
+   "category": "delete_future_emoji",
+   "input": "🫺🏻",
+   "expected": "",
+   "note": "Emoji 18.0: 🫺🏻 E18.0 rightwards thumb sign: light skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0010",
+   "category": "delete_future_emoji",
+   "input": "🫺🏼",
+   "expected": "",
+   "note": "Emoji 18.0: 🫺🏼 E18.0 rightwards thumb sign: medium-light skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0011",
+   "category": "delete_future_emoji",
+   "input": "🫺🏽",
+   "expected": "",
+   "note": "Emoji 18.0: 🫺🏽 E18.0 rightwards thumb sign: medium skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0012",
+   "category": "delete_future_emoji",
+   "input": "🫺🏾",
+   "expected": "",
+   "note": "Emoji 18.0: 🫺🏾 E18.0 rightwards thumb sign: medium-dark skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0013",
+   "category": "delete_future_emoji",
+   "input": "🫺🏿",
+   "expected": "",
+   "note": "Emoji 18.0: 🫺🏿 E18.0 rightwards thumb sign: dark skin tone"
+  },
+  {
+   "id": "delete_future_emoji-0014",
+   "category": "delete_future_emoji",
+   "input": "🫌",
+   "expected": "",
+   "note": "Emoji 18.0: 🫌 E18.0 monarch butterfly"
+  },
+  {
+   "id": "delete_future_emoji-0015",
+   "category": "delete_future_emoji",
+   "input": "🫝",
+   "expected": "",
+   "note": "Emoji 18.0: 🫝 E18.0 pickle"
+  },
+  {
+   "id": "delete_future_emoji-0016",
+   "category": "delete_future_emoji",
+   "input": "🛙",
+   "expected": "",
+   "note": "Emoji 18.0: 🛙 E18.0 lighthouse"
+  },
+  {
+   "id": "delete_future_emoji-0017",
+   "category": "delete_future_emoji",
+   "input": "🪋",
+   "expected": "",
+   "note": "Emoji 18.0: 🪋 E18.0 meteor"
+  },
+  {
+   "id": "delete_future_emoji-0018",
+   "category": "delete_future_emoji",
+   "input": "🪌",
+   "expected": "",
+   "note": "Emoji 18.0: 🪌 E18.0 eraser"
+  },
+  {
+   "id": "delete_future_emoji-0019",
+   "category": "delete_future_emoji",
+   "input": "🪍",
+   "expected": "",
+   "note": "Emoji 18.0: 🪍 E18.0 net with handle"
+  },
+  {
+   "id": "orphan_cleanup-0001",
+   "category": "orphan_cleanup",
+   "input": "おねがい🏻",
+   "expected": "おねがい",
+   "note": "辞書 🙏→おねがい を 🙏🏻 に当てた残り"
+  },
+  {
+   "id": "orphan_cleanup-0002",
+   "category": "orphan_cleanup",
+   "input": "ハート️",
+   "expected": "ハート",
+   "note": "辞書 ❤→ハート を ❤️ に当てた残り"
+  },
+  {
+   "id": "orphan_cleanup-0003",
+   "category": "orphan_cleanup",
+   "input": "えっ‍💨",
+   "expected": "えっ",
+   "note": "辞書 😮→えっ を 😮‍💨 に当てた残り（ZWJ＋💨）"
+  },
+  {
+   "id": "orphan_cleanup-0004",
+   "category": "orphan_cleanup",
+   "input": "日本🇵",
+   "expected": "日本",
+   "note": "辞書で RI 片方を消した残り"
+  },
+  {
+   "id": "orphan_cleanup-0005",
+   "category": "orphan_cleanup",
+   "input": "おとこ‍👩‍👧",
+   "expected": "おとこ",
+   "note": "ZWJ 列の先頭だけ辞書で置換"
+  },
+  {
+   "id": "orphan_cleanup-0006",
+   "category": "orphan_cleanup",
+   "input": "いいね🏻",
+   "expected": "いいね",
+   "note": "裸の肌色"
+  },
+  {
+   "id": "orphan_cleanup-0007",
+   "category": "orphan_cleanup",
+   "input": "祝️合格",
+   "expected": "祝合格",
+   "note": "漢字の後ろの VS16"
+  },
+  {
+   "id": "orphan_cleanup-0008",
+   "category": "orphan_cleanup",
+   "input": "1️位",
+   "expected": "1位",
+   "note": "キーキャップ記号の無い 数字＋VS16"
+  },
+  {
+   "id": "orphan_cleanup-0009",
+   "category": "orphan_cleanup",
+   "input": "a⃣",
+   "expected": "a",
+   "note": "数字以外＋囲み"
+  },
+  {
+   "id": "orphan_cleanup-0010",
+   "category": "orphan_cleanup",
+   "input": "旗󠁧󠁢󠁥󠁮󠁧󠁿",
+   "expected": "旗",
+   "note": "基底を失った tag 列"
+  },
+  {
+   "id": "orphan_cleanup-0011",
+   "category": "orphan_cleanup",
+   "input": "🇯",
+   "expected": "",
+   "note": "単独の RI"
+  },
+  {
+   "id": "orphan_cleanup-0012",
+   "category": "orphan_cleanup",
+   "input": "🇯🇵🇺",
+   "expected": "",
+   "note": "RI 3 個＝対 1 つ＋孤立 1 つ"
+  },
+  {
+   "id": "orphan_cleanup-0013",
+   "category": "orphan_cleanup",
+   "input": "あ‍い",
+   "expected": "あい",
+   "note": "かなの間の ZWJ"
+  },
+  {
+   "id": "orphan_cleanup-0014",
+   "category": "orphan_cleanup",
+   "input": "ﾊｰﾄ︎",
+   "expected": "ﾊｰﾄ",
+   "note": "VS15"
+  },
+  {
+   "id": "orphan_cleanup-0015",
+   "category": "orphan_cleanup",
+   "input": "󠀁",
+   "expected": "",
+   "note": "LANGUAGE TAG（非推奨の書式文字）"
+  },
+  {
+   "id": "orphan_cleanup-0016",
+   "category": "orphan_cleanup",
+   "input": "️",
+   "expected": ""
+  },
+  {
+   "id": "orphan_cleanup-0017",
+   "category": "orphan_cleanup",
+   "input": "︎",
+   "expected": ""
+  },
+  {
+   "id": "orphan_cleanup-0018",
+   "category": "orphan_cleanup",
+   "input": "‍",
+   "expected": ""
+  },
+  {
+   "id": "orphan_cleanup-0019",
+   "category": "orphan_cleanup",
+   "input": "⃣",
+   "expected": ""
+  },
+  {
+   "id": "orphan_cleanup-0020",
+   "category": "orphan_cleanup",
+   "input": "🏻",
+   "expected": "",
+   "note": "単独の肌色"
+  },
+  {
+   "id": "orphan_cleanup-0021",
+   "category": "orphan_cleanup",
+   "input": "🏼",
+   "expected": "",
+   "note": "単独の肌色"
+  },
+  {
+   "id": "orphan_cleanup-0022",
+   "category": "orphan_cleanup",
+   "input": "🏽",
+   "expected": "",
+   "note": "単独の肌色"
+  },
+  {
+   "id": "orphan_cleanup-0023",
+   "category": "orphan_cleanup",
+   "input": "🏾",
+   "expected": "",
+   "note": "単独の肌色"
+  },
+  {
+   "id": "orphan_cleanup-0024",
+   "category": "orphan_cleanup",
+   "input": "🏿",
+   "expected": "",
+   "note": "単独の肌色"
+  },
+  {
+   "id": "q5_text_symbol_lone-0001",
+   "category": "q5_text_symbol_lone",
+   "input": "©",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0001",
+   "category": "q5_text_symbol_vs15",
+   "input": "©︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0001",
+   "category": "q5_text_symbol_vs16",
+   "input": "©️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0008",
+   "category": "q5_text_symbol_lone",
+   "input": "↙",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0008",
+   "category": "q5_text_symbol_vs16",
+   "input": "↙️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0014",
+   "category": "q5_text_symbol_vs15",
+   "input": "⏮︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0015",
+   "category": "q5_text_symbol_lone",
+   "input": "⏯",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0015",
+   "category": "q5_text_symbol_vs16",
+   "input": "⏯️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0022",
+   "category": "q5_text_symbol_lone",
+   "input": "▶",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0022",
+   "category": "q5_text_symbol_vs16",
+   "input": "▶️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0027",
+   "category": "q5_text_symbol_vs15",
+   "input": "☁︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0029",
+   "category": "q5_text_symbol_lone",
+   "input": "☃",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0029",
+   "category": "q5_text_symbol_vs16",
+   "input": "☃️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_skin-0001",
+   "category": "q5_text_symbol_skin",
+   "input": "☝🏽",
+   "expected": "",
+   "note": "肌色付き＝絵文字＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0036",
+   "category": "q5_text_symbol_lone",
+   "input": "☢",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0036",
+   "category": "q5_text_symbol_vs16",
+   "input": "☢️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0040",
+   "category": "q5_text_symbol_vs15",
+   "input": "☮︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0043",
+   "category": "q5_text_symbol_lone",
+   "input": "☹",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0043",
+   "category": "q5_text_symbol_vs16",
+   "input": "☹️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0050",
+   "category": "q5_text_symbol_lone",
+   "input": "♦",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0050",
+   "category": "q5_text_symbol_vs16",
+   "input": "♦️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0053",
+   "category": "q5_text_symbol_vs15",
+   "input": "♾︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0057",
+   "category": "q5_text_symbol_lone",
+   "input": "⚖",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0057",
+   "category": "q5_text_symbol_vs16",
+   "input": "⚖️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0064",
+   "category": "q5_text_symbol_lone",
+   "input": "⚰",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0064",
+   "category": "q5_text_symbol_vs16",
+   "input": "⚰️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0066",
+   "category": "q5_text_symbol_vs15",
+   "input": "⛈︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0071",
+   "category": "q5_text_symbol_lone",
+   "input": "⛰",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0071",
+   "category": "q5_text_symbol_vs16",
+   "input": "⛰️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_skin-0002",
+   "category": "q5_text_symbol_skin",
+   "input": "⛹🏽",
+   "expected": "",
+   "note": "肌色付き＝絵文字＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0078",
+   "category": "q5_text_symbol_lone",
+   "input": "✈",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0078",
+   "category": "q5_text_symbol_vs16",
+   "input": "✈️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0079",
+   "category": "q5_text_symbol_vs15",
+   "input": "✉︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_skin-0003",
+   "category": "q5_text_symbol_skin",
+   "input": "✌🏽",
+   "expected": "",
+   "note": "肌色付き＝絵文字＝削る"
+  },
+  {
+   "id": "q5_text_symbol_skin-0004",
+   "category": "q5_text_symbol_skin",
+   "input": "✍🏽",
+   "expected": "",
+   "note": "肌色付き＝絵文字＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0085",
+   "category": "q5_text_symbol_lone",
+   "input": "✖",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0085",
+   "category": "q5_text_symbol_vs16",
+   "input": "✖️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0092",
+   "category": "q5_text_symbol_lone",
+   "input": "❣",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0092",
+   "category": "q5_text_symbol_vs15",
+   "input": "❣︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0092",
+   "category": "q5_text_symbol_vs16",
+   "input": "❣️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0099",
+   "category": "q5_text_symbol_lone",
+   "input": "⬇",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0099",
+   "category": "q5_text_symbol_vs16",
+   "input": "⬇️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0105",
+   "category": "q5_text_symbol_vs15",
+   "input": "🅿︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0106",
+   "category": "q5_text_symbol_lone",
+   "input": "🌡",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0106",
+   "category": "q5_text_symbol_vs16",
+   "input": "🌡️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0113",
+   "category": "q5_text_symbol_lone",
+   "input": "🌪",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0113",
+   "category": "q5_text_symbol_vs16",
+   "input": "🌪️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0118",
+   "category": "q5_text_symbol_vs15",
+   "input": "🎗︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0120",
+   "category": "q5_text_symbol_lone",
+   "input": "🎚",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0120",
+   "category": "q5_text_symbol_vs16",
+   "input": "🎚️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_skin-0005",
+   "category": "q5_text_symbol_skin",
+   "input": "🏋🏽",
+   "expected": "",
+   "note": "肌色付き＝絵文字＝削る"
+  },
+  {
+   "id": "q5_text_symbol_skin-0006",
+   "category": "q5_text_symbol_skin",
+   "input": "🏌🏽",
+   "expected": "",
+   "note": "肌色付き＝絵文字＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0127",
+   "category": "q5_text_symbol_lone",
+   "input": "🏎",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0127",
+   "category": "q5_text_symbol_vs16",
+   "input": "🏎️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0131",
+   "category": "q5_text_symbol_vs15",
+   "input": "🏗︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0134",
+   "category": "q5_text_symbol_lone",
+   "input": "🏚",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0134",
+   "category": "q5_text_symbol_vs16",
+   "input": "🏚️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0141",
+   "category": "q5_text_symbol_lone",
+   "input": "🏵",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0141",
+   "category": "q5_text_symbol_vs16",
+   "input": "🏵️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0144",
+   "category": "q5_text_symbol_vs15",
+   "input": "👁︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0148",
+   "category": "q5_text_symbol_lone",
+   "input": "🕯",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0148",
+   "category": "q5_text_symbol_vs16",
+   "input": "🕯️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_skin-0007",
+   "category": "q5_text_symbol_skin",
+   "input": "🕴🏽",
+   "expected": "",
+   "note": "肌色付き＝絵文字＝削る"
+  },
+  {
+   "id": "q5_text_symbol_skin-0008",
+   "category": "q5_text_symbol_skin",
+   "input": "🕵🏽",
+   "expected": "",
+   "note": "肌色付き＝絵文字＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0155",
+   "category": "q5_text_symbol_lone",
+   "input": "🕸",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0155",
+   "category": "q5_text_symbol_vs16",
+   "input": "🕸️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0157",
+   "category": "q5_text_symbol_vs15",
+   "input": "🖇︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0162",
+   "category": "q5_text_symbol_lone",
+   "input": "🖐",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0162",
+   "category": "q5_text_symbol_vs16",
+   "input": "🖐️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_skin-0009",
+   "category": "q5_text_symbol_skin",
+   "input": "🖐🏽",
+   "expected": "",
+   "note": "肌色付き＝絵文字＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0169",
+   "category": "q5_text_symbol_lone",
+   "input": "🗃",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0169",
+   "category": "q5_text_symbol_vs16",
+   "input": "🗃️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0170",
+   "category": "q5_text_symbol_vs15",
+   "input": "🗄︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_lone-0176",
+   "category": "q5_text_symbol_lone",
+   "input": "🗞",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0176",
+   "category": "q5_text_symbol_vs16",
+   "input": "🗞️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0183",
+   "category": "q5_text_symbol_lone",
+   "input": "🛋",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs15-0183",
+   "category": "q5_text_symbol_vs15",
+   "input": "🛋︎",
+   "expected": "",
+   "note": "VS15 付き＝P1 では削る（P2/P3' は残して VS15 を剥ぐ）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0183",
+   "category": "q5_text_symbol_vs16",
+   "input": "🛋️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "q5_text_symbol_lone-0190",
+   "category": "q5_text_symbol_lone",
+   "input": "🛣",
+   "expected": "",
+   "note": "文字既定の 1 字＝推奨 P1 では削る（P2/P3/P3' は残す＝expected_by_policy）"
+  },
+  {
+   "id": "q5_text_symbol_vs16-0190",
+   "category": "q5_text_symbol_vs16",
+   "input": "🛣️",
+   "expected": "",
+   "note": "VS16＝絵文字で出せ＝削る"
+  },
+  {
+   "id": "nfkc_fold-0002",
+   "category": "nfkc_fold",
+   "input": "‼",
+   "expected": "!!",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0003",
+   "category": "nfkc_fold",
+   "input": "‼︎",
+   "expected": "!!"
+  },
+  {
+   "id": "nfkc_fold-0004",
+   "category": "nfkc_fold",
+   "input": "⁉",
+   "expected": "!?",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0005",
+   "category": "nfkc_fold",
+   "input": "⁉️",
+   "expected": "!?",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0006",
+   "category": "nfkc_fold",
+   "input": "⁉︎",
+   "expected": "!?"
+  },
+  {
+   "id": "nfkc_fold-0007",
+   "category": "nfkc_fold",
+   "input": "™",
+   "expected": "TM",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0008",
+   "category": "nfkc_fold",
+   "input": "™️",
+   "expected": "TM",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0009",
+   "category": "nfkc_fold",
+   "input": "™︎",
+   "expected": "TM"
+  },
+  {
+   "id": "nfkc_fold-0010",
+   "category": "nfkc_fold",
+   "input": "ℹ",
+   "expected": "i",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0011",
+   "category": "nfkc_fold",
+   "input": "ℹ️",
+   "expected": "i",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0012",
+   "category": "nfkc_fold",
+   "input": "ℹ︎",
+   "expected": "i"
+  },
+  {
+   "id": "nfkc_fold-0013",
+   "category": "nfkc_fold",
+   "input": "Ⓜ",
+   "expected": "M",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0014",
+   "category": "nfkc_fold",
+   "input": "Ⓜ️",
+   "expected": "M",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0015",
+   "category": "nfkc_fold",
+   "input": "Ⓜ︎",
+   "expected": "M"
+  },
+  {
+   "id": "nfkc_fold-0016",
+   "category": "nfkc_fold",
+   "input": "㊗",
+   "expected": "祝",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0017",
+   "category": "nfkc_fold",
+   "input": "㊗️",
+   "expected": "祝",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0018",
+   "category": "nfkc_fold",
+   "input": "㊗︎",
+   "expected": "祝"
+  },
+  {
+   "id": "nfkc_fold-0019",
+   "category": "nfkc_fold",
+   "input": "㊙",
+   "expected": "秘",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0020",
+   "category": "nfkc_fold",
+   "input": "㊙️",
+   "expected": "秘",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0021",
+   "category": "nfkc_fold",
+   "input": "㊙︎",
+   "expected": "秘"
+  },
+  {
+   "id": "nfkc_fold-0022",
+   "category": "nfkc_fold",
+   "input": "🈁",
+   "expected": "ココ",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0023",
+   "category": "nfkc_fold",
+   "input": "🈁️",
+   "expected": "ココ",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0024",
+   "category": "nfkc_fold",
+   "input": "🈁︎",
+   "expected": "ココ"
+  },
+  {
+   "id": "nfkc_fold-0025",
+   "category": "nfkc_fold",
+   "input": "🈂",
+   "expected": "サ",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0026",
+   "category": "nfkc_fold",
+   "input": "🈂️",
+   "expected": "サ",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0027",
+   "category": "nfkc_fold",
+   "input": "🈂︎",
+   "expected": "サ"
+  },
+  {
+   "id": "nfkc_fold-0028",
+   "category": "nfkc_fold",
+   "input": "🈚",
+   "expected": "無",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0029",
+   "category": "nfkc_fold",
+   "input": "🈚️",
+   "expected": "無",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0030",
+   "category": "nfkc_fold",
+   "input": "🈚︎",
+   "expected": "無"
+  },
+  {
+   "id": "nfkc_fold-0031",
+   "category": "nfkc_fold",
+   "input": "🈯",
+   "expected": "指",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0032",
+   "category": "nfkc_fold",
+   "input": "🈯️",
+   "expected": "指",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0033",
+   "category": "nfkc_fold",
+   "input": "🈯︎",
+   "expected": "指"
+  },
+  {
+   "id": "nfkc_fold-0034",
+   "category": "nfkc_fold",
+   "input": "🈲",
+   "expected": "禁",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0035",
+   "category": "nfkc_fold",
+   "input": "🈲️",
+   "expected": "禁",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0036",
+   "category": "nfkc_fold",
+   "input": "🈲︎",
+   "expected": "禁"
+  },
+  {
+   "id": "nfkc_fold-0037",
+   "category": "nfkc_fold",
+   "input": "🈳",
+   "expected": "空",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0038",
+   "category": "nfkc_fold",
+   "input": "🈳️",
+   "expected": "空",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0039",
+   "category": "nfkc_fold",
+   "input": "🈳︎",
+   "expected": "空"
+  },
+  {
+   "id": "nfkc_fold-0040",
+   "category": "nfkc_fold",
+   "input": "🈴",
+   "expected": "合",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0041",
+   "category": "nfkc_fold",
+   "input": "🈴️",
+   "expected": "合",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0042",
+   "category": "nfkc_fold",
+   "input": "🈴︎",
+   "expected": "合"
+  },
+  {
+   "id": "nfkc_fold-0043",
+   "category": "nfkc_fold",
+   "input": "🈵",
+   "expected": "満",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0044",
+   "category": "nfkc_fold",
+   "input": "🈵️",
+   "expected": "満",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0045",
+   "category": "nfkc_fold",
+   "input": "🈵︎",
+   "expected": "満"
+  },
+  {
+   "id": "nfkc_fold-0046",
+   "category": "nfkc_fold",
+   "input": "🈶",
+   "expected": "有",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0047",
+   "category": "nfkc_fold",
+   "input": "🈶️",
+   "expected": "有",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0048",
+   "category": "nfkc_fold",
+   "input": "🈶︎",
+   "expected": "有"
+  },
+  {
+   "id": "nfkc_fold-0049",
+   "category": "nfkc_fold",
+   "input": "🈷",
+   "expected": "月",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0050",
+   "category": "nfkc_fold",
+   "input": "🈷️",
+   "expected": "月",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0051",
+   "category": "nfkc_fold",
+   "input": "🈷︎",
+   "expected": "月"
+  },
+  {
+   "id": "nfkc_fold-0052",
+   "category": "nfkc_fold",
+   "input": "🈸",
+   "expected": "申",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0053",
+   "category": "nfkc_fold",
+   "input": "🈸️",
+   "expected": "申",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0054",
+   "category": "nfkc_fold",
+   "input": "🈸︎",
+   "expected": "申"
+  },
+  {
+   "id": "nfkc_fold-0055",
+   "category": "nfkc_fold",
+   "input": "🈹",
+   "expected": "割",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0056",
+   "category": "nfkc_fold",
+   "input": "🈹️",
+   "expected": "割",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0057",
+   "category": "nfkc_fold",
+   "input": "🈹︎",
+   "expected": "割"
+  },
+  {
+   "id": "nfkc_fold-0058",
+   "category": "nfkc_fold",
+   "input": "🈺",
+   "expected": "営",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0059",
+   "category": "nfkc_fold",
+   "input": "🈺️",
+   "expected": "営",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0060",
+   "category": "nfkc_fold",
+   "input": "🈺︎",
+   "expected": "営"
+  },
+  {
+   "id": "nfkc_fold-0061",
+   "category": "nfkc_fold",
+   "input": "🉐",
+   "expected": "得",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0062",
+   "category": "nfkc_fold",
+   "input": "🉐️",
+   "expected": "得",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0063",
+   "category": "nfkc_fold",
+   "input": "🉐︎",
+   "expected": "得"
+  },
+  {
+   "id": "nfkc_fold-0064",
+   "category": "nfkc_fold",
+   "input": "🉑",
+   "expected": "可",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0065",
+   "category": "nfkc_fold",
+   "input": "🉑️",
+   "expected": "可",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0066",
+   "category": "nfkc_fold",
+   "input": "🉑︎",
+   "expected": "可"
+  },
+  {
+   "id": "nfkc_fold-0067",
+   "category": "nfkc_fold",
+   "input": "♥",
+   "expected": "♡",
+   "note": "上流の NFKC（♥ は固定置換）と同じ字へ先に畳む（削らない）"
+  },
+  {
+   "id": "nfkc_fold-0068",
+   "category": "nfkc_fold",
+   "input": "♥️",
+   "expected": "♡",
+   "note": "VS16 付きも同じ字（FE0F は捨てる）"
+  },
+  {
+   "id": "nfkc_fold-0069",
+   "category": "nfkc_fold",
+   "input": "♥︎",
+   "expected": "♡"
+  },
+  {
+   "id": "non_emoji_untouched-0001",
+   "category": "non_emoji_untouched",
+   "input": "♪",
+   "expected": "♪"
+  },
+  {
+   "id": "non_emoji_untouched-0002",
+   "category": "non_emoji_untouched",
+   "input": "♫",
+   "expected": "♫"
+  },
+  {
+   "id": "non_emoji_untouched-0003",
+   "category": "non_emoji_untouched",
+   "input": "♬",
+   "expected": "♬"
+  },
+  {
+   "id": "non_emoji_untouched-0004",
+   "category": "non_emoji_untouched",
+   "input": "★",
+   "expected": "★"
+  },
+  {
+   "id": "non_emoji_untouched-0005",
+   "category": "non_emoji_untouched",
+   "input": "☆",
+   "expected": "☆"
+  },
+  {
+   "id": "non_emoji_untouched-0006",
+   "category": "non_emoji_untouched",
+   "input": "→",
+   "expected": "→"
+  },
+  {
+   "id": "non_emoji_untouched-0007",
+   "category": "non_emoji_untouched",
+   "input": "←",
+   "expected": "←"
+  },
+  {
+   "id": "non_emoji_untouched-0008",
+   "category": "non_emoji_untouched",
+   "input": "↑",
+   "expected": "↑"
+  },
+  {
+   "id": "non_emoji_untouched-0009",
+   "category": "non_emoji_untouched",
+   "input": "↓",
+   "expected": "↓"
+  },
+  {
+   "id": "non_emoji_untouched-0010",
+   "category": "non_emoji_untouched",
+   "input": "⇒",
+   "expected": "⇒"
+  },
+  {
+   "id": "non_emoji_untouched-0011",
+   "category": "non_emoji_untouched",
+   "input": "⇔",
+   "expected": "⇔"
+  },
+  {
+   "id": "non_emoji_untouched-0012",
+   "category": "non_emoji_untouched",
+   "input": "①",
+   "expected": "①"
+  },
+  {
+   "id": "non_emoji_untouched-0013",
+   "category": "non_emoji_untouched",
+   "input": "②",
+   "expected": "②"
+  },
+  {
+   "id": "non_emoji_untouched-0014",
+   "category": "non_emoji_untouched",
+   "input": "⑳",
+   "expected": "⑳"
+  },
+  {
+   "id": "non_emoji_untouched-0015",
+   "category": "non_emoji_untouched",
+   "input": "〜",
+   "expected": "〜"
+  },
+  {
+   "id": "non_emoji_untouched-0016",
+   "category": "non_emoji_untouched",
+   "input": "～",
+   "expected": "～"
+  },
+  {
+   "id": "non_emoji_untouched-0017",
+   "category": "non_emoji_untouched",
+   "input": "ー",
+   "expected": "ー"
+  },
+  {
+   "id": "non_emoji_untouched-0018",
+   "category": "non_emoji_untouched",
+   "input": "々",
+   "expected": "々"
+  },
+  {
+   "id": "non_emoji_untouched-0019",
+   "category": "non_emoji_untouched",
+   "input": "〆",
+   "expected": "〆"
+  },
+  {
+   "id": "non_emoji_untouched-0020",
+   "category": "non_emoji_untouched",
+   "input": "ヶ",
+   "expected": "ヶ"
+  },
+  {
+   "id": "non_emoji_untouched-0021",
+   "category": "non_emoji_untouched",
+   "input": "ゝ",
+   "expected": "ゝ"
+  },
+  {
+   "id": "non_emoji_untouched-0022",
+   "category": "non_emoji_untouched",
+   "input": "ゞ",
+   "expected": "ゞ"
+  },
+  {
+   "id": "non_emoji_untouched-0023",
+   "category": "non_emoji_untouched",
+   "input": "〃",
+   "expected": "〃"
+  },
+  {
+   "id": "non_emoji_untouched-0024",
+   "category": "non_emoji_untouched",
+   "input": "※",
+   "expected": "※"
+  },
+  {
+   "id": "non_emoji_untouched-0025",
+   "category": "non_emoji_untouched",
+   "input": "〒",
+   "expected": "〒"
+  },
+  {
+   "id": "non_emoji_untouched-0026",
+   "category": "non_emoji_untouched",
+   "input": "◎",
+   "expected": "◎"
+  },
+  {
+   "id": "non_emoji_untouched-0027",
+   "category": "non_emoji_untouched",
+   "input": "○",
+   "expected": "○"
+  },
+  {
+   "id": "non_emoji_untouched-0028",
+   "category": "non_emoji_untouched",
+   "input": "●",
+   "expected": "●"
+  },
+  {
+   "id": "non_emoji_untouched-0029",
+   "category": "non_emoji_untouched",
+   "input": "△",
+   "expected": "△"
+  },
+  {
+   "id": "non_emoji_untouched-0030",
+   "category": "non_emoji_untouched",
+   "input": "▲",
+   "expected": "▲"
+  },
+  {
+   "id": "non_emoji_untouched-0031",
+   "category": "non_emoji_untouched",
+   "input": "▽",
+   "expected": "▽"
+  },
+  {
+   "id": "non_emoji_untouched-0032",
+   "category": "non_emoji_untouched",
+   "input": "▼",
+   "expected": "▼"
+  },
+  {
+   "id": "non_emoji_untouched-0033",
+   "category": "non_emoji_untouched",
+   "input": "□",
+   "expected": "□"
+  },
+  {
+   "id": "non_emoji_untouched-0034",
+   "category": "non_emoji_untouched",
+   "input": "■",
+   "expected": "■"
+  },
+  {
+   "id": "non_emoji_untouched-0035",
+   "category": "non_emoji_untouched",
+   "input": "◇",
+   "expected": "◇"
+  },
+  {
+   "id": "non_emoji_untouched-0036",
+   "category": "non_emoji_untouched",
+   "input": "◆",
+   "expected": "◆"
+  },
+  {
+   "id": "non_emoji_untouched-0037",
+   "category": "non_emoji_untouched",
+   "input": "♡",
+   "expected": "♡"
+  },
+  {
+   "id": "non_emoji_untouched-0038",
+   "category": "non_emoji_untouched",
+   "input": "♢",
+   "expected": "♢"
+  },
+  {
+   "id": "non_emoji_untouched-0039",
+   "category": "non_emoji_untouched",
+   "input": "♤",
+   "expected": "♤"
+  },
+  {
+   "id": "non_emoji_untouched-0040",
+   "category": "non_emoji_untouched",
+   "input": "♧",
+   "expected": "♧"
+  },
+  {
+   "id": "non_emoji_untouched-0041",
+   "category": "non_emoji_untouched",
+   "input": "✓",
+   "expected": "✓"
+  },
+  {
+   "id": "non_emoji_untouched-0042",
+   "category": "non_emoji_untouched",
+   "input": "✕",
+   "expected": "✕"
+  },
+  {
+   "id": "non_emoji_untouched-0043",
+   "category": "non_emoji_untouched",
+   "input": "×",
+   "expected": "×"
+  },
+  {
+   "id": "non_emoji_untouched-0044",
+   "category": "non_emoji_untouched",
+   "input": "÷",
+   "expected": "÷"
+  },
+  {
+   "id": "non_emoji_untouched-0045",
+   "category": "non_emoji_untouched",
+   "input": "±",
+   "expected": "±"
+  },
+  {
+   "id": "non_emoji_untouched-0046",
+   "category": "non_emoji_untouched",
+   "input": "∞",
+   "expected": "∞"
+  },
+  {
+   "id": "non_emoji_untouched-0047",
+   "category": "non_emoji_untouched",
+   "input": "∴",
+   "expected": "∴"
+  },
+  {
+   "id": "non_emoji_untouched-0048",
+   "category": "non_emoji_untouched",
+   "input": "∵",
+   "expected": "∵"
+  },
+  {
+   "id": "non_emoji_untouched-0049",
+   "category": "non_emoji_untouched",
+   "input": "℃",
+   "expected": "℃"
+  },
+  {
+   "id": "non_emoji_untouched-0050",
+   "category": "non_emoji_untouched",
+   "input": "°",
+   "expected": "°"
+  },
+  {
+   "id": "non_emoji_untouched-0051",
+   "category": "non_emoji_untouched",
+   "input": "¥",
+   "expected": "¥"
+  },
+  {
+   "id": "non_emoji_untouched-0052",
+   "category": "non_emoji_untouched",
+   "input": "§",
+   "expected": "§"
+  },
+  {
+   "id": "non_emoji_untouched-0053",
+   "category": "non_emoji_untouched",
+   "input": "†",
+   "expected": "†"
+  },
+  {
+   "id": "non_emoji_untouched-0054",
+   "category": "non_emoji_untouched",
+   "input": "‡",
+   "expected": "‡"
+  },
+  {
+   "id": "non_emoji_untouched-0055",
+   "category": "non_emoji_untouched",
+   "input": "…",
+   "expected": "…"
+  },
+  {
+   "id": "non_emoji_untouched-0056",
+   "category": "non_emoji_untouched",
+   "input": "‥",
+   "expected": "‥"
+  },
+  {
+   "id": "non_emoji_untouched-0057",
+   "category": "non_emoji_untouched",
+   "input": "㈱",
+   "expected": "㈱"
+  },
+  {
+   "id": "non_emoji_untouched-0058",
+   "category": "non_emoji_untouched",
+   "input": "㍉",
+   "expected": "㍉"
+  },
+  {
+   "id": "non_emoji_untouched-0059",
+   "category": "non_emoji_untouched",
+   "input": "㌔",
+   "expected": "㌔"
+  },
+  {
+   "id": "non_emoji_untouched-0060",
+   "category": "non_emoji_untouched",
+   "input": "㊤",
+   "expected": "㊤"
+  },
+  {
+   "id": "non_emoji_untouched-0061",
+   "category": "non_emoji_untouched",
+   "input": "㊥",
+   "expected": "㊥"
+  },
+  {
+   "id": "non_emoji_untouched-0062",
+   "category": "non_emoji_untouched",
+   "input": "㊦",
+   "expected": "㊦"
+  },
+  {
+   "id": "non_emoji_untouched-0063",
+   "category": "non_emoji_untouched",
+   "input": "✿",
+   "expected": "✿"
+  },
+  {
+   "id": "non_emoji_untouched-0064",
+   "category": "non_emoji_untouched",
+   "input": "❀",
+   "expected": "❀"
+  },
+  {
+   "id": "non_emoji_untouched-0065",
+   "category": "non_emoji_untouched",
+   "input": "✧",
+   "expected": "✧"
+  },
+  {
+   "id": "non_emoji_untouched-0066",
+   "category": "non_emoji_untouched",
+   "input": "✩",
+   "expected": "✩"
+  },
+  {
+   "id": "non_emoji_untouched-0067",
+   "category": "non_emoji_untouched",
+   "input": "✦",
+   "expected": "✦"
+  },
+  {
+   "id": "non_emoji_untouched-0068",
+   "category": "non_emoji_untouched",
+   "input": "✪",
+   "expected": "✪"
+  },
+  {
+   "id": "non_emoji_untouched-0069",
+   "category": "non_emoji_untouched",
+   "input": "☻",
+   "expected": "☻"
+  },
+  {
+   "id": "non_emoji_untouched-0070",
+   "category": "non_emoji_untouched",
+   "input": "☏",
+   "expected": "☏"
+  },
+  {
+   "id": "non_emoji_untouched-0071",
+   "category": "non_emoji_untouched",
+   "input": "℡",
+   "expected": "℡"
+  },
+  {
+   "id": "non_emoji_untouched-0072",
+   "category": "non_emoji_untouched",
+   "input": "♯",
+   "expected": "♯"
+  },
+  {
+   "id": "non_emoji_untouched-0073",
+   "category": "non_emoji_untouched",
+   "input": "♭",
+   "expected": "♭"
+  },
+  {
+   "id": "non_emoji_untouched-0074",
+   "category": "non_emoji_untouched",
+   "input": "〓",
+   "expected": "〓"
+  },
+  {
+   "id": "non_emoji_untouched-0075",
+   "category": "non_emoji_untouched",
+   "input": "「",
+   "expected": "「"
+  },
+  {
+   "id": "non_emoji_untouched-0076",
+   "category": "non_emoji_untouched",
+   "input": "」",
+   "expected": "」"
+  },
+  {
+   "id": "non_emoji_untouched-0077",
+   "category": "non_emoji_untouched",
+   "input": "『",
+   "expected": "『"
+  },
+  {
+   "id": "non_emoji_untouched-0078",
+   "category": "non_emoji_untouched",
+   "input": "』",
+   "expected": "』"
+  },
+  {
+   "id": "non_emoji_untouched-0079",
+   "category": "non_emoji_untouched",
+   "input": "【",
+   "expected": "【"
+  },
+  {
+   "id": "non_emoji_untouched-0080",
+   "category": "non_emoji_untouched",
+   "input": "】",
+   "expected": "】"
+  },
+  {
+   "id": "non_emoji_untouched-0081",
+   "category": "non_emoji_untouched",
+   "input": "（",
+   "expected": "（"
+  },
+  {
+   "id": "non_emoji_untouched-0082",
+   "category": "non_emoji_untouched",
+   "input": "）",
+   "expected": "）"
+  },
+  {
+   "id": "non_emoji_untouched-0083",
+   "category": "non_emoji_untouched",
+   "input": "！",
+   "expected": "！"
+  },
+  {
+   "id": "non_emoji_untouched-0084",
+   "category": "non_emoji_untouched",
+   "input": "？",
+   "expected": "？"
+  },
+  {
+   "id": "non_emoji_untouched-0085",
+   "category": "non_emoji_untouched",
+   "input": "ｗ",
+   "expected": "ｗ"
+  },
+  {
+   "id": "non_emoji_untouched-0086",
+   "category": "non_emoji_untouched",
+   "input": "w",
+   "expected": "w"
+  },
+  {
+   "id": "non_emoji_untouched-0087",
+   "category": "non_emoji_untouched",
+   "input": "草",
+   "expected": "草"
+  },
+  {
+   "id": "non_emoji_untouched-0088",
+   "category": "non_emoji_untouched",
+   "input": "仝",
+   "expected": "仝"
+  },
+  {
+   "id": "non_emoji_untouched-0089",
+   "category": "non_emoji_untouched",
+   "input": "〻",
+   "expected": "〻"
+  },
+  {
+   "id": "non_emoji_untouched-0090",
+   "category": "non_emoji_untouched",
+   "input": "ゐ",
+   "expected": "ゐ"
+  },
+  {
+   "id": "non_emoji_untouched-0091",
+   "category": "non_emoji_untouched",
+   "input": "ゑ",
+   "expected": "ゑ"
+  },
+  {
+   "id": "non_emoji_untouched-0092",
+   "category": "non_emoji_untouched",
+   "input": "ヰ",
+   "expected": "ヰ"
+  },
+  {
+   "id": "non_emoji_untouched-0093",
+   "category": "non_emoji_untouched",
+   "input": "ヱ",
+   "expected": "ヱ"
+  },
+  {
+   "id": "non_emoji_untouched-0094",
+   "category": "non_emoji_untouched",
+   "input": "ヴ",
+   "expected": "ヴ"
+  },
+  {
+   "id": "non_emoji_untouched-0095",
+   "category": "non_emoji_untouched",
+   "input": "㋐",
+   "expected": "㋐"
+  },
+  {
+   "id": "non_emoji_untouched-0096",
+   "category": "non_emoji_untouched",
+   "input": "㋿",
+   "expected": "㋿"
+  },
+  {
+   "id": "non_emoji_untouched-0097",
+   "category": "non_emoji_untouched",
+   "input": "㍻",
+   "expected": "㍻"
+  },
+  {
+   "id": "non_emoji_untouched-0098",
+   "category": "non_emoji_untouched",
+   "input": "〠",
+   "expected": "〠"
+  },
+  {
+   "id": "non_emoji_untouched-0099",
+   "category": "non_emoji_untouched",
+   "input": "〶",
+   "expected": "〶"
+  },
+  {
+   "id": "non_emoji_untouched-0100",
+   "category": "non_emoji_untouched",
+   "input": "Ⅰ",
+   "expected": "Ⅰ"
+  },
+  {
+   "id": "non_emoji_untouched-0101",
+   "category": "non_emoji_untouched",
+   "input": "Ⅱ",
+   "expected": "Ⅱ"
+  },
+  {
+   "id": "non_emoji_untouched-0102",
+   "category": "non_emoji_untouched",
+   "input": "ⅰ",
+   "expected": "ⅰ"
+  },
+  {
+   "id": "non_emoji_untouched-0103",
+   "category": "non_emoji_untouched",
+   "input": "¶",
+   "expected": "¶"
+  },
+  {
+   "id": "non_emoji_untouched-0104",
+   "category": "non_emoji_untouched",
+   "input": "‰",
+   "expected": "‰"
+  },
+  {
+   "id": "non_emoji_untouched-0105",
+   "category": "non_emoji_untouched",
+   "input": "′",
+   "expected": "′"
+  },
+  {
+   "id": "non_emoji_untouched-0106",
+   "category": "non_emoji_untouched",
+   "input": "″",
+   "expected": "″"
+  },
+  {
+   "id": "non_emoji_untouched-0107",
+   "category": "non_emoji_untouched",
+   "input": "℉",
+   "expected": "℉"
+  },
+  {
+   "id": "non_emoji_untouched-0108",
+   "category": "non_emoji_untouched",
+   "input": "Å",
+   "expected": "Å"
+  },
+  {
+   "id": "non_emoji_untouched-0109",
+   "category": "non_emoji_untouched",
+   "input": "№",
+   "expected": "№"
+  },
+  {
+   "id": "non_emoji_untouched-0110",
+   "category": "non_emoji_untouched",
+   "input": "葛󠄀",
+   "expected": "葛󠄀"
+  },
+  {
+   "id": "non_emoji_untouched-0111",
+   "category": "non_emoji_untouched",
+   "input": "(´・ω・`)",
+   "expected": "(´・ω・`)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0112",
+   "category": "non_emoji_untouched",
+   "input": "＼(^o^)／",
+   "expected": "＼(^o^)／",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0113",
+   "category": "non_emoji_untouched",
+   "input": "(*´▽｀*)",
+   "expected": "(*´▽｀*)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0114",
+   "category": "non_emoji_untouched",
+   "input": "m(_ _)m",
+   "expected": "m(_ _)m",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0115",
+   "category": "non_emoji_untouched",
+   "input": "( ˘ω˘ )",
+   "expected": "( ˘ω˘ )",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0116",
+   "category": "non_emoji_untouched",
+   "input": "٩(ˊᗜˋ*)و",
+   "expected": "٩(ˊᗜˋ*)و",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0117",
+   "category": "non_emoji_untouched",
+   "input": "ʕ•ᴥ•ʔ",
+   "expected": "ʕ•ᴥ•ʔ",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0118",
+   "category": "non_emoji_untouched",
+   "input": "(≧∇≦)",
+   "expected": "(≧∇≦)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0119",
+   "category": "non_emoji_untouched",
+   "input": "ヽ(✿ﾟ▽ﾟ)ノ",
+   "expected": "ヽ(✿ﾟ▽ﾟ)ノ",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0120",
+   "category": "non_emoji_untouched",
+   "input": "✧*。٩(ˊᗜˋ*)و✧*。",
+   "expected": "✧*。٩(ˊᗜˋ*)و✧*。",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0121",
+   "category": "non_emoji_untouched",
+   "input": "(｀・ω・´)ゞ",
+   "expected": "(｀・ω・´)ゞ",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0122",
+   "category": "non_emoji_untouched",
+   "input": "(;´Д`)",
+   "expected": "(;´Д`)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0123",
+   "category": "non_emoji_untouched",
+   "input": "orz",
+   "expected": "orz",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0124",
+   "category": "non_emoji_untouched",
+   "input": "┐(´д｀)┌",
+   "expected": "┐(´д｀)┌",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0125",
+   "category": "non_emoji_untouched",
+   "input": "(╯°□°）╯︵ ┻━┻",
+   "expected": "(╯°□°）╯︵ ┻━┻",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0126",
+   "category": "non_emoji_untouched",
+   "input": "( ﾟдﾟ)",
+   "expected": "( ﾟдﾟ)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0127",
+   "category": "non_emoji_untouched",
+   "input": "⊂((・x・))⊃",
+   "expected": "⊂((・x・))⊃",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0128",
+   "category": "non_emoji_untouched",
+   "input": "(⌒▽⌒)☆",
+   "expected": "(⌒▽⌒)☆",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0129",
+   "category": "non_emoji_untouched",
+   "input": "☆彡",
+   "expected": "☆彡",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0130",
+   "category": "non_emoji_untouched",
+   "input": "★彡",
+   "expected": "★彡",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0131",
+   "category": "non_emoji_untouched",
+   "input": "♪(´ε｀ )",
+   "expected": "♪(´ε｀ )",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0132",
+   "category": "non_emoji_untouched",
+   "input": "ヾ(≧▽≦*)o",
+   "expected": "ヾ(≧▽≦*)o",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0133",
+   "category": "non_emoji_untouched",
+   "input": "(っ´ω`c)",
+   "expected": "(っ´ω`c)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0134",
+   "category": "non_emoji_untouched",
+   "input": "(。>﹏<。)",
+   "expected": "(。>﹏<。)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0135",
+   "category": "non_emoji_untouched",
+   "input": "(*'▽'*)♪",
+   "expected": "(*'▽'*)♪",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0136",
+   "category": "non_emoji_untouched",
+   "input": "(^_^;)",
+   "expected": "(^_^;)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0137",
+   "category": "non_emoji_untouched",
+   "input": "(T_T)",
+   "expected": "(T_T)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0138",
+   "category": "non_emoji_untouched",
+   "input": "( ◜ω◝ )",
+   "expected": "( ◜ω◝ )",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0139",
+   "category": "non_emoji_untouched",
+   "input": "₍₍ ◝(●˙꒳˙●)◜ ₎₎",
+   "expected": "₍₍ ◝(●˙꒳˙●)◜ ₎₎",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0140",
+   "category": "non_emoji_untouched",
+   "input": "(๑•̀ㅂ•́)و✧",
+   "expected": "(๑•̀ㅂ•́)و✧",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0141",
+   "category": "non_emoji_untouched",
+   "input": "(ㆁωㆁ*)",
+   "expected": "(ㆁωㆁ*)",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0142",
+   "category": "non_emoji_untouched",
+   "input": "ฅ^•ω•^ฅ",
+   "expected": "ฅ^•ω•^ฅ",
+   "note": "顔文字"
+  },
+  {
+   "id": "non_emoji_untouched-0143",
+   "category": "non_emoji_untouched",
+   "input": "( ˙꒳​˙ )",
+   "expected": "( ˙꒳​˙ )",
+   "note": "顔文字"
+  },
+  {
+   "id": "q5_in_kaomoji-0001",
+   "category": "q5_in_kaomoji",
+   "input": "( ´ ▽ ` )ﾉ♥",
+   "expected": "( ´ ▽ ` )ﾉ♡",
+   "note": "顔文字の中の文字既定 EP＝P1 では ♥ は ♡ へ・❤ ☺ は削る"
+  },
+  {
+   "id": "q5_in_kaomoji-0002",
+   "category": "q5_in_kaomoji",
+   "input": "(*´ω`*)❤",
+   "expected": "(*´ω`*)",
+   "note": "顔文字の中の文字既定 EP＝P1 では ♥ は ♡ へ・❤ ☺ は削る"
+  },
+  {
+   "id": "q5_in_kaomoji-0003",
+   "category": "q5_in_kaomoji",
+   "input": "ヾ(＠⌒ー⌒＠)ノ☺",
+   "expected": "ヾ(＠⌒ー⌒＠)ノ",
+   "note": "顔文字の中の文字既定 EP＝P1 では ♥ は ♡ へ・❤ ☺ は削る"
+  },
+  {
+   "id": "sentence-0001",
+   "category": "sentence",
+   "input": "やったー🎉🎉🎉",
+   "expected": "やったー"
+  },
+  {
+   "id": "sentence-0002",
+   "category": "sentence",
+   "input": "ありがとう🙏🏻",
+   "expected": "ありがとう🙏",
+   "note": "肌色を剥いで 45 種へ"
+  },
+  {
+   "id": "sentence-0003",
+   "category": "sentence",
+   "input": "待って⏸ね",
+   "expected": "待って⏸️ね",
+   "note": "VS16 を補って 45 種へ"
+  },
+  {
+   "id": "sentence-0004",
+   "category": "sentence",
+   "input": "急いで⏩️",
+   "expected": "急いで⏩",
+   "note": "VS16 を剥いで 45 種へ"
+  },
+  {
+   "id": "sentence-0005",
+   "category": "sentence",
+   "input": "はぁ😮‍💨疲れた",
+   "expected": "はぁ😮‍💨疲れた"
+  },
+  {
+   "id": "sentence-0006",
+   "category": "sentence",
+   "input": "こんにちは🎉今日もがんばろう",
+   "expected": "こんにちは今日もがんばろう"
+  },
+  {
+   "id": "sentence-0007",
+   "category": "sentence",
+   "input": "すごい‼",
+   "expected": "すごい!!",
+   "note": "NFKC と同じ畳み"
+  },
+  {
+   "id": "sentence-0008",
+   "category": "sentence",
+   "input": "まじ⁉️",
+   "expected": "まじ!?"
+  },
+  {
+   "id": "sentence-0009",
+   "category": "sentence",
+   "input": "㊗合格",
+   "expected": "祝合格"
+  },
+  {
+   "id": "sentence-0010",
+   "category": "sentence",
+   "input": "🈚料",
+   "expected": "無料"
+  },
+  {
+   "id": "sentence-0011",
+   "category": "sentence",
+   "input": "大好き❤️",
+   "expected": "大好き"
+  },
+  {
+   "id": "sentence-0012",
+   "category": "sentence",
+   "input": "大好き❤",
+   "expected": "大好き",
+   "note": "Q5: 1 字の ❤ も P1 では削る（P2/P3/P3' は残す）"
+  },
+  {
+   "id": "sentence-0013",
+   "category": "sentence",
+   "input": "大好き♥",
+   "expected": "大好き♡",
+   "note": "上流と同じ ♥→♡ を前倒し"
+  },
+  {
+   "id": "sentence-0014",
+   "category": "sentence",
+   "input": "大好き♥️",
+   "expected": "大好き♡",
+   "note": "VS16 付きの ♥ も ♡"
+  },
+  {
+   "id": "sentence-0015",
+   "category": "sentence",
+   "input": "1️⃣番",
+   "expected": "1番",
+   "note": "キーキャップは丸ごと削る（数字も消える）"
+  },
+  {
+   "id": "sentence-0016",
+   "category": "sentence",
+   "input": "日本🇯🇵代表",
+   "expected": "日本代表"
+  },
+  {
+   "id": "sentence-0017",
+   "category": "sentence",
+   "input": "©2026",
+   "expected": "2026",
+   "note": "Q5: P1 では © も削る"
+  },
+  {
+   "id": "sentence-0018",
+   "category": "sentence",
+   "input": "©️2026",
+   "expected": "2026"
+  },
+  {
+   "id": "sentence-0019",
+   "category": "sentence",
+   "input": "☎︎03-1234",
+   "expected": "03-1234",
+   "note": "Q5: P1 では VS15 付きも削る"
+  },
+  {
+   "id": "sentence-0020",
+   "category": "sentence",
+   "input": "🙇‍♂️すみません",
+   "expected": "すみません",
+   "note": "上流の ♂ 削除で ZWJ＋FE0F が残る件の解消"
+  },
+  {
+   "id": "sentence-0021",
+   "category": "sentence",
+   "input": "おはよう☀️今日も🔥",
+   "expected": "おはよう今日も"
+  },
+  {
+   "id": "sentence-0022",
+   "category": "sentence",
+   "input": "えっ❗",
+   "expected": "えっ!",
+   "note": "❗ は Emoji_Presentation"
+  },
+  {
+   "id": "sentence-0023",
+   "category": "sentence",
+   "input": "なんで❓",
+   "expected": "なんで?",
+   "note": "❓ は Emoji_Presentation"
+  },
+  {
+   "id": "sentence-0024",
+   "category": "sentence",
+   "input": "😊😊🎉😊",
+   "expected": "😊😊😊",
+   "note": "45 の連続の間の非対応を詰める"
+  },
+  {
+   "id": "sentence-0025",
+   "category": "sentence",
+   "input": "草🤣🤣w",
+   "expected": "草w"
+  },
+  {
+   "id": "sentence-0026",
+   "category": "sentence",
+   "input": "ｗｗｗ😂",
+   "expected": "ｗｗｗ"
+  },
+  {
+   "id": "sentence-0027",
+   "category": "sentence",
+   "input": "🤔️🏼？",
+   "expected": "🤔？"
+  },
+  {
+   "id": "sentence-0028",
+   "category": "sentence",
+   "input": "１️⃣",
+   "expected": "１",
+   "note": "全角数字のキーキャップは塊にならない＝部品だけ掃除（上流 NFKC で 1）"
+  },
+  {
+   "id": "empty_result-0001",
+   "category": "empty_result",
+   "input": "🎉",
+   "expected": ""
+  },
+  {
+   "id": "empty_result-0002",
+   "category": "empty_result",
+   "input": "🎉🎉🎉",
+   "expected": ""
+  },
+  {
+   "id": "empty_result-0003",
+   "category": "empty_result",
+   "input": "🇯🇵",
+   "expected": ""
+  },
+  {
+   "id": "empty_result-0004",
+   "category": "empty_result",
+   "input": "🏻",
+   "expected": ""
+  },
+  {
+   "id": "empty_result-0005",
+   "category": "empty_result",
+   "input": "「🎉」",
+   "expected": "「」",
+   "note": "上流 normalize で括弧が剥けて空＝ValueError→400 の恐れ"
+  },
+  {
+   "id": "empty_result-0006",
+   "category": "empty_result",
+   "input": " 🎉 ",
+   "expected": "  ",
+   "note": "空白のみ"
+  },
+  {
+   "id": "empty_result-0007",
+   "category": "empty_result",
+   "input": "（🎉🎉）",
+   "expected": "（）",
+   "note": "同上"
+  },
+  {
+   "id": "empty_result-0008",
+   "category": "empty_result",
+   "input": "🎉。",
+   "expected": "。",
+   "note": "句点のみが残る"
+  },
+  {
+   "id": "empty_result-0009",
+   "category": "empty_result",
+   "input": "♂",
+   "expected": "",
+   "note": "♂ は P1 で削る（上流も消す・P3' では残るが上流 normalize 後に空）"
+  },
+  {
+   "id": "empty_result-0010",
+   "category": "empty_result",
+   "input": "あああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ。「🎉」",
+   "expected": "あああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ。「」",
+   "note": "全体は空でないが上流の分割（chunk_min_chars=80）の後の塊「」が空＝ValueError→400 の恐れ"
+  }
+ ]
+}

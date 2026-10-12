@@ -1,0 +1,92 @@
+<UserControl x:Class="IrodoriTtsYwk.Launcher.Views.DictionaryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:IrodoriTtsYwk.Launcher.ViewModels"
+             AutomationProperties.AutomationId="DictionaryView">
+  <!--
+    辞書（decisions.md 166・docs/design/app-dictionary.md §5）＝文字 → 読み の対応表。
+    上から順に効く。登録・削除・並べ替えのたびに dictionary.json へ書く（保存の釦は無い＝
+    本体 yomiwakechan2 の辞書設定と同じ即反映）。読み分けちゃん2 の辞書を通った後の文に掛かり、
+    その後に絵文字の扱い（v2.0.10）が掛かる。文言は ViewModels/UiStrings.cs が唯一の出所である。
+  -->
+  <Grid Margin="12">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" />
+      <ColumnDefinition Width="320" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0" Grid.ColumnSpan="2">
+      <TextBlock TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="DictionaryNoteText"
+                 Text="{x:Static vm:UiStrings.DictionaryNote}" />
+      <TextBlock TextWrapping="Wrap" Margin="0,4,0,0" Foreground="#666666" FontSize="11"
+                 AutomationProperties.AutomationId="DictionaryExampleText"
+                 Text="{x:Static vm:UiStrings.DictionaryExample}" />
+    </StackPanel>
+
+    <!-- 一覧 -->
+    <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,10,10,0">
+      <TextBlock DockPanel.Dock="Bottom" Margin="0,6,0,0" TextWrapping="Wrap"
+                 Foreground="#666666" FontSize="11"
+                 AutomationProperties.AutomationId="DictionaryCountText"
+                 Text="{Binding CountText, Mode=OneWay}" />
+      <DataGrid AutomationProperties.AutomationId="DictionaryGrid"
+                ItemsSource="{Binding Rows}"
+                SelectedItem="{Binding Selected, Mode=TwoWay}"
+                AutoGenerateColumns="False" IsReadOnly="True"
+                CanUserAddRows="False" CanUserDeleteRows="False"
+                HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                SelectionMode="Single">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="{x:Static vm:UiStrings.DictionaryFromColumn}"
+                              Binding="{Binding From}" Width="*" />
+          <DataGridTextColumn Header="{x:Static vm:UiStrings.DictionaryToColumn}"
+                              Binding="{Binding To}" Width="*" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </DockPanel>
+
+    <!-- 登録（2 欄＝文字／読み）と、選んでいる行の操作 -->
+    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,10,0,0">
+      <TextBlock Text="{x:Static vm:UiStrings.DictionaryAddHeader}" FontWeight="Bold" Margin="0,0,0,6" />
+
+      <TextBlock Text="{x:Static vm:UiStrings.DictionaryFromLabel}" TextWrapping="Wrap" />
+      <TextBox Margin="0,2,0,8"
+               AutomationProperties.AutomationId="DictionaryFromBox"
+               Text="{Binding NewFrom, UpdateSourceTrigger=PropertyChanged}" />
+
+      <TextBlock Text="{x:Static vm:UiStrings.DictionaryToLabel}" TextWrapping="Wrap" />
+      <TextBox Margin="0,2,0,8"
+               AutomationProperties.AutomationId="DictionaryToBox"
+               Text="{Binding NewTo, UpdateSourceTrigger=PropertyChanged}" />
+
+      <Button Content="{x:Static vm:UiStrings.DictionaryAddButton}" Padding="10,5"
+              AutomationProperties.AutomationId="DictionaryAddButton"
+              Command="{Binding AddCommand}" />
+
+      <Separator Margin="0,14,0,10" />
+
+      <TextBlock Text="{x:Static vm:UiStrings.DictionarySelectedHeader}" FontWeight="Bold" Margin="0,0,0,6" />
+      <WrapPanel>
+        <Button Content="{x:Static vm:UiStrings.DictionaryRemoveButton}" Padding="12,4" Margin="0,0,6,6"
+                AutomationProperties.AutomationId="DictionaryRemoveButton"
+                Command="{Binding RemoveCommand}" />
+        <Button Content="{x:Static vm:UiStrings.DictionaryUpButton}" Padding="12,4" Margin="0,0,6,6"
+                AutomationProperties.AutomationId="DictionaryUpButton"
+                Command="{Binding MoveUpCommand}" />
+        <Button Content="{x:Static vm:UiStrings.DictionaryDownButton}" Padding="12,4" Margin="0,0,6,6"
+                AutomationProperties.AutomationId="DictionaryDownButton"
+                Command="{Binding MoveDownCommand}" />
+      </WrapPanel>
+    </StackPanel>
+
+    <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Margin="0,10,0,0" TextWrapping="Wrap"
+               AutomationProperties.AutomationId="DictionaryMessageText"
+               Text="{Binding Message, Mode=OneWay}" />
+  </Grid>
+</UserControl>
